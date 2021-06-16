@@ -1,0 +1,391 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../iron-image/iron-image.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icons/communication-icons.html">
+<link rel="import" href="../iron-icons/hardware-icons.html">
+<link rel="import" href="../iron-icons/av-icons.html">
+<link rel="import" href="../paper-dialog/paper-dialog.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../iron-icons/device-icons.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<link rel="import" href="../triplat-debug/triplat-debug.html">
+
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-datetime-picker/triplat-datetime-picker.html">
+<link rel="import" href="../triplat-date-picker/triplat-date-picker.html">
+<link rel="import" href="../triplat-date-utilities/triplat-date-utilities.html">
+<link rel="import" href="../triplat-image/triplat-image.html">
+
+<link rel="import" href="tricomp-alert-message.html">
+
+<link rel="import" href="theme.html">
+
+<dom-module id="tricomp-request-item">
+
+	<link rel="import" type="css" href="shared.css">
+
+	<style>
+
+		:host {
+			@apply(--layout-vertical);
+			position: relative;
+			border-bottom: 1px solid var(--ibm-gray-10);
+		}
+
+		:host:last-of-type {
+
+		}
+
+		:host:nth-of-type(even) {
+			background-color: var(--ibm-neutral-2);
+		}
+
+		.actions-container {
+			@apply(--layout-vertical);
+			@apply(--layout-center);
+			margin: 0px 10px 20px 10px;
+			padding-top: 10px;
+		}
+
+
+		.actions-buttons {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			width: 50%;
+		}
+
+		.alert-message {
+			margin: 0 10px 0 10px;
+		}
+
+		.delete-button {
+			@apply(--layout-flex);
+			font-size: 16px;
+			width: 50%;
+		}
+
+		.drill-container {
+			@apply(--layout-vertical);
+			@apply(--layout-center-center);
+			@apply(--layout-end);
+			width: 10%;
+			cursor: pointer;
+		}
+
+		.drill-button {
+			color: var(--tri-primary-color);
+		}
+		
+		.icaluid {
+			@apply(--layout-flex);
+			color: rgb(65, 120, 190);
+			font-weight: bolder;
+		}
+
+		.image-container {
+			padding-right: 10px;
+		}
+
+		.info-blank-line{
+			height: 5px;
+		}
+
+		.info-line {
+			@apply(--layout-horizontal);
+			text-align: left;
+			font-size: 16px;
+			font-weight: normal;
+			font-family: var(--tri-font-family);
+			color: var(--ibm-cool-gray-60) !important;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			max-width: 300px;
+		}
+
+		.info-line-bold {
+			@apply(--layout-horizontal);
+			text-align: left;
+			font-size: 14px;
+			font-weight: bold;
+			font-family: var(--tri-font-family);
+			color: var(--ibm-cool-gray-60) !important;
+			overflow-x: hidden;
+		}
+
+		iron-image {
+			width: 63px;
+			height: 63px;
+		}
+
+		.profile-image-placeholder {
+			color: var(--ibm-cool-gray-50);
+			height: 64px;
+			width: 64px;
+		}		
+
+		.move-details-container {
+			@apply(--layout-flex);
+			min-width: 0;
+			@apply(--layout-vertical);
+		}
+
+		.requested-for {
+			font-family: var(--tri-font-family);
+			font-weight: bold;
+			font-size: 18px;
+			color: var(--ibm-cool-gray-100);
+		}
+
+		.request-item-container {
+			@apply(--layout-horizontal);
+			padding: 10px 0 10px 0;
+		}
+
+		.start-end-date-picker {
+			@apply(--layout-flex);
+			min-width: 200px;
+			--triplat-date-picker-width: 100%;
+		}
+
+		.request-status {
+			font-weight: bold;
+		}
+
+		.section-break {
+			color: var(--ibm-cool-gray-50)  !important;
+			font-family: var(--tri-font-family);
+			font-size: 14px;
+		}
+
+		.section-break-value {
+			color: var(--ibm-cool-gray-100)  !important;
+			font-family: var(--tri-font-family);
+			font-size: 14px;
+		}
+
+		triplat-datetime-picker {
+			font-size: 16px;
+		}
+
+		.info-header {
+			background-color: var(--tri-info-color);
+			height: 32px;
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			@apply(--layout-start-justify);
+			color: black;
+			margin-right: 10px;
+			margin-bottom: 10px;
+		}
+
+		.success-header {
+			background-color: var(--tri-success-color);
+			height: 32px;
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			@apply(--layout-start-justify);
+			color: black;
+			margin-right: 10px;
+			margin-bottom: 10px;
+		}
+		
+	</style>
+
+	<template>
+		<triplat-ds id="currentUser" name="currentUser" data="{{currentUser}}"></triplat-ds>
+
+		<tricore-url raw-url="/getCompanyFile.jsp?fileLoc=" bind-url="{{imgUrl}}"></tricore-url>
+
+		<triplat-ds	name="facilitiesProject" data="{{facilitiesProject}}" loading="{{facilitiesProjectLoading}}">
+			<triplat-ds-context name="myMoveRequests" context-id="[[item._id]]"></triplat-ds-context>
+		</triplat-ds>
+		<triplat-ds	name="workTask" data="{{workTask}}" loading="{{workTaskLoading}}">
+			<triplat-ds-context name="myMoveRequests" context-id="[[item._id]]"></triplat-ds-context>
+		</triplat-ds>
+
+		<div class="request-item-container" on-tap="_handleOpenRequest">
+			<div class="image-container">
+				<iron-icon class="profile-image-placeholder" icon="ibm:user-profile"></iron-icon>
+			</div>
+			<div class="move-details-container">
+
+				<label class="requested-for" aria-label="Move Request">Move Request</label>
+
+				<div class="section-break" aria-label="Request ID">Request ID: <span class="section-break-value">{{item.requestID}}</span></div>
+				<div class="section-break" aria-label="Requested move date">Requested move date: <span class="section-break-value">
+					<triplat-date-picker readonly display-format="[[currentUser._DateFormat]]" value="[[item.moveDate]]"></triplat-date-picker></span>
+				</div>
+
+				<div class="section-break" aria-label="Scheduled date">Scheduled date:
+					<span class="detail-item title" hidden$="{{_isEmpty(workTask.plannedStart)}}"> 
+						 <span class="section-break-value">
+							<triplat-date-picker readonly display-format="[[currentUser._DateFormat]]" value="[[workTask.plannedStart]]">
+							</triplat-date-picker>
+						</span>
+					</span>
+					<span class="detail-item title" hidden$="{{!_isEmpty(workTask.plannedStart)}}">
+						<span class="detail-item title" hidden$="{{_isEmpty(facilitiesProject.plannedStart)}}">
+							<span class="section-break-value">
+								<triplat-date-picker readonly display-format="[[currentUser._DateFormat]]" value="[[facilitiesProject.plannedStart]]"></triplat-date-picker>
+							</span>
+						</span>
+						<span class="detail-item title" hidden$="{{!_isEmpty(facilitiesProject.plannedStart)}}">
+							<span class="section-break-value">Pending</span>
+						</span>
+					</span>
+				</div>
+				<div class="info-blank-line"> <span>&nbsp;</span></div>
+
+			</div>
+				<div class="drill-container">
+				<paper-icon-button 
+					class="drill-button"
+					icon="icons:chevron-right">				
+				</paper-icon-button>
+			</div>
+		</div>
+
+		<tricomp-alert-message info id="successlMessage" class="alert-message" hidden$="{{!_isSubmitted(item.status)}}" aria-label="{{_getStatus(item.status)}}">{{_getStatus(item.status)}}</tricomp-alert-message>
+
+		<tricomp-alert-message info id="reviewMessage" class="alert-message" hidden$="{{!_isReviewInProgress(item.status)}}" aria-label="{{_getStatus(item.status)}}">{{_getStatus(item.status)}}</tricomp-alert-message>
+
+		<tricomp-alert-message info id="revisionMessage" class="alert-message" hidden$="{{!_isRevisionInProgress(item.status)}}" aria-label="{{_getStatus(item.status)}}">{{_getStatus(item.status)}}</tricomp-alert-message>
+
+		<tricomp-alert-message success id="completeMessage" class="alert-message" hidden$="{{!_isCompleted(item.status)}}" aria-label="{{_getStatus(item.status)}}">{{_getStatus(item.status)}}</tricomp-alert-message>
+
+		<div class="info-blank-line" hidden$="{{item.delete}}"> <span>&nbsp;</span></div>
+		<div class="info-blank-line" hidden$="{{item.delete}}"> <span>&nbsp;</span></div>
+		<div class="info-blank-line" hidden$="{{item.delete}}"> <span>&nbsp;</span></div>
+		<div class="info-blank-line" hidden$="{{item.delete}}"> <span>&nbsp;</span></div>
+
+		<div class="actions-container" hidden="{{!item.delete}}">
+			<div class="actions-buttons">
+			<paper-button 
+				id="delete" 
+				class="delete-button danger-outline"
+				disabled="{{!item.delete}}"
+				on-tap="_handleCancel" 
+				noink>Cancel</paper-button>
+			</div>
+		</div>	
+
+		<paper-dialog id="cancelDialog" modal entry-animation="scale-up-animation" exit-animation="fade-out-animation" with-backdrop>
+			<div aria-labelledby="cancelDialogDescription"> 
+			   <p>Are you sure you want to cancel this request?</p>
+			</div>
+			<div id="cancelDialogDescription" hidden=true> 
+               Are you sure you want to cancel this request?
+			</div>	
+			<div class="buttons">
+				<paper-button dialog-confirm autofocus noink>Yes</paper-button>
+				<paper-button secondary dialog-dismiss noink>No</paper-button>
+			</div>
+		</paper-dialog>
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-request-item",
+		behaviors: [MoveRequestBehavior, TriDateUtilities],
+
+		properties: {
+			item: Object,
+			disabled: {
+				type: Boolean,
+				value: false
+			},
+			enableCountdown: {
+				type: Boolean,
+				value: true
+			},
+      	},
+
+      	listeners: {
+			'cancelDialog.iron-overlay-closed': '_handleCancelDialogClose',
+      	},
+
+		_handleCancel: function(e) {
+			//console.log("tripage-request-summary._handleCancelDialog");
+			this.$.cancelDialog.open();
+		},
+
+		_handleCancelDialogClose: function(e, detail) {
+			if (detail && detail.confirmed) {
+				this._doCancel();
+			}
+		},
+
+		_doCancel: function(e) {
+			this.fire("action-delete", { 'requestId' : this.item._id });
+		},
+
+		_getRequestInstanceSpecId: function() {
+			return this.item._id;
+		},
+
+		_getRequestDefinitionSpecId: function() {
+			return this.item._rdSpecId;
+		},
+
+		_getStatus: function (status) {
+			if (status == "Issued") {
+				return "Submitted";
+			}
+			else if (status == "Review In Progress") {
+				return "Waiting For Approval";
+			}
+			else if (status == "Revision In Progress") {
+				return "Revision In Progress";
+			}
+			else if (status == "Completed") {
+				return "Completed";
+			}
+			return "Unknown";
+		},
+
+		_isSubmitted: function (status) {
+			//console.log("Status: ", status);
+			if (status == "Issued") {
+				return true;
+			}
+			return false;
+		},
+
+		_isReviewInProgress: function (status) {
+			if (status == "Review In Progress") {
+				return true;
+			}
+			return false;
+		},
+
+
+		_isRevisionInProgress: function (status) {
+			if (status == "Revision In Progress") {
+				return true;
+			}
+			return false;
+		},
+
+
+		_isCompleted: function (status) {
+			if (status == "Completed") {
+				return true;
+			}
+			return false;
+		},
+
+		_handleOpenRequest: function(e) {
+			var requestId = this.item._id;
+			this.fire("navigate-readonly-summary-page", { 'requestId' : requestId });
+		},
+
+		_isEmpty: function(val) {
+			return !val || val == "";
+		},
+
+	}); 
+</script>

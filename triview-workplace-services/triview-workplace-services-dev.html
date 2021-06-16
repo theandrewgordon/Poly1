@@ -1,0 +1,146 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-view-behavior/triplat-view-behavior.html">
+<link rel="import" href="../tricore-lazy-loading-behavior/tricore-lazy-loading-behavior.html">
+<link rel="import" href="../triblock-app-layout/triblock-app-layout.html">
+<link rel="import" href="../triblock-app-layout/triblock-app-layout-banner-popup-behavior.html">
+
+<link rel="import" href="trilazy-imports.html">
+
+<dom-module id="triview-workplace-services">
+	<template>
+		<style>
+			triblock-app-layout {
+				--triblock-app-layout-body-background-color: var(--tri-primary-content-background-color);
+			}
+		</style>
+
+		<tricore-url hidden raw-url="/p/web/serviceRequest" bind-url="{{requestMainUrl}}"></tricore-url>
+		<tricore-url hidden raw-url="/p/web/roomReservation" bind-url="{{reservationMainUrl}}"></tricore-url>
+		<tricore-url hidden raw-url="/p/web/moveMe" bind-url="{{moveMeMainUrl}}"></tricore-url>
+		<tricore-url hidden raw-url="/p/web/locate" bind-url="{{locateMainUrl}}"></tricore-url>
+
+		<triblock-app-layout
+			app-label="Workplace Services" 
+			mobile-page-label="[[mobilePageLabel]]"
+			show-mobile-back-button="[[showMobileBackButton]]">
+			<triblock-banner-button back tap-handler="_handleBackButtonTap"></triblock-banner-button>
+			<triblock-banner-button home tap-handler="_refresh"></triblock-banner-button>
+
+			<trimain-workplace-services id="portalPage" home-app="[[_appName]]" content></trimain-workplace-services>
+		</triblock-app-layout>
+	</template>
+	<script>
+		Polymer({
+			is: "triview-workplace-services",
+
+			behaviors: [TriPlatViewBehavior,
+						TriBlockAppLayoutBannerPopupBehavior,
+						TriLazyLoadingBehavior],
+
+			listeners: {
+				'service-item-tapped': '_handleServiceItemTapped',
+				'building-id-changed': "_onBuildingIdChanged"
+			},
+
+			properties: {
+				_appName: {
+					type: String,
+					value: "workplaceServices"
+				},
+				_currentBuildingId: Number,
+			},
+
+			ready: function() {
+				// globalize the window title
+				var __dictionary__title =  "IBM TRIRIGA Workplace Services";
+				document.title = __dictionary__title;
+
+				var __dictionary__appLabel =  "Workplace Services";
+				sessionStorage.setItem("workplaceServicesAppLabel", __dictionary__appLabel);
+
+				Polymer.RenderStatus.afterNextRender(this, function() {
+					this.loadResource(this.$.portalPage, 'trimain-workplace-services.html');
+				});
+
+				document.querySelector("body").style.height = "auto";
+			},
+
+			_onBuildingIdChanged: function(e) {
+				if (e && e.detail && e.detail.buildingId) {
+					this.set("_currentBuildingId", e.detail.buildingId);
+				}
+			},
+
+			_handleServiceItemTapped: function(e) {
+				var serviceType = e.detail.serviceType;
+				if (serviceType === "serviceRequest") {
+					this._handleNavigateWithBuilding(this.requestMainUrl, "new");
+				} else if(serviceType === "reservation") {
+					this._handleNavigateWithBuilding(this.reservationMainUrl, "new");
+				} else if(serviceType === "moveRequest") {
+					this._handleNavigateMoveMe(this.moveMeMainUrl);
+				} else if(serviceType === "locate") {
+					this._handleNavigateLocate(this.locateMainUrl);
+				}
+			},
+
+			_handleNavigateWithBuilding: function(url, path) {
+				var buildingId = "-1";
+				if (this._currentBuildingId && this._currentBuildingId != "") {
+					buildingId = this._currentBuildingId;
+				}
+
+				url += "?homeApp=" + this._appName;
+				url += "#!/";
+
+				if (path) {
+					url += path + "/"; 
+				}
+
+				url += buildingId;
+
+				this._openUrl(url);
+			},
+
+			_handleNavigateLocate: function(url) {
+				url += "?homeApp=" + this._appName;
+				if (this._currentBuildingId && this._currentBuildingId != "" && this._currentBuildingId != "-1") {
+					url += "&overrideBuildingId=" + this._currentBuildingId;
+				}
+				this._openUrl(url);
+			},
+
+			_handleNavigateMoveMe: function(url) {
+				url += "?homeApp=" + this._appName;
+
+				url += "#!/new/";
+
+				this._openUrl(url);
+			},
+
+			_handleNavigate: function(targetUrl, homeAppLabel) {
+				if (targetUrl && targetUrl.length > 0) {
+					targetUrl += "?homeApp=" + this._appName;
+
+					this._openUrl(targetUrl);
+				}
+			},
+
+			_openUrl: function(url) {
+				this.fire("set-busy");
+				this.async(function() {
+					location.assign(url);
+				});
+			},
+
+			_refresh: function() {
+				this.$.portalPage._navigateToMainPortalPage();
+			},
+
+			_handleBackButtonTap: function() {
+				this.managePopupBackBehavior();
+			}
+		});
+	</script>
+</dom-module>

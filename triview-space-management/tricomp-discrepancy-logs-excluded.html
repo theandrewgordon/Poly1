@@ -1,0 +1,243 @@
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-query/triplat-query.html">
+<link rel="import" href="../triplat-routing/triplat-routing.html">
+<link rel="import" href="../triplat-image/triplat-image.html">
+<link rel="import" href="../triplat-date-picker/triplat-date-picker.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-selector/iron-selector.html">
+<link rel="import" href="../paper-button/paper-button.html">
+
+<link rel="import" href="../triplat-table-behavior/triplat-table-behavior.html">
+
+<dom-module id="tricomp-discrepancy-logs-excluded">
+
+	<style>
+
+		:host {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			background-color: white;
+		}
+
+		paper-toggle-button {
+			--paper-toggle-button-checked-bar-color: #AD1625;
+			--paper-toggle-button-checked-button-color: #AD1625;
+		}
+
+		.icon-container {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-center-center);
+		}
+
+		triplat-icon .icon-size {
+			width: 40px;
+			height: 40px;
+			color: #5A5A5A;
+		}
+
+		.wrap-text {
+			width:200px;
+		}
+
+		.table-view {
+			width: 100%;
+		}
+
+		.table-row {
+			background-color: white !important; 
+		}
+
+		.action {
+			@apply(--layout);
+			@apply(--layout-center-center);
+		}
+
+	</style>
+
+	<template>
+
+		<triplat-route name="assessmentLogsList" params="{{assessmentParams}}"></triplat-route>
+		
+		<triplat-ds id="discrepancyLogsDs" name="discrepancyLogs" filtered-data="{{discrepancyLogs}}">
+			<triplat-ds-context name="mySpaceAssessments" context-id="{{assessmentParams.assessmentId}}"></triplat-ds-context>
+			<triplat-query>
+				<triplat-query-filter  name="space" operator="contains" value="{{searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-and></triplat-query-and>
+    			<triplat-query-filter name="approve" operator="equals" value="false"></triplat-query-filter>
+    			<triplat-query-or></triplat-query-or>
+			 	<triplat-query-filter  name="spaceClass" operator="contains" value="{{searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-and></triplat-query-and>
+    			<triplat-query-filter name="approve" operator="equals" value="false"></triplat-query-filter>
+    			<triplat-query-or></triplat-query-or>
+				<triplat-query-filter  name="discrepancyType" operator="contains" value="{{searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-and></triplat-query-and>
+    			<triplat-query-filter name="approve" operator="equals" value="false"></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter  name="asset.value" operator="contains" value="{{searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-and></triplat-query-and>
+    			<triplat-query-filter name="approve" operator="equals" value="false"></triplat-query-filter>
+    			<triplat-query-or></triplat-query-or>
+				<triplat-query-filter  name="person.value" operator="contains" value="{{searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-and></triplat-query-and>
+    			<triplat-query-filter name="approve" operator="equals" value="false"></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter  name="comment" operator="contains" value="{{searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-and></triplat-query-and>
+    			<triplat-query-filter name="approve" operator="equals" value="false"></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter  name="reviewComment" operator="contains" value="{{searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-and></triplat-query-and>
+    			<triplat-query-filter name="approve" operator="equals" value="false"></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<div tri-table class="table-view">
+			<div tri-thead class="table-header">
+				<div tri-tr class="table-header-row">
+					<div tri-th class="table-header-icon"></div>
+					<div tri-th class="table-header-column">Action</div>
+					<div tri-th class="table-header-column">Space</div>
+					<div tri-th class="table-header-column">Space Class</div>
+					<div tri-th class="table-header-column">Record</div>
+					<div tri-th class="table-header-column">Assessment Comment</div>
+					<div tri-th class="table-header-column">Review Comment</div>
+					<div tri-th class="table-header-icon"></div>
+				</div>
+			</div>
+			<div tri-tbody class="table-body">
+				<template id="personDiscrepancyLogsTemplate" is="dom-repeat" items="{{discrepancyLogs}}">
+					<div tri-tr>	
+						<div tri-td class="table-column-icon">
+							<triplat-image hidden$="{{!_hideImage(item.person.id, item.personImage)}}" src="{{item.personImage}}" width="40px" height="40px" sizing="contain"></triplat-image>
+							<triplat-image hidden$="{{!_hideImage(item.asset.id, item.assetImage)}}" src="{{item.assetImage}}" width="40px" height="40px" sizing="contain"></triplat-image>
+							<div class="icon-container" hidden$="{{_getImage(item.person.id, item.personImage, item.asset.id, item.assetImage)}}">
+								<triplat-icon class="icon-size" icon="{{_getPlaceholderIcon(item.person.id, item.asset.id)}}"></triplat-icon>
+							</div>
+						</div>
+						<div tri-td class="table-column">
+							<span>{{item.discrepancyType}}</span>
+						</div>
+						<div tri-td class="table-column">{{item.space}}</div>
+						<div tri-td class="table-column">{{item.spaceClass}}</div>
+						<div tri-td class="table-column">
+							<span hidden$="{{!item.person.id}}"><span>{{item.lastName}}</span><span>, </span><span>{{item.firstName}}</span></span>
+							<span hidden$="{{!item.asset.id}}">{{item.asset.value}}</span>
+						</div>
+						<div tri-td class="table-column-comment">{{item.comment}}</div>	
+						<div tri-td class="table-column-comment">{{item.reviewComment}}</div>	
+						<div tri-td>
+							<div class="action">
+		    					<paper-button on-tap="_handleReject" hidden="{{item.approve}}" disabled="{{historyAssessment}}">Undo</paper-button>
+		    					<paper-button on-tap="_handleAccept" hidden="{{!item.approve}}" disabled="{{historyAssessment}}">Exclude</paper-button>
+							</div>
+						</div>
+					</div>
+				</template>
+			</div>
+		</div>
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-discrepancy-logs-excluded",
+
+		behaviors : [TriPlatTableBehavior],
+
+		properties : {
+
+			searchTerms : String,
+			historyAssessment : Boolean,
+			countExcludedDiscrepancyLogs: {
+				type: Number,
+				notify: true
+			}
+						
+		},
+
+		observers : [
+   			'_handleExcludedDiscrepancyCount(discrepancyLogs)'
+     	],
+
+		listeners: {
+			"discrepancyLogsDs.ds-update-complete" : "_handleDiscrepancyLogsUpdateCompleted",
+		},
+
+		_handleExcludedDiscrepancyCount: function(discrepancyLogs) {
+			if (discrepancyLogs) {
+				this.set("countExcludedDiscrepancyLogs", this.discrepancyLogs.length);
+			}
+		},
+
+		_hideImage : function(id, image) {
+			return id && image;
+		},
+
+		_getImage : function(personId, personImage, assetId, assetImage) {
+			if (personId) {
+				if (personImage) {
+					return true;
+				} else {
+					return false;
+				}
+			} else if (assetId) {
+				if (assetImage) {
+					return true;
+				} else {
+					return false;
+				}
+			}
+		},
+
+		_getPlaceholderIcon : function(personId, assetId) {
+			if (personId) {
+				return "user-profile";
+			} else if (assetId) {
+				return "hardware:laptop-mac";
+			}
+		},
+
+		_handleDiscrepancyLogsUpdateCompleted : function() {
+			this.fire('refresh-datasources');
+		},
+
+		_handleReject: function(e) {
+			var _selectedDiscrepancyLog = this.$.personDiscrepancyLogsTemplate.itemForElement(e.target);
+			_selectedDiscrepancyLog.approve = true;
+			_selectedDiscrepancyLog.reviewComment = "";
+			var rtn = {'selectedDiscrepancyLog':_selectedDiscrepancyLog,'viewType' : "excluded"};
+			this.$.discrepancyLogsDs.updateRecord(_selectedDiscrepancyLog._id, TriPlatDs.RefreshType.SERVER, "defaultActions", "update");
+			this.fire("update-discrepancy-log", rtn);
+		},
+
+		_handleAccept: function(e) {
+			var _selectedDiscrepancyLog = this.$.personDiscrepancyLogsTemplate.itemForElement(e.target);
+			_selectedDiscrepancyLog.approve = false;
+			this._handleDisplayComment(_selectedDiscrepancyLog);
+		},
+
+		_handleDisplayComment: function(discrepancyLog) {
+			var rtn = {'discrepancyLog':discrepancyLog,'viewType' : "people"};
+			this.fire("show-comment", rtn);
+		},
+
+		_handleDisplayDiscrepancyType: function(discrepancyType) {
+			var __dictionary__displayText = "";
+
+			if(discrepancyType == "Add Person") {
+				__dictionary__displayText = "Add";
+				
+			} else {
+				__dictionary__displayText = "Remove";
+			}
+
+			return __dictionary__displayText;
+		}, 
+
+		refreshDiscrepancyLogsDs: function() {
+			this.$.discrepancyLogsDs.refresh();
+		}
+    });
+</script>

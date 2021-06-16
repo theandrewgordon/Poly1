@@ -1,0 +1,152 @@
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-icons/hardware-icons.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../triplat-image/triplat-image.html">
+<link rel="import" href="../triplat-date-picker/triplat-date-picker.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+
+<dom-module id="tricomp-discrepancy-comment-details">
+
+	<style>
+
+		.row .value {
+			color: var(--tri-focus-color);
+		}
+
+		.row label {
+			color: var(--tri-focus-label-color);
+		}
+
+		.info-group {
+			@apply(--layout-flex-3);
+		}
+
+		.image {
+			padding-right: 20px;
+		}
+
+		.row-header {
+			font-weight: 700;
+			height: 40px;
+		}
+
+		.selected-person-info {
+			@apply(--layout);
+			@apply(--layout-vertical);
+			padding: 20px;
+		}
+
+		.back iron-icon,
+		.back span {
+			color: var(--tri-actionable-color);
+		}
+
+		.back iron-icon {
+			width: 45px;
+			height: 45px;
+		}
+
+		triplat-icon .icon-size {
+			width: 40px;
+			height: 40px;
+		}
+
+	</style>
+
+	<template>		
+
+		<div class="row">
+			<div class="selected-person-info">
+				<div class="layout horizontal" hidden$="{{!_isPersonType(discrepancyLog.discrepancyType)}}">
+					<div class="image">
+						<triplat-image src="{{discrepancyLog.image}}" width="50px" height="50px" sizing="contain" hidden$="{{!_handleDisplayImage(discrepancyLog.image)}}"></triplat-image>
+						<triplat-icon class="icon-size" icon="user-profile" hidden$="{{_handleDisplayImage(discrepancyLog.image)}}"></triplat-icon> 
+					</div>
+					<div class="info-group">
+						<div>
+							<label>Action: </label><span class="value">{{discrepancyLog.discrepancyType}}</span>
+						</div>
+						<div class="row-header">
+							<span class="value">{{discrepancyLog.lastName}}</span>, 
+							<span class="value">{{discrepancyLog.firstName}}</span>
+						</div>
+						<div>
+							<span class="value">{{discrepancyLog.title}}</span>
+						</div>
+						<div>
+							<span class="value">{{discrepancyLog.workPhone}}</span>
+						</div>
+						<div>
+							<label>Assessment Comment: </label><span class="value">{{discrepancyLog.comment}}</span>
+						</div>
+					</div>
+					<div class="info-group">
+						<div>
+							<label>Space: </label><span class="value">{{discrepancyLog.space}}</span>
+						</div>
+						<div>
+							<label>Space Class: </label><span class="value">{{discrepancyLog.spaceClass}}</span>
+						</div>
+					</div>
+				</div>
+				<div class="layout horizontal" hidden$="{{_isPersonType(discrepancyLog.discrepancyType)}}">
+					<div class="image">
+						<triplat-image src="{{discrepancyLog.image}}" width="50px" height="50px" sizing="contain" hidden$="{{!_handleDisplayImage(discrepancyLog.image)}}"></triplat-image>
+						<iron-icon class="asset-icon" icon="hardware:laptop-mac" hidden$="{{_handleDisplayImage(discrepancyLog.image)}}"></iron-icon>
+					</div>
+					<div class="info-group">
+						<div>
+							<label>Action: </label><span class="value">{{discrepancyLog.discrepancyType}}</span>
+						</div>
+						<div class="row-header">
+							<span class="value">{{discrepancyLog.asset.value}}</span>
+						</div>
+						<div>
+							<span class="value">{{discrepancyLog.serialNumber}}</span>
+						</div>
+						<div>
+							<label>Assessment Comment: </label><span class="value">{{discrepancyLog.comment}}</span>
+						</div>
+					</div>
+					<div class="info-group">
+						<div>
+							<label>Space: </label><span class="value">{{discrepancyLog.space}}</span>
+						</div>
+						<div>
+							<label>Space Class: </label><span class="value">{{discrepancyLog.spaceClass}}</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-discrepancy-comment-details",
+
+		properties: {
+			discrepancyLog: Object
+		},
+
+		_handleDisplayImage : function(image) {
+			if(!image) {
+				return false;
+			}
+			else
+			{
+				return true;
+			}  
+		},
+
+		_isPersonType : function(item) {
+			if (item.indexOf("Person") != -1) {
+				return true;
+			}else {
+				return false ;
+			}
+		}	
+		
+	});
+</script>

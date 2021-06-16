@@ -1,0 +1,207 @@
+h<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-selector/iron-selector.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+
+<link rel="import" href="tricomp-search-input.html">
+<link rel="import" href="tricomp-person-item.html">
+
+<dom-module id="tricomp-person-selector">
+
+	<style>
+
+		:host {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			border: 1px solid var(--tri-primary-content-accent-color);
+			background-color: var(--tri-body-background-color);
+		}
+
+		tricomp-search-input {
+			width: 500px;
+			height: 44px;
+			margin: 10px;
+		}
+		
+		iron-selector {
+			@apply(--layout-flex);
+			@apply(--layout-scroll);
+			background-color: var(--tri-primary-content-background-color);
+		}
+
+		.iron-selected {
+			background-color: #C0E6FF;
+		}
+
+		tricomp-person-item {	
+			flex-shrink: 0;
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			cursor: pointer;
+		}
+
+		tricomp-person-item:last-of-type {
+			border-bottom: none;
+		}
+
+		.accessibility {
+               display: none;
+          }
+
+	</style>
+
+	<template>
+
+		<triplat-ds name="allPeople" data="{{_people}}">
+			<triplat-query delay="500">
+				<triplat-query-scroll-page scroller="{{_scroller}}" size="50"></triplat-query-scroll-page>
+				<triplat-query-filter name="lastName" operator="contains" value="{{_searchTerms}}" ignore-if-blank></triplat-query-filter>
+         		<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="firstName" operator="contains" value="{{_searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="email" operator="contains" value="{{_searchTerms}}" ignore-if-blank></triplat-query-filter>
+         		<triplat-query-or></triplat-query-or>
+         		<triplat-query-filter name="organization" operator="contains" value="{{_searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="building" operator="contains" value="{{_searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="floor" operator="contains" value="{{_searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="space" operator="contains" value="{{_searchTerms}}" ignore-if-blank></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<triplat-ds id="peopleDs" name="people" data="{{_assignedPeople}}">
+			<triplat-ds-context name="mySpaceAssessments" context-id="{{assessmentId}}"></triplat-ds-context>
+			<triplat-ds-context name="spacesForAssessments" context-id="{{spaceId}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="personDiscrepancyLogsDs" name="discrepancyLogs" filtered-data="{{_personDiscrepancyLogs}}">
+			<triplat-ds-context name="mySpaceAssessments" context-id="{{assessmentId}}"></triplat-ds-context>
+			<triplat-ds-context name="assessmentLogs" context-id="{{logId}}"></triplat-ds-context>
+			<triplat-query>
+				<triplat-query-filter name="discrepancyType_en_US" operator="contains" value="Person"></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<tricomp-search-input 
+			aria-labelledby="searchInput"
+			value="{{_searchTerms}}">
+		</tricomp-search-input>
+
+		<iron-selector id="personSelector" selected-item="{{_selectedElement}}">
+			<template is="dom-repeat" id="listTemplate" items="{{_selectablePeople}}">
+				<tricomp-person-item person="{{item}}" tabindex="0" on-keypress="_handleKeyPress"></tricomp-person-item>
+			</template>
+		</iron-selector>
+
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+
+		is: "tricomp-person-selector",
+
+		properties: {
+			selected : { 
+				type : Object,
+				notify : true
+			},
+
+			assessmentId : Number,
+			spaceId : Number,
+			logId : Number,
+
+			_selectablePeople : Array,
+			_people : Array,
+			_assignedPeople : Array,
+			_personDiscrepancyLogs : Array,
+			
+			_selectedElement : Object
+		},
+		
+		observers : [
+			'_handleSelectedElementChanged(_selectedElement)',
+    		'_handlePeoplePropertyChanged(_people.*)',
+    		'_handlePeoplePropertyChanged(_assignedPeople)',
+    		'_handlePeoplePropertyChanged(_personDiscrepancyLogs)'
+		],
+
+		attached : function() {
+			this.set('_scroller', this.$.personSelector);
+		},
+
+		_handleSelectedElementChanged : function(selectedElement) {
+			if (selectedElement) {
+				var itemForElement = this.$.listTemplate.itemForElement(selectedElement);
+				this.set('selected', itemForElement);
+			} else {
+				this.set('selected', null);
+			}
+		},
+		
+		_handlePeoplePropertyChanged : function(property) {
+			if (property) {
+				this._determineSelectablePeople();
+			}
+		},
+		
+		_determineSelectablePeople : function() {
+   			if (this._people) {
+   				var selectablePeople = this._people.slice();
+   				if (this._assignedPeople) {
+					selectablePeople = this._removeCurrentlyAssignedPeople(selectablePeople, this._assignedPeople);
+   					if (this._personDiscrepancyLogs) {
+						selectablePeople = this._removePendingAssignedPeople(selectablePeople, this._personDiscrepancyLogs);
+   					}
+   				}
+   				this.set('_selectablePeople', selectablePeople);
+   			}
+		},
+
+		_removeCurrentlyAssignedPeople: function(people, assignedPeople) {
+			if (people && assignedPeople) {
+				if (people.length > 0 && assignedPeople.length > 0) {
+					for (var i=0; i<assignedPeople.length; i++) {
+						for (var j=0; j<people.length; j++) {
+							if (assignedPeople[i]._id == people[j]._id) {
+								people.splice(j, 1);
+								break;
+							}
+						}
+					}
+				}
+			}
+			return people;
+		},
+
+		_removePendingAssignedPeople: function(people, discrepancyLogs) {
+			if (people && discrepancyLogs) {
+				if (people.length > 0 && discrepancyLogs.length > 0) {
+					for (var i=0; i<discrepancyLogs.length; i++) {
+						for (var j=0; j<people.length; j++) {
+							if (discrepancyLogs[i].person.id == people[j]._id) {
+								people.splice(j, 1);
+								break;
+							}
+						}
+					}
+				}
+			}
+			return people;
+		},
+
+		reset : function() {
+			this.$.personSelector.selected = -1;
+			this.set('_searchTerms', "");
+		}, 
+
+		_handleKeyPress: function(e) {
+			var keyCode = e.keyCode;
+
+			if (keyCode == 13) {
+				this.set("_selectedElement", e.target);
+			}
+		}
+	});
+</script>

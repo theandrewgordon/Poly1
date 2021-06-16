@@ -1,0 +1,359 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<!-- This is a lazy-loaded component, DO NOT add imports here, add them to its corresponding -imports.html file. -->
+<dom-module id="trimain-service-request">
+	<template>
+		<style include="shared-app-layout-styles shared-page-styles"></style>
+
+		<triplat-ds id="currentUserDS" name="currentUser" data="{{currentUser}}"></triplat-ds>
+		<triplat-ds id="newRequestDS" name="myRequest" data="{{request}}" manual></triplat-ds>
+
+		<triplat-route id="inboxRoute" name="inbox" path="/requests" on-route-active="_onInboxRouteActive"></triplat-route>
+		<triplat-route id="precreateRoute" name="precreate" path="/new/:buildingId"></triplat-route>
+		<triplat-route id="editRequestRoute" name="editRequest" path="/edit/:reqId" on-route-active="_onEditRequestRouteActive"></triplat-route>
+		<triplat-route id="viewRequestRoute" name="viewRequest" path="/view/:reqId" on-route-active="_onViewRequestRouteActive"></triplat-route>
+
+		<triplat-ds id="requestDS" name="myRequest" data="{{request}}">
+			<triplat-ds-instance instance-id="{{_reqId}}"></triplat-ds-instance>
+		</triplat-ds>
+
+		<triplat-route-selector selected="{{_selectedRoute}}" no-initial-route page>
+			<iron-pages>
+				<tripage-request-inbox id="inboxPage" route="inbox" on-request-new="_onPrecreate" on-route-active="_handleInboxRouteActive"></tripage-request-inbox>
+				<tripage-precreate route="precreate" on-request-new="_onNewRequest" on-route-active="_handlePrecreateRouteActive"></tripage-precreate>
+				<tripage-edit-request id="editRequestPage"
+						route="editRequest"
+						request="{{request}}"
+						current-user="[[currentUser]]"
+						override-building="[[_isOverrideBuilding]]"
+						on-update-request="_updateRequest"
+						on-request-submitted="_onRequestSubmitted"
+						on-route-active="_handleRequestDetailRouteActive"></tripage-edit-request>
+				<tripage-view-request id="viewRequestPage"
+						route="viewRequest"
+						request="{{request}}"
+						current-user="[[currentUser]]"
+						on-cancel-request="_cancelRequest"
+						on-request-done="_navigateHome"
+						on-route-active="_handleRequestDetailRouteActive"></tripage-view-request>
+			</iron-pages>
+		</triplat-route-selector>
+
+		<triblock-confirmation-popup id="unsavedPopup" 
+			on-confirm-tapped="_confirmUnsavedChanges" aria-label="Changes not saved">
+			<p class="text">Your changes were not saved. Are you sure you want to discard them?</p>
+		</triblock-confirmation-popup>
+
+		<tricomp-alert id="errorAlert" type="error" title="Error"></tricomp-alert>
+	</template>
+	<script>
+		Polymer({
+
+			is: "trimain-service-request",
+
+			behaviors: [
+				TriLazyLoadingBehavior,
+				TriBlockViewResponsiveBehavior,
+				TriRequestUnsavedChangesBehavior
+			],
+
+			properties: {
+				currentUser: Object,
+				
+				_reqId: Number,
+
+				_reqIdPrecreated: Number,
+
+				// Indicate when a DS action was calles (update or cancel request)
+				_dsAction: {
+					type: Boolean,
+					value: false
+				},
+
+				// Indicate if it's a new request
+				_isNewReq: {
+					type: Boolean,
+					computed: '_validateNewRequest(_reqId, _reqIdPrecreated)'
+				},
+
+				_unsavedChanges: {
+					type: Boolean,
+					value: false,
+					observer: '_observeUnsavedChanges'
+				},
+
+				_unsavedChangesFn: {
+					type: Object,
+					value: function() {
+						return this._showUnsavedChangesPopup.bind(this);
+					}
+				},
+
+				_isOverrideBuilding: {
+					type: Boolean,
+					value: false
+				},
+
+				_selectedRoute: {
+					type: String,
+					observer: '_onSelectedRoute'
+				},
+
+				_navigatedToEditPageViaPrecreate: {
+					type: Boolean,
+					value: false,
+					computed: '_calculateNavigatedToEditPageViaPrecreate(_precreateRouteWasActive, _editRouteWasActive)'
+				},
+
+				_precreateRouteWasActive: {
+					type: Boolean,
+					value: false
+				},
+
+				_editRouteWasActive: {
+					type: Boolean,
+					value: false
+				}
+			},
+
+			observers: [
+				"_onRequestsDSComplete(request)"
+			],
+
+			listeners: {
+				'request-open': '_onOpenRequest', //tricomp-request-list
+				'navigate-inbox': '_navigateInbox',
+				'url-param': '_changeRequestId',
+				'field-changed': '_validateUnsavedChanges',
+				'error-alert': '_handleErrorAlert'
+			},
+
+			_calculateNavigatedToEditPageViaPrecreate: function(precreateRoute, editRoute) {
+				return precreateRoute && editRoute;
+			},
+
+			_onOpenRequest: function (e) {
+				this._reqId = e.detail.item._id;
+			},
+
+			_onPrecreate: function (e) {
+				this.$.precreateRoute.navigate({ buildingId: -1 });
+			},
+
+			_onNewRequest: function (e) {
+				if (!this._navigatedToEditPageViaPrecreate) {
+					var newRequest = {};
+
+					// let's be defensive - just in case this function is called without the event information
+					if (e && e.detail) {
+						if (e.detail.buildingId && e.detail.buildingId != "-1") {
+							newRequest.building = { id: e.detail.buildingId };
+							this.set("_isOverrideBuilding", true);
+						} else {
+							this.set("_isOverrideBuilding", false);
+						}
+					}
+
+					this.$.newRequestDS.createRecord(newRequest, TriPlatDs.RefreshType.BOTH, "actionGroup", "preCreate").then(function (newId) {
+						// console.log(newId);
+						if (newId) {
+							this._reqId = newId;
+							this._reqIdPrecreated = newId;
+						} else {
+							console.error("Something went wrong with the precreate.");
+						}
+					}.bind(this));
+				} else {
+					this.set('_precreateRouteWasActive', false);
+					this.set('_editRouteWasActive', false);
+					this._navigateHome();
+				}
+			},
+
+			_onRequestSubmitted: function (e) {
+				this._unsavedChanges = false;
+				this._navigateHome();
+			},
+
+			_navigateInbox: function () {
+				this.$.inboxRoute.navigate();
+			},
+
+			_navigateHome: function () {
+				this.fire("navigate-home");
+			},
+
+			_handleInboxRouteActive: function (e) {
+				if (e.detail.active) {
+					this._resetRequestId();
+				}
+				this.fire('inbox-route-active', { active: e.detail.active, pageLabel: null, hasBackButton: false });
+			},
+
+			_handlePrecreateRouteActive: function (e) {
+				if (e.detail.active) {
+					this.fire('precreate-route-active', { active: e.detail.active, pageLabel: null, hasBackButton: false });
+					if (!this._navigatedToEditPageViaPrecreate) {
+						this.set('_precreateRouteWasActive', true);
+					}
+				}
+			},
+
+			_handleRequestDetailRouteActive: function (e) {
+				if (!e.detail.active) {
+					// Reset the request for validation changes
+					this.setAsOriginalRequest();
+					this._unsavedChanges = false;
+				}
+				var __dictionary__serviceRequestPageLabel =  "Service Request";
+				this.fire('request-detail-route-active', { active: e.detail.active, pageLabel: __dictionary__serviceRequestPageLabel, hasBackButton: true });	
+			},
+
+			_onInboxRouteActive: function(e) {
+				if (e.detail.active) {
+					this.loadResource(this.$.inboxPage, "tripage-request-inbox.html");
+					this.set('_precreateRouteWasActive', false);
+					this.set('_editRouteWasActive', false);
+				}				
+			},
+
+			_onEditRequestRouteActive: function(e) {
+				if (e.detail.active) {
+					this.set('_editRouteWasActive', true);
+					this.loadResource(this.$.editRequestPage, "tripage-edit-request.html");
+				}
+			},
+
+			_onViewRequestRouteActive: function(e) {
+				if (e.detail.active) {
+					this.loadResource(this.$.viewRequestPage, "tripage-view-request.html");
+				}
+			},
+
+			_isStatusEditable: function(status) {
+				var isStatusEditable = false;
+				if (!status || (!status.id || status.value == "Draft")) {
+					isStatusEditable = true;
+				}
+				return isStatusEditable;
+			},
+
+			_onRequestsDSComplete: function(request) {
+				if (request && this._reqId && this._reqId > 0 && !this._dsAction) {
+					// Set the request for validation changes
+					this.setAsOriginalRequest(request);
+
+					if (this._isStatusEditable(request.statusENUS) && this._isNewReq) {
+						this.$.editRequestRoute.navigate({ reqId: this._reqId });
+					} else if (this._isStatusEditable(request.statusENUS) && !this._isNewReq) {
+						// this._navigateHome(); 
+					} else {
+						this.$.viewRequestRoute.navigate({ reqId: this._reqId });
+					}
+				}
+			},
+
+			_updateRequest: function(e) {
+				this._dsAction = true;
+
+				this.$.requestDS.updateRecord(this.request, TriPlatDs.RefreshType.BOTH, "actionGroup", "submit").then(function(request) {
+						this._dsAction = false;
+						this.$.editRequestPage.openConfirmationPopup();
+					}.bind(this)
+				).catch(
+					function(error) {
+						this._dsAction = false;
+						//TODO Handle error
+					}
+				);
+			},
+
+			_cancelRequest: function(e) {
+				this._dsAction = true;
+
+				var updatePromise = this.$.requestDS.performAction(
+					this.request, TriPlatDs.RefreshType.NONE,
+					"actionGroup",
+					"cancel");
+
+				updatePromise.then(this._refreshRequest.bind(this)).then(
+					function(request) {
+						this._dsAction = false;
+						this._navigateHome();
+					}.bind(this)
+				);
+			},
+
+			_refreshRequest: function() {
+				return this.$.requestDS.refresh();
+			},
+
+			_resetRequestId: function() {
+				this._reqId = "";
+			},
+
+			_changeRequestId: function(e) {
+				this._reqId = e.detail.item.reqId;
+			},
+
+			// Check if the request ID is equal to the precreated request ID
+			_validateNewRequest: function(reqId, reqIdPrecreated) {
+				return reqId === reqIdPrecreated;
+			},
+			
+			_validateUnsavedChanges: function() {
+				this._unsavedChanges = false;
+				
+				this.debounce(
+					"validateUnsavedChanges",
+					function() {
+						if (this.request && this.request._id) {
+							this._unsavedChanges = (this.unsavedFields(this.request, this._isNewReq)) ?	true : false;
+						}
+					},
+					700
+				);
+			},
+
+			_observeUnsavedChanges: function(value) {
+				// This action will be listen by triview-service-request
+				this.fire("unsaved-changes", value);
+
+				if (value) {
+					this._stateLocation = location.href;
+					this._stateTitle = document.title;
+
+					window.addEventListener('popstate', this._unsavedChangesFn);
+				} else {
+					window.removeEventListener('popstate', this._unsavedChangesFn);
+				}
+			},
+
+			_showUnsavedChangesPopup: function(e) {
+				window.history.pushState(null, this._stateTitle, this._stateLocation);
+				this.$.unsavedPopup.openPopup();
+			},
+
+			_confirmUnsavedChanges: function() {
+				window.removeEventListener('popstate', this._unsavedChangesFn);
+				this._navigateHome();
+			},
+
+			_handleErrorAlert: function(event) {
+				this.$.errorAlert.fitInto = this.smallScreen ? window : this;
+				this.$.errorAlert.text = "";
+				this.$.errorAlert.text = event.detail;
+				this.$.errorAlert.open();
+			},
+
+			_onSelectedRoute: function(route) {
+				if (!route) {
+					this._navigateInbox();	
+				}
+			}
+
+		});
+
+	</script>
+</dom-module>
+

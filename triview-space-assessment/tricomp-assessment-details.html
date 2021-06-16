@@ -1,0 +1,73 @@
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-selector/iron-selector.html">
+
+<link rel="import" href="tricomp-assessment-logs.html">
+<link rel="import" href="tricomp-discrepancy-logs.html">
+
+<dom-module id="tricomp-assessment-details">
+
+	<style>
+
+		:host {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			background-color: var(--tri-body-background-color);
+		}
+
+		iron-pages {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+		}
+
+	</style>
+
+	<template>
+		<iron-pages selected="{{selectedPage}}">
+			<tricomp-assessment-logs
+				id="assessmentLogsList"
+				logs="{{assessmentLogs}}"
+				on-open-actions="_handleOpenActions"
+				search-terms="[[searchTerms]]">
+			</tricomp-assessment-logs>	
+			<tricomp-discrepancy-logs
+				id="assessmentActions"
+				logs="{{assessmentLogs}}"
+				selected-log="{{selectedLog}}"
+				on-back="_handleBack"
+			</tricomp-discrepancy-logs>	
+       </iron-pages>
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-assessment-details",
+
+		properties : {
+
+			assessmentLogs : Object,
+			selectedPage : {
+				type : Number,
+				value : 0
+			},
+
+			selectedLog : Object,
+			searchTerms : String,
+			assessmentId: Number
+		},
+
+		_handleOpenActions : function(e) {
+			var _selectedLog=e.detail;
+			this.set("selectedLog",_selectedLog);
+			this.set("selectedPage", 1);
+		},
+		
+		_handleBack : function(e) {
+			this.set("selectedPage", 0);
+		},
+
+		reset : function() {
+			this.set('selectedPage', 0);
+		}
+    });
+</script>

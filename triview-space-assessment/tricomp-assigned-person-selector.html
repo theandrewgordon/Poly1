@@ -1,0 +1,131 @@
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-selector/iron-selector.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+
+<link rel="import" href="tricomp-search-input.html">
+<link rel="import" href="tricomp-person-item.html">
+
+<dom-module id="tricomp-assigned-person-selector">
+
+	<style>
+
+		:host {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			border: 1px solid var(--tri-primary-content-accent-color);
+			background-color: var(--tri-body-background-color);
+		}
+
+		tricomp-search-input {
+			width: 500px;
+			height: 44px;
+			margin: 10px;
+		}
+		
+		iron-selector {
+			@apply(--layout-flex);
+			@apply(--layout-scroll);
+			background-color: var(--tri-primary-content-background-color);
+		}
+
+		.iron-selected {
+			background-color: #C0E6FF;
+		}
+
+		tricomp-person-item {	
+			flex-shrink: 0;
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			cursor: pointer;
+		}
+
+		tricomp-person-item:last-of-type {
+			border-bottom: none;
+		}
+
+		.accessibility {
+			display: none;
+		}
+		
+	</style>
+
+	<template>
+		<triplat-ds name="allPeople" data="{{_people}}">
+			<triplat-query delay="500">
+				<triplat-query-scroll-page scroller="{{_scroller}}" size="50"></triplat-query-scroll-page>
+				<triplat-query-filter name="lastName" operator="contains" value="{{_searchTerms}}" ignore-if-blank></triplat-query-filter>
+         		<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="firstName" operator="contains" value="{{_searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="email" operator="contains" value="{{_searchTerms}}" ignore-if-blank></triplat-query-filter>
+         		<triplat-query-or></triplat-query-or>
+         		<triplat-query-filter name="organization" operator="contains" value="{{_searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="building" operator="contains" value="{{_searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="floor" operator="contains" value="{{_searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="space" operator="contains" value="{{_searchTerms}}" ignore-if-blank></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<tricomp-search-input aria-labelledby="searchInput"
+			value="{{_searchTerms}}">
+		</tricomp-search-input>
+
+		<iron-selector id="assignedPersonSelector" selected-item="{{_selectedElement}}">
+			<template is="dom-repeat" id="listTemplate" items="{{_people}}">
+				<tricomp-person-item person="{{item}}" tabindex="0" on-keypress="_handleKeyPress"></tricomp-person-item>
+			</template>
+		</iron-selector>
+
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+
+		is: "tricomp-assigned-person-selector",
+
+		properties: {
+			selected : { 
+				type : Object,
+				notify : true
+			},
+			
+			_selectedElement : Object
+		},
+		
+		observers : [
+			'_handleSelectedElementChanged(_selectedElement)',
+		],
+
+		attached : function() {
+			this.set('_scroller', this.$.assignedPersonSelector);
+		},
+
+		_handleSelectedElementChanged : function(selectedElement) {
+			if (selectedElement) {
+				var itemForElement = this.$.listTemplate.itemForElement(selectedElement);
+				this.set('selected', itemForElement);
+			} else {
+				this.set('selected', null);
+			}
+		},
+		
+		reset : function() {
+			this.$.assignedPersonSelector.selected = -1;
+			this.$.assignedPersonSelector.scrollTop = 0;
+			this.set('_searchTerms', "");
+			this.set("selected", "");
+		},
+
+		_handleKeyPress: function(e) {
+			var keyCode = e.keyCode;
+
+			if (keyCode == 13) {
+				this.set("_selectedElement", e.target);
+			}
+		}
+	});
+</script>

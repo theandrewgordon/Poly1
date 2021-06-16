@@ -1,0 +1,79 @@
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-pages/iron-pages.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+
+<link rel="import" href="tricomp-assigned-person-selector.html">
+
+<dom-module id="tricomp-assigned-person-dialog">
+
+	<style>
+
+		:host {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			font-family: "Helvetica Neue", Helvetica, Arial, Roboto;
+		}
+
+		.header {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			padding-bottom: 10px;
+		}
+
+		.header h2 {
+			@apply(--layout-flex);
+			margin-left: 10px;
+		}
+
+		#assignedPersonDialogSelector {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+		}
+		
+	</style>
+
+	<template>
+		<div class="header">
+			<h2>Assigned to</h2>
+			<paper-icon-button icon="icons:close" on-tap="_handleClose" aria-labelledby="closeDialog"></paper-icon-button>
+		</div>
+		<tricomp-assigned-person-selector 
+			id="assignedPersonDialogSelector" 
+			selected="{{selected}}">
+		</tricomp-assigned-person-selector>
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+
+		is: "tricomp-assigned-person-dialog",
+
+    	properties : {
+    		selected : Object,
+    	},
+
+    	observers : [
+    		'_handleSelectedChanged(selected)'
+    	],
+
+    	_handleClose: function() {
+    		this.fire("close-dialog");
+    		this.$.assignedPersonDialogSelector.reset();
+    	},
+
+    	_handleSelectedChanged : function(selected) {
+    		if (selected) {
+    			this._handleConfirmSelected();
+    		}
+    	},
+
+    	_handleConfirmSelected: function() {
+    		var selectedPerson = this.selected;
+    		this.fire("select-person", selectedPerson);
+    		this._handleClose();
+    	}		
+	});
+</script>

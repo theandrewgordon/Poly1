@@ -1,0 +1,114 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triblock-responsive-layout/triblock-responsive-layout.html">
+
+<link rel="import" href="tristyles-service-request-app.html">
+
+<dom-module id="tricomp-request-page-container">
+	<template>
+		<style include="shared-page-styles">
+			:host {
+				@apply(--layout-vertical);
+				@apply(--layout-flex);
+			}
+
+			.page-header {
+				background-color: var(--ibm-neutral-2);
+			}
+			:host([small-screen-width]) .page-header {
+				background-color: var(--tri-header-color);
+				padding: 5px 10px 5px 10px;
+			}
+
+			:host(:not([small-screen-width])) .request-page-content {
+				@apply(--layout-flex);
+				@apply(--layout-horizontal);
+			}
+      		:host([small-screen-width]) .request-page-content {
+				@apply(--layout-vertical);
+			}
+
+			:host ::content .request-page-left-panel {
+				@apply(--layout-vertical);
+				flex-shrink: 0;
+				padding: 17px 20px 0px 20px;
+			}
+			:host(:not([small-screen-width])) ::content .request-page-left-panel {
+				@apply(--layout-flex);
+			}
+			:host([small-screen-width]) ::content .request-page-left-panel {
+				padding: 10px;
+				@apply(--layout-flex-none);
+			}
+
+			:host ::content .request-page-right-panel {
+				padding: 10px;
+				background-color: var(--tri-primary-content-background-color);
+				@apply(--layout-vertical);
+			}
+			:host(:not([small-screen-width])) ::content .request-page-right-panel {
+				@apply(--layout-flex-2);
+				border-left: 1px solid var(--ibm-gray-10);
+			}
+			:host([small-screen-width]) ::content .request-page-right-panel {
+				flex-shrink: 0;
+				border-top: 1px solid var(--ibm-gray-10);
+				@apply(--layout-flex-none);
+			}
+
+			:host ::content .action-bar {
+				@apply(--layout-horizontal);
+			}
+			:host([small-screen-width]) ::content .action-bar:not(.closeButton){
+				background-color: var(--tri-footer-background-color);
+				color: var(--tri-footer-color);
+				padding: 5px;
+				@apply(--layout-center-center);
+				@apply(--layout-fixed-bottom);
+				z-index: 102;
+			}
+
+			:host ::content triblock-popup .action-bar {
+				@apply(--layout-end-justified);
+				margin-top: 2em;
+			}
+
+			:host(:not([small-screen-width])) ::content .comments {
+				@apply(--layout-flex);
+			}
+		</style>
+
+		<div class="page-header">
+			<div class="header-text tri-h2" hidden$="[[smallScreenWidth]]" aria-label="Service Request">Service Request [[request.requestID]]</div>
+
+			<content select=".header-action-bar"></content>
+		</div>
+
+		<triblock-responsive-layout id="responsiveLayout" class="request-page-content">
+			<content select=".request-page-left-panel"></content>
+			<content select=".request-page-right-panel"></content>
+		</triblock-responsive-layout>
+
+		<content select="triblock-popup"></content>
+
+		<content select="triblock-confirmation-popup"></content>
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-request-page-container",
+
+			behaviors: [
+				TriBlockViewResponsiveBehavior,
+			],
+
+			properties: {
+				request: {
+					type: Object
+				}
+			}
+
+		});
+	</script>
+</dom-module>
+

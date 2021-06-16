@@ -1,0 +1,1491 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<!-- TRIRIGA Platform Components -->
+<!-- dragdrop change -->
+<link rel="import" href="../triplat-drag-drop/triplat-drag-drop.html">
+<link rel="import" href="../triplat-drag-drop/triplat-drag.html">
+<link rel="import" href="../triplat-drag-drop/triplat-drop.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+
+<!-- Polymer Iron Components -->
+<link rel="import" href="../iron-collapse/iron-collapse.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icons/hardware-icons.html">
+<link rel="import" href="../iron-icons/communication-icons.html">
+<link rel="import" href="../iron-selector/iron-selector.html">
+
+<!-- Polymer Paper Components -->
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+
+<!-- Local Components -->
+<link rel="import" href="tricomp-move-accordion-arrow.html">
+<link rel="import" href="tricomp-accordion-image.html">
+
+<dom-module id="tricomp-move-details-accordion">
+	<style>
+		/*=========================================
+		 * Table of Contents
+		 *-----------------------------
+		 * Host
+		 * Icons
+		 * Checkbox
+		 * Container - #content
+		 * Container - .dragItem
+		 * Container - .image-icon
+		 * Container - .item
+		 * Paper Checkbox
+		 * Paper Icon Button
+		 *=========================================*/
+
+		/* Host */
+		:host {
+			@apply(--layout-vertical);
+		}
+		/* End Host */
+
+
+		/* Icons */
+		triplat-icon.assigned,
+		triplat-icon.unassigned {
+			border-right: 1px solid var(--tri-primary-content-accent-color);
+			padding-right: 5px!important;
+			padding-left: 5px;
+		}
+
+		.iron-icon-2 {
+			height: 30px;
+			width: 30px;
+		}
+		/* End Icons */
+
+
+		/* Checkbox */
+		.paper-checkbox {
+			border-right: 1px solid var(--tri-primary-content-accent-color);
+			padding-left: 5px;
+		}
+		.paper-checkbox > div {
+			background: gray;
+		}
+		/* End Checkbox */
+
+
+		/* Container - #content */
+		#content > div:last-of-type {
+			border-bottom: none;
+		}
+		/* End Container - #content */
+
+
+		/* Container - .dragItem */
+		.dragItemPerson,
+		.dragItemAsset,
+		.dragItemEquipment,
+		.dragItemRoom {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			user-select: none;
+			-moz-user-select: none;
+			-webkit-user-select: none;
+			-ms-user-select: none;
+
+		}
+		/* End Container - .dragItem */
+
+
+		/* Container - .image-icon */
+		.image-icon {
+			height: 30px;
+			padding-right: 10px;
+		}
+
+		tricomp-accordion-image {
+			--tricomp-accordion-image-height: 30px;
+			--tricomp-accordion-image-width: 30px;
+
+			--tricomp-accordion-image-icon-height: 23px;
+			--tricomp-accordion-image-icon-width: 23px;
+		}
+		/* End Container - .image-icon */
+
+
+		/* Container - .item */
+		.item {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			padding-right: 10px;
+			padding-left: 10px;
+		}
+
+		.item > .dragClass {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+		}
+
+		.item > .info {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			font-size: 14px;
+			color: var(--tri-footer-background-color);
+			font-weight: bold;
+			padding-left: 15px;
+		}
+
+		.item > .action {
+			cursor: pointer;
+		}
+
+		.item.assigned > .action {
+			color: var(--tri-error-color);
+			padding-right: 0px;
+			padding-left: 0px;
+		}
+
+		.item.assigned > .actionDisabled {
+			padding-left: 10px;
+			border-left: 1px solid var(--tri-primary-content-accent-color);
+		}
+
+		.name {
+			min-width: 50px;
+		}
+			.name span {
+				word-break: break-word;
+			}
+
+		.item > .space {
+			font-size: 14px;
+			color: var(--tri-footer-background-color);
+			padding-right: 15px;
+		}
+			.space span {
+				word-break: break-word;
+			}
+
+		.item > .assigned {
+			color: var(--tri-success-color);
+			padding-right: 10px;
+		}
+
+		.item > .unassigned {
+			color: var(--tri-success-color);
+			padding-right: 10px;
+		}
+
+
+		.inbox-checkbox {
+			padding-left: 4px;
+		}
+
+		.inbox-checkbox-hide {
+			width: 22px;
+			height: 18px;
+		}
+
+		.ready-icon-spacing {
+			width: 12px;
+			height: 24px;
+		}
+
+
+		/* Paper Checkbox */
+		paper-checkbox {
+			--paper-checkbox-label-spacing: 20px;
+			--paper-checkbox-size: 22px;
+			--paper-checkbox-unchecked-background-color: var(--tri-header-color);
+		}
+		/* End Paper Checkbox */
+
+
+		/* Paper Icon Button */
+		paper-icon-button.action {
+			min-width: 30px;
+		}
+		/* End Paper Icon Button */
+
+
+		.info {
+			padding: 5px 5px 5px 0;
+		}
+
+		#itemInfo {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			font-size: 14px;
+			color: var(--tri-footer-background-color);
+			padding-right: 5px;
+		}
+
+		#itemName {
+			display: block;
+	    white-space: normal;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		#itemSpace {
+			font-size: 14px;
+			color: var(--tri-footer-background-color);
+			padding-right: 10px;
+			padding-left: 10px;
+		}
+
+		.line-item-row.iron-selected {
+			background-color: var(--tri-primary-light-color);
+		}
+
+		.line-item-row .value {
+			color: var(--tri-footer-background-color);
+		}
+
+		.drag-drop-row{
+			@apply(--layout-flex);
+
+		}
+
+		.read-only-row{
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+		}
+
+		#mliHeader {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			padding: 0px 10px 0px 10px;
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			border-top: 1px solid var(--tri-primary-content-accent-color);
+			background-color: var(--tri-body-background-color);
+			user-select: none;
+			-moz-user-select: none;
+			-webkit-user-select: none;
+			-ms-user-select: none;
+		}
+
+		#mliHeader .title {
+			@apply(--layout-flex);
+			text-transform: uppercase;
+			font-size: 14px;
+			color: var(--tri-secondary-color);
+			user-select: none;
+			-moz-user-select: none;
+			-webkit-user-select: none;
+			-ms-user-select: none;
+		}
+		.title {
+			padding-left: 10px;
+		}
+
+		#mliHeader .count {
+			font-weight: bold;
+			font-size: 14px;
+			color: var(--tri-primary-content-color);
+		}
+
+		#mliHeader > triplat-icon {
+			color: var(--tri-actionable-color);
+			cursor: pointer;
+			padding-right: 15px;
+			border-right: 1px solid var(--tri-primary-content-accent-color);
+		}
+
+		#mliHeader, .item {
+			min-height: 44px;
+		}
+
+		#placeholder {
+			padding: 10px 10px 10px 10px;
+			font-style: italic;
+		}
+
+		tricomp-accordion-arrow {
+			padding-left: 50px;
+		}
+		.divider-line {
+			border-left: 1px solid var(--tri-primary-content-accent-color);
+			height: 24px;
+			margin-right: 15px;
+		}
+
+	</style>
+
+	<template>
+		<div id="mliHeader">
+			<template is="dom-if" if="{{accordionPeople}}">
+				<paper-checkbox id="selectAllPeopleMove" class="inbox-checkbox" on-tap="_selectAllPeopleMoveCheckboxes" checked="{{_showAll}}"></paper-checkbox>
+			</template>
+			<template is="dom-if" if="{{accordionAssets}}">
+				<paper-checkbox id="selectAllAssetsMove" class="inbox-checkbox" on-tap="_selectAllAssetsMoveCheckboxes" checked="{{_showAll}}"></paper-checkbox>
+			</template>
+			<template is="dom-if" if="{{accordionEquipment}}">
+				<paper-checkbox id="selectAllEquipmentsMove" class="inbox-checkbox" on-tap="_selectAllEquipmentsMoveCheckboxes" checked="{{_showAll}}"></paper-checkbox>
+			</template>
+			<template is="dom-if" if="{{accordionRooms}}">
+				<paper-checkbox id="selectAllRoomsMove" class="inbox-checkbox" on-tap="_selectAllRoomsMoveCheckboxes" checked="{{_showAll}}"></paper-checkbox>
+			</template>
+
+			<div class="title">
+				<span>{{label}}</span>
+				<span>&nbsp;</span>
+				<!-- <span class="count">{{assignedCount}}</span> \  --><span class="count" id="count"></span>
+			</div><!-- end .title -->
+			<div class="divider-line"></div>
+			<tricomp-move-accordion-arrow
+				id="detailsAccordionArrow"
+				opened="{{openDrawer}}"
+				enabled="{{_enableAccordionToggle(actionsEnabled, count)}}"
+				tabindex="0" role="button" aria-label$="{{_getAccordionLabel(label)}}" on-keypress="_openCurrentArrow">
+			</tricomp-move-accordion-arrow>
+		</div><!-- end #mliHeader -->
+
+		<iron-collapse id="collapsible" opened="{{openDrawer}}">
+			<div id="placeholder" hidden$="{{!_showPlaceholder}}">
+				<span>{{placeholderMessageLabel}}</span>
+			</div><!-- end #placeholder -->
+
+			<div id="content" hidden$="{{_showPlaceholder}}">
+				<iron-selector id="selectorMoveLineItems" selectable=".line-item-row" selected-item="{{_selectedElement}}">
+					<template id="moveItemsTemplate"
+						is="dom-repeat"
+						items="{{_computedFilteredList(moveLineItems, currentFilter, FieldsToFilter)}}"
+						sort="{{_sort(sortField, sortDescending)}}"
+						filter="lineItemType"
+						observe="toSpace selected">
+
+<!-- PERSON ITEM -->
+						<template is="dom-if" if="{{peopleEnabled}}">
+							<div id="item" class$="[[_computeItemClass(item)]]" selected$="{{item.selected}}" on-tap="_handleSelectedItem" hidden$="{{!peopleEnabled}}" name$="{{_findItemId(item)}}">
+								<div class="inbox-checkbox">
+									<paper-checkbox checked="{{item.selected}}" on-tap="_handleCheckboxLineItemSelect" criterion="[[item]]"></paper-checkbox>
+								</div><!-- end .inbox-checkbox -->
+
+								<div class="ready-icon-spacing"></div>
+
+								
+								<div hidden$="{{_isCompleted(item)}}" class="drag-drop-row">
+									<triplat-drag
+										selector="#dip-{{index}}"
+										class="dragClass"
+										id="dragItem"
+										icon="{{placeholderIconName}}"
+										disabled on-drag-end="_handleDragEnd">
+										<div id="dip-{{index}}" class="dragItemPerson" data-info$="{{_findItemId(item)}}">
+											<div id="itemInfo" class="info">
+												<template is="dom-if" if="{{_screenLarge}}">
+													
+												</template>
+
+												<template is="dom-if" if="{{_screenLarge}}">
+													<div id="itemName" class="name" hidden$="{{!peopleEnabled}}">
+														<span>{{item.firstName}}</span> <span>{{item.lastName}}</span>
+													</div><!-- end .name -->
+												</template>
+
+												<template is="dom-if" if="{{!_screenLarge}}">
+													<div id="itemName" class="name" hidden$="{{!peopleEnabled}}">
+														<span>{{item.firstName}}</span><br><span>{{item.lastName}}</span>
+													</div><!-- end .name -->
+												</template>
+
+												<span id="itemName" class="name" hidden$="{{peopleEnabled}}">{{item.name}}</span>
+											</div><!-- end .info -->
+
+											<div id="itemSpace" class="space" hidden$="{{!peopleEnabled}}">
+											 	<span>{{_addLocation(item)}}</span>
+											</div><!-- end .space -->
+										</div><!-- end .dragItemPerson -->
+									</triplat-drag><!-- end .dragClass -->
+								</div><!-- end .drag-drop-row -->
+
+								<div hidden$="{{!_isCompleted(item)}}" class="drag-drop-row" >
+									<div id="readOnlyItemPerson" class="read-only-row" data-info$="{{_findItemId(item)}}">
+										<div id="itemInfo" class="info">
+											<template is="dom-if" if="{{_screenLarge}}">
+											
+											</template>
+
+											<template is="dom-if" if="{{_screenLarge}}">
+												<div id="itemName" class="name" hidden$="{{!peopleEnabled}}">
+													<span>{{item.firstName}}</span> <span>{{item.lastName}}</span>
+												</div><!-- end .name -->
+											</template>
+
+											<template is="dom-if" if="{{!_screenLarge}}">
+												<div id="itemName" class="name" hidden$="{{!peopleEnabled}}">
+													<span>{{item.firstName}}</span><br><span>{{item.lastName}}</span>
+												</div><!-- end .name -->
+											</template>
+
+											<span id="itemName" class="name" hidden$="{{peopleEnabled}}">{{item.name}}</span>
+										</div><!-- end .info -->
+
+										<div id="itemSpace" class="space" hidden$="{{!peopleEnabled}}">
+										 	<span>{{_addLocation(item)}}</span>
+										</div><!-- end .space -->
+									</div><!-- end .read-only-row -->
+								</div><!-- end .drag-drop-row -->
+
+								<paper-icon-button
+									id="itemAction"
+										class="action"
+										icon="ibm:remove-delete"
+										hidden$="{{_isAssignedCompleted(item)}}"
+										on-tap="_handleRemove"
+										data-mli$="{{item._id}}">
+									</paper-icon-button>
+								
+							</div><!-- end .line-item-row -->
+						</template>
+<!-- ASSET ITEM -->
+						<template is="dom-if" if="{{assetsEnabled}}">
+							<div class="item assigned line-item-row" selected$="{{item.selected}}" on-tap="_handleSelectedItem" hidden$="{{!assetsEnabled}}" name$="{{_findItemId(item)}}">
+								<div class="inbox-checkbox">
+									<paper-checkbox checked="{{item.selected}}" on-tap="_handleCheckboxLineItemSelect" criterion="[[item]]"></paper-checkbox>
+								</div><!-- end .inbox-checkbox -->
+
+								<div class="ready-icon-spacing"></div>
+
+								<div hidden$="{{_isCompleted(item)}}" class="drag-drop-row">
+									<triplat-drag selector="#dia-{{index}}" class="dragClass" id="dragItem" icon="ibm:assets" disabled on-drag-end="_handleDragEnd">
+										<div id="dia-{{index}}" class="dragItemAsset" data-info$="{{_findItemId(item)}}">
+											<div id="itemInfo" class="info">
+												<template is="dom-if" if="{{_screenLarge}}">
+													
+												</template>
+
+												<div id="itemName" class="name" hidden$="{{!assetsEnabled}}">
+													<span>{{item.assetId}}</span>, <span>{{item.assetName}}</span>
+												</div><!-- end .name -->
+											</div><!-- end .info -->
+
+											<div id="itemSpace" class="space" hidden$="{{!assetsEnabled}}">
+											 	<span>{{_addLocation(item)}}</span>
+											</div><!-- end .space -->
+										</div><!-- end .dragItemAsset -->
+									</triplat-drag><!-- end .dragClass -->
+								</div><!-- end .drag-drop-row -->
+
+								<div hidden$="{{!_isCompleted(item)}}" class="drag-drop-row" >
+									<div id="readOnlyItemAsset" class="read-only-row" data-info$="{{_findItemId(item)}}">
+										<div id="itemInfo" class="info">
+											<template is="dom-if" if="{{_screenLarge}}">
+												
+											</template>
+
+											<div id="itemName" class="name" hidden$="{{!assetsEnabled}}">
+												<span>{{item.assetId}}</span>, <span>{{item.assetName}}</span>
+											</div><!-- end .name -->
+										</div><!-- end .info -->
+
+										<div id="itemSpace" class="space" hidden$="{{!assetsEnabled}}">
+										 	<span>{{_addLocation(item)}}</span>
+										</div><!-- end .space -->
+									</div><!-- end .read-only-row -->
+								</div><!-- end .drag-drop-row -->
+
+											<paper-icon-button
+										class="action"
+										icon="ibm:remove-delete"
+										hidden$="{{_isAssignedCompleted(item)}}"
+										on-tap="_handleRemove"
+										data-mli$="{{item._id}}"></paper-icon-button>
+							</div><!-- end .line-item-row -->
+						</template>
+<!-- EQUIPMENT ITEM -->
+						<template is="dom-if" if="{{equipmentEnabled}}">
+							<div class="item assigned line-item-row" selected$="{{item.selected}}" on-tap="_handleSelectedItem" hidden$="{{!equipmentEnabled}}" name$="{{_findItemId(item)}}">
+								<div class="inbox-checkbox">
+									<paper-checkbox checked="{{item.selected}}" on-tap="_handleCheckboxLineItemSelect" criterion="[[item]]"></paper-checkbox>
+								</div><!-- end .inbox-checkbox -->
+
+								<div class="ready-icon-spacing"></div>
+
+								<!-- <triplat-icon class="assigned" icon="ready" hidden$="{{!_isAssigned(item)}}"></triplat-icon>
+								<triplat-icon class="unassigned" icon="not-ready" hidden$="{{_isAssigned(item)}}"></triplat-icon> -->
+
+								<div hidden$="{{_isCompleted(item)}}" class="drag-drop-row">
+									<triplat-drag selector="#die-{{index}}" class="dragClass" id="dragItem" icon="ibm:equipment" disabled on-drag-end="_handleDragEnd">
+										<div id="die-{{index}}" class="dragItemEquipment" data-info$="{{_findItemId(item)}}">
+											<div id="itemInfo" class="info">
+												<template is="dom-if" if="{{_screenLarge}}">
+													
+												</template>
+
+												<div id="itemName" class="name" hidden$="{{!equipmentEnabled}}">
+													<span>{{item.equipmentName}}</span>
+												</div><!-- end .name -->
+											</div><!-- end .info -->
+
+											<div id="itemSpace" class="space" hidden$="{{!equipmentEnabled}}">
+											 	<span>{{_addLocation(item)}}</span>
+											</div><!-- end .space -->
+										</div><!-- end .dragItemEquipment -->
+									</triplat-drag><!-- end .dragClass -->
+								</div><!-- end .drag-drop-row -->
+
+								<div hidden$="{{!_isCompleted(item)}}" class="drag-drop-row" >
+									<div id="readOnlyItemEquipment" class="read-only-row" data-info$="{{_findItemId(item)}}">
+										<div id="itemInfo" class="info">
+											<template is="dom-if" if="{{_screenLarge}}">
+												
+											</template>
+
+											<div id="itemName" class="name" hidden$="{{!equipmentEnabled}}">
+												<span>{{item.equipmentName}}</span>
+											</div><!-- end .name -->
+										</div><!-- end .info -->
+
+										<div id="itemSpace" class="space" hidden$="{{!equipmentEnabled}}">
+										 	<span>{{_addLocation(item)}}</span>
+										</div><!-- end .space -->
+									</div><!-- end .read-only-row -->
+								</div><!-- end .drag-drop-row -->
+
+								<paper-icon-button
+										class="action"
+										icon="ibm:remove-delete"
+										hidden$="{{_isAssignedCompleted(item)}}"
+										on-tap="_handleRemove"
+										data-mli$="{{item._id}}"></paper-icon-button>
+								
+							</div><!-- end .line-item-row -->
+						</template>
+<!-- ROOM ITEM -->
+						<template is="dom-if" if="{{roomsEnabled}}">
+							<div class="item assigned line-item-row" selected$="{{item.selected}}" on-tap="_handleSelectedItem" hidden$="{{!roomsEnabled}}" name$="{{_findItemId(item)}}">
+								<div class="inbox-checkbox">
+									<paper-checkbox checked="{{item.selected}}" on-tap="_handleCheckboxLineItemSelect" criterion="[[item]]"></paper-checkbox>
+								</div><!-- end .inbox-checkbox -->
+
+								<div class="ready-icon-spacing"></div>
+
+								
+								<div hidden$="{{_isCompleted(item)}}" class="drag-drop-row">
+									<triplat-drag selector="#dir-{{index}}" class="dragClass" id="dragItem" icon="ibm:room-function" disabled on-drag-end="_handleDragEnd">
+										<div id="dir-{{index}}" class="dragItemRoom" data-info$="{{_findItemId(item)}}">
+											<div id="itemInfo" class="info">
+												<template is="dom-if" if="{{_screenLarge}}">
+
+												</template>
+
+												<div id="itemName" class="name" hidden$="{{!roomsEnabled}}">
+													<span>{{item.fromSpace}}</span>
+												</div><!-- end .name -->
+											</div><!-- end .info -->
+
+											<div id="itemSpace" class="space" hidden$="{{!roomsEnabled}}">
+											 	<span>{{_addLocation(item)}}</span>
+											</div><!-- end .space -->
+										</div><!-- end .dragItemRoom -->
+									</triplat-drag><!-- end .dragClass -->
+								</div><!-- end .drag-drop-row -->
+
+								<div hidden$="{{!_isCompleted(item)}}" class="drag-drop-row" >
+									<div id="readOnlyItemRoom" class="read-only-row" data-info$="{{_findItemId(item)}}">
+										<div id="itemInfo" class="info">
+											<template is="dom-if" if="{{_screenLarge}}">
+
+											</template>
+
+											<div id="itemName" class="name" hidden$="{{!roomsEnabled}}">
+												<span>{{item.fromSpace}}</span>
+											</div><!-- end .name -->
+										</div><!-- end .info -->
+
+										<div id="itemSpace" class="space" hidden$="{{!roomsEnabled}}">
+										 	<span>{{_addLocation(item)}}</span>
+										</div><!-- end .space -->
+									</div><!-- end .read-only-row -->
+								</div><!-- end .drag-drop-row -->
+
+								
+								<paper-icon-button
+										class="action"
+										icon="ibm:remove-delete"
+										hidden$="{{_isAssignedCompleted(item)}}"
+										on-tap="_handleRemove"
+										data-mli$="{{item._id}}"></paper-icon-button>
+								
+							</div><!-- end .line-item-row -->
+						</template>
+					</template><!-- end #moveItemsTemplate -->
+				</iron-selector><!-- end #selectorMoveLineItems -->
+			</div><!-- end #content -->
+		</iron-collapse><!-- end #collapsible -->
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+
+		is: "tricomp-move-details-accordion",
+
+		behaviors: [Polymer.IronResizableBehavior],
+
+		properties : {
+
+			label : String,
+
+			type : String,
+
+			moveLineItems : {
+				type: Array,
+				notify: true,
+			},
+
+			count : {
+				type : Number,
+				value : 0
+			},
+
+			assignedCount : {
+				type : Number,
+				value : 0
+			},
+
+			openByDefault : {
+				type : Boolean,
+				value : false
+			},
+
+			actionsEnabled : {
+				type : Boolean,
+				value : false
+			},
+
+			placeholderIconName : String,
+
+			imageEnabled : {
+				type : Boolean,
+				value : false
+			},
+
+			peopleEnabled : {
+				type : Boolean,
+				value : false
+			},
+
+			assetsEnabled : {
+				type : Boolean,
+				value : false
+			},
+
+			equipmentEnabled : {
+				type : Boolean,
+				value : false
+			},
+
+			roomsEnabled : {
+				type : Boolean,
+				value : false
+			},
+
+			placeholderMessage : String,
+
+			_showPlaceholder : {
+				type : Boolean,
+				value : false
+			},
+
+			_selectedElement: {
+				type: Object,
+				observer: "_handleSelectedElement"
+			},
+
+			currentFilter: {
+				type: String,
+				value: "",
+			},
+
+			FieldsToFilter: {
+			  type: Array,
+			  value: ["lastName","firstName","toSpace","assetId","assetName","fromSpace","equipmentName"]
+
+			},
+
+			lastLineItemAssigned: {
+				type: Object,
+				notify: true,
+			},
+
+			lastLineItemSelected: {
+				type: Object,
+				notify: true,
+			},
+
+			checkboxEnabled: {
+				type: Boolean,
+				notify: true,
+				observer: "refreshItemList"
+			},
+			isCompleted: {
+				type: Boolean,
+				value: false
+			},
+			screenLarge : {
+				type : Boolean,
+				value : true
+			},
+			selectorName : {
+				type : String,
+				value : "selectorMoveLineItems",
+				computed: "_getSelectorName(label)"
+			},
+			sortField : {
+				type : String,
+				value : "firstName"
+			},
+			sortDescending : {
+				type : Boolean,
+				value : false
+			},
+
+			//=========================================================
+			// Property accordion-Type
+			//------------------------------------------
+			// Objective: Indicate what type of accordion is being used
+			//=========================================================
+			accordionPeople: {
+        type: Boolean,
+      },
+			accordionAssets: {
+        type: Boolean,
+      },
+			accordionEquipment: {
+        type: Boolean,
+      },
+			accordionRooms: {
+        type: Boolean,
+      },
+
+			//=========================================================
+			// Property _selectedRequests
+			//------------------------------------------
+			// Objective: Array of MLI checkbox selected
+			//=========================================================
+			_selectedRequests: {
+				type: Array,
+				value: [],
+				notify: true
+			},
+
+			//=========================================================
+			// Property _showAll
+			//------------------------------------------
+			// Objective: Indicate when to check showAll checkbox
+			//=========================================================
+			_showAll: {
+				type: Boolean,
+				value: false
+			},
+		},
+
+		observers : [
+			'_handleOpenByDefaultChange(openByDefault)',
+			'_handleCountChanged(count)',
+			"_handleSelectedCheckboxChange(_selectedRequests.*)",
+			"_handleCount(count)",
+		],
+
+		listeners: {
+			'selectorMoveLineItems.iron-select' : '_handleSelect',
+			'selectorMoveLineItems.iron-deselect' : '_handleDeSelect',
+			'iron-resize': '_onIronResize',
+			'drag-start' : '_handleDragStart',
+		},
+
+
+		_addLocation: function(item) {
+			var location = "";
+			if (item.toSpace != null) {
+				location =  item.toSpace + "     ";
+			}
+			return location;
+		},
+
+		// Dynamic Search Function
+	   _computedFilteredList: function(unFilteredData, currentFilter, fieldsToFilter) {
+		   if (!currentFilter || currentFilter == "" || !fieldsToFilter) {
+			 this.count = unFilteredData.length;
+			 return unFilteredData;
+		   }
+		   var filteredData = unFilteredData.filter(function(record) {
+			 var lowerFilter = currentFilter.toLowerCase();
+
+			for (var field in fieldsToFilter) {
+			   if (fieldsToFilter[field] && record[fieldsToFilter[field]] && record[fieldsToFilter[field]].toLowerCase().indexOf(lowerFilter) != -1) {
+				 return true;
+			   }
+			 }
+
+			return false;
+		   });
+
+
+		   return filteredData;
+		 },
+
+		_completeRequest: function(){
+			this.fire('complete');
+		},
+
+		_enableAccordionToggle : function(actionsEnabled, count) {
+			return actionsEnabled || count > 0;
+		},
+
+		_findItemId: function(item) {
+			return item._id;
+		},
+
+    	_getSelectorName: function(label) {
+    		if (this.label == "Assets") {
+    			return "selectorMoveLineItemsAssets";
+    		}
+    		else {
+    			return "selectorMoveLineItems";
+    		}
+
+		},
+
+		_handleCountChanged : function(count) {
+			if (count <= 0) {
+
+				this.set('_showPlaceholder', true);
+			} else {
+				this.set('_showPlaceholder', false);
+			}
+		},
+
+		_handleDeSelect: function(e) {
+			if (e.detail.item) {
+				var triplatDragElm = e.detail.item.getElementsByTagName("triplat-drag");
+				if (triplatDragElm && triplatDragElm.length > 0) {
+					triplatDragElm[0].disabled = true;
+				}
+			}
+		},
+
+		_handleDragEnd : function(e) {
+			var dragTarget = e.detail.dragTarget;
+			var docStyle = window.document.documentElement.style;
+			docStyle.webkitUserSelect = docStyle.MozUserSelect = docStyle.userSelect = "";
+		},
+
+		_handleDragStart : function(e) {
+			//When the drag starts, disable all selections in the page
+			var docStyle = window.document.documentElement.style;
+			docStyle.webkitUserSelect = docStyle.MozUserSelect = docStyle.userSelect = "none";
+		},
+
+		_handleInitialize : function(e) {
+			var reference = this.$;
+			this.fire('initialize', reference);
+		},
+
+		_handleOpenByDefaultChange : function(openByDefault) {
+
+		},
+
+		_handleSelect: function(e) {
+			var selected = this.$.selectorMoveLineItems.selected;
+			var itemSelected = this.label + selected;
+			if (this.lastLineItemSelected == itemSelected) {
+				if (this._selectedElement) {
+					var triplatDragElm = this._selectedElement.getElementsByTagName("triplat-drag");
+					if (triplatDragElm  && triplatDragElm.length > 0 ) {
+						triplatDragElm[0].disabled = true;
+					}
+				}
+
+				this.$.selectorMoveLineItems.selected = null;
+				this.set("lastLineItemSelected",null);
+				this.lastLineItemAssigned = null;
+				this.fire('deselect');
+			} else {
+				this.set("lastLineItemSelected",itemSelected);
+
+				if (this._selectedElement) {
+					var triplatDragElm = this._selectedElement.getElementsByTagName("triplat-drag");
+					if (triplatDragElm && triplatDragElm.length > 0 ) {
+						triplatDragElm[0].disabled = false;
+					}
+				}
+
+			}
+		},
+
+		_handleSelectedElement: function(selectedElement, oldSelectedElement) {
+			if (!selectedElement) {
+				return;
+			}
+			return;
+		},
+
+		_handleSelectedItem : function(e) {
+
+			this._handleInitialize();
+			var itemToAssign = this.$.moveItemsTemplate.itemForElement(e.target);
+
+			if(itemToAssign.status != "Completed") {
+				// If line item already selected, deselect it
+				if ((this.lastLineItemAssigned != null) && (itemToAssign._id == this.lastLineItemAssigned._id)) {
+					this.lastLineItemAssigned = null;
+
+					this.refreshItemList();
+
+				}
+				else
+				{
+					this.lastLineItemAssigned = itemToAssign;
+					this.fire('select', itemToAssign);
+
+				}
+			}
+			else{
+				this.fire('select', itemToAssign);
+			}
+		},
+
+		_handleRemove: function(e) {
+
+
+			// Get current button and disble it
+				// Required to prevent double click
+			e.currentTarget.disabled = true;
+
+			// Initialize
+			this._handleInitialize();
+
+			// Item to remove
+   		var itemToRemove = this.$.moveItemsTemplate.itemForElement(e.target);
+
+			// Fire Event
+   		this.fire('select', itemToRemove);
+			this.fire('remove', itemToRemove);
+
+			// Setting parameters
+   		this.lastLineItemAssigned = null;
+			this.set("lastLineItemSelected", null);
+
+			e.stopPropagation();
+		},
+
+		_hasImage : function(image) {
+			if ((image) && (image != "-1")) {
+				return true;
+			}
+			return false;
+		},
+
+		_isAssigned: function(item) {
+			return item.toSpace != null;
+		},
+
+		_isAssignedCompleted: function(item) {
+			if (item.toSpace == null || this.isCompleted || item.status=="Completed") {
+				return true;
+			} else {
+				// Enable remove button
+					// When remove and assignment the buttons are disbled, so it's necessary to enable again
+				var btnRemove = Polymer.dom(this.root).querySelectorAll("paper-icon-button.action");
+
+				// For: Iterate through the array of buttons
+				for (var i = 0; i < btnRemove.length; i++) {
+					btnRemove[i].disabled = false;
+				}// end for
+
+				return false;
+			}// end if
+		},
+
+		_isNotAssignedCompleted: function(item) {
+			return (item.toSpace == null || !(this.isCompleted || item.status=="Completed"));
+		},
+
+		_isCompleted: function(item) {
+			return  (this.isCompleted || item.status=="Completed");
+		},
+
+
+		lineItemType: function(item) {
+		 	if (this.type == "People") {
+
+				var person = item.moveType == 'Person';
+
+
+				if (person) {
+					if (this.checkboxEnabled) {
+						if (item.toSpace == null) {
+							return true;
+						}
+						else
+						{
+							return false;
+						}
+					}
+				}
+
+
+	        	return person;
+        	}
+        	else if (this.type == "Assets") {
+
+        		var asset = item.moveType == 'Asset';
+
+
+				if (asset) {
+					if (this.checkboxEnabled) {
+						if (item.toSpace == null) {
+							return true;
+						}
+						else
+						{
+							return false;
+						}
+					}
+				}
+
+	        	return asset;
+        	}
+
+        	else if (this.type == "Equipment") {
+
+        		var equipment = item.moveType == 'Equipment';
+
+
+				if (equipment) {
+					if (this.checkboxEnabled) {
+						if (item.toSpace == null) {
+							return true;
+						}
+						else
+						{
+							return false;
+						}
+					}
+				}
+
+	        	return equipment;
+        	}
+
+        	else if (this.type == "Rooms") {
+
+        		var room = item.moveType == 'Room Function';
+
+
+				if (room) {
+					if (this.checkboxEnabled) {
+						if (item.toSpace == null) {
+							return true;
+						}
+						else
+						{
+							return false;
+						}
+					}
+				}
+
+	        	return room;
+        	}
+
+		},
+
+		_onIronResize: function() {
+	        this.screenWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+	        if( this.screenWidth > 769 ) {
+	            this.set("_screenLarge", true);
+	        } else {
+	         	this.set("_screenLarge", false);
+	        }
+    	},
+
+
+
+		refreshItemList: function() {
+			this.$.selectorMoveLineItems.selected = null;
+			this.$.moveItemsTemplate.render();
+		},
+
+		_sort: function(sortField, sortDescending) {
+
+			// Sort MLIs
+			if (sortDescending) {
+				return function(mli1, mli2) {
+					if (mli1[sortField] && mli2[sortField]) {
+						if (mli1[sortField] == "") {
+							return 1; // blank strings go at the end of sorted list
+						} else {
+							var compare = mli2[sortField].localeCompare(mli1[sortField]);
+							return compare;
+						}
+					} else {
+						if (( mli1[sortField] === null) && (mli2[sortField] === null)) return 0;
+							else if (( mli1[sortField] === null) && (mli2[sortField] != null)) return 1;
+							else if (( mli1[sortField] != null) && (mli2[sortField] === null)) return -1;
+					}
+				}
+			}
+			else {
+				return function(mli1, mli2) {
+					if (mli1[sortField] && mli2[sortField]) {
+						if (mli1[sortField] == "") {
+							return 1; // blank strings go at the end of sorted list
+						} else {
+							var compare = mli1[sortField].localeCompare(mli2[sortField]);
+							return compare;
+						}
+					} else {
+						if (( mli1[sortField] === null) && (mli2[sortField] === null)) return 0;
+							else if (( mli1[sortField] === null) && (mli2[sortField] != null)) return -1;
+							else if (( mli1[sortField] != null) && (mli2[sortField] === null)) return 1;
+					}
+				}
+
+			}
+	   	},
+
+	   	selectMoveLineItem: function(moveLineItem) {
+	   		if (moveLineItem) {
+	   			var itemId = this._findItemId(moveLineItem);
+
+	   			var selectedItem = this.$.moveItemsTemplate.itemForElement(this.$.selectorMoveLineItems.selectedItem);
+	   			var selectedItemId = selectedItem ? this._findItemId(selectedItem) : null;
+
+	   			//Select only if there is no selected item or if the selected item's id is different from
+	   			//the MLI id.
+	   			if (!selectedItem || selectedItemId !== itemId) {
+	   				this.openDrawer = true;
+	   				//Simulate a click button on the div that represents the MLI.
+	   				switch (moveLineItem.moveType) {
+					    case "Asset":
+					        if (this.assetsEnabled) {
+					        	var target = this.$$('.dragItemAsset[data-info="' + itemId + '"]');
+					        	if (target) {
+											this.fire("tap", {}, {node: target});
+					        	}
+					        }
+					        break;
+					    case "Equipment":
+					        if (this.equipmentEnabled) {
+					        	var target = this.$$('.dragItemEquipment[data-info="' + itemId + '"]');
+					        	if (target) {
+					        		this.fire("tap", {}, {node: target});
+					        	}
+					        }
+					        break;
+					    case "Person":
+					        if (this.peopleEnabled) {
+					        	var target = this.$$('.dragItemPerson[data-info="' + itemId + '"]');
+					        	if (target) {
+					        		this.fire("tap", {}, {node: target});
+					        	}
+					        }
+					        break;
+					    case "Room Function":
+					    	if (this.roomsEnabled) {
+					        	var target = this.$$('.dragItemRoom[data-info="' + itemId + '"]');
+					        	if (target) {
+					        		this.fire("tap", {}, {node: target});
+					        	}
+					        }
+					        break;
+					}
+	   			}
+	   		} else {
+	   			//Deselect the current selected item
+	   			var selectedItem = this.$.selectorMoveLineItems.selectedItem;
+	   			if (selectedItem) {
+						this.fire("tap", {}, {node: selectedItem});
+	   			}
+	   		}
+	   	},
+
+		//=========================================================
+		// Function _computeItemClass
+		//------------------------------------------
+		// Objective: Used to change the class
+		//=========================================================
+		_computeItemClass: function(currentLineItem) {
+		  if (currentLineItem.dateConflict) {
+		    return "line-item-row item assigned line-item-conflict";
+		  } else {
+		    return "line-item-row item assigned";
+		  }// end if
+		},
+
+		//=========================================================
+		// Function _getItemModel
+		//------------------------------------------
+		// Objective: Retrieve the model of the selected item
+		//=========================================================
+		_getItemModel: function(selectedElement) {
+			var model = null;
+
+			model = this.$.moveItemsTemplate.modelForElement(selectedElement);
+
+    	return model;
+		},
+
+		//=========================================================
+		// Function _selectAllPeopleMoveCheckboxes
+		//------------------------------------------
+		// Objective: Handle select all checkbox
+		//=========================================================
+		_selectAllPeopleMoveCheckboxes: function() {
+			if (!this.$$("#selectAllPeopleMove").active) {
+				this._removeAllSelections("Person");
+			}
+			else
+			{
+				this._selectAllCheckboxes("Person");
+			}// end if
+		},
+
+		//=========================================================
+		// Function _selectAllAssetsMoveCheckboxes
+		//------------------------------------------
+		// Objective: Handle select all checkbox
+		//=========================================================
+		_selectAllAssetsMoveCheckboxes: function() {
+			if (!this.$$("#selectAllAssetsMove").active) {
+				this._removeAllSelections("Asset");
+			}
+			else
+			{
+				this._selectAllCheckboxes("Asset");
+			}// end if
+		},
+
+		//=========================================================
+		// Function _selectAllEquipmentsMoveCheckboxes
+		//------------------------------------------
+		// Objective: Handle select all checkbox
+		//=========================================================
+		_selectAllEquipmentsMoveCheckboxes: function() {
+			if (!this.$$("#selectAllEquipmentsMove").active) {
+				this._removeAllSelections("Equipment");
+			}
+			else
+			{
+				this._selectAllCheckboxes("Equipment");
+			}// end if
+		},
+
+		//=========================================================
+		// Function _selectAllRoomsMoveCheckboxes
+		//------------------------------------------
+		// Objective: Handle select all checkbox
+		//=========================================================
+		_selectAllRoomsMoveCheckboxes: function() {
+			if (!this.$$("#selectAllRoomsMove").active) {
+				this._removeAllSelections("Room Function");
+			}
+			else
+			{
+				this._selectAllCheckboxes("Room Function");
+			}// end if
+		},
+
+		//=========================================================
+		// Function _selectAllCheckboxes
+		//------------------------------------------
+		// Objective: Handle select all checkbox
+		//=========================================================
+		_selectAllCheckboxes: function(drawerType) {
+			var selectedRows = Polymer.dom(this.root).querySelectorAll(".line-item-row");
+
+			for (var i=0; i < selectedRows.length; i++) {
+				var model = this._getItemModel(selectedRows[i]);
+
+				if ((model.item.moveType == drawerType) && (model.item.child == null)) {
+					var selectedRowCheckbox = Polymer.dom(selectedRows[i]).querySelector(".inbox-checkbox > paper-checkbox");
+
+					if (!selectedRowCheckbox.checked) {
+						selectedRowCheckbox.checked = true;
+
+						this.fire('selectLineCheckbox', model.item);
+
+						this.push("_selectedRequests", model.item._id);
+					}// end if
+				}// end if
+			}// end for
+		},
+
+		//=========================================================
+		// Function _removeAllSelections
+		//------------------------------------------
+		// Objective: Remove all checkbox selections
+		//=========================================================
+		_removeAllSelections: function(drawerType) {
+			// Remove all selections
+			if (drawerType == null) {
+				this.set("_selectedRequests", []);
+
+				var selectedRows = Polymer.dom(this.root).querySelectorAll(".line-item-row[selected]");
+
+				for (var i=0; i < selectedRows.length; i++) {
+					selectedRows[i].removeAttribute("selected");
+					var selectedRowCheckbox = Polymer.dom(selectedRows[i]).querySelector(".inbox-checkbox > paper-checkbox");
+					selectedRowCheckbox.checked = false;
+				}// end for
+
+				if (this.accordionPeople) {
+					this.$$("#selectAllPeopleMove").active = false;
+				} else if (this.accordionAssets) {
+					this.$$("#selectAllAssetsMove").active = false;
+				} else if (this.accordionEquipment) {
+					this.$$("#selectAllEquipmentsMove").active = false;
+				} else if (this.accordionRooms) {
+					this.$$("#selectAllRoomsMove").active = false;
+				}// end if
+			}
+			// Remove selections from drawer
+			else {
+				var selectedRows = Polymer.dom(this.root).querySelectorAll(".line-item-row[selected]");
+
+				for (var i=0; i < selectedRows.length; i++) {
+					var model = this._getItemModel(selectedRows[i]);
+
+					if ((model.item.moveType == drawerType) && (model.item.child == null)) {
+						selectedRows[i].removeAttribute("selected");
+						var selectedRowCheckbox = Polymer.dom(selectedRows[i]).querySelector(".inbox-checkbox > paper-checkbox");
+						selectedRowCheckbox.checked = false;
+						this._removeSelectedRequest(model.item);
+					}// end if
+				}// end for
+			}// end if
+		},
+
+		//=========================================================
+		// Function _handleCheckboxLineItemSelect
+		//------------------------------------------
+		// Objective: Handle select 1 checkbox
+		//=========================================================
+		_handleCheckboxLineItemSelect: function(e) {
+			e.stopPropagation();
+
+			// update selected requests array
+			var request = e.model.item;
+			if (request) {
+				if (request.selected) {
+					this.fire('selectLineCheckbox', request);
+
+					this.push("_selectedRequests", request._id);
+				} else {
+					this._removeSelectedRequest(request);
+
+					if (this._checkboxListEmpty(request.moveType)) {
+						if (request.moveType == "Person") {
+							this.$$("#selectAllPeopleMove").active = false;
+						}
+						else if (request.moveType == "Asset") {
+							this.$$("#selectAllAssetsMove").active = false;
+						}
+						else if (request.moveType == "Equipment") {
+							this.$$("#selectAllEquipmentsMove").active = false;
+						}
+						else if (request.moveType == "Room Function") {
+							this.$$("#selectAllRoomsMove").active = false;
+						}
+						else {
+							// not found
+						}// end if
+					}// end if
+				}// end if
+			}// end if
+		},
+
+		//=========================================================
+		// Function _removeSelectedRequest
+		//------------------------------------------
+		// Objective: Handle remove 1 checkbox selected
+		//=========================================================
+		_removeSelectedRequest: function(selectedItem) {
+			var selectedItemId = selectedItem._id;
+			var i = 0;
+			var found = false;
+
+			this.fire('deselectLineCheckbox', selectedItem);
+
+			this.splice("_selectedRequests", this._selectedRequests.indexOf(selectedItemId), 1);
+
+		},
+
+		//=========================================================
+		// Function _checkboxListEmpty
+		//------------------------------------------
+		// Objective: Check if checkbox list is empty
+		//=========================================================
+		_checkboxListEmpty: function(type) {
+			var empty = true;
+			var selectedRows = Polymer.dom(this.root).querySelectorAll(".line-item-row[selected]");
+
+			for (var i=0; i < selectedRows.length; i++) {
+				var model = this._getItemModel(selectedRows[i]);
+
+				if ((model.item.moveType == type) && (model.item.child == null)) {
+					empty = false;
+					break;
+				}// end if
+			}// end for
+
+			return empty;
+		},
+
+		//=========================================================
+		// Function _handleSelectedCheckboxChange
+		//------------------------------------------
+		// Objective: Called when checkbox change - Use to select and deselect showAll checkbox
+		//=========================================================
+		_handleSelectedCheckboxChange: function(change) {
+			// If Statement: Check the path
+			if (change.path == "_selectedRequests" || change.path == "_selectedRequests.splices") {
+				this._checkSelected();
+			}// end if
+		},
+
+		//=========================================================
+		// Function _checkSelected
+		//------------------------------------------
+		// Objective: Check all checkbox selected to determine when to showAll or not
+		//=========================================================
+		_checkSelected: function() {
+			var allCheckboxes = Polymer.dom(this.root).querySelectorAll(".inbox-checkbox paper-checkbox");
+			var showAll = allCheckboxes &&  allCheckboxes.length > 0;
+
+			if (allCheckboxes) {
+				for (var i = 0; i < allCheckboxes.length; i++) {
+					allCheckboxes[i].checked = this._selectedRequests && this._selectedRequests.indexOf(allCheckboxes[i].criterion._id) >= 0;
+					showAll = showAll && allCheckboxes[i].checked;
+				}// end for
+			}// end if
+
+			this._showAll = showAll;
+		},
+
+		_openCurrentArrow: function(e){
+			if (e.which == 13 || e.keyCode == 13) {
+			this.openDrawer = !this.openDrawer;
+			}
+		},
+		_getAccordionLabel: function(val1){
+			return val1 + " Accordion";
+		},
+
+		//=========================================================
+		// Function _handleCount
+		//------------------------------------------
+		// Objective: Set the count content
+		//=========================================================
+		_handleCount: function(count) {
+			this.$.count.textContent = count;
+		},
+	});
+</script>

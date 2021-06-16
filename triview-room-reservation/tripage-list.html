@@ -1,0 +1,67 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<!-- This is a lazy-loaded component, DO NOT add imports here, add them to its corresponding -imports.html file. -->
+<dom-module id="tripage-list">
+	<template>
+		<style include="shared-app-layout-styles">
+			:host {
+				@apply(--layout-horizontal);
+
+				background-color: white;
+			}
+
+			.container {
+				@apply(--layout-vertical);
+				@apply(--layout-flex);
+				padding: 0px;
+
+				height: 100%;
+			}
+
+			.container > * {
+				@apply(--layout-fit);
+			}
+		</style>
+
+		<triplat-route id="listRoute" name="list" params="{{pageParams}}" on-route-active="_handleRouteActive"></triplat-route>
+
+		<div class="container">
+			<tricomp-reservation-list
+				id="reservationListPage"
+				current-user="[[currentUser]]"
+				favorite-rooms="{{favoriteRooms}}">
+			</tricomp-reservation-list>
+		</div>
+	</template>
+	<script>
+		Polymer({
+
+			is: "tripage-list",
+
+			properties: {
+				currentUser: Object,
+				favoriteRooms: Array
+			},
+
+			observers: [
+			],
+
+			listeners: {
+			},
+
+			_handleRouteActive: function(e) {
+				if (e.detail.active) {
+					this.async(function() {
+						this.$.reservationListPage._pageAttached();
+					}, 200);
+				}
+			},
+
+			_refreshReservationList: function() {
+				this.$.reservationListPage._refreshReservationList();
+			},
+
+		});
+
+	</script>
+</dom-module>

@@ -1,0 +1,206 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017-2018 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-listbox/paper-listbox.html">
+<link rel="import" href="../paper-menu-button/paper-menu-button.html">
+
+<link rel="import" href="../iron-icon/iron-icon.html">
+
+<link rel="import" href="../triplat-accessibility-behavior/triplat-accessibility-behavior.html">
+
+<link rel="import" href="../triblock-responsive-layout/triblock-view-responsive-behavior.html">
+
+<dom-module id="tricomp-task-list-sort">
+	<template>
+		<style>
+			:host {
+				display: block;
+				background-color: var(--ibm-neutral-2);
+			}
+
+			.container {
+				@apply --layout-vertical;
+			}
+
+			.sort-bar {
+				@apply --layout-horizontal;
+				@apply --layout-center;
+			}
+
+			:host(:not([small-screen-width])) .sort-bar {
+				padding: 15px 20px 0px 20px;
+			}
+
+			:host([small-screen-width]) .sort-bar {
+				padding: 10px;
+				border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			}
+
+			paper-menu-button {
+				padding: 0;
+			}
+			:host-context([dir="ltr"]) paper-menu-button {
+				--paper-menu-button-dropdown: {
+					left: auto !important;
+					margin: 0 !important;
+					position: absolute !important;
+					right: 0;
+					top: 0 !important;
+				};
+			}
+			:host-context([dir="rtl"]) paper-menu-button {
+				--paper-menu-button-dropdown: {
+					left: 0 !important;
+					margin: 0 !important;
+					position: absolute !important;
+					top: 0 !important;
+				};
+			}
+			:host([small-screen-width]) paper-menu-button {
+				@apply --layout-flex;
+			}
+
+			.sort-button {
+				background: transparent !important;
+				margin: 0 !important;
+				padding: 0 !important;
+				text-align: left !important;
+			}
+			:host[small-screen-width] .sort-button {
+				display: block !important;
+			}
+			:host-context([dir="ltr"]) .sort-button {
+				text-align: left !important;
+			}
+			:host-context([dir="rtl"]) .sort-button {
+				text-align: right !important;
+			}
+
+			.sort-button-content {
+				@apply --layout-horizontal;
+				@apply --layout-center;
+			}
+			:host([small-screen-width]) .sort-button-content {
+				@apply --layout-flex;
+			}
+
+			:host-context([dir="ltr"]) .selected-sort-label {
+				padding-left: 10px;
+			}
+			:host-context([dir="rtl"]) .selected-sort-label {
+				padding-right: 10px;
+			}
+
+			:host([small-screen-width]) .selected-sort-label {
+				@apply --layout-flex;
+			}
+
+			paper-listbox {
+				--paper-listbox: {
+					padding: 0;
+				}
+			}
+
+			paper-item {
+				@apply --tri-font-family;
+				cursor: pointer;
+				font-size: 14px;
+				font-weight: normal;
+				line-height: 17px;
+				white-space: nowrap;
+				--paper-item-min-height: 0;
+				--paper-item-selected-weight: normal;
+				--paper-item: {
+					padding: 10px;
+				};
+			}
+
+			:host(:not([small-screen-width])) paper-item {
+				background-color: white;
+				color: var(--tri-primary-color);
+			}
+
+			:host(:not([small-screen-width])) paper-item.iron-selected {
+				background-color: var(--tri-primary-color-10) !important;
+			}
+		</style>
+
+		<div class="container">
+			<div class="sort-bar">
+				<span>Sort by:</span>
+				<paper-menu-button opened="{{_dropdownOpened}}" allow-outside-scroll restore-focus-on-close>
+					<paper-button id="sortButton" class="dropdown-trigger sort-button" aria-label="Sort by">
+						<div class="sort-button-content">
+							<span class="tri-link selected-sort-label">[[_sortByLabel]]</span>
+							<iron-icon class="tri-link" icon="[[_dropdownArrowDirectionIcon]]"></iron-icon>
+						</div>
+					</paper-button>
+					<paper-listbox class="dropdown-content" attr-for-selected="name" selected="{{selected}}" hidden="[[smallScreenWidth]]" on-iron-select="_handleDropdownItemTapped">
+						<paper-item name="priority">Priority</paper-item>
+						<paper-item name="plannedStart">Planned Start</paper-item>
+						<paper-item name="status">Status</paper-item>
+						<paper-item name="location" hidden$="[[ignoreLocation]]">Location</paper-item>
+						<paper-item name="newest">Newest</paper-item>
+					</paper-listbox>
+				</paper-menu-button>
+			</div>
+			<div hidden="[[!smallScreenWidth]]">
+				<iron-selector class="dropdown-content" attr-for-selected="name" selected="{{selected}}" on-iron-select="_handleDropdownItemTapped" hidden="[[!_dropdownOpened]]">
+					<tricomp-dropdown-item name="priority" label="Priority"></tricomp-dropdown-item>
+					<tricomp-dropdown-item name="plannedStart" label="Planned Start"></tricomp-dropdown-item>
+					<tricomp-dropdown-item name="status" label="Status"></tricomp-dropdown-item>
+					<tricomp-dropdown-item name="location" label="Location" hidden$="[[ignoreLocation]]"></tricomp-dropdown-item>
+					<tricomp-dropdown-item name="newest" label="Newest"></tricomp-dropdown-item>
+				</iron-selector>
+			</div>
+		</div>
+	</template>
+
+	<script>
+		Polymer({
+
+			is: "tricomp-task-list-sort",
+
+			behaviors: [
+				TriBlockViewResponsiveBehavior,
+				TriPlatAccessibilityBehavior
+			],
+
+			properties: {
+				ignoreLocation: {
+					type: Boolean,
+					value: false
+				},
+
+				selected: {
+					type: String,
+					value: "priority",
+					notify: true
+				},
+				_sortByLabel: String,
+				_dropdownOpened: {
+					type: Boolean,
+					value: false,
+					observer: '_toggleDropdownIcon'
+				},
+				_dropdownArrowDirectionIcon: {
+					type: String,
+					value: "icons:arrow-drop-down"
+				}
+			},
+
+			_toggleDropdownIcon: function(value) {
+				var dropdownArrowDirectionIcon = this._dropdownArrowDirectionIcon && this._dropdownArrowDirectionIcon.endsWith("down") ? "icons:arrow-drop-up" : "icons:arrow-drop-down";
+				this.set('_dropdownArrowDirectionIcon', dropdownArrowDirectionIcon);
+
+				this.setAriaProperty(this.$.sortButton, value, "expanded");
+			},
+
+			_handleDropdownItemTapped: function(e) {
+				this.fire("task-sort-selected", e.detail.item.name);
+				this.set('_sortByLabel', e.detail.item.innerText);
+			}
+
+		});
+	</script>
+</dom-module>

@@ -1,0 +1,223 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-query/triplat-query.html">
+<link rel="import" href="../triplat-select-input/triplat-select-input.html">
+<link rel="import" href="../triplat-icon/ibm-icons.html">
+
+<link rel="import" href="../triblock-responsive-layout/triblock-responsive-layout.html">
+<link rel="import" href="../triblock-responsive-layout/triblock-view-responsive-behavior.html">
+
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-tooltip/paper-tooltip.html">
+
+<link rel="import" href="tricomp-room-search-popup.html">
+
+<link rel="import" href="tribehav-scroll-field-into-view.html">
+<link rel="import" href="tribehav-validation.html">
+
+<dom-module id="tricomp-request-floor-room">
+	<template>
+		<style>
+			:host {
+				@apply(--layout-vertical);
+				padding-top: 4px;
+			}
+
+			:host([small-screen]){
+				padding-top: 0px;
+			}
+
+			.search-icon {
+				border-left: 1px solid var(--ibm-gray-10);
+			}
+
+			paper-icon-button {
+				margin-top: 20px;
+				padding: 4px 4px 4px 11px;
+				height: 32px;
+				width: 43px;
+			}
+
+			.floor-select {
+				min-width: 300px;
+			}
+
+			.room-container {
+				@apply(--layout-horizontal);
+				@apply(--layout-start);
+			}
+
+			.room-select {
+				@apply(--layout-flex);
+				padding-right: 10px;
+			}
+
+			triplat-select-input {
+				--triplat-select-input-margin-bottom-when-opened: 700px;				   
+   				--paper-input-container-color: var(--ibm-gray-30);
+				--triplat-select-input-dropdown-max-height: 180px;
+				--paper-input-container-label-floating:{
+    				font-size:14px;
+    				font-family: var(--tri-font-family);
+   					webkit-transform: translateY(-75%) scale(1);
+    				transform: translateY(-75%) scale(1);
+   				};
+   				--paper-input-container-label:{
+   					padding-bottom: 4px;
+   					font-family: var(--tri-font-family);
+   				};
+   				--paper-input-container-input:{
+   					font-size: 14px;
+   					font-family: var(--tri-font-family);
+   				};
+   				--paper-input-container-underline:{
+   					height: 2px;
+   				};
+				--triplat-select-input-clear-button: {
+   					color: var(--ibm-gray-30);
+   				};
+			}
+		</style>
+
+		<triplat-ds id="buildingFloors" name="buildingFloors" filtered-data="{{_buildingFloorsFiltered}}" loading="{{_buildingFloorsLoading}}">
+			<triplat-ds-context name="lookupBuilding" context-id="[[request.building.id]]"></triplat-ds-context>
+			<triplat-query>
+				<triplat-query-filter name="floor" operator="contains" value="[[_floorSearchValue]]" ignore-if-blank></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<triplat-ds id="floorRooms" name="floorRooms" data="{{_floorRooms}}" loading="{{_floorRoomsLoading}}">
+			<triplat-ds-context name="lookupBuilding" context-id="[[request.building.id]]"></triplat-ds-context>
+			<triplat-ds-context name="buildingFloors" context-id="[[_currentFloor.id]]"></triplat-ds-context>
+			<triplat-query>
+				<triplat-query-scroll-page id="floorRoomsScrollPage" scroller="[[_scrollerRooms]]" size="10" threshold="25"></triplat-query-scroll-page>
+				<triplat-query-filter name="space" operator="contains" value="[[_roomSearchValue]]" ignore-if-blank></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+
+		<triplat-select-input tabindex="0" class="floor-select"
+				id="floor"
+				required
+				label="Floor"
+				value="{{request.floor}}"
+				search-value="{{_floorSearchValue}}"
+				value-name="floor"
+				select-src="[[_buildingFloorsFiltered]]"
+				aria-label="Floor"
+				loading="[[_buildingFloorsLoading]]"
+				disabled="[[disabled]]"
+				scroll-element-into-view="[[_scrollSelectInputIntoView]]">
+		</triplat-select-input>
+
+		<div class="room-container">
+			<triplat-select-input class="room-select"
+				id="room"
+				required
+				label="Room"
+				value="{{request.room}}"
+				search-value="{{_roomSearchValue}}"
+				value-name="space"
+				select-src="[[_floorRooms]]"
+				aria-label="Room"
+				scroller="{{_scrollerRooms}}"
+				loading="[[_floorRoomsLoading]]"
+				disabled="[[disabled]]"
+				query-scroll-page-id="floorRoomsScrollPage"
+				scroll-element-into-view="[[_scrollSelectInputIntoView]]">
+			</triplat-select-input>
+
+			<paper-icon-button id="showFloorplanBtn" icon="ibm:floorplan" class="search-icon" primary alt="Show floor plan"
+					on-tap="_openFloorPlan" disabled="[[_computeDisableShowFloorplanBtn(disabled, request.floor)]]" aria-label="Show floor plan">
+			</paper-icon-button>
+
+			<paper-tooltip for="showFloorplanBtn" position="right" animation-delay="0" offset="5">Show floor plan</paper-tooltip>
+		</div>
+
+		<tricomp-room-search-popup id="roomSelectorPopup" building="[[request.building]]" floor="[[request.floor]]" room="{{request.room}}">
+		</tricomp-room-search-popup>
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-request-floor-room",
+
+			behaviors: [
+				TriBlockViewResponsiveBehavior,
+				TriScrollFieldIntoViewBehavior,
+				TriValidationBehavior
+			],
+
+			properties: {
+				request: {
+					type: Object
+				},
+
+				disabled: {
+					type: Boolean,
+					value: false
+				},
+
+				_currentFloor: Object
+			},
+
+			observers: [
+				'_floorChanged(request.floor)',
+				'_observeRequestLocation(request.floor, request.floor.*, request.room, request.room.*)'
+			],
+
+			// Observer for request.floor - Use to clear the Room field when the new floor is different from the old floor selected
+			_floorChanged: function(floor) {
+				if (this._floorRooms) {
+					this.set("_floorRooms", []);
+				}
+
+				// Reset room scroll pagination
+				this.$.floorRoomsScrollPage.reset();
+
+				var emptyObj = {id: "", value:""};
+
+				var newFloor = (this._validateObject(floor)) ? floor : emptyObj;
+				var oldFloor = this._currentFloor;
+
+				if (this._validateObject(oldFloor)) {
+					// Check if the new floor is not equal to the old floor
+					if ((newFloor.id != oldFloor.id)) {
+						if (oldFloor.id != "") {
+							this.set("request.room", emptyObj);
+						}
+					}
+				}
+
+				this.set("_currentFloor", newFloor);
+			},
+
+			// Validate if the object exists and if it has an internal content
+			_validateObject: function(target) {
+				if (target) {
+					// Check if there's a content inside the target object
+					if (Object.keys(target).length !== 0 && target.constructor === Object) {
+						return true;
+					} else {
+						return false;
+					}
+				} else {
+				return false;
+				}
+			},
+
+			_openFloorPlan: function() {
+				this.$.roomSelectorPopup.open();
+			},
+
+			_observeRequestLocation: function() {
+				this.fire('field-changed');
+			},
+
+			_computeDisableShowFloorplanBtn: function(disabled, floor) {
+				return disabled || !this._isValidSelectInputOption(floor);
+			}
+		});
+	</script>
+</dom-module>

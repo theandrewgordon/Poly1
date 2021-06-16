@@ -1,0 +1,1078 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-tooltip/paper-tooltip.html">
+
+<link rel="import" href="../iron-selector/iron-selector.html">
+<link rel="import" href="../iron-pages/iron-pages.html">
+<link rel="import" href="../iron-collapse/iron-collapse.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-loading-indicator/triplat-loading-indicator.html">
+
+<link rel="import" href="../triblock-tabs/triblock-tabs.html">
+
+<link rel="import" href="tricomp-multi-space-selector-graphic.html">
+<link rel="import" href="tricomp-multi-space-selector-list.html">
+<link rel="import" href="tricomp-alert.html">
+
+<dom-module id="tricomp-multi-space-selector">
+	<template>
+		<style>
+			/*=========================================
+			 * Table of Contents
+			 *-----------------------------
+			 * Host
+			 * Container - space-container
+			 * Container - tab
+			 * Container - container-collapse-action
+			 * Container - container-spaces-empty
+			 *=========================================*/
+
+			/* Host */
+		    :host {
+		    	@apply(--layout-flex);
+		    	@apply(--layout-vertical);
+		    	@apply(--layout-relative);
+		    }
+		    /* End Host */
+
+			/* Container - space-container */
+			.space-container {
+				@apply(--layout-flex-4);
+				@apply(--layout);
+				@apply(--layout-vertical);
+			}
+			@media (max-width: 991px) {
+				.space-container {
+					@apply(--layout-flex-1);
+				}
+			}
+			@media (max-width: 767px) {
+				.space-container {
+					@apply(--layout-flex-1);
+				}
+			}
+
+			.header {
+				@apply(--layout-horizontal);
+				flex-direction: row;
+				align-items: center;
+	      		padding: 0.5em 0.6em;
+				background-color: var(--tri-primary-content-accent-color);
+			}
+
+			.header-left {
+				@apply(--layout-horizontal);
+				flex: 3;
+				justify-content: flex-start;
+			}
+
+			.building-name {
+				margin: 0;
+				font-size: 0.9em;
+				font-weight: 300;
+				color: var(--tri-primary-color-100);
+			}
+
+			.link-blue {
+				font-weight: 300;
+				color: var(--tri-info-icon-button-press-color);
+				cursor: pointer;
+				transition: 0.4s;
+				font-size: 0.9em;
+			}
+
+			@media(min-width: 415px) {
+				.link-blue {
+					margin-left: 1em;
+				}
+			}
+
+			.link-blue:hover {
+				color: var(--tri-primary-icon-button-press-color);
+			}
+
+			.header-right {
+				@apply(--layout-horizontal);
+				justify-content: flex-end;
+			}
+			/* End Container - space-container */
+
+			/* Container - tab */
+			iron-selector.tabs-container {
+				@apply(--layout-horizontal);
+				color: var(--tri-primary-color);
+			}
+
+			.tab {
+				@apply(--layout-horizontal);
+				@apply(--layout-end);
+				cursor: pointer;
+				z-index: 6;
+				user-select: none;
+				-moz-user-select: none;
+				-webkit-user-select: none;
+				-ms-user-select: none;
+			}
+
+			@media (min-width: 901px) {
+				.tab {
+					padding-left: 5px;
+					padding-right: 12px;
+				}
+				:host-context([dir="rtl"]) .tab {
+					padding-left: 12px;
+					padding-right: 5px;
+				}
+			}
+
+			@media (max-width: 900px) {
+				.tab {
+					padding-left: 0px;
+					padding-right: 0px;
+				}
+			}
+
+			.tab.iron-selected {
+				position: relative;
+				color: var(--tri-primary-color);
+				font-weight: 700;
+				cursor: context-menu;
+			}
+			/* End Container - tab */
+
+
+			.main {
+				@apply(--layout-flex);
+				@apply(--layout-vertical);
+			}
+
+
+			/* Container - container-collapse-action */
+			.container-collapse-action {
+				position: fixed;
+				right: 0;
+				bottom: 0;
+				left: 0;
+				z-index: 9999;
+			}
+
+			.container-action-button {
+				@apply(--layout-horizontal);
+				@apply(--layout-center-center);
+				@apply(--layout-wrap);
+				background-color: var(--tri-footer-background-color);
+				color: var(--tri-header-color);
+				padding: 5px;
+			}
+
+			.container-action-button > * {
+				margin: 5px;
+			}
+			/* End Container - container-collapse-action */
+
+
+			.actions-message {
+				padding-left: 10px;
+				padding-right: 10px;
+				white-space: pre;
+				@apply(--layout-flex-1);
+			}
+
+
+			/* Container - container-spaces-empty */
+			.container-spaces-empty p {
+				text-align: center;
+		    	font-size: 0.9em;
+		    	font-weight: 300;
+			}
+			/* End Container - container-spaces-empty */
+		</style>
+
+		<triplat-loading-indicator
+				show="[[_computeLoading(_loadingAllRooms, _loadingSelectedRooms, _loadingGraphics)]]">
+		</triplat-loading-indicator>
+
+		<triplat-ds id="allRoomsInFloorForMoveRequest" name="allRoomsInFloorForMoveRequest"
+				data="{{_allSpacesInFloorForMoveRequest}}" loading="{{_loadingAllRooms}}" manual>
+        	<triplat-ds-context name="lookupBuildingLocation" context-id="[[building._id]]"></triplat-ds-context>
+        	<triplat-ds-context name="buildingFloors" context-id="[[_selectedFloor._id]]"></triplat-ds-context>
+    	</triplat-ds>
+
+    	<triplat-ds id="selectedRoomsForMoveRequest" name="selectedRoomsForMoveRequest"
+    			data="{{_selectedRoomsForMoveRequest}}" manual loading="{{_loadingSelectedRooms}}">
+        	<triplat-ds-context name="myMoveRequests" context-id="[[moveRequest._id]]"></triplat-ds-context>
+        	<triplat-ds-context name="moveRequest" context-id="[[moveRequest._id]]"></triplat-ds-context>
+    	</triplat-ds>
+
+		<div class="space-container">
+			<triblock-tabs id="floorTabs" selected="{{selectedFloorRecordId}}" refresh-delay="700">
+				<template is="dom-repeat" items="[[floors]]" id="boxFloorTemplate">
+					<triblock-tab id$="[[item._id]]" label$="[[item.floor]]"></triblock-tab>
+				</template>
+			</triblock-tabs>
+
+			<div class="header">
+				<div class="header-left">
+					<div>
+						<span class="building-name">[[building.building]]</span>
+                        <span class="link-blue" on-tap="_handleChangeLocationTap">Change</span>
+					</div>
+				</div>
+
+				<div class="header-right">
+		    		<iron-selector class="tabs-container" hidden$="[[_hideTabs]]" selected="{{_selectedView}}">
+						<div class="tab">
+							<triplat-icon id="floorplanViewIcon" aria-label="Floor plan view" icon="floorplan"></triplat-icon>
+						</div>
+						<div class="tab">
+							<triplat-icon id="listViewIcon" aria-label="List view" icon="list-view"></triplat-icon>
+						</div>
+						<paper-tooltip for="floorplanViewIcon" position="bottom" animation-delay="0" offset="5">
+							View as floor plan
+						</paper-tooltip>
+						<paper-tooltip for="listViewIcon" position="bottom" animation-delay="0" offset="5">
+							View as list
+						</paper-tooltip>
+					</iron-selector>
+				</div>
+			</div>
+
+			<iron-pages id="spacesIronPages" class="main" selected="{{_selectedView}}" selected-attribute="enabled"
+					hidden$="[[_computeHideGraphic(_hasGraphic, _hasSpaces)]]">
+				<tricomp-multi-space-selector-graphic id="graphicSelector"
+						has-graphic={{_hasGraphic}}
+						on-has-graphic-changed="_handleHasGraphicChanged"
+						loading="{{_loadingGraphics}}"
+						selected-spaces="{{_selectedSpaces}}"
+						floor="[[_selectedFloor]]"
+						legend-spaces="[[_spacesForGraphicLegend]]"
+						selectable-spaces="[[_selectableSpacesInFloor]]">
+				</tricomp-multi-space-selector-graphic>
+
+				<tricomp-multi-space-selector-list
+						id="spaceList"
+						selectable-spaces="[[_selectableSpacesInFloor]]"
+						selected-spaces="{{_selectedSpaces}}">
+				</tricomp-multi-space-selector-list>
+			</iron-pages>
+
+			<div class="container-spaces-empty" hidden$="[[!_computeHideGraphic(_hasGraphic, _hasSpaces)]]">
+				<p>There is no information to display.</p>
+			</div><!-- end .container-spaces-empty -->
+		</div>
+
+		<iron-collapse id="actionsCollapse" class="container-collapse-action"
+				opened="[[_computeShowAction(_showActions, _savingAlertOpened, _successAlertOpened)]]">
+			<div class="container-action-button">
+				<div class="actions-message">[[_getActionsMessage(addedSpaces, removedSpaces)]]</div>
+				<paper-button noink class="btn-actionbar footer" on-tap="_handleUpdateTap">Update</paper-button>
+				<paper-button noink class="btn-actionbar footer" on-tap="_handleCancelTap">Cancel</paper-button>
+			</div>
+		</iron-collapse>
+
+		<tricomp-alert id="savingAlert" type="info" opened="{{_savingAlertOpened}}" duration="0"
+				horizontal-align="left">
+		</tricomp-alert>
+
+		<tricomp-alert id="successAlert" type="success" opened="{{_successAlertOpened}}" duration="5000"
+				horizontal-align="left" title="Success" >
+		</tricomp-alert>
+
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+
+		is: "tricomp-multi-space-selector",
+
+		/**
+         * Fired when the user taps the location change link.
+         *
+         * @event change-location
+         */
+
+
+        /**
+         * Fired when the user click the update button.
+         *
+         * @event update-added-or-removed-spaces
+         */
+
+        behaviors: [
+			Polymer.IronResizableBehavior
+		],
+
+		properties: {
+			//=========================================================
+			// Property building
+			//------------------------------------------
+			// Objective: The building to search for items
+			//=========================================================
+			building: {
+		    	type: Object,
+		    	observer: "_handleBuildingChanged"
+		    },
+
+			//=========================================================
+			// Property floors
+			//------------------------------------------
+			// Objective: The list of floors to search for items
+			//=========================================================
+			floors: {
+		    	type: Array,
+		    	observer: "_handleFloorsChanged"
+		    },
+
+		    //=========================================================
+			// Property selectedFloorRecordId
+			//------------------------------------------
+			// Objective: Gets os sets the selected floor id.
+			//=========================================================
+			selectedFloorRecordId: {
+				type: Number,
+				observer: "_handleSelectedFloorRecordIdChanged",
+				value: -1
+			},
+
+			//=========================================================
+			// Property addedSpaces
+			//------------------------------------------
+			// Objective: The list of spaces added to the
+			// initial selection.
+			//=========================================================
+			addedSpaces: {
+				type: Array,
+				notify: true,
+				readOnly: true
+			},
+
+			//=========================================================
+			// Property removedSpaces
+			//------------------------------------------
+			// Objective: The list of spaces removed from the
+			// initial selection.
+			//=========================================================
+			removedSpaces: {
+				type: Array,
+				notify: true,
+				readOnly: true
+			},
+
+			//=========================================================
+			// Property moveRequest
+			//------------------------------------------
+			// Objective: The move request
+			//=========================================================
+			moveRequest: {
+				type: Object
+			},
+
+		    //=========================================================
+			// Property _selectedFloor
+			//------------------------------------------
+			// Objective: The selected floor object
+			//=========================================================
+			_selectedFloor: {
+				type: Object,
+				readOnly: true
+			},
+
+		    //=========================================================
+			// Property _selectedView
+			//------------------------------------------
+			// Objective: Determine the selected view - 
+			// 0 = Floor Plan or 1 = List View
+			//=========================================================
+	     	_selectedView : {
+				type : Number,
+				value : 0
+			},
+
+      		//=========================================================
+			// Property _hideTabs
+			//------------------------------------------
+			// Objective: Determine when to hide the tabs - Floor Plan or List View
+			//=========================================================
+      		_hideTabs : {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _allSpacesInFloorForMoveRequest
+			//------------------------------------------
+			// Objective: An array that contains all the spaces in a
+			// floor available for move request. It may contain
+			// duplicated spaces if any space has more than one charge
+			// to organization.
+			//=========================================================
+			_allSpacesInFloorForMoveRequest:  {
+				type: Array,
+				observer: "_handleAllSpacesInFloorForMoveRequestChanged"
+			},
+
+			//=========================================================
+			// Property _selectableSpacesInFloor
+			//------------------------------------------
+			// Objective: An array that contains the selectable spaces
+			// in a floor. It does not contains duplicated spaces.
+			//=========================================================
+			_selectableSpacesInFloor:  {
+				type: Array
+			},
+
+			//=========================================================
+			// Property _selectableSpacesInFloorById
+			//------------------------------------------
+			// Objective: An object that contains the selectable spaces
+			// in a floor. It does not contains duplicated spaces.
+			// The spaces are indexed by it's id.
+			//=========================================================
+			_selectableSpacesInFloorById:  {
+				type: Object
+			},
+
+			//=========================================================
+			// Property _spacesForGraphicLegend
+			//------------------------------------------
+			// Objective: An array that contains all selectable the
+			// spaces in a floor. It does not contains duplicated
+			// spaces and each space has the necessary data to
+			// build the legend.
+			//=========================================================
+			_spacesForGraphicLegend: {
+				type: Array
+			},
+
+			//=========================================================
+			// Property _selectedSpaces
+			//------------------------------------------
+			// Objective: Contains the current selected spaces on the
+			// graphic or list.
+			//=========================================================
+			_selectedSpaces: {
+				type: Array
+			},
+
+			//=========================================================
+			// Property _selectedRoomsForMoveRequest
+			//------------------------------------------
+			// Objective: Contains the current selected room on the
+			// move request.
+			//=========================================================
+			_selectedRoomsForMoveRequest: {
+				type: Array,
+				observer: "_handleSelectedRoomsForMoveRequestChanged"
+			},
+
+			//=========================================================
+			// Property _initialSelectedSpaces
+			//------------------------------------------
+			// Objective: Contains the initial selected spaces on the
+			// graphic or list.
+			//=========================================================
+			_initialSelectedSpaces: {
+				type: Array
+			},
+
+			//=========================================================
+			// Property _showActions
+			//------------------------------------------
+			// Objective: Controls if the actions collapse should
+			// be shown or hidden.
+			//=========================================================
+			_showActions: {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _savingAlertOpened
+			//------------------------------------------
+			// Objective: Controls if the saving alert is opened.
+			//=========================================================
+			_savingAlertOpened: {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _sucessAlertOpened
+			//------------------------------------------
+			// Objective: Controls if the success alert is opened.
+			//=========================================================
+			_successAlertOpened: {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _loadingAllRooms
+			//------------------------------------------
+			// Objective: Indicates if the allRoomsInFloorForMoveRequest
+			// DS is loading.
+			//=========================================================
+			_loadingAllRooms: {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _loadingSelectedRooms
+			//------------------------------------------
+			// Objective: Indicates if the selectedRoomsForMoveRequest
+			// DS is loading.
+			//=========================================================
+			_loadingSelectedRooms: {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _loadingGraphics
+			//------------------------------------------
+			// Objective: Indicates if the graphics is loading.
+			//=========================================================
+			_loadingGraphics: {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _translatedMessages
+			//------------------------------------------
+			// Objective: Map of translated messages.
+			//=========================================================
+			_translatedMessages: {
+				type: Object,
+				value: function() {
+					var __dictionary__singleAdd = "item selected";
+                    var __dictionary__multipleAdd = "items selected";
+                    var __dictionary__singleRemove = "item deselected";
+                    var __dictionary__multipleRemove = "items deselected";
+
+                    var __dictionary__singleAddInfoAlert = "item is being added";
+                    var __dictionary__multipleAddInfoAlert = "items are being added";
+                    var __dictionary__singleRemoveInfoAlert = "item is being removed";
+                    var __dictionary__multipleRemoveInfoAlert = "items are being removed";
+
+                    var __dictionary__singleAddSuccessAlert = "item has been added";
+                    var __dictionary__multipleAddSuccessAlert = "items have been added";
+                    var __dictionary__singleRemoveSuccessAlert = "item has been removed";
+                    var __dictionary__multipleRemoveSuccessAlert = "items have been removed";
+
+					var _messages = {};
+					_messages["singleAdd"] = __dictionary__singleAdd;
+                    _messages["multipleAdd"] = __dictionary__multipleAdd;
+                    _messages["singleRemove"] = __dictionary__singleRemove;
+                    _messages["multipleRemove"] = __dictionary__multipleRemove;
+
+					_messages["singleAddInfoAlert"] = __dictionary__singleAddInfoAlert;
+					_messages["multipleAddInfoAlert"] = __dictionary__multipleAddInfoAlert;
+					_messages["singleRemoveInfoAlert"] = __dictionary__singleRemoveInfoAlert;
+					_messages["multipleRemoveInfoAlert"] = __dictionary__multipleRemoveInfoAlert;
+
+					_messages["singleAddSuccessAlert"] = __dictionary__singleAddSuccessAlert;
+					_messages["multipleAddSuccessAlert"] = __dictionary__multipleAddSuccessAlert;
+					_messages["singleRemoveSuccessAlert"] = __dictionary__singleRemoveSuccessAlert;
+					_messages["multipleRemoveSuccessAlert"] = __dictionary__multipleRemoveSuccessAlert;
+
+					return _messages;
+				}
+			},
+
+			//=========================================================
+			// Property _hasGraphic
+			//------------------------------------------
+			// Objective: Indicates if there's a graphic.
+			//=========================================================
+			_hasGraphic: {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _hasSpaces
+			//------------------------------------------
+			// Objective: Indicates if there are spaces.
+			//=========================================================
+			_hasSpaces: {
+				type: Boolean,
+				value: false
+			}
+		},	
+
+		observers: [
+			"_handleSelectedSpacesChanged(_selectedSpaces.*)",
+			"_handleAddedOrRemovedSpacesChanged(addedSpaces, removedSpaces)"
+		],
+
+		//=========================================================
+		// Function alertSavingStarted
+		//------------------------------------------
+		// Objective: Show a alert to indicate to the user that the
+		// saving operation has started.
+		//=========================================================
+		alertSavingStarted: function() {
+			this.$.savingAlert.text = this._getInfoAlertMessage(this.addedSpaces, this.removedSpaces);
+			this._savingAlertOpened = true; 
+		},
+
+		//=========================================================
+		// Function alertSaveFinished
+		//------------------------------------------
+		// Objective: Show a alert to indicate to the user that the
+		// saving operation was successfully finished.
+		//=========================================================
+		alertSaveFinished: function() {
+			this.$.successAlert.text = this._getSuccessAlertMessage(this.addedSpaces, this.removedSpaces);
+			this._savingAlertOpened = false;
+			this._successAlertOpened = true;
+			this._resetInitialSelectedSpaces();
+		},
+
+		//=========================================================
+		// Function refreshSelected
+		//------------------------------------------
+		// Objective: Refresh the selected spaces.
+		//=========================================================
+		refreshSelected: function() {
+			return this.$.selectedRoomsForMoveRequest.refresh();
+		},
+
+		//=========================================================
+		// Function hasNonSavedSpaces
+		//------------------------------------------
+		// Objective: Returns true there are added or removed spaces.
+		//=========================================================
+		hasNonSavedSpaces: function() {
+			return (this.addedSpaces && this.addedSpaces.length > 0) ||
+			       (this.removedSpaces && this.removedSpaces.length > 0) ;
+		},
+
+		//=========================================================
+		// Function _handleHasGraphicChanged
+		//------------------------------------------
+		// Objective: Show the graphics if the floor has a graphic,
+		// otherwise show the space list.
+		//=========================================================
+		_handleHasGraphicChanged: function(e) {
+			if (e.detail.value) {
+				this._selectedView = 0;
+				this._hideTabs = false;
+			} else {
+				this._hideTabs = true;
+				this._selectedView = 1;
+			}
+		},
+
+		//=========================================================
+		// Function _handleBuildingChanged
+		//------------------------------------------
+		// Objective: Clear the floors when the buiding changes
+		//=========================================================
+		_handleBuildingChanged: function(newValue, oldValue) {
+			if (!newValue || !oldValue || newValue._id != oldValue._id) {
+				this.floors = null;
+				this.$.graphicSelector.resetLegendAndButtons();
+			}
+		},
+
+		//=========================================================
+		// Function _handleFloorsChanged
+		//------------------------------------------
+		// Objective: When the floors change, it selects the first
+		// one.
+		//=========================================================
+		_handleFloorsChanged: function(newValue, oldValue) {
+			this._initialSelectedSpaces = [];
+			if (this._selectedSpaces && this._selectedSpaces.length > 0) {
+				this.splice("_selectedSpaces",0);
+			}
+			this.selectedFloorRecordId = -1;
+			if (this.floors && this.floors.length > 0) {
+				this.$.boxFloorTemplate.render();
+				this.async(function() {
+					this.selectedFloorRecordId = this.floors[0]._id;
+				}.bind(this), 500);
+				this.refreshSelected();
+			}
+			this.$.floorTabs.refreshTabs();
+		},
+
+		//=========================================================
+		// Function _handleSelectedFloorRecordIdChanged
+		//------------------------------------------
+		// Objective: When the selectedFloorRecordId change, it
+		// sets the selected floor.
+		//=========================================================
+		_handleSelectedFloorRecordIdChanged: function(newValue, oldValue) {
+			this._set_selectedFloor(null);
+			if (newValue != null && newValue >= 0) {
+				var selectedFloor = this.floors.find(
+					function(floor) {
+						return floor._id === newValue;
+					}
+				);
+				this._set_selectedFloor(selectedFloor);
+				this.$.allRoomsInFloorForMoveRequest.refresh();
+			}
+		},
+
+		//=========================================================
+		// Function _handleChangeLocationTap
+		//------------------------------------------
+		// Objective: Fires a event when the user taps the location
+		// change link.
+		//=========================================================
+		_handleChangeLocationTap: function(e) {
+			this.fire("change-location");
+		},
+
+		//=========================================================
+		// Function _handleSelectedRoomsForMoveRequestChanged
+		//------------------------------------------
+		// Objective: Generate an array of unique selected spaces
+		// for a move request.
+		//=========================================================
+		_handleSelectedRoomsForMoveRequestChanged: function(newValue, oldValue) {
+			var uniqueSelectedSpaces = [];
+			var uniqueSelectedSpacesById = {};
+
+			for (var i = 0; newValue && i < newValue.length; i++) {
+				uniqueSelectedSpacesById[newValue[i]._id] = newValue[i];
+			}
+
+			for (var spaceID in uniqueSelectedSpacesById) {
+				uniqueSelectedSpaces.push(uniqueSelectedSpacesById[spaceID]);
+			}
+
+			if (this._selectableSpacesInFloorById && uniqueSelectedSpaces && uniqueSelectedSpaces.length > 0) {
+				for (var i = 0; uniqueSelectedSpaces && i < uniqueSelectedSpaces.length; i++) {
+					if (uniqueSelectedSpaces[i]._id in this._selectableSpacesInFloorById) {
+						uniqueSelectedSpaces[i] = this._selectableSpacesInFloorById[uniqueSelectedSpaces[i]._id];
+					}
+				}
+			}
+
+			this._initialSelectedSpaces = uniqueSelectedSpaces.slice(0);
+			if (uniqueSelectedSpaces.length > 0) {
+				this._selectedSpaces = uniqueSelectedSpaces;
+			} else if (this._selectedSpaces) {
+				this.splice("_selectedSpaces",0);
+			}
+		},
+
+		//=========================================================
+		// Function _handleAllSpacesInFloorForMoveRequestChanged
+		//------------------------------------------
+		// Objective: Generates an array of selectable spaces
+		// in a floor and an array of spaces for the graphic legend.
+		//=========================================================
+		_handleAllSpacesInFloorForMoveRequestChanged: function(newValue, oldValue) {
+			this._computeLegendAndSelectableSpaces();
+		},
+
+		//=========================================================
+		// Function _computeLegendAndSelectableSpaces
+		//------------------------------------------
+		// Objective: Generate an array of selectable spaces
+		// in a floor and an array of spaces for the graphic legend.
+		// Update the _selectedSpaces and _initialSelectedSpaces
+		// with the new spaces objects returned by the
+		// allSpacesInFloorForMoveRequest Datasource.
+		//=========================================================
+		_computeLegendAndSelectableSpaces: function() {
+			var allSpacesInFloor = this._allSpacesInFloorForMoveRequest;
+			var selectableSpaces = [];
+			var selectableSpacesById = {};
+			var spacesForGraphicLegend = [];
+			var spacesForGraphicLegendByKey = {};
+
+			for (var i = 0; allSpacesInFloor && i < allSpacesInFloor.length; i++) {
+				if (!(allSpacesInFloor[i]._id in selectableSpacesById)) {
+					selectableSpacesById[allSpacesInFloor[i]._id] = allSpacesInFloor[i];
+					selectableSpaces.push(allSpacesInFloor[i]);
+				}
+            	
+            	var spaceKey = this._getLegendSpaceKey(allSpacesInFloor[i]);
+            	spacesForGraphicLegendByKey[spaceKey] = allSpacesInFloor[i];
+			}
+
+			this._hasSpaces = selectableSpaces.length > 0;
+
+			for (var spaceKey in spacesForGraphicLegendByKey) {
+				spacesForGraphicLegend.push(spacesForGraphicLegendByKey[spaceKey]);
+			}
+
+			var selectedSpaces = this._selectedSpaces;
+			for (var i = 0; selectedSpaces && i < selectedSpaces.length; i++) {
+				if (selectedSpaces[i]._id in selectableSpacesById) {
+					selectedSpaces[i] = selectableSpacesById[selectedSpaces[i]._id];
+				}
+			}
+
+			var initialSelectedSpaces = this._initialSelectedSpaces;
+			for (var i = 0; initialSelectedSpaces && i < initialSelectedSpaces.length; i++) {
+				if (initialSelectedSpaces[i]._id in selectableSpacesById) {
+					initialSelectedSpaces[i] = selectableSpacesById[initialSelectedSpaces[i]._id];
+				}
+			}
+
+			this._selectableSpacesInFloorById = selectableSpacesById;
+			this._selectableSpacesInFloor = selectableSpaces;
+			this._spacesForGraphicLegend = spacesForGraphicLegend;
+		},
+
+		//=========================================================
+		// Function _getLegendSpaceKey
+		//------------------------------------------
+		// Objective: Generate an unique identifier for a space.
+		//=========================================================
+		_getLegendSpaceKey: function(space) {
+			var spaceID = space._id;
+			var org = space.chargedToOrg ? space.chargedToOrg : "";
+			var spaceClass = space.spaceClass ? space.spaceClass : "";
+			return spaceID + org + spaceClass;
+		},
+
+		//=========================================================
+		// Function _handleSelectedSpacesChanged
+		//------------------------------------------
+		// Objective: When a space is selected or deselected,
+		// re-compute the added and removed spaces.
+		//=========================================================
+		_handleSelectedSpacesChanged: function(change) {
+			if(change.path == "_selectedSpaces" || change.path == "_selectedSpaces.splices") {
+                this._computeAddedAndRemovedSpaces();
+			}
+		},
+
+		//=========================================================
+		// Function _computeAddedAndRemovedSpaces
+		//------------------------------------------
+		// Objective: Computes the difference between the selected
+		// spaces and the initial selected spaces.
+		// Spaces that are selected and are not initial selected,
+		// they are considered added spaces.
+		// Spaces that are initial selected and are not selected,
+		// They are considered removed spaces.
+		//=========================================================
+		_computeAddedAndRemovedSpaces: function() {
+			var addedSpaces = [];
+            var removedSpaces = [];
+
+            for (var i = 0; this._selectedSpaces && i < this._selectedSpaces.length; i++) {
+            	var spaceIndex = this._findSpaceIndex(this._initialSelectedSpaces, this._selectedSpaces[i]._id);
+            	if (spaceIndex < 0) {
+            		addedSpaces.push(this._selectedSpaces[i]);
+            	}
+            }
+            for (var i = 0; this._initialSelectedSpaces && i < this._initialSelectedSpaces.length; i++) {
+            	var spaceIndex = this._findSpaceIndex(this._selectedSpaces, this._initialSelectedSpaces[i]._id);
+            	if (spaceIndex < 0) {
+            		removedSpaces.push(this._initialSelectedSpaces[i]);
+            	}
+            }
+            this._setAddedSpaces(addedSpaces);
+			this._setRemovedSpaces(removedSpaces);
+		},
+
+		//=========================================================
+		// Function _resetInitialSelectedSpaces
+		//------------------------------------------
+		// Objective: Set the initial selected spaces to be the
+		// same as the selected spaces.
+		//=========================================================
+		_resetInitialSelectedSpaces: function() {
+			this._initialSelectedSpaces = this._selectedSpaces ? this._selectedSpaces.slice(0) : [];
+			this._computeAddedAndRemovedSpaces();
+		},
+
+		//=========================================================
+		// Function _findSpaceIndex
+		//------------------------------------------
+		// Objective: Returns the index of a particular space
+		// in a array of spaces.
+		//=========================================================
+		_findSpaceIndex: function (spacesArray, spaceID) {
+			var index = -1;
+			if(spacesArray) {
+				for (var i = 0; i < spacesArray.length && index < 0; i++) {
+					if (spacesArray[i]._id == spaceID) {
+						index = i;
+					} else if (spacesArray[i] == spaceID) {
+						index = i;
+					}
+				}
+			}
+			return index;
+		},
+
+		//=========================================================
+		// Function _handleAddedOrRemovedSpacesChanged
+		//------------------------------------------
+		// Objective: When the addedSpaces or removedSpaces change,
+		// it computes the showActions variable.
+		//=========================================================
+		_handleAddedOrRemovedSpacesChanged: function(addedSpaces, removedSpaces) {
+			var addedCount = addedSpaces ? addedSpaces.length : 0;
+			var removedCount = removedSpaces ? removedSpaces.length : 0;
+			this._showActions = addedCount > 0 || removedCount > 0;
+		},
+
+		//=========================================================
+		// Function _handleUpdateTap
+		//------------------------------------------
+		// Objective: Fires a event when the user clicks the
+		// update button.
+		//=========================================================
+		_handleUpdateTap: function(e) {
+			var detail = {addedSpaces: this.addedSpaces, removedSpaces: this.removedSpaces};
+			this.fire("update-added-or-removed-spaces", detail);
+		},
+
+		//=========================================================
+		// Function _handleCancelTap
+		//------------------------------------------
+		// Objective: When the user clicks the cancel button,
+		// it sets the selected spaces to the initial selected spaces.
+		//=========================================================
+		_handleCancelTap: function(e) {
+			if (this._initialSelectedSpaces && this._initialSelectedSpaces.length > 0) {
+				this._selectedSpaces = this._initialSelectedSpaces.slice(0);
+			} else {
+				this.splice("_selectedSpaces",0);
+			}
+		},
+
+		//=========================================================
+		// Function _getActionsMessage
+		//------------------------------------------
+		// Objective: Returns the translated message to be displayed
+		// in the actions collapse.
+		//=========================================================
+		_getActionsMessage: function(addedSpaces, removedSpaces) {
+			var addedCount = addedSpaces ? addedSpaces.length : 0;
+			var removedCount = removedSpaces ? removedSpaces.length : 0;
+			var translatedMessages = this._translatedMessages;
+			var message = "";
+
+			if (addedCount > 0) {
+				message += addedCount + " ";
+				message += addedCount == 1 ? translatedMessages["singleAdd"] : translatedMessages["multipleAdd"];
+			}
+			if (removedCount > 0) {
+				message += "     " + removedSpaces.length + " ";
+				message += removedSpaces.length == 1 ? translatedMessages["singleRemove"] :
+													   translatedMessages["multipleRemove"];
+			}
+
+			return message;
+		},
+
+		//=========================================================
+		// Function _getInfoAlertMessage
+		//------------------------------------------
+		// Objective: Returns the translated message to be displayed
+		// in the info alert message.
+		//=========================================================
+		_getInfoAlertMessage: function(addedSpaces, removedSpaces) {
+			var addedCount = addedSpaces ? addedSpaces.length : 0;
+			var removedCount = removedSpaces ? removedSpaces.length : 0;
+			var translatedMessages = this._translatedMessages;
+			var message = "";
+			if (addedCount > 0) {
+				message += addedCount + " ";
+				message += addedCount == 1 ? translatedMessages["singleAddInfoAlert"] :
+				                             translatedMessages["multipleAddInfoAlert"];
+				message += removedCount > 0 ? " - " : "";
+			}
+			if (removedCount > 0) {
+				message += removedCount + " ";
+				message += removedCount == 1 ? translatedMessages["singleRemoveInfoAlert"] :
+				                               translatedMessages["multipleRemoveInfoAlert"];
+			}
+			return message;
+		},
+
+		//=========================================================
+		// Function _getSuccessAlertMessage
+		//------------------------------------------
+		// Objective: Returns the translated message to be displayed
+		// in the success alert message.
+		//=========================================================
+		_getSuccessAlertMessage: function(addedSpaces, removedSpaces) {
+			var addedCount = addedSpaces ? addedSpaces.length : 0;
+			var removedCount = removedSpaces ? removedSpaces.length : 0;
+			var translatedMessages = this._translatedMessages;
+			var message = "";
+			if (addedCount > 0) {
+				message += addedCount + " ";
+				message += addedCount == 1 ? translatedMessages["singleAddSuccessAlert"] :
+				                             translatedMessages["multipleAddSuccessAlert"];
+				message += removedCount > 0 ? " - " : "";
+			}
+			if (removedCount > 0) {
+				message += removedCount + " ";
+				message += removedCount == 1 ? translatedMessages["singleRemoveSuccessAlert"] :
+				                               translatedMessages["multipleRemoveSuccessAlert"];
+			}
+			return message;
+		},
+
+		//=========================================================
+		// Function _findFloorIndex
+		//------------------------------------------
+		// Objective: Returns the index of a particular floor
+		// in a array of floors.
+		//=========================================================
+		_findFloorIndex: function (floorsArray, floorID) {
+			var index = -1;
+			if(floorsArray) {
+				for (var i = 0; i < floorsArray.length && index < 0; i++) {
+					if (floorsArray[i]._id == floorID) {
+						index = i;
+					}
+				}
+			}
+			return index;
+		},
+
+		//=========================================================
+		// Function _computeShowAction
+		//------------------------------------------
+		// Objective: Returns true if the action bar must be shown.
+		//=========================================================
+		_computeShowAction: function(_showActions, _savingAlertOpened, _successAlertOpened) {
+			return _showActions && !_savingAlertOpened && !_successAlertOpened;
+		},
+
+		//=========================================================
+		// Function _computeLoading
+		//------------------------------------------
+		// Objective: Returns true if the loading indicator bar
+		// must be shown.
+		//=========================================================
+		_computeLoading: function(_loadingAllRooms, _loadingSelectedRooms, _loadingGraphics) {
+			return _loadingAllRooms	|| _loadingSelectedRooms || _loadingGraphics;
+		},
+
+		//=========================================================
+		// Function _computeHideGraphic
+		//------------------------------------------
+		// Objective: Compute when show or hide the graphic container
+		//=========================================================
+		_computeHideGraphic: function(hasGraphic, hasSpaces) {
+			if (hasGraphic || hasSpaces) {
+				return false;
+			} else {
+				return true;
+			}// end if
+		},
+	});
+</script>

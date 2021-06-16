@@ -1,0 +1,238 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<dom-module id="shared-app-layout-styles">
+	<template>
+		<style>
+			triplat-route-selector, iron-pages {
+				@apply(--layout-flex);
+				@apply(--layout-vertical);
+			}
+
+			iron-pages > * {
+				@apply(--layout-flex);
+			}
+
+			triplat-loading-indicator {
+				--triplat-loading-indicator-clear-background: rgba(0, 0, 0, 0.12);
+				--triplat-loading-indicator-container: {
+					position: fixed;
+				}
+			}
+		</style>
+	</template>
+</dom-module>
+
+<dom-module id="shared-page-styles">
+	<template>
+		<style>
+			.page-header {
+				@apply(--layout-justified);
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+				padding: 20px;
+			}
+
+			.header-text {
+				font-weight: bold;
+			}
+
+			.page-main {
+				@apply(--layout-vertical);
+				@apply(--layout-flex);
+				@apply(--layout-center);
+
+				min-height: 0;
+
+				background-color: var(--tri-primary-content-background-color);
+
+				box-sizing: border-box; /* This is necessary to prevent any padding applied on page-main elements from overflowing (happens on small screen) */
+			}
+			.page-main[disabled] * {
+				opacity: .8;
+				pointer-events: none;
+			}
+
+			.page-message {
+				@apply(--layout-horizontal);
+				@apply(--layout-wrap);
+				@apply(--layout-scroll);
+				max-height: 64px;
+
+				padding: 5px;
+
+				flex-shrink: 0;
+
+				background-color: var(--tri-danger-color);
+				color: white;
+				text-align: center;
+			}
+
+			.page-wrap { /* place directly inside page-main */
+				@apply(--layout-vertical);
+				@apply(--layout-flex);
+				width: 100%;
+			}
+
+			.page-wrap > * {
+				flex-shrink: 0; /* prevent all children from shrinking - we want content to overflow and be scrollable */
+			}
+
+			.empty-data-message {
+				@apply(--layout-vertical);
+				@apply(--layout-center-center);
+				text-align: center;
+				padding: 0 20px;
+			}
+
+			.end-reservation-time-icon {
+				color: var(--ibm-gray-30);
+			}
+
+			.favorite-icon {
+				color: var(--tri-primary-icon-button-color);
+			}
+
+			.favorite-icon:hover {
+				color: var(--tri-primary-icon-button-hover-color)!important;
+			}
+
+			.favorite-icon[favorited] {
+				color: var(--tri-primary-icon-button-press-color);
+			}
+
+			.favorite-icon[active][toggles] {
+				color: var(--tri-primary-icon-button-press-color);
+			}
+
+			.field-container {
+				@apply(--layout-vertical);
+				padding: 8px 0;
+			}
+			
+			.field-label {
+				font-size: .75em;
+				color: var(--tri-primary-content-label-color);
+			}
+
+			/* hold-time-message should be hidden until necessary via the [show] attribute */
+			.hold-time-message:not([show]) {
+				display: none;
+			}
+			.hold-time-countdown {
+				display: inline-flex;
+				--countdown: {
+					font-size: 20px;
+				};
+			}
+
+			.link {
+				color: var(--tri-primary-color);
+				cursor: pointer;
+				text-decoration: underline;
+			}
+			.link[disabled] {
+				pointer-events: none;
+				cursor: pointer;
+				opacity: 0.3;
+			}
+
+			.expand-button {
+				height: 32px;
+				width: 32px;
+				--iron-icon-stroke-color: var(--tri-primary-color);
+			}
+
+			paper-checkbox {
+				--paper-checkbox-size: 24px;
+			}
+
+			paper-dropdown-menu {
+				--paper-dropdown-menu-ripple: {
+					display: none;
+				};
+				--paper-input-container-input: {
+					overflow: hidden;
+					white-space: nowrap;
+					text-overflow: ellipsis;
+					max-width: 100%;
+					box-sizing: border-box;
+
+					cursor: pointer;
+					font-family: var(--tri-font-family);
+				};
+			}
+
+			paper-tabs {
+				--paper-tabs-selection-bar-color: white;
+				--paper-tabs-selection-bar: {
+					height: 7px;
+				};
+				--paper-tabs: {
+					background-color: var(--tri-primary-color);
+				};
+			}
+			paper-tab {
+				--paper-tab: {
+					@apply(--layout-flex);
+					color: white;
+					font-family: var(--tri-font-family);
+					font-size: 18px;
+				};
+			}
+			paper-tab.iron-selected {
+				font-weight: bold;
+			}
+
+			.required-asterisk {
+				color: var(--tri-danger-color);
+				font-size: 20px;
+			}
+
+			.start-reservation-time-icon {
+				color: var(--ibm-green-30);
+			}
+
+			triplat-date-picker,
+			triplat-datetime-picker {
+				--triplat-date-picker-icon-color: var(--tri-primary-color);
+			}
+
+			.with-border {
+				border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			}
+
+			.padded-container {
+				padding: 0 20px;
+			}
+
+			.toolbar-symmetrical paper-button {
+				white-space: nowrap;
+				flex-basis: 25%;
+			}
+			
+			:host[small-screen-width] .toolbar-symmetrical paper-button {
+				flex-basis: 50%;
+			}
+			
+			triplat-loading-indicator {
+				--triplat-loading-indicator-clear-background: rgba(0, 0, 0, 0.12);
+				--triplat-loading-indicator-container: {
+					position: fixed;
+				}
+			}
+
+			.multiline-overflow-text {
+				position: relative;
+				max-height: 2.4em;
+				line-height: 1.2em;
+				overflow: hidden;
+			}
+		</style>
+	</template>
+</dom-module>
+
+<style is="custom-style">
+	:root iron-overlay-backdrop {
+		--iron-overlay-backdrop-opacity: 0.12;
+	}
+</style>

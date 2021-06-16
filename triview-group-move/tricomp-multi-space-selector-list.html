@@ -1,0 +1,370 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-list/iron-list.html">
+
+<link rel="import" href="../triplat-search-input/triplat-search-input.html">
+<link rel="import" href="../triplat-query/triplat-query.html">
+
+<dom-module id="tricomp-multi-space-selector-list">
+	<template>
+		<style>
+			:host {
+				@apply(--layout-flex);
+				@apply(--layout-vertical);
+				background-color: var(--tri-body-background-color);
+				margin: 5px;
+				border:  2px solid var(--tri-primary-content-accent-color);
+				overflow: auto;
+			}
+			
+			#selector {
+				@apply(--layout-vertical);
+				@apply(--layout-flex);
+				padding: 0px;
+			}
+
+			#selector > div:first-of-type {
+				border-top: none;
+			}
+			
+			.space-item {
+				@apply(--layout-horizontal);
+				background-color: var(--primary-background-color);
+				padding: 20px 40px 20px 40px;
+				/*border-top: 1px solid var(--tri-card-border-color);*/
+				border-top: 1px solid var(--tri-primary-content-accent-color);
+				cursor: pointer;
+			}
+
+			.space-item:focus {
+				background-color: var(--tri-primary-content-accent-color);
+			}
+
+			.space-item[tri-selected] {
+				background-color: var(--tri-primary-light-color);
+			}
+
+			.space-item > span {
+				padding-left: 5px;
+				padding-right: 5px;
+			}
+
+			.value {
+				color: var(--tri-focus-color);
+			}
+
+			label {
+				color: var(--tri-focus-label-color);
+			}
+
+			.id {
+				@apply(--layout-flex-2);
+			}
+
+			.name {
+			
+				@apply(--layout-flex-2);
+			}
+
+			.type {
+		
+				@apply(--layout-flex-2);
+			}
+
+			.occupancy {
+			
+				@apply(--layout-flex-2);
+			}
+
+			/* Container - Search Input */
+			.search-input-container {
+				@apply(--layout-start-justified);
+				min-width: 0;
+				padding: 10px;
+				background-color: var(--tri-body-background-color);
+				font-size: 0.9em;
+				font-weight: 300;
+			}
+
+			.search-input {
+				@apply(--layout-flex);
+
+				--triplat-search-input: {
+					background-color: var(--tri-primary-content-background-color);
+					border-bottom-color: var(--tri-primary-color);
+					border-bottom-width: 2px;
+					color: var(--tri-secondary-icon-button-hover-color);
+					font-family: var(--tri-font-family);
+					font-weight: normal;
+					padding-left: 0px;
+					padding-right: 0px;
+				}
+
+				--triplat-search-input-input: {
+					color: var(--tri-primary-content-color);
+					font-family: var(--tri-font-family);
+					font-weight: normal;
+					font-size: 14px;
+					user-select: none;
+					-moz-user-select: none;
+					-webkit-user-select: none;
+					-ms-user-select: none;
+				}
+
+				--triplat-search-input-search-icon: {
+					color: var(--tri-primary-content-label-color);
+					padding-left: 0px;
+					padding-right: 22px;
+				}
+
+				--triplat-search-input-clear-icon {
+					color: var(--tri-primary-content-label-color);
+					padding-right: 0px;
+					align-items: flex-end;
+					justify-content: flex-end;
+				}
+			}
+			/* End Container - Search Input */
+		</style>
+
+		<triplat-query id="spacesQuery" filtered-data-out="{{_filteredSpaces}}" 
+				append-filters="[[appendFilters]]"></triplat-query>
+
+		<div class="search-input-container">
+			<triplat-search-input
+				id="searchField"
+				class="search-input"
+				placeholder="Search"
+				search-icon-precede="true"
+				data="[[selectableSpaces]]"
+				aliases="[[_searchInputAliases]]"
+				append-filters="{{appendFilters}}"
+				max-header-children="3">
+			</triplat-search-input>
+		</div>
+
+		<iron-list id="selector" multi-selection>
+			<template>
+				<div class="space-item" space="[[item]]" tabindex$="[[tabIndex]]" tri-selected$="[[selected]]"
+						on-tap="_handleItemTap" on-keydown="_handleItemKeyDown">
+					<span class="id"><label>ID: </label><span class="value">{{item.id}}</span></span>
+					<span class="name"><label>Name: </label><span class="value">{{item.space}}</span></span>
+					<span class="type"><label>Type: </label><span class="value">{{item.spaceClass}}</span></span>
+					<span class="occupancy">
+						<label>Occupancy: </label>
+						<span class="value">{{item.occupancyStatus}}</span>
+					</span>
+				</div>
+			</template>
+		</iron-list>
+		
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-multi-space-selector-list",
+
+		properties : {
+			//=========================================================
+			// Property selectableSpaces
+			//------------------------------------------
+			// Objective: An array that contains the selectable spaces
+			// in a floor. It does not contains duplicated spaces.
+			//=========================================================
+			selectableSpaces: {
+				type : Array,
+				observer: "_handleSelectableSpacesChanged"
+			},
+
+			//=========================================================
+			// Property selectedSpaces
+			//------------------------------------------
+			// Objective: Contains the selected spaces on the
+			// graphic.
+			//=========================================================
+			selectedSpaces: {
+				type : Array,
+				notify : true
+			},
+
+			//=========================================================
+			// Property enabled
+			//------------------------------------------
+			// Objective: If true, this element will show the space list
+			// and the user can select or deselect spaces.
+			// Otherwise, this will not show the space list.
+			//=========================================================
+			enabled: {
+				type : Boolean,
+				value : false,
+				observer: "_handleEnabledChanged"
+			},
+
+			//=========================================================
+			// Property _filteredSpaces
+			//------------------------------------------
+			// Objective: An array that contains the filtered spaces.
+			//=========================================================
+			_filteredSpaces: {
+				type : Array,
+				observer: "_handleFilteredSpacesChanged"
+			},
+
+			//=========================================================
+			// Property _searchInputAliases
+			//------------------------------------------
+			// Objective: An object that holds information about the 
+			// headers in the search input.
+			//=========================================================
+			_searchInputAliases: {
+				type: Object,
+				value: function() {
+					var __dictionary__id = "[Id]";
+					var __dictionary__space = "[Name]";
+					var __dictionary__spaceClass = "[Type]";
+					var __dictionary__occupancyStatus = "[Occupancy]";
+					var _aliases = {};
+					_aliases["id"] = __dictionary__id;
+					_aliases["space"] = __dictionary__space;
+					_aliases["spaceClass"] = __dictionary__spaceClass;
+					_aliases["occupancyStatus"] = __dictionary__occupancyStatus;
+					return _aliases;
+				}
+			}
+		},
+
+		observers: [
+			"_handleSelectedSpacesChanged(selectedSpaces.*)"
+		],
+
+		//=========================================================
+		// Function _handleEnabledChanged
+		//------------------------------------------
+		// Objective: If enabled it sets all the selectable spaces 
+		// to the space query data.
+		// It it is not enabled, no space will be shown in the list.
+		//=========================================================
+		_handleEnabledChanged: function(newValue, oldValue) {
+			if (this.enabled) {
+				this.$.spacesQuery.data = this.selectableSpaces;
+			} else {
+				this.$.spacesQuery.data = [];
+			}
+		},
+
+		//=========================================================
+		// Function _handleSelectedSpacesChanged
+		//------------------------------------------
+		// Objective: When a space is selected or deselected, 
+		// mark it as selected or not selected in the iron list. 
+		//=========================================================
+		_handleSelectedSpacesChanged: function(change) {
+			if (this.enabled) {
+				if (change.path == "selectedSpaces") {
+					for (var i = 0; this._filteredSpaces && i < this._filteredSpaces.length; i++) {
+						if (this.selectedSpaces && this.selectedSpaces.indexOf(this._filteredSpaces[i]) >= 0) {
+							this.$.selector.selectItem(this._filteredSpaces[i]);
+						} else {
+							this.$.selector.deselectItem(this._filteredSpaces[i]);
+						}
+					}
+					this.$.selector.notifyResize();//Call notify resize to refresh the ironlist.
+				} else if (change.path == "selectedSpaces.splices") {
+	                var indexSplice = change.value.indexSplices[0];
+					indexSplice.removed.forEach(
+						function(removed) {
+							if (this._filteredSpaces && this._filteredSpaces.indexOf(removed) >= 0) {
+								this.$.selector.deselectItem(removed);
+							}
+						}, 
+						this
+					);
+					for (var i = 0; i < indexSplice.addedCount; i++) {
+						var added = indexSplice.object[indexSplice.index + i];
+						if (this._filteredSpaces && this._filteredSpaces.indexOf(added) >= 0) {
+							this.$.selector.selectItem(added);
+						}
+					}
+					this.$.selector.notifyResize();//Call notify resize to refresh the ironlist.
+				}
+			}
+		},
+
+		//=========================================================
+		// Function _handleFilteredSpacesChanged
+		//------------------------------------------
+		// Objective: Set the filtered spaces to the iron-list and
+		// and mark as selected all selected spaces. 
+		//=========================================================
+		_handleFilteredSpacesChanged: function(newValue, oldValue) {
+			this.$.selector.items = this._filteredSpaces;
+			if (this.selectedSpaces && this.selectedSpaces.length > 0 && this._filteredSpaces) {
+				for (var i = 0; this._filteredSpaces && i < this._filteredSpaces.length; i++) {
+					if (this.selectedSpaces.indexOf(this._filteredSpaces[i]) >= 0) {
+						this.$.selector.selectItem(this._filteredSpaces[i]);
+					}
+				}
+			}
+		},
+
+		//=========================================================
+		// Function _handleSelectableSpacesChanged
+		//------------------------------------------
+		// Objective: If enabled it sets all the selectable spaces 
+		// to the space query data.
+		//=========================================================
+		_handleSelectableSpacesChanged: function(newValue, oldValue) {
+			if (this.enabled) {
+				this.$.spacesQuery.data = this.selectableSpaces;
+			}
+		},
+
+		//=========================================================
+		// Function _handleItemKeyDown
+		//------------------------------------------
+		// Objective: Toggle the space selection when the enter key 
+		// is down. 
+		//=========================================================
+		_handleItemKeyDown: function(e) {
+			if (e.key == "Enter") { 
+				e.stopPropagation();
+				var space = e.currentTarget.space;
+				this._toggleSpaceSelection(space);
+			}
+		},
+
+		//=========================================================
+		// Function _handleItemTap
+		//------------------------------------------
+		// Objective: Toggle the space selection when the user taps
+		// a space
+		//=========================================================
+		_handleItemTap: function(e) {
+			var space = e.currentTarget.space;
+			this._toggleSpaceSelection(space);
+		},
+
+		//=========================================================
+		// Function _toggleSpaceSelection
+		//------------------------------------------
+		// Objective: Select or deselect a given space depending 
+		// on whether the space has already been selected.
+		//=========================================================
+		_toggleSpaceSelection: function(space) {
+			var index = -1;
+			
+			if (!this.selectedSpaces) {
+				this.selectedSpaces = [];
+			}
+
+			index = this.selectedSpaces.indexOf(space);
+			if (index >= 0) {
+				this.splice("selectedSpaces", index, 1);
+			} else {
+				this.push("selectedSpaces", space);
+			}
+		}
+    });
+</script>

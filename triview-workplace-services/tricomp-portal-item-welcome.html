@@ -1,0 +1,130 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+<!-- This is a lazy-loaded component, DO NOT add imports here, add them to its corresponding -imports.html file. -->
+<dom-module id="tricomp-portal-item-welcome">
+
+	<template>
+
+		<style>
+			:host {
+				background-color: white;
+			}
+
+			.container {
+				@apply(--layout-horizontal);
+				padding: 20px 30px 30px 30px;
+			}
+			:host(:not([small-screen])) .container {
+				@apply(--layout-center);
+			}
+			:host([small-screen]) .container {
+				@apply(--layout-vertical-reverse);
+				@apply(--layout-end-justified);
+				padding: 22px 15px;
+			}
+
+			.location-container {
+				@apply(--layout-vertical);
+			}
+			:host(:not([small-screen])) .call {
+				@apply(--layout-horizontal);
+      			@apply(--layout-end-justified);
+				@apply(--layout-flex);
+			}
+
+			:host([small-screen]) .location-container {
+				margin-bottom: 20px;
+				margin-top: 20px;
+			}
+
+			.location {
+				@apply(--layout-horizontal);
+			}
+
+			.location-container[disabled] {
+				display: none;
+			}
+			.location-container[disabled] > * {
+				display: none;
+			}
+
+			.building-container {
+				font-size: 18px;
+			}
+			:host([small-screen]) .building-container {
+				margin: 0;
+			}
+
+			.title {
+				margin-bottom: 15px;
+				font-weight: 300;
+				color: var(--tri-primary-content-label-color);
+			}
+
+			.divider {
+				position: relative;
+				box-sizing: border-box;
+				height: 1px;
+				width: 100%;
+				margin: 15px 0;
+				padding: 0 5px;
+			}
+			.divider > div {
+				@apply(--layout-fit);
+				right: 5px;
+				left: 5px;
+				background-color: var(--ibm-gray-10);
+			}
+
+			:host([small-screen]) .call {
+				@apply(--layout-self-center);
+			}
+		</style>
+
+		<triplat-ds name="applicationSettings" data="{{applicationSettings}}">
+		</triplat-ds>
+
+		<div class="container">
+
+			<div class="location-container building-container" disabled$="[[locationSearching]]">
+
+				<div class="location">
+					<tricomp-user-location></tricomp-user-location>
+				</div>
+			</div>
+
+			<div class="divider" hidden$="[[!smallScreen]]"><div></div></div>
+
+		    <div class="call" hidden$="[[_isEmpty(applicationSettings.customerSupportPhone)]]">
+				<tricomp-urgent-call id="call"
+					title="Have an urgent request?"
+					icon="phone-call"
+					number="[[applicationSettings.customerSupportPhone]]">
+				</tricomp-urgent-call>
+		    </div>
+		</div>
+	</template>
+	<script>
+		Polymer({
+			is: "tricomp-portal-item-welcome",
+
+			behaviors: [
+				TriPortalItemBehavior,
+				TriBlockViewResponsiveBehavior
+			],
+
+			properties: {
+			},
+
+			observers: [
+			],
+
+			listeners: {
+			},
+
+			_isEmpty: function(val) {
+				return !val || val == "";
+			},
+
+		});
+	</script>
+</dom-module>

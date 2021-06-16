@@ -1,0 +1,566 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../iron-label/iron-label.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+
+<link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../paper-listbox/paper-listbox.html">
+<link rel="import" href="../paper-button/paper-button.html">
+
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-icon/ibm-icons.html">
+<link rel="import" href="../triplat-query/triplat-query.html">
+<link rel="import" href="../triblock-responsive-layout/triblock-view-responsive-behavior.html">
+
+<link rel="import" href="../triapp-location-context/triapp-location-context.html">
+
+<link rel="import" href="tristyles-room-reservation-app.html">
+<link rel="import" href="tribehav-room-reservation-util.html">
+<link rel="import" href="tribehav-validation.html">
+
+<link rel="import" href="tricomp-amenities-list.html">
+<link rel="import" href="tricomp-incremental-number-input.html">
+<link rel="import" href="tricomp-alert-message.html">
+<link rel="import" href="tricomp-select-input.html">
+<link rel="import" href="tricomp-room-criteria-when.html">
+
+<dom-module id="tricomp-room-criteria">
+	<template>
+		<style include="shared-page-styles">
+
+			:host {
+				@apply(--layout-vertical);
+			}
+
+			.header-section {
+				padding: 10px 20px 10px 20px;
+			}
+
+			triapp-location-context {
+				padding: 5px 20px 20px 20px;
+				display: block;
+			}
+			
+			.location-options-section {
+				border-top: 1px solid var(--tri-primary-content-accent-color);
+			}
+
+			.amenities-list {
+				@apply(--layout-flex);
+			}
+
+			.row-container {
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+			}
+
+			.select-amenities-link {
+				@apply(--layout-flex);
+			}
+
+			.sub-section:not(:first-child) {
+				padding-top: 12px;
+			}
+			.sub-section:not(:last-child) {
+				padding-bottom: 12px;
+			}
+
+			.sub-section-amenities {
+				padding-left: 20px;
+			}
+
+			.layout-dropdown-container {
+				@apply(--layout-horizontal);
+				@apply(--layout-start);
+			}
+
+			paper-dropdown-menu {
+				--paper-input-container-label-floating:{
+    				font-family: var(--tri-font-family);
+   					font-weight: 400;
+					-webkit-font-smoothing: subpixel-antialiased;
+
+   				};
+			}
+
+			.action-bar {
+				@apply(--layout-horizontal);
+				@apply(--layout-center-center);
+				@apply(--layout-center-justified);
+			}
+
+			.action-button {
+				font-weight: 500;
+				margin: 10px 5px;
+			}
+
+			:host(:not([small-screen-width])) .action-bar {
+				padding-bottom: 20px;
+			}
+
+			:host([small-screen-width]) .action-bar {
+				background-color: var(--tri-footer-background-color);
+				color: var(--tri-footer-color);
+				width: 100%;
+				padding: 5px;
+				@apply(--layout-center-center);
+				@apply(--layout-fixed-bottom);
+				z-index: 102;
+			}
+
+			:host([small-screen-width]) .action-bar-space {
+				height: 55px;
+			}
+
+			.empty-data-message > * {
+				margin: 10px 0;
+			}
+
+			.empty-data-message-icon {
+				height: 32px;
+				width: 32px;
+			}
+
+			#amenities{
+				font-weight: 400;
+				font-size: 12px;
+				color: var(--tri-primary-content-label-color);
+				font-family: var(--tri-font-family);
+			}
+
+			:host-context([dir="rtl"]) .expand-button {
+                 transform: scaleX(-1);
+            } 
+
+		</style>
+
+		<triplat-ds id="roomTypes" name="roomTypes" data="{{roomTypes}}"></triplat-ds>
+
+		<triplat-ds id="layoutTypes" name="layoutTypes" filtered-data="{{layoutTypes}}">
+			<triplat-query>
+				<triplat-query-filter name="parentListValueId" operator="equals" value="{{reservationManager.searchRoomType.id}}"></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<div class="page-main">
+			<div class="page-wrap">
+				<tricomp-alert-message id="appUserMessage" warning hidden$="[[!reservationManager.userMessage]]">
+					<div>[[reservationManager.userMessage]]</div>
+				</tricomp-alert-message>
+
+				<section class="header-section">
+					<tricomp-select-input
+						required
+						no-label-float
+						value="{{selectedRoomType}}"
+						search-value="{{_roomTypeSearchValue}}"
+						value-name="value"
+						select-src="[[roomTypes]]"
+						disabled="[[_disableSelectRoomType(hasBookedRooms, reservationManager.timeZone)]]">
+					</tricomp-select-input>
+				</section>
+
+				<triapp-location-context
+					id="userLocation"
+					tabindex="-1"
+					hide-message
+					override-building-id="{{overrideBuildingId}}"
+					on-location-changed="_handleLocationChanged"
+					change-location-type="icon"
+					regular-font-size
+					image-width="64"
+					image-height="64"
+					hidden$="[[!_hasRoomType]]"
+					disabled="[[disabled]]"
+					no-popup="[[noPopup]]"
+					scroller="[[scroller]]"
+					search-value="[[searchValue]]"
+					search-result="{{searchResult}}"
+					loading="{{loading}}">
+				</triapp-location-context>
+
+				<tricomp-room-criteria-when
+					id="criteriaWhen"
+					class="padded-container"
+					reservation-manager="{{reservationManager}}"
+					current-user="[[currentUser]]"
+					is-workspace-room="[[_isRoomTypeWorkspace(reservationManager.searchRoomType, _workspaceId)]]"
+					is-meeting-room="[[_isRoomTypeMeetingSpace(reservationManager.searchRoomType, _meetingSpaceId)]]"
+					has-booked-rooms="[[hasBookedRooms]]"
+					active="[[active]]"
+					disabled="[[_disableCriteriaWhen]]"
+					hidden$="[[!_hasRoomType]]">
+				</tricomp-room-criteria-when>
+
+				<section class="location-options-section padded-container" 
+						hidden$="{{!_isRoomTypeMeetingSpace(selectedRoomType, _meetingSpaceId)}}">
+					<div class="sub-section">
+						<!--TODO replace tricomp-incremental-number-input with triplat-incremental-input -->
+						<tricomp-incremental-number-input
+							id="capacity"
+							invalid="{{attendeesInvalid}}"
+							float-label
+							label="Attendees"
+							aria-label="Attendees"
+							min="1"
+							max="9999"
+							value="{{reservationManager.searchCapacity}}"
+							disabled="[[_noTimezone(reservationManager.timeZone)]]">
+						</tricomp-incremental-number-input>
+
+						<div class="layout-dropdown-container">
+							<paper-dropdown-menu label="Layout" 
+								tab-index="0" 
+								no-animations 
+								on-tap="_jumpTo" 
+								always-float-label
+								disabled="[[_noTimezone(reservationManager.timeZone)]]">
+								<paper-listbox id="layoutTypesListBox" class="dropdown-content" on-iron-select="_handleRoomLayoutSelected">
+									<template id="layoutTypesTemplate" is="dom-repeat" items="[[layoutTypes]]"
+										on-dom-change="_handleLayoutTypesTemplateDomChange">
+										<paper-item>[[item.value]]</paper-item>
+									</template>
+								</paper-listbox>
+							</paper-dropdown-menu>
+						</div>
+					</div>
+				</section>
+
+				<div class="sub-section sub-section-amenities" hidden$="{{!_isRoomTypeMeetingSpace(selectedRoomType, _meetingSpaceId)}}">
+					<iron-label class="field-container">
+						<span id="amenities">Amenities</span>
+						<div class="row-container" iron-label-target>
+							<tricomp-amenities-list class="amenities-list" hidden$="[[_noAmenitiesSelected]]"
+									catering="[[reservationManager.isCateringAvailable]]"
+									disabled-access="[[reservationManager.isADAAvailable]]"
+									network-connection="[[reservationManager.isNetworkConnection]]"
+									phone-conference="[[reservationManager.isConferencePhone]]"
+									projector="[[reservationManager.isProjector]]"
+									video-conference="[[reservationManager.isVideoConference]]"
+									whiteboard="[[reservationManager.isWhiteboard]]">
+							</tricomp-amenities-list>
+							<span class="link select-amenities-link" hidden$="[[!_noAmenitiesSelected]]" tabindex="0" aria-label="Select amenities" on-tap="_handleNavigateAmenities">Select amenities</span>
+							<span class="link" hidden$="[[_noAmenitiesSelected]]" on-tap="_handleNavigateAmenities">Select more</span>
+							<paper-icon-button primary class="expand-button" icon="ibm-glyphs:expand-open" on-tap="_handleNavigateAmenities" tabindex="0" aria-label="Expand amenities" ></paper-icon-button>
+						</div>
+					</iron-label>
+				</div>
+
+				<div class="action-bar" hidden$="{{_hideSearchButton}}" >
+					<paper-button class="action-button" 
+						on-tap="_updateSearch" 
+						noink
+						disabled="[[_noTimezone(reservationManager.timeZone)]]">Search</paper-button>
+				</div>
+				<div class="action-bar-space"></div>
+				<div class="action-bar" hidden$="{{_hideSmallScreenSearchButton}}">
+					<paper-button footer-secondary$="[[smallScreenWidth]]" on-tap="_handleReturnToSummary" 
+							hidden="[[!hasBookedRooms]]">Return to summary</paper-button>
+					<paper-button footer$="[[smallScreenWidth]]" 
+						on-tap="_handleSearchRoom"
+						disabled="[[_noTimezone(reservationManager.timeZone)]]">Search</paper-button>
+				</div>
+				<div class="empty-data-message" hidden$="[[_hasRoomType]]">
+					<iron-icon class="empty-data-message-icon" icon="ibm:status-info" info></iron-icon>
+					<div>Select a room type.</div>
+				</div>
+			</div>
+		</div>
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-room-criteria",
+
+			behaviors: [
+				TriRoomReservationUtilBehavior,
+				TriBlockViewResponsiveBehavior,
+				TriValidationBehavior
+			],
+
+			properties: {
+				currentUser: {
+					type: Object
+				},
+
+				reservationManager: {
+					type: Object
+				},
+
+				isOutlookEmbedded: {
+					type: Object
+				},
+
+				selectedRoomType: {
+					type: Object,
+					value: {
+						id: -1,
+						value: "",
+					},
+					observer: "_handleSelectedRoomTypeChange"
+				},
+
+				roomTypes: {
+					type: Array,
+					observer: "_handleRoomTypesChange"
+				},
+
+				_noAmenitiesSelected: {
+					type: Boolean,
+					computed: "_computeNoAmenitiesSelected(reservationManager.isCateringAvailable, reservationManager.isADAAvailable, reservationManager.isNetworkConnection, reservationManager.isProjector, reservationManager.isConferencePhone, reservationManager.isVideoConference, reservationManager.isWhiteboard)"
+				},
+
+				hasBookedRooms: {
+					type: Boolean,
+					value: false
+				},
+
+				active: {
+					type: Boolean,
+					value: false
+				},
+
+				noActionBar: {
+					type: Boolean,
+					value: false
+				},
+
+				_disableCriteriaWhen: {
+					type: Boolean,
+					value: false,
+					computed: "_computeDisableCriteriaWhen(isOutlookEmbedded, reservationManager, hasBookedRooms)"
+				},
+
+				_hasRoomType: {
+					type: Boolean,
+					value: false
+				},
+
+				_hideSearchButton: {
+					type: Boolean,
+					value: false
+				},
+
+				_hideSmallScreenSearchButton: {
+					type: Boolean,
+					value: false
+				},
+
+				_searchRoomLayoutId: {
+					type: String,
+					computed: "_computeSearchRoomLayoutId(reservationManager)",
+					observer: "_handleSearchRoomLayoutIdChanged"
+				},
+
+				disabled: {
+					type: Boolean,
+					value: false
+				},
+
+				overrideBuildingId: {
+					type: Number,
+					notify: true
+				},
+				
+				// If true it will disable the search popup
+				noPopup: {
+					type: Boolean,
+					value: false
+				},
+
+				// Scroller object to allow the scroll pagination in the building search
+				scroller: {
+					type: Object
+				},
+
+				// Search string for the building search
+				searchValue: {
+					type: String
+				},
+
+				// Search results from the building search
+				searchResult: {
+					type: Array,
+					notify: true
+				},
+
+				// Loading from the building search
+				loading: {
+					type: Boolean,
+					value: false,
+					notify: true
+				}
+			},
+
+			observers: [
+				"_computeHideSearchButton(_hasRoomType, smallScreenWidth)"
+			],
+
+			_jumpTo: function(e) {
+				e.target.scrollIntoView();
+			},
+
+			_handleRoomLayoutSelected: function(e) {
+				var selectedRoomLayout = this.$.layoutTypesTemplate.itemForElement(e.detail.item);
+				this.set('reservationManager.searchRoomLayout', { id: selectedRoomLayout._id, value: selectedRoomLayout.value });
+			},
+
+			_computeNoAmenitiesSelected: function(isCateringAvailable, isADAAvailable, isNetworkConnection, isProjector, isConferencePhone, isVideoConference, isWhiteboard) {
+				return !isCateringAvailable && !isADAAvailable && !isNetworkConnection && !isProjector && !isConferencePhone && !isVideoConference && !isWhiteboard;
+			},
+
+			_handleNavigateAmenities: function(e) {
+				this.fire("navigate-criteria-amenities", {"backEventName": "navigate-room-criteria-back"});
+			},
+
+			_handleNavigateRecurrence: function(e) {
+				this.fire("navigate-recurrence", {"backEventName": "navigate-room-criteria-back"});
+			},
+
+			// update the reservation manager so that the server side query can perform the context filtering
+			// for the room results
+			_updateSearch: function() {
+				if (this._isValidString(this.reservationManager.userMessage)) {
+					this.$.appUserMessage.focus();
+					this.fire("action-update-search");
+					return false;
+				} else if (!(this.reservationManager.searchBuilding && this.reservationManager.searchBuilding.id)) {
+					this.$.userLocation.focus();
+					return false;
+				} else {
+					this.fire("action-update-search");
+					return true;
+				}
+			},
+
+			_updateSearchResults: function() {
+				this.fire("update-search-results");
+			},
+
+			_handleSelectedRoomTypeChange: function(value, oldValue) {
+				this._hasRoomType = value != null && value.id != null && value.id != -1;
+				if (!this.reservationManager) {
+					return;
+				}
+
+				if (value) {
+					if (this.reservationManager.searchRoomType) {
+						if (value.id != this.reservationManager.searchRoomType.id) {
+							this._onChangeRoomType(value);
+
+							// clear the amenities if the room type is a workspace
+							if (this._isRoomTypeWorkspace(this.selectedRoomType, this._workspaceId)) {
+								this.set("reservationManager.isCateringAvailable", false);
+								this.set("reservationManager.isProjector", false);
+								this.set("reservationManager.isVideoConference", false);
+								this.set("reservationManager.isWhiteboard", false);
+								this.set("reservationManager.isNetworkConnection", false);
+								this.set("reservationManager.isConferencePhone", false);
+								this.set("reservationManager.isADAAvailable", false);
+							}
+						}
+					} else {
+						this._onChangeRoomType(value);
+					}
+				} else {
+					this._onChangeRoomType({id: null, value: null});
+				}
+			},
+
+			_onChangeRoomType: function(value) {
+				this.fire("on-change-room-type", {value: value});
+			},
+
+			_pageAttached: function() {
+				this._setRoomTypeFromRM();
+			},
+
+			_setRoomTypeFromRM: function() {
+				if (this.selectedRoomType.id != this.reservationManager.searchRoomType.id) {
+					this.set("selectedRoomType", this.reservationManager.searchRoomType);
+				}
+			},
+
+			_handleSearchRoomLayoutIdChanged: function(searchRoomLayoutId) {
+				var types = this.layoutTypes;
+				if (types != null) {
+					var selectedIndex = types.findIndex(
+						function(item) {
+							return item._id == searchRoomLayoutId;
+						}
+					);
+					this.$.layoutTypesListBox.selected = selectedIndex != -1 ? selectedIndex : null;
+				}
+			},
+
+			_handleLayoutTypesTemplateDomChange: function() {
+				var searchRoomLayoutId = null;
+				if (this.reservationManager != null && this.reservationManager.searchRoomLayout != null) {
+					searchRoomLayoutId = this.reservationManager.searchRoomLayout.id;
+				}
+				this._handleSearchRoomLayoutIdChanged(searchRoomLayoutId);
+			},
+
+			_computeSearchRoomLayoutId: function() {
+				if (this.reservationManager != null && this.reservationManager.searchRoomLayout != null) {
+					return this.reservationManager.searchRoomLayout.id;
+				} else {
+					return null;
+				} 
+			},
+
+			_handleLocationChanged: function(e) {
+				if (e && e.detail && e.detail.building) {
+					this.fire("set-building-id", {buildingId: e.detail.building._id});
+				}
+			},
+			
+			_handleSearchRoom: function(){
+				if(this.smallScreen){
+					if (this._updateSearch()) {
+						this.fire("responsive-layout-switch-view", {viewId: "reservation-page-right-panel"});
+					}
+				}
+			},
+
+			_computeDisableCriteriaWhen: function(isOutlookEmbedded, reservationManager, hasBookedRooms) {
+				return this._isReadOnlyOutlook(isOutlookEmbedded, reservationManager) ||
+					hasBookedRooms || this._noTimezone(reservationManager.timeZone);
+			},
+
+			_computeHideSearchButton: function(_hasRoomType, smallScreenWidth) {
+				this._hideSearchButton = (this.noActionBar) ? true : (smallScreenWidth || !_hasRoomType);
+				this._hideSmallScreenSearchButton = (this.noActionBar) ? true : (!smallScreenWidth || !_hasRoomType);
+			},
+
+			_handleRoomTypesChange: function() {
+				this.fire("room-types-changed", {roomTypes: this.roomTypes});
+			},
+
+			_handleReturnToSummary: function(e) {
+				this.fire("navigate-summary-page");
+			},
+
+			reloadLocalstorage: function() {
+				this.$.userLocation.reload();
+			},
+
+			_disableSelectRoomType: function(hasBookedRooms, timezone) {
+				return hasBookedRooms || this._noTimezone(timezone);
+			},
+
+			_noTimezone: function(timezone) {
+				return !(timezone && timezone.id && this._isValidString(timezone.value));
+			},
+
+			enableSearchDs: function() {
+				this.$.userLocation.enableSearchDs();
+			},
+
+			disableSearchDs: function() {
+				this.$.userLocation.disableSearchDs();
+			}
+
+		});
+	</script>
+</dom-module>

@@ -1,0 +1,53 @@
+<link rel="import" href="../triblock-page-container-behavior/triblock-page-container-behavior.html">
+<link rel="import" href="../triplat-view-behavior/triplat-view-behavior.html">
+
+<link rel="import" href="../triview-space-assessment/tripage-new-assessment.html">
+
+<dom-module id="tripage-new-assessment-delegate">
+
+	<style>
+
+		:host {
+		}
+
+	</style>
+
+	<template>
+		<tripage-new-assessment
+			id="newSpaceAssessment"
+			manager-created="{{managerCreated}}"
+			on-assessment-created="_handleAssessmentCreated">
+		</tripage-new-assessment>
+	</template>
+</dom-module>
+<script>
+	Polymer({
+		is: "tripage-new-assessment-delegate",
+
+		behaviors: [TriPlatViewBehavior, TriBlockPageContainerBehavior],
+
+		properties : {
+			managerCreated: {
+				type: Boolean,
+				value: true
+			},
+
+			createPermission: Boolean
+		},
+
+		_handleAssessmentCreated: function(e) {
+			this.fire("assessment-created", e);
+		},
+
+		_pageAttached : function() {
+			this.$.newSpaceAssessment.resetNavigateToNewAssessment();
+			this.fire("details-page-attached");
+		},
+
+		_pageDetached : function() {
+			this.$.newSpaceAssessment.resetNavigateAwayNewAssessment();
+			this.fire("details-page-detached");
+		}
+
+	});
+</script>

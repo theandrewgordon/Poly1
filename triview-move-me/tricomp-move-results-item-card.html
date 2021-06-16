@@ -1,0 +1,340 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-debug/triplat-debug.html">
+<link rel="import" href="../triplat-date-picker/triplat-date-picker.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+
+<link rel="import" href="../tricore-url/tricore-url.html">
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icons/hardware-icons.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+
+<link rel="import" href="theme.html">
+
+<dom-module id="tricomp-move-results-item-card">
+
+	<style>
+
+		.action-button {
+			width: 50%;
+			font-weight: 500;
+			font-size: 16px;
+		}
+
+		.banner {
+			@apply(--layout-vertical);
+			@apply(--layout-start);
+			@apply(--layout-relative);
+		}
+
+		.banner-left {
+            height: var(--legend-color-box-size, 100px); 
+            width: var(--legend-color-box-size, 10px); 
+            @apply(--layout-flex);
+		}
+
+		.content {
+			font-size: 14px;
+			font-weight: bold;
+			background-color: white;
+			border: 1px solid var(--tri-primary-content-accent-color);
+			color: var(--tri-primary-content-color);
+			margin: 10px 10px 10px 10px;
+			@apply(--tri-inbox-card);
+			@apply(--layout-horizontal);
+			border: 1px solid var(--ibm-gray-10);
+		}
+
+		.header-container {
+			@apply(--layout-vertical);
+			@apply(--layout-center-justified);
+			align: left;
+			vertical-align: middle;
+			margin-left: 8px;
+            overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			width: 80%;
+		}
+
+		.icon-container {
+			@apply(--layout-vertical);
+			@apply(--layout-center-center);
+		}
+
+		.info-container {
+			@apply(--layout-vertical);
+			@apply(--layout-flex);
+			padding-bottom: 20px;
+			padding-top: 20px;
+			padding-right: 20px;
+			padding-left: 10px;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			width:70%;
+		}
+
+		.info-container-space {
+			@apply(--layout-horizontal);
+			padding-bottom: 0px;
+		}
+
+		.info-line {
+			@apply(--layout-horizontal);
+			text-align: left;
+			font-size: 14px;
+			font-weight: normal;
+			font-family: var(--tri-font-family);
+			color: var(--ibm-cool-gray-60) !important;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			max-width: 300px;
+		}
+
+		.info-line-bold {
+			@apply(--layout-horizontal);
+			text-align: left;
+			font-size: 14px;
+			font-weight: bold;
+			font-family: var(--tri-font-family);
+			color: var(--ibm-cool-gray-60) !important;
+			overflow-x: hidden;
+		}
+
+		.main-content {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			overflow-x: hidden;
+			white-space: nowrap;
+		}
+
+		.lower-main-content {
+			@apply(--layout-horizontal);
+			padding-top: 0px;
+
+		}
+
+		.request-class-icon {
+			--iron-icon-height: 32px;
+			--iron-icon-width: 32px;
+		}
+
+		.space-image-container {
+			@apply(--layout-vertical);
+			@apply(--layout-start);
+			@apply(--layout-relative);
+			padding-left: 20px;
+			padding-right: 20px;
+		}
+
+		.space-image {
+			width: 64px;
+			height: 64px;
+		}
+
+		.space-image-placeholder-icon {
+			--triplat-icon-height: 64px;
+			--triplat-icon-width: 64px;
+			--triplat-icon-fill-color: var(--tri-primary-content-accent-color);
+		}
+
+		.space-actions-container {
+			@apply(--layout-horizontal);
+			@apply(--layout-center-center);
+		}
+
+		.space-details-container {
+			@apply(--layout-flex);
+			min-width: 0;
+			@apply(--layout-vertical);
+			font-size: 14px;
+			line-height: 17px;
+		}
+
+		.space-detail-item {
+
+		}
+
+		.space-name {
+			padding-top: 5px;
+			padding-right: 10px;
+			font-size: 20px;
+			font-weight: 500;
+			line-height: 19px;
+		}
+
+		.space-name-container {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			@apply(--layout-start-justified);
+		}
+
+		.text-bold {
+		    font-size: 14px;
+			font-weight: bold;
+			@apply(--layout-left);
+			vertical-align: middle;
+			font-family: var(--tri-font-family);
+			color: var(--ibm-cool-gray-70) !important;
+		}
+
+		.text-normal{
+			font-size: 14px;
+			font-weight: normal;
+		}
+
+		.upper-main-content {
+			@apply(--layout-horizontal);
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			padding-bottom: 3px;
+		}
+
+		 .upper-main-content[selected] {
+			background-color: var(--tri-primary-light-color);
+		}
+		
+	</style>
+
+	<template>
+
+		<tricore-url raw-url="/getCompanyFile.jsp?fileLoc=" bind-url="{{imgUrl}}"></tricore-url>
+		 
+        <div class="content" id="content" on-tap="_handleCardTap" read$="{{read}}" unread$="{{!read}}" selected$="{{selected}}">
+			<div class="main-content">
+
+                <!-- Dates, etc -->
+				<div class="lower-main-content">
+
+					<div class="info-container-space">
+						
+						<div class="banner" hidden$="{{!_matchesOrgSpecified(item)}}">
+							<div class="banner-left" style="background-color: #5AA700;opacity: 0.95;"></div>
+						</div>
+
+						<div class="banner" hidden$="{{!_matchesOrgOther(item)}}">
+							<div class="banner-left" style="background-color: #BE9B00;opacity: 0.95;"></div>
+						</div>
+
+					</div>
+
+					<div class="info-container">
+
+						<div class="info-container-space">
+
+							<div class="space-image-container" hidden$="{{!displayImages}}">
+								<iron-image id="roomImage" class="space-image" alt="Room" src="{{_computeImageUrl(item.spaceImage, imgUrl)}}" sizing="cover" hidden$="[[!roomImageLoaded]]" loaded="{{roomImageLoaded}}"></iron-image> 
+								<triplat-icon class="space-image-placeholder-icon" icon="picturefile" hidden$="[[roomImageLoaded]]"></triplat-icon>
+							</div>
+
+							<div class="space-details-container">
+								<div class="space-name-container">
+									<span class="space-name space-detail-item">{{item.space}}</span>
+								</div>
+								<div class="info-line">[[item.building]]</div>
+								<div class="info-line">[[item.floor]]</div>
+								<div class="info-line-bold">[[item.spaceClass]]</div>
+								<div class="info-line">[[_roundArea(item.area.value)]]&nbsp;[[item.area.uom]]</div>
+							</div>
+						</div>
+
+						<span>&nbsp;</span>
+
+						<div class="space-actions-container">
+							<paper-button on-tap="_handleSelectSpace" class="action-button" noink>Select</paper-button>
+						</div>
+
+					</div>
+
+		        </div> 
+
+			</div>
+
+		</div>
+
+	</template>
+
+</dom-module>
+
+<script>
+	Polymer({
+
+		is: "tricomp-move-results-item-card",
+
+		behaviors: [MoveRequestBehavior],
+
+		properties: {
+			selected: {
+				type: Boolean,
+				value: false,
+				notify: true,
+				reflectToAttribute: true
+			},
+			requestId: String,
+			requestClass: String,
+			role: String,
+			requestedMoveDate: String,
+			scheduledMoveDate: String,
+			deleteAction: String,
+			id: String,
+			displayImages: Boolean,
+			organization: String,
+		},
+
+
+		_computeSmartObjectURL: function(specId) {
+			if (!specId)
+				return "";
+
+			var url = this.$.urlGen.getUrl("/WebProcess.srv?objectId=750000&actionId=750011&specId=" + specId);
+
+			return url;
+		},
+
+		_handleCardTap: function() {
+			this.fire("card-tap");
+		},
+
+		_isEmptyString: function(val) {
+			return !val || val == "";
+		},
+
+		_calculateTotal: function(room, assets, equipment, person){
+		   return  room + assets + equipment + person;
+		},
+
+		_getStatus: function (status) {
+			if ((status == "Issued") ||  (status == "Review In Progress")) {
+				return "Submitted";
+			}
+			else if (status == "Completed") {
+				return "Completed";
+			}
+			return "Unknown";
+		},
+		
+		_isSubmitted: function (status) {
+			if ((status == "Issued") ||  (status == "Review In Progress")) {
+				return true;
+			}
+			return false;
+		},
+
+		_isCompleted: function (status) {
+			if (status == "Completed") {
+				return true;
+			}
+			return false;
+		},
+
+		_handleSelectSpace: function(e) {
+			console.log("_handleSelectSpace...");
+			var spaceId = this.item._id;
+			this.fire("action-select-space", { 'spaceId' : spaceId });
+		}
+
+	});
+</script>

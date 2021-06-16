@@ -1,0 +1,41 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<dom-module id="tricomp-read-only-field">
+	<template>
+		<style>
+			:host {
+				display: block;
+				font-size: 14px;
+			}
+
+			label {
+				font-weight: 400;
+			}
+			
+			.field-content {
+				color: var(--tri-primary-dark-color);
+			}
+
+			:host ::content .field-content {
+				font-weight: 500;
+			}
+		</style>
+
+		<label>[[fieldLabel]]</label>
+
+		<div class="field-content">
+			<content select=".field-content"></content>
+		</div>
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-read-only-field",
+
+			properties: {
+				fieldLabel: String
+			}
+
+		});
+	</script>
+</dom-module>

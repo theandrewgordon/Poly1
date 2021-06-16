@@ -1,0 +1,1102 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-debug/triplat-debug.html">
+<link rel="import" href="../triplat-routing/triplat-routing.html">
+<link rel="import" href="../triplat-image/triplat-image.html">
+<link rel="import" href="../triblock-page-container-behavior/triblock-page-container-behavior.html">
+<link rel="import" href="../triplat-datetime-picker/triplat-datetime-picker.html">
+<link rel="import" href="../triplat-calendar-container/triplat-calendar-container.html">
+
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-query/triplat-query.html">
+<link rel="import" href="../triplat-select-input/triplat-select-input.html">
+<link rel="import" href="../triplat-search-input/triplat-search-input.html">
+
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icons/communication-icons.html">
+<link rel="import" href="../iron-icons/hardware-icons.html">
+<link rel="import" href="../iron-icons/av-icons.html">
+<link rel="import" href="../iron-input/iron-input.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-material/paper-material.html">
+<link rel="import" href="../paper-input/paper-input.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-header-panel/paper-header-panel.html">
+<link rel="import" href="../paper-fab/paper-fab.html">
+<link rel="import" href="../paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../paper-toggle-button/paper-toggle-button.html">
+<link rel="import" href="../iron-label/iron-label.html">
+<link rel="import" href="../iron-collapse/iron-collapse.html">
+
+<link rel="import" href="../paper-spinner/paper-spinner.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<link rel="import" href="../triplat-loading-indicator/triplat-loading-indicator.html">
+
+<link rel="import" href="move-request-behavior.html">
+<link rel="import" href="move-request-page-behavior.html">
+
+<link rel="import" href="tricomp-page-header.html">
+
+<dom-module id="tripage-move-criteria">
+
+	<link rel="import" type="css" href="shared.css">
+
+	<style>
+
+		:host {
+			@apply(--layout-vertical);
+		}
+
+		section {
+			padding-top: 2px;
+			padding-bottom: 2px;
+			padding-left: 10px;
+			padding-right: 10px;
+		}
+
+		.calendar-date {
+			@apply(--layout-horizontal);
+			@apply(--layout-start-justified);
+			margin-left: 10px;
+		}
+
+		.header-section {
+			font-size: 22px;
+			font-weight: 200;
+			color: var(--ibm-cool-gray-70);
+		}
+
+		.header-section-top {
+			font-size: 22px;
+			font-weight: 200;
+			color: var(--ibm-cool-gray-70);
+			padding-top: 10px;
+			@apply(--layout-horizontal);
+			@apply(--layout-justified);
+			min-height: 22px;
+		}
+
+		.header-section-container {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+		}
+
+		.header-section-divider {
+			margin-top: 20px;
+			margin-bottom: 18px;
+			border-top: 1px solid var(--tri-primary-content-accent-color);
+		}
+
+		.header-section-right {
+			@apply(--layout-end-justified);
+			font-size: 14px;
+		}
+
+		.instructions-section {
+
+		}
+
+		.footer-section {
+			padding-top: 500px;
+		}
+
+		.location-options-section {
+			background-color: var(--tri-primary-content-background-color);
+		}
+
+		paper-checkbox {
+			padding-top: 2px;
+			font-size: 14px;
+			font-family: var(--tri-font-family);
+
+		}
+
+		.header-container {
+			@apply(--layout-horizontal);
+			@apply(--layout-justified);
+			background-color: var(--ibm-neutral-2);
+			padding: 18px 20px 18px 20px;
+		}
+
+		.header-container-text {
+			font-size: 22px;
+			font-weight: bold;
+			font-family: var(--tri-font-family);
+			color: var(--ibm-cool-gray-70);
+
+		}
+
+		paper-button {	
+			@apply(--tri-button);
+			/* @apply(--tri-primary-button); */
+			font-size: 1.1em;
+		}
+
+		paper-button[disabled] {
+			@apply(--tri-disabled-button);
+
+		}
+
+		.header-input {
+			--paper-input-container-color: var(--tri-primary-light-color) !important;
+			--paper-input-container-input-color: white;
+			--paper-input-container-focus-color: var(--tri-primary-light-color) !important;
+			--triplat-select-input-clear-button: {
+				color: var(--tri-primary-light-color);
+			};
+		}
+
+
+		.link {
+			color: var(--tri-primary-color);
+			cursor: pointer;
+			text-decoration: underline;
+		}
+
+		.move-calendar {
+			@apply(--layout-horizontal);
+			@apply(--layout-center-center);
+			padding: 15px;
+		}
+
+		.page-main > * {
+			flex-shrink: 0; /* prevent all children from shrinking - we want content to overflow and be scrollable */
+		}
+
+		.required-label {
+			@apply(--layout-horizontal);
+		}
+
+		.row-container {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			@apply(--layout-wrap);
+		}
+
+
+		.start-end-date-picker {
+			@apply(--layout-flex);
+			min-width: 200px;
+			--triplat-date-picker-width: 100%;
+		}
+
+		.sub-section:not(:first-child) {
+			padding-top: 10px;
+		}
+		.sub-section:not(:last-child) {
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			padding-bottom: 10px;
+		}
+
+		.info-line {
+			@apply(--layout-horizontal);
+			text-align: left;
+			font-size: 16px;
+			font-weight: normal;
+			font-family: var(--tri-font-family);
+			color: var(--ibm-cool-gray-70) !important;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			max-width: 300px;
+		}
+
+		.info-line-bold {
+			@apply(--layout-horizontal);
+			text-align: left;
+			font-size: 14px;
+			font-weight: bold;
+			font-family: var(--tri-font-family);
+			color: var(--ibm-cool-gray-70) !important;
+			overflow-x: hidden;
+		}
+
+		.main-container {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			@apply(--layout-center-center);
+			@apply(--layout-scroll);
+		}
+
+		triplat-select-input{
+			--paper-input-container-label-floating:{
+				font-size:18px;
+				font-family: var(--tri-font-family);
+			};
+			--paper-input-container-label:{
+				font-size:14px;
+				font-family: var(--tri-font-family);
+			};
+			--paper-input-container-input:{
+				font-size:14px;
+			};
+		}
+
+		triplat-calendar-container {
+			--triplat-calendar-container-border: none;
+		}
+
+		.when-section{
+			min-height: 450px;
+		}
+
+	</style>
+
+	<template>
+
+		<triplat-route id="moveCriteriaRoute" name="moveCriteriaRouteMoveRequest"></triplat-route>
+
+		<triplat-ds id="currentUser" name="currentUser" data="{{currentUser}}"></triplat-ds>
+
+		<triplat-ds name="applicationSettings" data="{{applicationSettings}}" on-ds-get-complete="_handleApplicationSettingsGetComplete"></triplat-ds>
+		
+		<triplat-ds id="moveRequest" name="moveRequest" data="{{moveRequest}}" loading="{{moveRequestLoading}}" on-ds-get-complete="_handleMoveRequestGetComplete">
+			<triplat-ds-context name="myMoveRequests" context-id="[[specId]]">
+			</triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="lookupBuildingDefault" name="lookupBuilding" data="{{defaultBuilding}}" loading="{{lookupBuildingDefaultLoading}}" on-ds-get-complete="_handleDefaultBuildingGetComplete">
+			    <triplat-ds-instance instance-id="{{moveRequest.toBuilding.id}}"></triplat-ds-instance>
+		</triplat-ds>
+
+		<triplat-ds id="buildingCityDefault" name="buildingCity" data="{{buildingCity}}" loading="{{buildingCityLoading}}" on-ds-get-complete="_handleMoveRequestGetComplete">
+			<triplat-ds-context name="lookupBuilding" context-id="{{moveRequest.toBuilding.id}}">
+			</triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="buildingPropertyDefault" name="buildingProperty" data="{{buildingProperty}}" loading="{{buildingPropertyLoading}}" on-ds-get-complete="_handleMoveRequestGetComplete">
+			<triplat-ds-context name="lookupBuilding" context-id="{{moveRequest.toBuilding.id}}">
+			</triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="lookupCity" name="lookupCity" data="{{_allCities}}" loading="{{lookupCityLoading}}">
+			<triplat-query delay="500">
+				<triplat-query-scroll-page scroller="[[cityScroller]]" size="30">
+        		</triplat-query-scroll-page>
+				<triplat-query-filter name="city" operator="contains" value="{{_citySearchValue}}" ignore-if-blank></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<triplat-ds id="lookupProperty" name="lookupProperty" data="{{_allProperties}}" loading="{{lookupPropertyLoading}}">
+			<triplat-query delay="500">
+				<triplat-query-scroll-page scroller="[[propertyScroller]]" size="30">
+        		</triplat-query-scroll-page>
+				<triplat-query-filter name="city" operator="equals" value="{{selectedCity.value}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-and></triplat-query-and>
+				<triplat-query-filter name="property" operator="contains" value="{{_propertySearchValue}}" ignore-if-blank></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<triplat-ds id="lookupBuilding" name="lookupBuilding" data="{{_allBuildings}}" loading="{{lookupBuildingLoading}}">
+			<triplat-query delay="500">
+				<triplat-query-scroll-page scroller="[[buildingScroller]]" size="30">
+        		</triplat-query-scroll-page>
+				<triplat-query-filter name="city" operator="equals" value="{{selectedCity.value}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-and></triplat-query-and>
+				<triplat-query-filter name="property" operator="equals" value="{{selectedProperty.value}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-and></triplat-query-and>
+				<triplat-query-filter name="building" operator="contains" value="{{_buildingSearchValue}}" ignore-if-blank></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<triplat-ds id="lookupFloor" name="lookupFloor" data="{{_allFloors}}" loading="{{lookupFloorLoading}}">
+			<triplat-query delay="500">
+				<triplat-query-scroll-page scroller="[[floorScroller]]" size="30">
+        		</triplat-query-scroll-page>
+				<triplat-query-filter name="buildingID" operator="equals" value="{{selectedBuilding.id}}"></triplat-query-filter>
+				<triplat-query-and></triplat-query-and>
+				<triplat-query-filter name="floor" operator="contains" value="{{_floorSearchValue}}" ignore-if-blank></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<triplat-ds id="lookupOrganization" name="lookupOrganization" data="{{_allOrganizations}}" loading="{{lookupOrganizationLoading}}">
+			<triplat-query delay="500">
+        		<triplat-query-scroll-page scroller="[[organizationScroller]]" size="30">
+        		</triplat-query-scroll-page>
+        		<triplat-query-filter name="name" operator="contains" 
+                              value="{{_organizationSearchValue}}" ignore-if-blank>
+        		</triplat-query-filter>
+    		</triplat-query>
+		</triplat-ds>
+
+		<triplat-ds id="lookupPeople" name="lookupPeople" data="{{_allPeople}}" loading="{{lookupPeopleLoading}}">
+			 <triplat-query delay="500">
+        		<triplat-query-scroll-page scroller="[[peopleScroller]]" size="30">
+        		</triplat-query-scroll-page>
+        		<triplat-query-filter name="name" operator="contains" 
+                              value="{{_peopleSearchValue}}" ignore-if-blank>
+        		</triplat-query-filter>
+    		</triplat-query>
+		</triplat-ds>
+
+		<!-- Do we need this ds-->
+		<triplat-ds id="moveToBuildingDS" name="moveToBuilding" data="{{moveToBuilding}}">
+			<triplat-ds-context name="myMoveRequests" context-id="[[specId]]"></triplat-ds-context>
+			<!--triplat-ds-context name="moveRequest" context-id="{{moveRequest._id}}"></triplat-ds-context-->
+		</triplat-ds>
+
+		<triplat-ds name="moveToFloor" data="{{moveToFloor}}" loading="{{moveToFloorLoading}}" on-ds-get-complete="_handleMoveToFloorGetComplete" id="moveToFloorDS">
+			<triplat-ds-context name="myMoveRequests" context-id="[[specId]]"></triplat-ds-context>
+		</triplat-ds>
+		
+		<triplat-ds name="moveToSpaces" data="{{moveToSpaces}}" filtered-data="{{filteredSpaces}}" loading="{{moveToSpacesLoading}}" on-ds-get-complete="_handleMoveToSpacesGetComplete" id="moveToSpacesDS">
+			<triplat-ds-context name="moveToFloor" context-id="{{moveToFloor._id}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-loading-indicator show="[[_isBusy(isBusy, moveRequestLoading, lookupBuildingDefaultLoading, buildingCityLoading, buildingPropertyLoading, moveToFloorLoading, moveToSpacesLoading)]]"></triplat-loading-indicator>
+
+		<template is="dom-if" if="[[!screenLarge]]">
+			
+			<div class="page-main">
+
+				<section class="header-section-top">
+					<iron-label>Where</iron-label>
+					<div class="header-section-right">
+					<paper-checkbox id="skipCheckBox" class="paper-checkbox" checked="{{skipSearch}}" aria-label="Skip Room Search" hidden$="[[applicationSettings.restrictMoveToLocationSelection]]">
+						<span>Skip Room Search</span>
+					</paper-checkbox>
+					</div>
+				</section>
+					
+				<section class="location-options-section">
+
+					<div class="sub-section">
+						<triplat-select-input
+							id="city"
+							label="City"
+							value="{{selectedCity}}"
+							search-value="{{_citySearchValue}}"
+							value-name="city"
+							select-src="[[_allCities]]"
+							scroller="{{cityScroller}}">
+						</triplat-select-input>
+
+						<triplat-select-input
+							id="property"
+							label="Campus"
+							value="{{selectedProperty}}"
+							search-value="{{_propertySearchValue}}"
+							value-name="property"
+							select-src="[[_allProperties]]"
+							scroller="{{propertyScroller}}">
+						</triplat-select-input>
+
+						<triplat-select-input
+							id="building"
+							required
+							value="{{selectedBuilding}}"
+							search-value="{{_buildingSearchValue}}"
+							value-name="building"
+							select-src="[[_allBuildings]]"
+							scroller="{{buildingScroller}}"
+							aria-label="Building">
+							<div label class="required-label"><span class="required-asterisk">*</span>Building</div>
+						</triplat-select-input> 
+						<triplat-select-input
+							id="floor"
+							required
+							label="*Building"
+							value="{{selectedFloor}}"
+							search-value="{{_floorSearchValue}}"
+							value-name="floor"
+							select-src="[[_allFloors]]"
+							scroller="{{floorScroller}}"
+							aria-label="Floor">
+							<div label class="required-label"><span class="required-asterisk">*</span>Floor</div>
+						</triplat-select-input>
+					</div>
+					
+				</section>
+
+				<div class="header-section-divider"></div>
+
+				<section class="header-section">
+					<iron-label>When</iron-label>
+				</section>
+
+				<section class="location-options-section">
+					<triplat-date-picker
+						class="start-end-date-picker"
+						disallow-past-dates
+						display-format="[[currentUser._DateFormat]]" 
+						value="{{moveRequest.proposedMoveDate}}">
+						<div label class="required-label"><span class="required-asterisk">*</span>Requested Move Date</div>
+					</triplat-date-picker>
+				</section>
+				
+				<iron-collapse opened="{{!skipSearch}}">
+
+					<div class="header-section-divider"></div>
+					
+					<section class="header-section">
+						<iron-label>Other Search Criteria</iron-label>
+					</section>
+
+					<section class="location-options-section">
+						<triplat-select-input
+							id="supervisor"
+							label="Close to my co-worker"
+							value="{{selectedPerson}}"
+							search-value="{{_peopleSearchValue}}"
+							value-name="name"
+							select-src="[[_allPeople]]"
+							scroll-element-into-view
+							scroller="{{peopleScroller}}"
+							>
+						</triplat-select-input>
+
+						<triplat-select-input
+							id="organization"
+							label="Close to my organization"
+							value="{{selectedOrganization}}"
+							search-value="{{_organizationSearchValue}}"
+							value-name="name"
+							select-src="[[_allOrganizations]]"
+							scroll-element-into-view
+							scroller="{{organizationScroller}}">
+						</triplat-select-input>
+					</section>
+					
+				</iron-collapse>
+
+				<section class="footer-section">
+				</section>
+
+
+			</div>
+
+		</template>
+
+		<template is="dom-if" if="[[screenLarge]]"> 
+
+			<div class="header-container"> 
+				<div class="header-container-text" tabindex="0" aria-label="Search for a Room">Search for a Room</div> 
+				<paper-button autofocus disabled$="[[!isReady]]" on-tap="_handleSearch" hidden="[[skipSearch]]" noink aria-label="Search">Search</paper-button>
+				<paper-button autofocus disabled$="[[!isReady]]" on-tap="_handleSearch" hidden="[[!skipSearch]]" noink aria-label="Next">Next</paper-button>
+			</div>
+
+			<div class="page-main-large-horizontal">
+
+				<div class="page-main-large-split">
+
+				<section class="header-section-top">
+					<iron-label>Where</iron-label>
+					<div class="header-section-right">
+						<paper-checkbox id="skipCheckBox" class="paper-checkbox" checked="{{skipSearch}}" aria-label="Skip Room Search" hidden$="[[applicationSettings.restrictMoveToLocationSelection]]">
+							<span>Skip Room Search</span>
+						</paper-checkbox>
+					</div>
+				</section>
+
+					<section class="location-options-section">
+
+						<div class="sub-section">
+							<triplat-select-input
+								id="city"
+								label="City"
+								value="{{selectedCity}}"
+								search-value="{{_citySearchValue}}"
+								value-name="city"
+								select-src="[[_allCities]]"
+								scroller="{{cityScroller}}">
+							</triplat-select-input>
+
+							<triplat-select-input
+								id="property"
+								label="Campus"
+								value="{{selectedProperty}}"
+								search-value="{{_propertySearchValue}}"
+								value-name="property"
+								select-src="[[_allProperties]]"
+								scroller="{{propertyScroller}}">
+							</triplat-select-input>
+
+							<triplat-select-input
+								id="building"
+								required
+								value="{{selectedBuilding}}"
+								search-value="{{_buildingSearchValue}}"
+								value-name="building"
+								select-src="[[_allBuildings]]"
+								scroller="{{buildingScroller}}"
+								aria-label="Building">
+								<div label class="required-label"><span class="required-asterisk">*</span>Building</div>
+							</triplat-select-input>
+							<triplat-select-input
+								id="floor"
+								required
+								value="{{selectedFloor}}"
+								search-value="{{_floorSearchValue}}"
+								value-name="floor"
+								select-src="[[_allFloors]]"
+								scroller="{{floorScroller}}">
+								<div label class="required-label"
+								aria-label="Floor"><span class="required-asterisk">*</span>Floor</div>
+							</triplat-select-input>
+						</div>
+
+					</section>
+
+					<iron-collapse opened="{{!skipSearch}}">
+
+						<div class="header-section-divider"></div>
+
+						<section class="header-section">
+							<iron-label>Other Search Criteria</iron-label>
+						</section>
+						
+						<section class="location-options-section">
+							<triplat-select-input
+								id="supervisor"
+								label="Close to my co-worker"
+								value="{{selectedPerson}}"
+								search-value="{{_peopleSearchValue}}"
+								value-name="name"
+								select-src="[[_allPeople]]"
+								scroll-element-into-view
+								scroller="{{peopleScroller}}">
+							</triplat-select-input>
+
+							<triplat-select-input
+								id="organization"
+								label="Close to my organization"
+								value="{{selectedOrganization}}"
+								search-value="{{_organizationSearchValue}}"
+								value-name="name"
+								select-src="[[_allOrganizations]]"
+								scroll-element-into-view
+								scroller="{{organizationScroller}}"> 
+							</triplat-select-input>
+						</section>
+					</iron-collapse>
+
+					<section class="footer-section">
+					</section>
+
+				</div>
+				
+				<div class="page-main-large-split when-section">
+
+					<section class="header-section-top">
+						<iron-label>When</iron-label>	
+					</section>
+
+					<section class="instructions-section">
+						<p>Please select an available date from the calendar below.</p>
+					</section>
+
+					<div class="calendar-date">
+						<div>Selected Date: <triplat-date-picker readonly display-format="[[currentUser._DateFormat]]" value="[[moveRequest.proposedMoveDate]]"></triplat-date-picker></div>
+					</div>
+
+					<section class="move-calendar">
+						<triplat-calendar-container
+							id="calendar"
+							no-fixed-position 
+							fit-width-to-parent
+							hide-header
+							value="{{moveRequest.proposedMoveDate}}"
+							disallow-past-dates>
+						</triplat-calendar-container>
+						
+					</section>
+					
+				</div>
+
+			</div>
+
+		</template>
+
+		<tricomp-page-toolbar hidden="[[screenLarge]]" on-tap="_handleSearch">
+			<tricomp-page-toolbar-button label="Search" aria-la bel="Search" icon="ibm:search" disabled$="[[!isReady]]" hidden="[[skipSearch]]"> </tricomp-page-toolbar-button>
+			<tricomp-page-toolbar-button label="Next" aria-label="Next" icon="ibm:next-right-forward" disabled$="[[!isReady]]" hidden="[[!skipSearch]]"></tricomp-page-toolbar-button>
+		</tricomp-page-toolbar>
+
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tripage-move-criteria",
+		behaviors: [MoveRequestBehavior, MoveRequestPageBehavior],
+
+		properties: {
+			requestManager: {
+				type: Object,
+			},
+
+			preCreateComplete: {
+				type: Boolean,
+				value: false
+			},
+
+			defaultCallMethod: {
+				type: String,
+				value: "Workflow"
+			},
+
+			isReady: {
+				type: Boolean,
+				value: true
+			},
+
+			isSummaryValid: {
+				type: Boolean,
+				value: false
+			},
+
+			selectedCity: {
+				type: Object,
+				value: {
+					id: -1,
+					value: "",
+				},
+				observer: "_handleSelectedCityChange"
+			},
+
+			selectedProperty: {
+				type: Object,
+				value: {
+					id: -1,
+					value: "",
+				},
+				observer: "_handleSelectedPropertyChange"
+			},
+
+			selectedBuilding: {
+				type: Object,
+				value: {
+					id: -1,
+					value: "",
+				},
+				observer: "_handleSelectedBuildingChange"
+			},
+
+			selectedFloor: {
+				type: Object,
+				value: {
+					id: -1,
+					value: "",
+				},
+				observer: "_handleSelectedFloorChange"
+			},
+
+			selectedPerson: {
+				type: Object,
+				value: {
+					id: -1,
+					value: "",
+				},
+				observer: "_handleSelectedPersonChange"
+			},
+
+			selectedOrganization: {
+				type: Object,
+				value: {
+					id: -1,
+					value: "",
+				},
+				observer: "_handleSelectedOrganizationChange"
+			},
+			skipSearch: {
+				type: Boolean,
+				value: false
+			},
+			newSearch: Boolean,
+
+			citySearchValue: {
+				type: String,
+				value: "",
+			},
+		},
+
+		listeners: {
+			"moveCriteriaRoute.route-active": "_handleRouteActive",
+			"select-input-list-close": "_handleInputListOpen",
+		},
+
+		observers: [
+			"_computeIsReady(selectedBuilding, selectedFloor, moveRequest.proposedMoveDate, skipSearch)",
+			"_buildingChanged(selectedBuilding)",
+		],
+
+		
+		ready: function() {
+
+			window.addEventListener ('popstate', function(event) {
+	   			event.stopPropagation();
+				this._popStateFired(event);
+			}.bind(this));		
+
+		},
+
+		_popStateFired: function(event) {
+			if (this._isPageActive) {
+				var processed = sessionStorage.getItem("processed");
+				if (!processed) {
+					var next = document.location.hash;
+					if (next.indexOf("results") != -1)  {
+						this._handleSearch();
+					}
+					else if (next.indexOf("list") != -1) {
+						//skip
+					}		
+					else if (next.indexOf("summary") != -1) {
+						if (this.skipSearch)
+						 	this.fire("navigate-summary-page");
+						else
+							this.fire("navigate-summary-skip-page");
+					}				
+					else {
+						this._handleNavigateBack();
+					}
+				}
+			}
+		},
+		
+
+		_computeIsReady: function(building, floor, moveDate, skipSearch) {
+
+			if (moveDate == null) {
+				var tomorrow = new Date();
+				tomorrow.setDate(tomorrow.getDate() + 1);
+				this.set("moveRequest.proposedMoveDate", tomorrow);
+			}
+
+			var isReady = ((building && building.id && (building.id != -1)) &&
+				(floor && floor.id) && (moveDate));
+
+			this.set("isReady", isReady);
+		},
+
+		_buildingChanged: function(selectedBuilding) {
+
+			// Handle case where building cleared then same value selected again
+			if (selectedBuilding.value != "") {
+				this._handleMoveRequestGetComplete();	
+			}
+		},
+
+		_isBusy: function(isBusy, moveRequestLoading, lookupBuildingDefaultLoading, buildingCityLoading, buildingPropertyLoading, moveToFloorLoading, moveToSpacesLoading) {
+			return isBusy || moveRequestLoading || lookupBuildingDefaultLoading || buildingCityLoading ||  buildingPropertyLoading || moveToFloorLoading || moveToSpacesLoading;
+		},
+
+		_handleSelectedCityChange: function(value, oldValue) {
+			// console.log("tripage-move-criteria._handleSelectedCityChange");
+
+			if (!this._isPageActive)
+				return;
+
+			// City value cleared
+			if (!value && oldValue && (oldValue.value != "")) {
+
+			  	this.selectedCity = {id: -1, value: ""};
+			  	this.set("selectedCity", {id: null, value: ""});
+
+				if ((this.selectedProperty) && (this.selectedProperty.value != ""))
+					this.set("selectedProperty", {id: null, value: ""});
+				if ((this.selectedBuilding) && (this.selectedBuilding.value != ""))
+					this.set("selectedBuilding", {id: null, value: ""});
+				if ((this.selectedFloor) && (this.selectedFloor.value != ""))
+					this.set("selectedFloor", {id: null, value: ""}); 	
+			}
+
+			// City value changed
+			if ((value && oldValue) && (value.value != oldValue.value)) {
+				if ((this.selectedProperty) && (this.selectedProperty.value != ""))
+					this.set("selectedProperty", {id: null, value: ""});
+				if ((this.selectedBuilding) && (this.selectedBuilding.value != ""))
+					this.set("selectedBuilding", {id: null, value: ""});
+				if ((this.selectedFloor) && (this.selectedFloor.value != ""))
+					this.set("selectedFloor", {id: null, value: ""});
+			}
+
+		},
+
+		_handleSelectedPropertyChange: function(value, oldValue) {
+			// console.log("_handleSelectedPropertyChange");
+
+			if (!this._isPageActive)
+				return;
+
+			// Property value cleared
+			if (!value && oldValue && (oldValue.value != "")) {
+
+			  	this.set("selectedProperty", {id: null, value: ""});
+
+			  	if ((this.selectedBuilding) && (this.selectedBuilding.value != ""))
+					this.set("selectedBuilding", {id: null, value: ""});
+				if ((this.selectedFloor) && (this.selectedFloor.value != ""))
+					this.set("selectedFloor", {id: null, value: ""});
+			}
+
+			// Property value changed
+			if ((value && oldValue) && (value.value != oldValue.value)) {
+				if ((this.selectedBuilding) && (this.selectedBuilding.value != ""))
+					this.set("selectedBuilding", {id: null, value: ""});
+				if ((this.selectedFloor) && (this.selectedFloor.value != ""))
+					this.set("selectedFloor", {id: null, value: ""});
+			}
+				
+		},
+
+		_handleSelectedBuildingChange: function(value, oldValue) {
+			// console.log("_handleSelectedBuildingChange");
+
+			if (!this._isPageActive)
+				return;
+
+			if (value && value.id > 0 &&
+				(!oldValue || (oldValue && value.id != oldValue.id))) {
+
+				if (this.moveRequest.toBuilding &&
+					value.id != this.moveRequest.toBuilding.id) {
+					this.set("moveRequest.toBuilding", value);
+
+					if ((this.selectedFloor) && (this.selectedFloor.value != ""))
+						this.set("selectedFloor", {id: null, value: ""});
+				}
+			} else if (!value) {
+				if ((this.selectedFloor) && (this.selectedFloor.value != ""))
+					this.set("selectedFloor", {id: null, value: ""});
+				this.set("selectedBuilding", {id: -1, value: ""});
+
+			}
+		},
+
+		_handleSelectedFloorChange: function(value, oldValue) {
+			//console.log("_handleSelectedFloorChange...");
+						
+			if (!this._isPageActive)
+				return;
+
+			if (value && value.id > 0 &&
+				(!oldValue || (oldValue && value.id != oldValue.id))) {
+
+				if (this.moveRequest.toFloor &&
+					value.id != this.moveRequest.toFloor.id) {
+					this.set("moveRequest.toFloor", value);
+				}
+			} else if (!value) {
+				this.set("selectedFloor", {id: null, value: ""});
+			}
+		},
+
+		_handleSelectedPersonChange: function(value, oldValue) {
+			//console.log("_handleSelectedPersonChange...");
+						
+			if (!this._isPageActive)
+				return;
+		},
+
+		_handleSelectedOrganizationChange: function(value, oldValue) {
+			//console.log("_handleSelectedOrganizationChange...");
+						
+			if (!this._isPageActive)
+				return;
+		},
+
+		_handleSearch: function(e) {
+			if (!this.isReady) {
+				return;
+			}
+
+			sessionStorage.setItem("processed", "true");
+			this._setBusy();
+
+			if (this.skipSearch) {
+				this.set("moveRequest.toSpace", {id: null, value: null});
+				this.$.moveRequest.updateRecord(TriPlatDs.RefreshType.BOTH);	
+				this.fire("navigate-summary-skip-page");
+			}
+			
+			else {
+
+				this.$.moveRequest.updateRecord("actionGroup", "onchange-move-to-building").then(function() {
+
+				    this.$.moveRequest.updateRecord("actionGroup", "onchange-move-to-floor").then(function() {
+				      	//this._synchronizeSelectedSpace();
+				      	this.$.moveRequest.refresh().then(function() {
+				      		this.$.moveToBuildingDS.refresh().then(function() {
+				      			this.$.moveToFloorDS.refresh().then(function() {
+				      				this.$.moveToSpacesDS.refresh().then(function() {
+			
+							      		this.async(function() {
+							      			var searchObject = [];
+			      							this._getOtherSearchCriteria(searchObject);
+											this.fire("navigate-move-results", { 'searchObject' : searchObject });
+										});
+									}.bind(this));
+				      			}.bind(this));
+							}.bind(this));
+						}.bind(this));
+					}.bind(this));
+				}.bind(this));
+
+			}
+
+		},
+
+		_refreshRequestData: function() {
+			// console.log("tripage-move-criteria._refreshrequestData");
+		},
+
+		_pageAttached : function() {
+			// console.log("tripage-move-criteria._pageAttached");
+			
+			sessionStorage.clear();
+
+			if (this.newSearch) {
+			  	this.set("selectedCity", {id: null, value: ""});
+			  	this.set("selectedProperty", {id: null, value: ""});
+			  	this.set("selectedPerson", {id: null, value: ""});
+			  	this.set("selectedOrganization", {id: null, value: ""});
+			  	//this.set("newSearch", false);
+			}
+			
+			this._handleApplicationSettingsGetComplete();
+
+			if (this.specId) {
+				this._refreshRequestData();
+			} else {
+				// trigger the main application initialization
+				this.fire("init");
+			}
+		},
+
+		_pageDetached : function() {
+			sessionStorage.clear();
+		},
+
+		_handleApplicationSettingsGetComplete: function () {
+			if (this.applicationSettings) {
+				if (this.applicationSettings.restrictMoveToLocationSelection) {
+					this.set("skipSearch", true);
+				}
+				else {
+					this.set("skipSearch", false);
+				}
+			}
+		},
+
+		_handleMoveRequestGetComplete: function() {
+			if ((this.moveRequest && this.moveRequest.toBuilding._id == null) ||
+			   (this.moveRequest && this.buildingCity && this.buildingProperty)) {
+				if (this.newSearch) {
+					this.set("newSearch", false);
+					this.set("selectedOrganization", this.moveRequest.customerOrganization);
+					if (this.buildingCity && this.buildingCity._id)
+						this.set("selectedCity",{id: this.buildingCity._id, value: this.buildingCity.name});
+					if (this.buildingProperty && this.buildingProperty._id)
+						this.set("selectedProperty",{id: this.buildingProperty._id, value: this.buildingProperty.name});
+					this.set("selectedBuilding", this.moveRequest.toBuilding);
+					this.set("selectedFloor", this.moveRequest.toFloor);
+				}
+				var tempBuilding = this.selectedBuilding;
+				var tempFloor = this.selectedFloor;
+				if (this.buildingCity) {
+					if ((!this.selectedCity) || (this.selectedCity.id != this.buildingCity._id)) {
+						this.set("selectedCity",{id: this.buildingCity._id, value: this.buildingCity.name});
+						this.set("selectedBuilding", tempBuilding);
+						this.set("selectedFloor", tempFloor);
+					}
+				}
+				if (this.buildingProperty) {
+					if ((!this.selectedProperty) || (this.selectedProperty.id != this.buildingProperty._id)) {
+						this.set("selectedProperty",{id: this.buildingProperty._id, value: this.buildingProperty.name});
+						this.set("selectedBuilding", tempBuilding);
+						this.set("selectedFloor", tempFloor);
+					}
+				}
+			}
+		},
+
+		_handleDefaultBuildingGetComplete: function() {
+			if (this.moveRequest && this.moveRequest.toBuilding.id != null) {
+			   	if (this.defaultBuilding && this.defaultBuilding._id ) {
+			   		// building found, no action required
+				}
+				else {
+					// building not available - clear data
+					this.set("selectedCity", {id: null, value: ""});
+					//this.set("moveRequest.toBuilding", {id: null, value: ""});
+					//this.set("moveRequest.toFloor", {id: null, value: ""});
+				}
+			}
+		},
+
+		_handleMoveToFloorGetComplete: function() {
+
+		},
+
+		_handleMoveToSpacesGetComplete: function() {
+			this._clearBusy();
+		},
+
+		_getOtherSearchCriteria: function(searchObject) {
+
+
+			// Get Building\Floor\Space for selectedPerson
+			searchObject.space = null;
+			if ((this.selectedPerson) && (this.selectedPerson.value)) {
+				var person = null;
+				if (this._allPeople) {
+			 		for (var i = 0; i < this._allPeople.length; i++) {
+				 		if (this.selectedPerson.id == this._allPeople[i]._id) {
+								person = this._allPeople[i];
+							break;
+				 		}
+				 	}
+				}
+
+				var space = null;
+				if (this.moveToSpaces) {
+			 		for (var i = 0; i < this.moveToSpaces.length; i++) {
+				 		if ((person.building == this.moveToSpaces[i].building) &&
+				 			(person.floor == this.moveToSpaces[i].floor) &&
+				 			(person.space == this.moveToSpaces[i].space)) {
+								space = this.moveToSpaces[i];
+								/*
+								searchObject.space = space;
+								searchObject.space.personName = person.name;
+								*/
+								searchObject.space = new Array();
+								searchObject.space[0] = space;
+								searchObject.space[0].personName = person.name;
+							break;
+				 		}
+				 	}
+				}
+			}
+
+
+			searchObject.organization = "";
+			if (this.selectedOrganization && this.selectedOrganization.value) {
+				searchObject.organization = this.selectedOrganization.value;
+			}
+			else {
+				if ((this.moveRequest.customerOrganization) && (this.moveRequest.customerOrganization.value))
+					searchObject.organization = this.moveRequest.customerOrganization.value;
+			}
+
+
+			return;
+		},
+
+		_handleInputListOpen: function() {
+
+		},
+
+		testButton: function() {
+			console.log("test");
+		}, 
+
+		_handleNavigateBack: function() {
+			sessionStorage.setItem("processed", "true");
+			this.set("newSearch", true);
+			this._handleNavigateHome();
+		},
+
+	});
+</script>

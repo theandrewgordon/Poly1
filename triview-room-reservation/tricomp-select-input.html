@@ -1,0 +1,624 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../iron-dropdown/iron-dropdown.html">
+<link rel="import" href="../iron-list/iron-list.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout-classes.html">
+
+<link rel="import" href="../paper-input/paper-input-container.html">
+<link rel="import" href="../paper-input/paper-input-error.html">
+<link rel="import" href="../iron-input/iron-input.html">
+<link rel="import" href="../paper-menu/paper-menu.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-styles/paper-styles.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icons/hardware-icons.html">
+
+<dom-module id="tricomp-select-input">
+  <template>
+	<style>
+		:host {
+			display: block;
+			position: relative;
+		}
+
+		#dropdown {      
+			/* iron-dropdown calculate the max-height for the dropdown base on the screen size. The dropdown scroll 
+			* is set to auto, and will be displayed if the items size is bigger then the dropdown size.
+			* If using scroll pagination with low number of records that fit the screen, the scroll will not be displayed.
+			* In that case, App developer should set the dropdown max-height to be smaller then the height of the pagination records, to force scroll display.
+			*/
+			max-height: var(--tricomp-select-input-dropdown-max-height, none);
+		}
+
+		.dropdown-content {
+			@apply(--layout);
+			@apply(--layout-vertical);
+
+			@apply(--shadow-elevation-2dp);
+			margin-bottom: 20px;
+		}
+		
+		#selectClear {
+			@apply(--layout-horizontal);
+			position: relative;
+		}
+		
+		#selectClear:focus{
+			outline: none;   
+		}
+
+		iron-list {
+			@apply(--layout-flex);
+		}
+
+		paper-item {
+			--paper-item: {
+				cursor: pointer;
+				background-color: #ffffff;
+				@apply(--tricomp-select-input-paper-item);
+			};
+			--paper-item-min-height: {
+				@apply(--tricomp-select-input-paper-item-min-height);
+			};
+			--paper-item-focused: {
+				@apply(--tricomp-select-input-paper-item-focused);
+			};
+		}
+		paper-item:hover {
+			background-color: var(--tri-primary-light-color);
+		}
+		
+		paper-item span {
+			pointer-events: none;
+		}
+		
+		paper-input-container input::-ms-clear {
+			display: none;
+		}
+
+		.suffix-button {
+			height: 24px;
+			width: 24px;
+			padding: 0;
+		}
+
+		#clearButton {
+			@apply(--tricomp-select-input-clear-button);
+		}
+
+		#dropdownButton {
+			@apply(--tricomp-select-input-dropdown-button);
+		}
+
+		#dropdownButton[dropdown-opened] {
+			transform: rotate(0.5turn);
+		}
+		
+		#triSelectInputField{
+			text-overflow: ellipsis;
+		} 
+	</style>
+
+  	<div id="selectClear">
+  		<paper-input-container 
+  			class="flex" 
+  			id="input" 
+  			focused="{{focused}}" 
+  			disabled$="[[disabled]]" 
+  			aria-label$="{{label}}" 
+  			auto-validate$="[[autoValidate]]" 
+			no-label-float$="[[noLabelFloat]]"
+  			always-float-label$="[[alwaysFloatLabel]]" 
+  			on-keydown="_keyDownInputHandler">
+  			<label id="triSelectInputLabel" for="triSelectInputField">[[label]]<content id="labelContent" select="[label]"></content></label>
+  			<input id="triSelectInputField" aria-labelledby="triSelectInputLabel" is="iron-input" bind-value="{{_searchValue}}" required$="[[required]]" disabled$="[[disabled]]" readonly$="[[readonly]]" aria-label$="{{label}}">
+
+	  		<paper-icon-button suffix id="clearButton" class="suffix-button" icon="clear" secondary on-tap="_clearValue" on-keydown="_keyDownClearHandler" disabled$="[[disabled]]" alt="Clear"></paper-icon-button>
+
+	  		<paper-icon-button suffix id="dropdownButton" class="suffix-button" icon="hardware:keyboard-arrow-down" dropdown-opened$="[[dropdownOpened]]" primary on-tap="_dropdownButtonTap" on-keydown="" disabled$="[[disabled]]" alt="Clear"></paper-icon-button>
+
+	      	<template is="dom-if" if="[[errorMessage]]">
+    	    	<paper-input-error>[[errorMessage]]</paper-input-error>
+      		</template>
+  		</paper-input-container>
+  	</div>
+	<iron-dropdown id="dropdown" horizontal-align="left" vertical-align="top" 
+			opened="{{dropdownOpened}}"	no-overlap>
+		<div role="alert" aria-live="assertive" id="dropdownContent" class="dropdown-content">
+			<paper-menu id="menu" role="list" aria-label$="{{label}}" on-keydown="_keyDownMenuHandler">
+				<template id="itemsTemplate" is="dom-repeat" items="{{selectSrc}}">
+					<paper-item role="listitem" on-keypress="_keyPressHandler"><span>{{_computeItemValue(item)}}</span></paper-item>
+				</template>
+			</paper-menu>
+		</div>
+	</iron-dropdown>
+  </template>
+  <script>
+		Polymer({
+
+			is: "tricomp-select-input",
+			
+			/**
+			* Fired after the dropdown list opens.
+			*
+			* @event select-input-list-open
+			*/
+			
+			/**
+			* Fired after the dropdown list closes.
+			*
+			* @event select-input-list-close
+			*/
+			
+			/**
+			* Fired after the input value changes. Contains the new value in event.detail.value.
+			*
+			* @event select-input-value-change 
+			*/
+
+			properties: {
+				/*
+				* Label for input field.
+				*/
+				label: {
+					type: String,
+					notify: false,
+					readOnly: false
+				},
+
+				/*
+				* STRING_WITH_ID object for the currently selected value for the field. 
+				* If the dropdown is open. then this value won't change until you select a new value.
+				* This value will be null if there is no match.
+				*/
+				value: {
+					type: Object,
+					notify: true,
+					readOnly: false,
+					observer: "_onValueChanged"
+				},
+				
+				/*
+				* Value name used in the STRING_WITH_ID object. This will specify the property of the STRING_WITH_ID object
+				* that you want to set. Typically, STRING_WITH_ID contains 2 properties, "id" and "value", and you would want 
+				* to set the valueName to "value".
+				*/
+				valueName: {
+					type: String,
+					notify: false,
+					readOnly: false
+				},
+
+				/*
+				* String for filter/search. This is set to the value that is typed in the input field and is updated each
+				* time a character is typed or removed. When selectSrc references a data source with a filter, this value can 
+				* be used in that filter to produce typeahead filtering by data-binding this value with a
+				* triplat-query-filter value attribute.
+				*/
+				searchValue: {
+					type: String,
+					notify: true,
+					readOnly: true
+				},
+
+				/*
+				* Select data source. The values in this array are displayed in the dropdown box.
+				* This array is also used to data-bind with the triplat-ds data attribute or filtered-data attribute.
+				*/
+				selectSrc: {
+					type: Array,
+					notify: false,
+					readOnly: false,
+					observer: "_onSelectSrcChanged"
+				},
+				
+				/*
+				* Scroller container element object. This object is also used to data-bind with the triplat-query-scroll-page scroller attribute.
+				*/
+				scroller: {
+					type: Object,
+					notify: true,
+					readOnly: true
+				},
+				
+				/*
+				* Query scroll page element ID that defines the scroller property. This ID is used to get the 
+				* triplat-query-scroll-page size attribute to ensure that the scrollbar is displayed for a small pagination size.
+				*/
+				queryScrollPageId: {
+					type: String
+				},
+				
+				/** 
+				* Boolean to indicate that this is a disabled input field. Show
+				* the value, but not the clear button. The value will be grayed out and not editable.
+				* The value will be underlined to indicate it is an input field.
+				*/
+				disabled: {
+					type: Boolean,
+					value: false
+				},
+
+				/** 
+				* Boolean to indicate that this is a read-only value. Show
+				* the value, but not the clear button.
+				*/
+				readonly: {
+					type: Boolean,
+					value: false
+				}, 
+
+
+				/**
+				* Set to true to mark the input field as required.
+				*/
+				required: {
+				type: Boolean,
+				value: false
+				},
+
+				/**
+				* The error message to display when the input value is invalid.
+				*/
+				errorMessage: {
+				type: String
+				},
+
+				/**
+				* Set to true to auto-validate the input value when it changes.
+				*/
+				autoValidate: {
+				type: Boolean,
+				value: false
+				},
+
+				/**
+				* Set to true to scroll the selected input element into view (on focus). If scroll is available, it will align the element to the top of the browser window (if possible).
+				* The scroll into view is applied on mobile devices only, where screens are small and the virtual keyboard takes much of the screen area.
+				*/
+				scrollElementIntoView: {
+				type: Boolean,
+				value: false
+				},
+
+				/*
+				* Set to true to always float the floating label.
+				*/
+				alwaysFloatLabel: {
+					type: Boolean,
+					value: false
+				},
+
+				
+			/**
+				* The delay (in milliseconds) between the time a single letter is typed, 
+				* and the time the dropdown shows results. This delay is needed so we can wait a bit after presenting the results list in 
+				* the dropdown. This way, we can achieve better performance, skipping searches against single letters.
+				*/
+				delay: {
+					type: Number,
+					notify: false,
+					readOnly: false,
+					value: 300
+				},
+
+				noLabelFloat: {
+					type: Boolean,
+					value: false
+				},
+
+
+
+				/**
+				* Internally set to true to open the dropdown when the select source change.
+				*/
+				_openDropDownOnMenuChange: {
+				type: Boolean,
+				value: false
+				},
+			},
+
+			observers: [
+				"_onFocusedChanged(focused)",
+				"_on_searchValueChanged(_searchValue)"
+			],
+
+			listeners: {
+				"dropdown.iron-overlay-closed": "_onIronOverlayClosed",
+				"dropdown.iron-overlay-opened": "_onIronOverlayOpened",
+				"menu.iron-select": "_onIronSelect"
+			},
+
+			attached: function() {
+				this.$.dropdown.positionTarget = this.$.input;
+				this.$.dropdown.focusTarget = this.$.input;
+				this._setScroller(this.$.dropdownContent);
+				if(Polymer.dom(this.$$('#labelContent')).getDistributedNodes().length >0){
+					this.label=" ";
+				}
+			},
+
+			_dropdownButtonTap: function() {
+				this.$.triSelectInputField.focus();
+				this._openDropDown();
+			},
+
+			_computeItemValue: function(item) {
+				return (item == undefined)? "":item[this.valueName];
+			},
+
+			_onFocusedChanged: function(focused) {
+				if(this._isDisabledOrReadonly()) {
+					return;
+				}
+				
+				if (focused && (!this.$.dropdown.opened)) {
+					var searchValue = this._searchValue;
+					var value = (this.value)? this.value.value:null;
+					if(searchValue && searchValue.length>0 && value && value.length>0 && searchValue.length==value.length && searchValue.indexOf(value)>-1) {
+						// Even if value is already set, we want to open dropdown and display all the available values to tell user this is a list
+						// values from drop down will be filetered on user's key stroke
+						this._on_searchValueChanged(""); //set search value includes: enable/disable clear icon, open dropdown
+						this.$.clearButton.style.display = "inline"; //display clear icon as there is a value
+					}else{
+						this.$.dropdown.resetFit();
+						this._on_searchValueChanged(""); //set search value includes: enable/disable clear icon, open dropdown
+					} 
+				}
+			},
+
+			_selectItem: function(selectedElement) {
+				this.$.dropdown.resetFit();
+				var selectedItem = this.$.itemsTemplate.itemForElement(selectedElement);
+				this._valueSelected = true;
+				this.$.menu.selected = -1;
+				this.$.dropdown.close();
+				this.fire('select-input-list-close');
+				this._internalSet = true;
+				// only set value when it has actually changed
+				if ((this.value == undefined || this.value.id == undefined || this.value.value == undefined) ||
+					(this.value.id != selectedItem._id && this.value.value != selectedItem[this.valueName])) {
+					this.set("value", {id: selectedItem._id, value: selectedItem[this.valueName]});
+				} else if(this._searchValue != selectedItem[this.valueName]) {
+					//if value did not change but search value change, then update the search value (input display value)
+					this.set("_searchValue", selectedItem[this.valueName]);
+				}
+				this._internalSet = false;
+			},
+			
+			_onIronSelect: function(e) {	
+				this.async(function() {
+					var selectedElement = e.detail.item;
+					this._selectItem(selectedElement);
+				}, 200);
+			},
+
+			_onSelectSrcChanged: function(selectSrc) {
+				if(this._openDropDownOnMenuChange){
+					this._openDropDown();
+				}
+			},
+			
+			_onValueChanged: function(value) {
+				this._internalSet = true;
+				if (value && (value.value!=null)) {
+					this.set("_searchValue", value.value);
+				} else {
+					this.set("_searchValue", "");
+				}
+				this._internalSet = false;
+				this.fire('select-input-value-change', {'value': (value ? value.value : "")});
+			},
+
+			_onIronOverlayClosed: function(e) {
+				if (!this._valueSelected) {
+					var canceled = e.detail.canceled;
+					if (canceled && this.searchValue && this.searchValue.length == 0) {
+						this.set("value", null);
+					} else {
+						if (this.value && (this.value.value!=null)) {
+							//string with id has value, update search value
+							this.set("_searchValue", this.value.value);
+						} else {
+							this.set("_searchValue", "");
+						}
+					}
+				}
+				this._valueSelected = false;
+				this._overlayClosed = true;
+				if(this.tabToNextElement){
+					//do not set focus and allow tab to next element in the page
+					this.set("tabToNextElement", false);
+				} else {
+					//reset focus, so clicking of the input field again will open the dropdown
+					this._setFocus();
+				}
+			},
+
+			_onIronOverlayOpened: function(e) {
+				//check if need to adjust menu height to guarantee scroller is displayed (to get next records)
+				if(this.scroller !=undefined && this.queryScrollPageId !=undefined){
+					var queryScrollPage = document.querySelector("#"+this.queryScrollPageId);
+					if(queryScrollPage != undefined && this.$.menu.items !=undefined 
+						&& this.$.menu.items.length < queryScrollPage.totalSize){
+						var menuHeight = this.$.menu.getBoundingClientRect().bottom - this.$.menu.getBoundingClientRect().top;
+						var dropdownContentHeight = parseInt(this.$.dropdownContent.style.maxHeight);
+						if(menuHeight <= dropdownContentHeight){
+							//Make wrapper height a bit smaller then menu to insure scroller is displayed
+							this.$.dropdownContent.style.maxHeight = menuHeight - 10 + "px";
+						}
+					}
+				}
+			},
+
+			_on_searchValueChanged: function(_searchValue) {
+				if(_searchValue && _searchValue.length > 0 && !this._isDisabledOrReadonly()){
+					this.$.clearButton.style.display = "inline";
+				}else {
+					this.$.clearButton.style.display = "none";
+				}
+
+				var toOpenDropDown = (!this._internalSet && this._overlayClosed)? true:false;
+
+				if(toOpenDropDown){
+					//no delay in setting search value and opening dropdown dialog in that order so
+					//dropdown max-height calculation is done on the full set
+					if(this.searchValue !=  _searchValue){
+						//new search trigger new request, open dropdown on request results change
+						this._openDropDownOnMenuChange = true;
+						this._setSearchValue(_searchValue);
+					} else {
+						//open dropdown directly (no change means no request)
+						this._setSearchValue(_searchValue);
+						this._openDropDown();
+					}
+				} else {
+					if(_searchValue == "" || this.searchValue == ""
+						|| (this.value && this.value.value != null && this.value.value == _searchValue)){
+						this._setSearchValue(_searchValue);
+					} else {
+						//once dropdown already open (and sized), delay the search text 
+						if (this._delayHandle != undefined && this._delayHandle != null) {
+							this.cancelAsync(this._delayHandle);
+						}
+
+						this._delayHandle = this.async(function() {
+							this._setSearchValue(_searchValue);
+						}, this._intDelay);
+					}
+				}
+
+				if(this._overlayClosed == undefined) {
+					this._overlayClosed = true;
+				}
+			},
+			
+			get _intDelay() {
+				var intDelay = parseInt(this.delay);
+				return (intDelay > 200)? intDelay:200; //minimum search delay of 200 milliseconds to avoid sync results issues
+			},
+
+			_keyPressHandler: function(event) {
+				var code = event.keyCode;
+				// accept Enter (13) as select item
+				if (code == 13) {
+					var selectedElement = event.target;
+					this._selectItem(selectedElement);
+					//console.log("_keyPressHandler selectedElement: " + selectedElement);
+				}
+				event.preventDefault();
+			},
+			
+			_keyDownInputHandler: function(event) {
+				var code = event.keyCode;
+				if(code == 40 ||
+						(code == 9 && this.$.clearButton.style.display == "none")) {
+					// on the input field, accept Down Arrow (40) or TAB(9) without clear icon as a move to dropdown first item (menu.div.paper-item)
+					var firstItem = this.$.menu.firstElementChild.firstElementChild;
+					if(firstItem != null) {
+						firstItem.focus();
+					}
+				} else if(code==9 && event.shiftKey && this.$.dropdown.opened) {
+					// on the input field, accept shiftKey + TAB(9) as a move back to previouse TAB element in the page and therefore close the dropdown menu
+					this.$.dropdown.close();
+				}
+			},
+			
+			_keyDownMenuHandler: function(event) {
+				var code = event.keyCode;
+				if(code == 9) {
+					// on the menu, accept TAB(9) as a move to next TAB element in the page and therefore close the dropdown menu
+					this.$.dropdown.close();
+					this.set("tabToNextElement", true);
+				}
+			},
+			
+			_keyDownClearHandler: function(event) {
+				var code = event.keyCode;
+				if(code == 9) {
+					// on the clear icon, accept TAB(9) as a move to dropdown first item (menu.div.paper-item)
+					var firstItem = this.$.menu.firstElementChild.firstElementChild;
+					if(firstItem != null) {
+						firstItem.focus();
+						event.preventDefault();
+					}
+				}
+			},
+			
+			_clearValue: function() {
+				this.$.dropdown.resetFit();
+				this._internalSet = true;
+				this.set("value", null);
+				this.set("_searchValue", "");
+				this._internalSet = false;
+				this._setFocus();
+			},
+			
+			_setFocus: function(){
+				this.$.selectClear.tabIndex = 0;
+				this.$.selectClear.focus();
+				this.$.selectClear.tabIndex = -1;
+			},
+
+			/* Return true if the component is disabled or readonly.
+			*/
+			_isDisabledOrReadonly: function() {
+				return this.disabled || this.readonly;
+			},
+
+			_openDropDown: function() {
+				if(!this.$.dropdown.opened && !this._isDisabledOrReadonly()){
+					var openDelay = 200;
+					if(this._isMobileDevice()){
+						//Mobile devices, such iPad, need more delay for scrollToTop and virtual keyboard
+						openDelay = 400;
+						if(this._isAndroidDevice()) {
+							//Android field keyboard and field scroll to to seem to be slower. Therefore, increase delay for Android to 
+							//allow more time for the virtual keyboard to be displayed and for the field to scroll to top before 
+							//dropdown is opened and positioned next to the field.
+							openDelay = 1000;
+						}
+						if(this.scrollElementIntoView){
+							this.$.input.scrollIntoView(true); //On mobile devices, scrolls the page, if possible, and bring the current input element into a higher area of the screen.
+						}
+					}
+					
+					this.async(function() {
+						this.$.dropdownContent.style.width = this.offsetWidth + "px";
+						this.$.dropdown.open();
+						//this.$.dropdown.notifyResize(); commented out since it cause dialog to be center when leaving and returning to the page 
+						this.fire('select-input-list-open');
+						this._openDropDownOnMenuChange = false;
+						this._overlayClosed = false;
+					}, openDelay); //100 not enough in some cases for the search input to keep its focus
+				}
+			},
+
+			_isMobileDevice: function () {
+				if( navigator.userAgent.match(/Android/i)
+					|| navigator.userAgent.match(/webOS/i)
+					|| navigator.userAgent.match(/iPhone/i)
+					|| navigator.userAgent.match(/iPad/i)
+					|| navigator.userAgent.match(/iPod/i)
+					|| navigator.userAgent.match(/BlackBerry/i)
+					|| navigator.userAgent.match(/Windows Phone/i)
+				){
+					return true;
+				}
+				else {
+					return false;
+				}
+			},
+
+			_isAndroidDevice: function () {
+				return navigator.userAgent.match(/Android/i);
+			}
+
+
+		});
+
+	</script>
+</dom-module>

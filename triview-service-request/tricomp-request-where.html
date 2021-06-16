@@ -1,0 +1,41 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-search-location/triplat-search-location.html">
+
+<link rel="import" href="tricomp-request-building.html">
+<link rel="import" href="tricomp-request-floor-room.html">
+
+<dom-module id="tricomp-request-where">
+  <template>
+
+    <tricomp-request-building request="{{request}}" override-building="[[overrideBuilding]]" refresh="[[refresh]]"></tricomp-request-building>
+    <tricomp-request-floor-room id="selectLocation" request="{{request}}"></tricomp-request-floor-room>
+
+  </template>
+  <script>
+    Polymer({
+
+      is: "tricomp-request-where",
+
+      properties: {
+        request: Object,
+
+        _emptyObj: {
+          type: Object,
+          value: function(){
+            return {id: "", value:""};
+          }
+        },
+
+        overrideBuilding: {
+          type: Boolean,
+          value: false
+        },
+
+        refresh: Boolean
+      },
+
+    });
+  </script>
+</dom-module>
+

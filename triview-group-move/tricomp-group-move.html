@@ -1,0 +1,666 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-view-behavior/triplat-view-behavior.html">
+
+<link rel="import" href="../triplat-routing/triplat-routing.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triblock-side-nav/triblock-side-nav.html">
+<link rel="import" href="../triblock-side-nav/triblock-side-nav-item.html">
+<link rel="import" href="../triblock-side-nav/triblock-side-nav-layout.html">
+
+<link rel="import" href="../iron-pages/iron-pages.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<link rel="import" href="../paper-spinner/paper-spinner.html">
+
+<link rel="import" href="../neon-animation/neon-animated-pages.html">
+<link rel="import" href="../neon-animation/neon-animatable.html">
+<link rel="import" href="../neon-animation/neon-animations.html">
+
+
+<link rel="import" href="tripage-groupmove-item-detail.html">
+<link rel="import" href="tripage-groupmove-search-detail.html">
+<link rel="import" href="tripage-groupmove-move-detail.html">
+<link rel="import" href="tripage-groupmove-where.html">
+<link rel="import" href="tripage-groupmove-schedule.html">
+<link rel="import" href="tripage-groupmove-overview.html">
+<link rel="import" href="tricomp-error-prompt.html">
+
+
+<dom-module id="tricomp-group-move">
+
+	<style>
+    /*=========================================
+     * Table of Contents
+     *-----------------------------
+     * Host
+     * Container - container-loading
+     *=========================================*/
+
+    /* Host */
+		:host {
+			@apply(--layout-fit);
+			@apply(--layout);
+			@apply(--layout-vertical);
+			background-color: var(--tri-body-background-color);
+		}
+    /* End Host */
+
+
+    /* Container - container-loading */
+    .container-loading {
+			position: fixed;
+			top: 44px;
+			right: 0;
+			bottom: 0;
+			left: 0;
+			z-index: 99;
+			background: white;
+		}
+			.container-loading > div {
+				display: flex;
+				height: 100%;
+				width: 100%;
+				align-items: center;
+				justify-content: center;
+			}
+    /* End Container - container-loading */
+
+		.toolbars {
+			display: none;
+		}
+
+		neon-animated-pages {
+			@apply(--layout-fit);
+		}
+
+		.container {
+				@apply(--layout-fit);
+				min-height: 0;
+		}
+
+
+		triblock-side-nav-item[badge-icon="warning"] {
+				--tri-badge-icon-color: var(--ibm-yellow-20) !important;
+		}
+		
+		.error-dialog {
+			overflow: auto;
+		}
+	</style>
+
+	<template>
+
+    <!-- DOM-IF : Provide event handler to the on-route-active event of your routes. -->
+    <!-- Routes Definition -->
+		<triplat-route id="searchRoute" name="searchRouteGroupMove" path="/search"></triplat-route>
+		<triplat-route id="itemRoute" name="itemRouteGroupMove" path="/item"></triplat-route>
+		<triplat-route id="moveRoute" name="moveRouteGroupMove" path="/move"></triplat-route>
+
+        <triplat-route id="whereRoute" name="whereRouteGroupMove" path="/where"></triplat-route>
+        <triplat-route id="scheduleRoute" name="scheduleRouteGroupMove" path="/schedule"></triplat-route>
+        <triplat-route id="overviewRoute" name="overviewRouteGroupMove" path="/overview"></triplat-route>
+
+    <!-- DataSources -->
+		<triplat-ds id="currentUser" name="currentUser" data="{{currentUser}}" on-ds-get-complete="_handleCurrentUserGetComplete"></triplat-ds>
+
+		<triplat-ds id="myMoveRequests" name="myMoveRequests" data="{{myMoveRequests}}"></triplat-ds>
+
+		<triplat-ds id="moveRequest" name="moveRequest" data="{{moveRequest}}" loading="{{moveRequestLoading}}" disable on-ds-get-complete="_handleMoveRequestComplete">
+			<triplat-ds-context name="myMoveRequests" context-id="{{_reqId}}">
+			</triplat-ds-context>
+		</triplat-ds>
+
+
+		<triplat-ds id="myMoveRequests" name="myMoveRequests" data="{{myRequestsData}}"></triplat-ds>
+
+
+    <div id="loadContainer" class="container-loading">
+      <div>
+        <paper-spinner active></paper-spinner>
+      </div><!-- end div -->
+    </div><!-- end .container-loading -->
+
+
+		<div id="mainPageDiv" class="wizard-main" >
+		<!--<div class="wizard-main">-->
+
+			<triblock-side-nav-layout class="container">
+ 				<triblock-side-nav id="groupMoveSideNav" selected="{{_currentPage}}" attr-for-selected="route-id" nav>
+
+					<triblock-side-nav-item
+						id="navLink1"
+						route-id="Search"
+						icon="search"
+						tap-handler="_updateCurrentPage"
+						triplat-route-id="searchRoute"
+						triplat-route-params="{{openRequestUrlParams}}"
+						disabled="{{_disableSearchNav}}"
+						>
+					</triblock-side-nav-item>
+
+					<triblock-side-nav-item
+						id="navLink2"
+						route-id="details"
+						icon="document"
+						tap-handler="_updateCurrentPage"
+						triplat-route-id="itemRoute"
+						triplat-route-params="{{openRequestUrlParams}}"
+						>
+					</triblock-side-nav-item>
+
+
+          <triblock-side-nav-item
+						id="navLink5"
+						route-id="Where"
+						icon="move"
+						tap-handler="_updateCurrentPage"
+						triplat-route-id="whereRoute"
+						triplat-route-params="{{openRequestUrlParams}}"></triblock-side-nav-item>
+
+          <triblock-side-nav-item
+						id="navLink6"
+						route-id="Overview"
+						icon="log"
+						tap-handler="_updateCurrentPage"
+						triplat-route-id="overviewRoute"
+						triplat-route-params="{{openRequestUrlParams}}"
+						></triblock-side-nav-item>
+
+
+
+				</triblock-side-nav>
+
+
+				<div class="main-container" page>
+					<triplat-route-selector>
+						<iron-pages class="pages" >
+
+
+							<!-- DOM-IF : Wrap your route pages with section and dom-if template.  You need to wrap it with section so triplat-route can be able to initialize the routes and pages when the page is not in the DOM initially then move the route properties from the route page to the section. Then wrap with template dom-if and assign boolean property.-->
+								<tripage-groupmove-search-detail
+									default-route
+									id="search"
+									route="searchRouteGroupMove"
+									request-id="{{preCreateRequestId}}"
+									selected-people="{{selectedPeople}}"
+									is-new="false"
+									pre-create-complete="{{preCreateComplete}}"
+									status="New">
+								</tripage-groupmove-search-detail>
+								<tripage-groupmove-item-detail
+									id="item"
+									is-new="false"
+									route="itemRouteGroupMove"
+									request-id="{{preCreateRequestId}}"
+									selected-people="{{selectedPeople}}">
+								</tripage-groupmove-item-detail>
+								<tripage-groupmove-move-detail
+									id="move"
+									route="moveRouteGroupMove"
+									request-id="{{preCreateRequestId}}"
+									selected-people="{{selectedPeople}}"
+									>
+								</tripage-groupmove-move-detail>
+                            <tripage-groupmove-where
+								id="where"
+								route="whereRouteGroupMove"
+								request-id="{{preCreateRequestId}}"
+								selected-people="{{selectedPeople}}">
+							</tripage-groupmove-where>
+								<tripage-groupmove-schedule
+									id="schedule"
+									route="scheduleRouteGroupMove"
+									request-id="{{preCreateRequestId}}"
+									selected-people="{{selectedPeople}}">
+								</tripage-groupmove-schedule>
+								<tripage-groupmove-overview
+									id="overview"
+									route="overviewRouteGroupMove"
+									request-id="{{preCreateRequestId}}">
+								</tripage-groupmove-overview>
+
+						</iron-pages>
+					</triplat-route-selector>
+				</div>
+
+			</triblock-side-nav-layout>
+			
+		<paper-dialog modal with-backdrop id="errorDialog" class="error-dialog">
+			<tricomp-error-prompt error-details="{{_errorDetails}}" is-admin="{{currentUser._Admin}}" on-error-details-collapse-or-expand="_handleErrorDetailsCollapseOrExpand"></tricomp-error-prompt>
+		</paper-dialog>
+		</div>
+
+	</template>
+</dom-module>
+<script>
+
+	Polymer({
+		is: "tricomp-group-move",
+
+		behaviors: [TriPlatViewBehavior],
+
+		properties: {
+			moveRequest: Object,
+
+			openRequestUrlParams: Object,
+
+			start: Date,
+			end: Date,
+
+			preCreateRequestId: {
+				type: String,
+				value: null,
+			},
+
+			preCreating: {
+				type: Boolean,
+				value: true,
+				observer: '_calcPreCreateComplete',
+			},
+
+			preCreateComplete: {
+				type: Boolean,
+				value: false,
+			},
+
+			selectedPeople: {
+				type: Array,
+				value: function() {
+					return [];
+				}
+			},
+
+			moveRequestLoading: {
+				type: Boolean,
+				value: true,
+				observer: '_calcPreCreateComplete',
+			},
+
+			moveFromBuildingLoading: {
+				type: Boolean,
+				value: true,
+				observer: '_calcPreCreateComplete',
+			},
+
+			requestedForOrgLoading: {
+				type: Boolean,
+				value: true,
+				observer: '_calcPreCreateComplete',
+			},
+
+			requestedForLoading: {
+				type: Boolean,
+				value: true,
+				observer: '_calcPreCreateComplete',
+			},
+
+			requestedForManagerLoading: {
+				type: Boolean,
+				value: true,
+				observer: '_calcPreCreateComplete',
+			},
+
+			fromBuildingMovePlannersLoading: {
+				type: Boolean,
+				value: true,
+				observer: '_calcPreCreateComplete',
+			},
+
+			businessUnitManagersLoading: {
+				type: Boolean,
+				value: true,
+				observer: '_calcPreCreateComplete',
+			},
+
+			moveReasonsLoading: {
+				type: Boolean,
+				value: true,
+				observer: '_calcPreCreateComplete',
+			},
+
+			moveToSpacesLoading: {
+				type: Boolean,
+				value: true,
+				observer: '_calcPreCreateComplete',
+			},
+
+			entryAnimation: {
+				type: String,
+				value: "slide-from-right-animation",
+			},
+
+			exitAnimation: {
+				type: String,
+				value: "slide-left-animation",
+			},
+			_currentPage: {
+				type: String,
+				value: "Search"
+			},
+
+			_reqId:{
+				type: String,
+
+			},
+			refreshPage: {
+				type: Boolean,
+				value: false
+			},
+
+            // DOM-IF: Add boolean properties for your dom-if templates with initial value of false
+			searchRouteActive: {
+				type: Boolean,
+				value: false
+			},
+
+			itemRouteActive: {
+				type: Boolean,
+				value: false
+			},
+
+			moveRouteActive: {
+				type: Boolean,
+				value: false
+			},
+
+			whereRouteActive: {
+				type: Boolean,
+				value: false
+			},
+
+			scheduleRouteActive: {
+				type: Boolean,
+				value: false
+			},
+
+			overviewRouteActive: {
+				type: Boolean,
+				value: false
+			},
+			initialLoad: {
+				type: Boolean,
+				value: false
+			},
+
+		},
+
+		listeners: {
+			"search.submit": "submitRequest",
+			"item.submit": "submitRequest",
+			"where.submit": "submitRequest",
+			"overview.submit": "submitRequest",
+			"cancel": "cancelRequest",
+			"search.reset": "resetPage",
+			"myMoveRequests.ds-create-complete": "_handlePreCreateComplete",
+			"start-over": "_handleStartOver",
+			"jump-where-to": "_handleWhereJump",
+			"jump-when": "_handleWhenJump",
+			"jump-who": "_handleWhoJump",
+			"init": "_init",
+			"search.searchActive": "_handleSearchActive",
+			"item.itemActive": "_handleItemActive",
+			"where.whereActive": "_handleWhereActive",
+			"overview.overviewActive": "_handleOverviewActive",
+		},
+
+		_calcPreCreateComplete: function() {
+			if (this.preCreateComplete)
+				return;
+
+			this.set("preCreateComplete",
+					!this.preCreating
+					&& !this.moveRequestLoading);
+
+			if (this.preCreateComplete) {
+				this.set("end", new Date());
+
+			}
+		},
+
+		_handleAnimationComplete: function() {
+			this.$.when.animationComplete();
+		},
+
+		_navigateDramatic: function(navigateTo) {
+			this.set("entryAnimation", "scale-up-animation");
+			this.set("exitAnimation", "scale-down-animation");
+
+			this.async(function() {
+				navigateTo.navigate();
+			});
+		},
+
+		_navigateForwards: function(navigateTo) {
+			this.set("entryAnimation", "slide-from-right-animation");
+			this.set("exitAnimation", "slide-left-animation");
+
+			this.async(function() {
+				navigateTo.navigate();
+			});
+		},
+
+		_navigateBackwards: function(navigateTo) {
+			this.set("entryAnimation", "slide-from-left-animation");
+			this.set("exitAnimation", "slide-right-animation");
+
+			this.async(function() {
+				navigateTo.navigate();
+			});
+		},
+
+		_handleStartOver: function() {
+			this._navigateDramatic(this.$.searchRoute);
+		},
+
+		_init : function() {
+			this._getCurrentRequest();
+			if(this.moveRequest != null){
+				if(this.refreshPage){
+					this._handleMoveRequestComplete();
+				}
+
+			}
+
+				this.async(function() {
+					this.fire("change-top-toolbar", this.$.topToolbar);
+					this.fire("change-toolbar-title", this.$.toolbarTitle);
+
+				});
+		},
+
+		initRequest : function() {
+			this.set("preCreateRequestId", null);
+			this.set("start", new Date());
+			this.set("selectedPeople", new Array());
+
+			this.preCreateRequest();
+		},
+
+		submitRequest : function() {
+					this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "submit");
+					this.fire("refresh");
+		},
+
+		cancelRequest : function() {
+			this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "cancel");
+			this.fire("refreshCancel");
+		},
+
+
+		_handleUpdateComplete: function(e) {
+			this.$.moveRequest.refresh();
+		},
+
+
+		preCreateRequest : function() {
+			this.set("preCreateComplete", false);
+			this.set("preCreating", true);
+
+			var newRequest = {};
+			this.$.myMoveRequests.createRecord(newRequest, TriPlatDs.RefreshType.BOTH, "actionGroup", "preCreateGroupMove");
+		},
+
+		_handlePreCreateComplete: function(e) {
+			this.set("preCreateRequestId", e.detail);
+
+			this.async(function() {
+				this.set("preCreating", false);
+			});
+		},
+
+		_handleMoveRequestComplete: function(){
+			var status = this.moveRequest.status;
+			//Show Search page
+			if((status==null)||(status=="Draft")){
+				if(this.initialLoad){
+					this._navigateDramatic(this.$.searchRoute);
+					this.resetPage();
+					this._disableSearchNav = false;
+				}
+				else{
+					this.initialLoad = true;
+					this.$.search.loadMoveRequest(); 
+				}
+				}
+			else if(status=="Completed"){
+				this._navigateDramatic(this.$.overviewRoute);
+				this._disableSearchNav = false;
+			}
+			else{
+				switch(this._page){
+					case "where" : 
+						this._navigateDramatic(this.$.whereRoute);
+						this.setMovePage();
+						break;
+					case "overview" : 
+						this._navigateDramatic(this.$.overviewRoute);
+						this._currentPage = "overview";
+						break;
+					case "item" : 
+						this._navigateDramatic(this.$.itemRoute);
+						this._currentPage = "item";
+					break;
+					default:
+						this._navigateDramatic(this.$.whereRoute);
+						this.setMovePage();
+				}
+				this._disableSearchNav = true;
+			}
+			this.refreshPage = false;
+		},
+
+		_updateCurrentPage: function(menuItem) {
+			var routeId = menuItem.getAttribute("route-id");
+			this._currentPage = routeId;
+
+		},
+
+
+		_handleCurrentUserGetComplete: function(){
+			this.$.loadContainer.hidden=true;
+		},
+
+		resetPage: function(){
+			this._currentPage="Search";
+			this.$.groupMoveSideNav.selected="Search";
+		},
+
+		setMovePage: function(){
+			this._currentPage="Where";
+			this.$.groupMoveSideNav.selected="Where";
+		},
+
+		_getCurrentRequest: function(){
+			this.refreshPage = true;
+			var param = window.location.hash;
+			this._reqId = param.substring(param.lastIndexOf("/") +1,param.length);
+			this._page = param.substring(param.lastIndexOf("/") +1,param.length);
+			if(this._reqId=="search"||this._reqId=="where" ||this._reqId=="overview" ||this._reqId=="item"){
+				var auxString = param.substring(0,param.lastIndexOf("/"));
+				this._reqId = auxString.substring(auxString.lastIndexOf("/") +1,auxString.length);
+			}
+			this.$.moveRequest.disable=false;
+		},
+
+		//=========================================================
+		// Function _handleSearchActive
+		//------------------------------------------
+		// Objective: Called when Search Page is active to make its tab open when refreshing a page
+		//=========================================================
+		_handleSearchActive: function() {
+			// Set Search page as current page
+			this.$.search._initToastMessage();
+			this._currentPage = "Search";
+			this.$.groupMoveSideNav.selected="Search";
+		},
+
+		//=========================================================
+		// Function _handleItemActive
+		//------------------------------------------
+		// Objective: Called when Item Page is active to make its tab open when refreshing a page
+		//=========================================================
+		_handleItemActive: function() {
+			this.$.search._clearSearch();
+			this.$.item._initToastMessage();
+			this._currentPage = "Item";
+			this.$.groupMoveSideNav.selected="details";
+			if(!this._initialRequest){
+				this._getCurrentRequest();
+				this._initialRequest = true;
+			}
+		},
+
+		//=========================================================
+		// Function _handleWhereActive
+		//------------------------------------------
+		// Objective: Called when Where Page is active to make its tab open when refreshing a page
+		_handleWhereActive: function() {
+			//Added to clear search when navigating between the pages
+			this.$.search._clearSearch();
+			this.$.where._initToastMessage();
+			// Set Where page as current page
+			this._currentPage = "Where";
+			this.$.groupMoveSideNav.selected="Where";
+			if(!this._initialRequest){
+				this._getCurrentRequest();
+				this._initialRequest = true;
+			}
+		},
+
+		//=========================================================
+		// Function _handleOverviewActive
+		//------------------------------------------
+		// Objective: Called when Where Page is active to make its tab open when refreshing a page
+		_handleOverviewActive: function() {
+			//Added to clear search when navigating between the pages
+			this.$.search._clearSearch();
+			this.$.overview._initHeader();
+			// Set Overview page as current page 
+			this._currentPage = "Overview";
+			this.$.groupMoveSideNav.selected="Overview";
+			if(!this._initialRequest){
+				this._getCurrentRequest();
+				this._initialRequest = true;
+			}
+		},
+		
+		_handleDSError: function(e) {
+			var errorDetails = e.detail;
+			if (errorDetails.status != 403){
+				if (errorDetails) this.set("_errorDetails", errorDetails);
+				this.$.errorDialog.open();
+			}
+		},
+
+		_handleErrorDetailsCollapseOrExpand: function() {
+			this.async(function() {
+				this.$.errorDialog.center();
+			}.bind(this), 300);
+		},
+
+
+
+
+	});
+</script>

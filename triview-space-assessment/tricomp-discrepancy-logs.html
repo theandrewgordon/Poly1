@@ -1,0 +1,250 @@
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-selector/iron-selector.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+
+<link rel="import" href="tricomp-search-input.html">
+
+<dom-module id="tricomp-discrepancy-logs">
+
+	<style>
+
+		:host {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			background-color: var(--tri-body-background-color);
+		}
+
+
+		.discrepancyLogsContainer {
+			@apply(--layout-scroll);
+			background-color: var(--tri-primary-content-background-color);
+		}
+
+		.back {
+			@apply(--layout);
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			padding-right: 20px;
+			cursor: pointer;
+		}
+
+		.back iron-icon,
+		.back span {
+			color: var(--tri-primary-color);
+		}
+
+		.back iron-icon {
+			width: 45px;
+			height: 45px;
+			margin: 0px 0px;
+		}
+
+		.row {
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+		}
+
+		.row.iron-selected {
+			background-color: #C0E6FF;
+		}
+
+		.row-content {
+			@apply(--layout);
+			@apply(--layout-horizontal);
+			flex-shrink: 0;
+			margin: 0px 20px;
+			padding: 20px;
+			background-color: #ffffff;
+		}
+
+		.header-row {
+			@apply(--layout);
+			@apply(--layout-horizontal);
+			padding: 10px 10px 5px 10px;
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+		}
+
+        .header-fields {
+			@apply(--layout-flex);
+		}
+
+		.header-fields {
+			@apply(--layout-flex);
+		}
+
+		.header-detail {
+			@apply(--layout-flex);
+		}
+
+		.detail {
+			@apply(--layout-flex);
+		}
+
+		.assessmentDetail {
+			@apply(--layout-flex);
+		}
+
+		.assessmentDetail div {
+			padding-bottom: 5px;
+		}
+
+		.assessmentDetail div label{
+			color: var(--tri-focus-label-color);
+			width: 120px;
+			color: #959595;
+		}
+
+		@media (min-width: 1024px) {
+			.header-detail {
+				@apply(--layout-horizontal);
+			}
+
+			.header-detail div {
+				@apply(--layout-flex);
+			}
+
+			.assessmentDetail {
+				@apply(--layout-horizontal);
+			}
+
+			.assessmentDetail div{
+				@apply(--layout-flex);
+			}
+
+			.assessmentDetail div span{
+				@apply(--layout-flex);
+			}
+		}
+
+		@media (max-width: 1023px) {
+			.header-detail {
+				@apply(--layout-vertical);
+			}
+
+			.assessmentDetail {
+				@apply(--layout-vertical);
+			}
+		}
+
+	</style>
+
+	<template>
+		<triplat-route name="walkthruAssessment" params="{{assessmentParams}}"></triplat-route>
+
+		<triplat-ds name="currentUser" data="{{currentUser}}"></triplat-ds>
+		
+		<triplat-ds id="discrepancyLogsDs" name="discrepancyLogs" data="{{discrepancyLogs}}">
+			<triplat-ds-context name="mySpaceAssessments" context-id="{{assessmentParams.assessmentId}}"></triplat-ds-context>
+			<triplat-ds-context name="assessmentLogs" context-id="{{selectedLog._id}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<div class="header-row">
+			<div class="back" on-tap="_handleBackTap">
+				<iron-icon icon="hardware:keyboard-arrow-left" role="button" tabindex="0" on-keypress="_handleKeyPress" aria-labelledby="backtoAssessedSpace"></iron-icon>
+	    	</div>
+			<div class="header-fields">
+				<div class="header-detail">
+					<div>
+						<label>Space:</label>
+						<span class="value">{{_handleShowSpaceName(selectedLog.space.value)}}</span>
+					</div>
+					<div>
+						<label>Classification:</label>
+						<span class="value">{{selectedLog.spaceClass}}</span>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="discrepancyLogsContainer">
+			<template is="dom-repeat" id="actionsTemplate" items="{{discrepancyLogs}}">
+				<div class="row">
+					<div class="row-content">
+						<div class="detail">
+							<div class="assessmentDetail">
+								<div>
+									<label>Action:</label>&nbsp;<span class="value">{{item.discrepancyType}}</span>
+								</div>
+								<div hidden$="{{_isPersonType(item)}}">
+					    			<label>Asset Name:</label>&nbsp;<span class="value">{{item.asset.value}}</span>
+					    		</div>
+								<div hidden$="{{!_isPersonType(item)}}">
+					    			<label>Person Name:</label>&nbsp;<span class="value">{{item.person.value}}</span>
+					    		</div>
+							</div>
+							<div class="assessmentDetail">
+								<div hidden$="{{!_isPersonType(item)}}">
+									<label>Phone Number:</label>&nbsp;<span class="value">{{item.workPhone}}</span>
+								</div>
+								<div hidden$="{{_isPersonType(item)}}">
+									<label>SN:</label>&nbsp;<span class="value">{{item.assetSerialNumber}}</span>
+								</div>
+								<div hidden$="{{_isPersonType(item)}}">
+									<label>Classification:</label>&nbsp;<span class="value">{{item.assetClassification}}</span>
+								</div>
+							</div>
+							<div class="assessmentDetail">
+								<div>
+									<label>Comment:</label>&nbsp;<span class="value">{{item.comment}}</span>
+								</div>	
+							</div>
+						</div>
+					</div>
+				</div>
+			</template>
+		</div>
+		
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-discrepancy-logs",
+
+		properties : {
+
+			logs : Object,
+			
+			selectedLog : Object,
+
+		},
+
+		_handleBackTap : function() {
+				this.fire("back")
+			},
+
+		_isPersonType : function(item) {
+			if (item.discrepancyType_en_US.indexOf("Person") != -1) {
+				return true;
+			}else {
+				return false ;
+			}
+		},
+
+		_getResult: function(selectedLog){
+			if (selectedLog.discrepantSpace) {
+				return "MISMATCH";
+			}
+			else
+			{
+				return "MATCH";
+			}
+		},
+
+		_handleShowSpaceName: function(space) {
+			if (space && space.length > 25) {
+				space = space.substring(0, 25) + '...';
+			}
+
+			return space;
+		},
+
+		_handleKeyPress: function(e) {
+			var keyCode = e.keyCode;
+
+			if (keyCode == 13) {
+				this._handleBackTap();
+			}
+		}
+
+    });
+</script>

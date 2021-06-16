@@ -1,0 +1,269 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2020 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../iron-list/iron-list.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../triblock-table/triblock-table.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+
+<dom-module id="tricomp-space-list">
+	<template>
+		<style>
+			:host {
+				@apply --layout-flex;
+				@apply --layout-vertical;
+			}
+
+			iron-list {
+				@apply --layout-flex;
+				@apply --layout-scroll;
+				@apply --layout-vertical;
+				border: 2px solid var(--tri-primary-content-accent-color);
+				background-color: var(--tri-body-background-color);
+			}
+
+			triblock-table {
+				--triblock-table-cell: {
+					height: auto !important;
+				};
+			}
+
+			.container-spaces-empty p {
+				text-align: center;
+				font-size: 0.9em;
+				font-weight: 300;
+			}
+
+			.charged-to-org {
+				padding-left: 8px;
+				margin-bottom: 2px;
+			}
+
+			.data-table-container {
+				@apply --layout-flex;
+				@apply --layout-vertical;
+				padding: 20px;
+			}
+
+			.data-table {
+				@apply --layout-flex;
+			}
+
+			.occupant {
+				color: var(--ibm-blue-50);
+				cursor: pointer;
+			}
+
+			.occupancy-table-column {
+				--triblock-table-column-flex: 1.5;
+			}
+
+			.org-table-column {
+				--triblock-table-column-flex: 2;
+			}
+
+			.occupant-container {
+				@apply(--layout-vertical);
+			}
+
+			.charged-to-org-container {
+				@apply(--layout-vertical);
+			}
+
+			#occupantTooltip {
+				border: 2px solid var(--tri-primary-light-color);
+				border-radius: 3px;
+				display: flex;
+				flex-direction: column;
+				position: absolute;
+				z-index: 100;
+				background-color: white;
+				padding: 10px;
+			}
+
+			.arrow-up {
+				position: absolute;
+				width: 0;
+				border-bottom: solid 10px var(--tri-primary-light-color);
+				border-right: solid 8px transparent;
+				border-left: solid 8px transparent;
+				top: -10px;
+			}
+
+			.arrow-up .empty-arrow {
+				position: absolute;
+				top: 2px;
+				left: -7px;
+				width: 0;
+				border-bottom: solid 12px white;
+				border-right: solid 7px transparent;
+				border-left: solid 7px transparent;
+			}
+
+			.selected-space {
+				color: var(--tri-success-color);
+			}
+			
+		</style>
+
+		<triplat-query delay="0" data="[[spaces]]" filtered-data-out="{{_mySpaceData}}">
+			<triplat-query-filter name="spaceClass" operator="contains" ignore-if-blank=""></triplat-query-filter>
+			<triplat-query-sort name="[[sortField]]" desc="[[sortDesc]]" type="[[sortType]]"></triplat-query-sort>
+		</triplat-query>
+		
+		<template is="dom-if" if="[[_hasSpaces(spaces)]]">
+			<div table-container class="data-table-container">
+				<div id="occupantTooltip" hidden$="[[_hideToolTip]]">
+					<div class="arrow-up">
+						<div class="empty-arrow"></div>
+					</div>
+					<span>[[_occupant.occupant]]</span>
+					<span>[[_occupant.occupantEmail]]</span>
+					<span>[[_occupant.occupantOrg]]</span>
+					<span>[[_occupant.occupantTitle]]</span>
+				</div>
+				<triblock-table class="data-table" data="[[_mySpaceData]]" hidden$="[[!_hasSpaces(spaces)]]" scroller="{{tableScroller}}"
+								on-row-tap="_handleSelectedSpace" read-only="[[readOnly]]" sortable sort-property="{{sortField}}" sort-descending="{{sortDesc}}" sort-type="{{sortType}}">
+					<triblock-table-column title="ID" property="id" sortable></triblock-table-column>
+					<triblock-table-column title="Name" property="space" sortable></triblock-table-column>
+					<triblock-table-column title="Type" property="spaceClass" sortable></triblock-table-column>
+					<triblock-table-column title="Capacity" property="capacity" sortable></triblock-table-column>
+					<triblock-table-column title="Occupancy" property="occupancyStatus" class="occupancy-table-column" sortable>
+						<template>
+							<div class="occupant-container">
+								<span>[[item.occupancyStatus]]</span>
+								<template is="dom-repeat" items="[[item.occupants]]">
+									<div class="occupant" on-mouseover='_onHovered' on-mouseout='_onUnhovered'>[[item.occupant]]</div>
+								</template>
+							</div>
+						</template>
+					</triblock-table-column>
+					<triblock-table-column title="Charge To Organization" property="computedChargedToOrg" class="org-table-column" sortable>
+						<template>
+							<div class="charged-to-org-container">
+								<template is="dom-repeat" items="[[item.chargedToOrgs]]">
+									<div class="charged-to-org" style$="[[_computeOrgColor(item)]]">[[_computeOrgValue(item)]]</div>
+								</template>
+							</div>
+						</template>
+					</triblock-table-column>
+					<triblock-table-column>
+						<template>
+							<template is="dom-if" if="[[_isSelectedSpace(item._id)]]">
+								<iron-icon class="selected-space" icon="ibm-medium:ok"></iron-icon>
+							</template>
+						</template>
+					</triblock-table-column>
+				</triblock-table>
+			</div>
+		</template>
+
+		<template is="dom-if" if="[[!_hasSpaces(spaces)]]">
+			<div class="container-spaces-empty">
+				<p>There is no information to display.</p>
+			</div>
+		</template>
+	</template>
+
+	<script>
+		Polymer({
+
+			is: "tricomp-space-list",
+
+			properties: {
+				spaces: {
+					type: Object
+				},
+
+				selectedSpace: {
+					type: Object
+				},
+
+				readOnly: {
+					type: Boolean,
+					value: false
+				},
+
+				sortField: {
+					type: String,
+					notify: true,
+					value: "id"
+
+				},
+
+				sortDesc: {
+					type: Boolean,
+					notify: true,
+					value: false
+				},
+
+				sortType: {
+					type: String,
+					notify: true,
+					value: ""
+				},
+
+				tableScroller: {
+					type: Object,
+					notify: true
+				},
+
+				_hideToolTip: {
+					type: Boolean,
+					value: true
+				},
+				
+				_occupant: {
+					type: Object
+				},
+
+				_mySpaceData: {
+					type: Array
+				}
+			},
+
+			_hasSpaces: function (spaces) {
+				return spaces && spaces.length > 0;
+			},
+
+			_computeOrgColor: function (space) {
+				var orgColor = space && space.orgColor ? space.orgColor : "gray";
+				return "border-left: 8px solid " + orgColor;
+			},
+			
+			_handleSelectedSpace: function (e) {
+				e.stopPropagation();
+				this.set("selectedSpace", e.detail.item);
+				if (this.selectedSpace.available && !this.readOnly) {
+					this.fire("space-selected", this.selectedSpace);
+				}
+			},
+
+			_isSelectedSpace(spaceId) {
+				if (this.selectedSpace) {
+					return spaceId == this.selectedSpace._id;
+				}
+				return false;
+			},
+
+			_computeOrgValue: function (space) {
+				var __dictionary__noOrg = "None";
+				return space && space.chargedToOrg ? space.chargedToOrg : __dictionary__noOrg;
+			},
+
+			_onHovered: function(e) {
+				this._occupant = e.model.item;
+				var tooltip = document.getElementById("occupantTooltip");
+				var left = e.target.getBoundingClientRect().x - this.getBoundingClientRect().x;
+				var top = (e.target.getBoundingClientRect().y - this.getBoundingClientRect().y) + 24;
+				tooltip.style.left = left + "px";
+				tooltip.style.top = top + "px";
+				this.set("_hideToolTip", false);
+			},
+
+			_onUnhovered: function() {
+				this.set("_hideToolTip", true);
+				this.set("_occupant", "");
+			}
+		});
+	</script>
+</dom-module>

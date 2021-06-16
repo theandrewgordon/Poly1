@@ -1,0 +1,217 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<link rel="import" href="../paper-button/paper-button.html">
+
+<link rel="import" href="../tricore-url/tricore-url.html">
+
+<link rel="import" href="../triplat-number-input/triplat-number-input.html">
+
+<link rel="import" href="../triblock-responsive-layout/triblock-view-responsive-behavior.html">
+
+<link rel="import" href="tristyles-room-reservation-app.html">
+
+<link rel="import" href="tribehav-room-reservation-util.html">
+
+<link rel="import" href="tricomp-incremental-number-input.html">
+
+<dom-module id="tricomp-food-order-item">
+	<template>
+		<style include="shared-page-styles">
+			:host {
+				@apply(--layout-vertical);
+				flex-shrink: 0;
+				border-bottom: 1px solid var(--ibm-gray-30);
+			}
+			:host:first-of-type {
+				border-top: 1px solid var(--ibm-gray-30);
+			}
+
+			.container {
+				@apply(--layout-horizontal);
+				padding: 5px 0;
+			}
+			:host(:not([small-screen-width])) .container {
+				@apply(--layout-center);
+			}
+			:host([small-screen-width]) .container {
+				@apply(--layout-vertical);
+				min-height: 0;
+			}
+
+			:host([small-screen-width]) .img-details-container,
+			:host([small-screen-width]) .button-container {
+				flex-shrink: 0;
+			}
+
+			.img-details-container {
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+			}
+			:host(:not([small-screen-width])) .img-details-container {
+				@apply(--layout-flex);
+			}
+			
+			.image-container {
+				@apply(--layout-vertical);
+			}
+			.image {
+				width: 64px;
+				height: 64px;
+			}
+			.image-placeholder-icon {
+				--triplat-icon-height: 64px;
+				--triplat-icon-width: 64px;
+				--triplat-icon-fill-color: var(--tri-primary-content-accent-color);
+			}
+
+			.details-container {
+				@apply(--layout-flex);
+				@apply(--layout-vertical);
+				@apply(--layout-self-start);
+				padding: 5px 10px;
+			}
+			.item-name {
+				margin-bottom: 3px;
+				font-size: 16px;
+				font-weight: bold;
+			}
+			paper-textarea {
+				--paper-input-container-input: {
+					font-size: 12px !important;
+				}
+			}
+
+			.button-container {
+				@apply(--layout-horizontal);
+				@apply(--layout-start);
+			}
+			:host([small-screen-width]) .button-container {
+				@apply(--layout-center-center);
+				padding: 10px 0;
+			}
+			:host[is-added] .button-container {
+				@apply(--layout-self-start);
+				padding: 10px 0;
+			}
+			:host[small-screen-width][is-added] .button-container {
+				@apply(--layout-self-center);
+			}
+
+			:host([small-screen-width]) .quantity-input {
+				padding-right: 10px;
+			}
+			tricomp-incremental-number-input {
+				--tricomp-incremental-number-input-padding-top: 0px;
+			}
+		</style>
+
+		<tricore-url raw-url="/getCompanyFile.jsp?fileLoc=" bind-url="{{imgUrl}}"></tricore-url>
+
+		<div class="container">
+			<div class="img-details-container">
+				<template is="dom-if" if="[[_showImage(applicationSettings)]]">
+					<div class="image-container">
+						<iron-image class="image" src="{{_computeImageUrl(item.image, imgUrl)}}" sizing="cover" hidden$="[[!imageLoaded]]" loaded="{{imageLoaded}}"></iron-image>
+						<triplat-icon class="image-placeholder-icon" icon="picturefile" hidden$="[[imageLoaded]]"></triplat-icon>
+					</div>
+				</template>
+
+				<div class="details-container">
+					<div class="item-name">[[item.menuItem]]</div>
+					<div>[[item.description]]</div>
+
+					<paper-textarea label="Instructions" 
+						value="{{item.instructions}}" 
+						max-rows="4" 
+						hidden$="[[!_computeIsAdded(item._id, item.quantity)]]"
+						always-float-label></paper-textarea>
+				</div>
+			</div>
+
+			<div class="button-container">
+				<tricomp-incremental-number-input class="quantity-input" 
+					hidden="[[!_computeIsAdded(item._id, item.quantity)]]" 
+					on-user-change="_handleQuantityChange" 
+					min="1" 
+					max="9999" 
+					value="{{item.quantity}}"></tricomp-incremental-number-input>
+				<paper-button secondary
+					class="action-button" 
+					hidden$="[[_computeIsAdded(item._id, item.quantity)]]" 
+					on-tap="_handleAddFood"
+					noink>Add</paper-button>
+				<paper-button danger-outline 
+					class="action-button" 
+					hidden$="[[!_computeIsAdded(item._id, item.quantity)]]" 
+					on-tap="_handleRemoveFood"
+					noink>Remove</paper-button>
+			</div>
+		</div>
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-food-order-item",
+
+			behaviors: [
+				TriBlockViewResponsiveBehavior,
+				TriRoomReservationUtilBehavior,
+				TriPlatNumberBehavior
+			],
+
+			properties: {
+				item: Object,
+				isAdded: {
+					type: Boolean,
+					value: false,
+					reflectToAttribute: true,
+					computed: '_computeIsAdded(item._id, item.quantity)'
+				}
+			},
+
+			observers: [
+				'_handleInstructionsChange(item.instructions)'
+			],
+
+			_computeIsAdded: function(id, quantity) {
+				return id != null && quantity > 0;
+			},
+
+			_setModified: function() {
+				this.item._modified = true;
+				this.fire("food-order-changed");
+			},
+
+			_handleQuantityChange: function() {
+				if (this.item && this.item._id) {
+					this._setModified();
+				}
+			},
+
+			_handleInstructionsChange: function(instructions) {
+				if (this.item && this.item._id) {
+					this._setModified();
+				}
+			},
+
+			_handleAddFood: function() {
+				if (this.item && this.item._id > 0) {
+					this.set("item.quantity", 1);
+					this._setModified();
+					return;
+				} else {
+					var menuItemId = this.item.menuItemId;
+					this.fire("action-add-food", { 'menuItemId' : menuItemId, 'el' : this });
+				}
+			},
+
+			_handleRemoveFood: function() {
+				this.set("item.quantity", 0);
+				this._setModified();
+			}
+
+		});
+	</script>
+</dom-module>

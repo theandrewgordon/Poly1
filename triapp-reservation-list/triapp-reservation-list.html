@@ -1,0 +1,511 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<dom-module id="triapp-reservation-list">
+	<template>
+		<style>
+			:host {
+				@apply(--layout-vertical);
+			}
+			:host([list-view]:not([small-screen-width])) {
+				@apply(--layout-horizontal);
+				@apply(--layout-wrap);
+			}
+
+			.no-reservations-placeholder {
+				@apply(--layout-flex);
+				padding: 15px 15px 0 15px;
+				font-size: 18px;
+				font-weight: 300;
+			}
+			.no-reservations-placeholder > * {
+				text-align: center;
+				margin: 0;
+			}
+
+			paper-icon-button {
+				width: 44px;
+				height: 44px;
+				padding: 10px;
+			}
+
+			triblock-scroll-container {
+				--triblock-scroll-container-button-background: var(--ibm-blue-50);
+				--triblock-scroll-container-left-arrow: 25px;
+				--triblock-scroll-container-right-arrow: 25px
+			}
+
+			.cancel-dialog {
+				@apply(--layout-vertical);
+				@apply(--layout-center-center);
+			}
+
+			.loading-indicator {
+				margin: 20px;
+				text-align: center;
+			}
+
+			.reservation-padding{
+				padding-left: 30px;
+			}
+
+			:host([list-view]:not([small-screen-width])) .loading-indicator {
+				@apply(--layout-flex);
+				flex-basis: 100%;
+			}
+
+			#roomPopup {
+				width: 80%;
+				height: 80%;
+				max-width: 600px;
+				padding: 0px;
+			}
+
+		</style>
+
+		<!-- Reserve uses a special Current User with some extensions -->
+		<triplat-ds id="currentUser" name="currentUser" data="{{currentUser}}" loading="{{currentUserLoading}}"></triplat-ds>
+
+		<triplat-ds id="reservationInstances" name="reservationInstances" data="{{reservationInstances}}" loading="{{reservationInstancesLoading}}" manual></triplat-ds>
+
+		<triplat-ds id="reservationsForPerson" name="reservationsForPerson" data="{{reservationsForPerson}}" loading="{{reservationsForPersonLoading}}">
+			<triplat-ds-instance instance-id="[[currentUser.person.data._id]]"></triplat-ds-instance>
+		</triplat-ds>
+
+		<triplat-ds id="myReservationEvents" name="myReservationEvents" data="{{myReservationEvents}}" loading="{{myReservationEventsLoading}}" manual>
+			<triplat-ds-context name="reservationsForPerson" context-id="{{currentUser.person.data._id}}">
+			</triplat-ds-context>
+			<triplat-query id="myReservationEventsQuery">
+				<triplat-query-resource-calendar
+					start-date="[[_range.start]]"
+					end-date="[[_range.end]]">
+				</triplat-query-resource-calendar>
+			</triplat-query>
+		</triplat-ds>
+
+		<triplat-ds id="myReservationManagers" name="myReservationManagers" data="{{myReservationManagers}}" manual></triplat-ds>
+
+		<triplat-ds id="myOldReservationManagers" name="myOldReservationManagers" data="{{myOldReservationManagers}}" manual></triplat-ds>
+
+		<triplat-ds id="reservationManager" name="reservationManager" data="{{reservationManager}}" loading="{{reservationManagerLoading}}" manual>
+			<triplat-ds-context name="myReservationManagers" context-id="[[reservationManagerSpecId]]">
+			</triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="reservationManagerInstance" name="reservationManagerInstance" data="{{reservationManagerInstance}}" loading="{{reservationManagerInstanceLoading}}" manual>
+			<triplat-ds-context name="myReservationManagers" context-id="[[reservationManagerSpecId]]">
+			</triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="reservationLocations" name="reservationLocations" data="{{reservationLocations}}" loading="{{reservationLocationsLoading}}" manual>
+			<triplat-ds-context name="myReservationManagers" context-id="[[reservationManagerSpecId]]">
+			</triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="exceptionOccurrences" name="exceptionOccurrences" data="{{exceptionOccurrences}}" loading="{{exceptionOccurrencesLoading}}" manual>
+			<triplat-ds-context name="myReservationManagers" context-id="[[reservationManagerSpecId]]">
+			</triplat-ds-context>
+		</triplat-ds>
+
+		<tricore-url hidden raw-url="/p/web/roomReservation" bind-url="{{mainUrl}}"></tricore-url>
+
+		<template is="dom-if" if="[[!listView]]">
+			<tricomp-reservation-month-title
+				main-url="[[mainUrl]]"
+				home-app="[[homeApp]]"></tricomp-reservation-month-title>
+		</template>
+
+		<div class="loading-indicator" hidden="[[!_isLoading]]">
+			<paper-spinner active></paper-spinner>
+		</div>
+
+		<template is="dom-if" if="[[reservationsGroupByDate]]">
+			<template is="dom-if" if="[[!listView]]">
+				<triblock-scroll-container class="reservation-padding" id="cardsContainer" auto-height>
+					<template is="dom-repeat" items="{{reservationsGroupByDate}}" as="dayGroupedItems">
+						<template is="dom-repeat" items="{{dayGroupedItems}}">
+
+							<tricomp-reservation-list-item
+								event-item="{{item}}"
+								current-user="[[currentUser]]"
+								is-card="[[!listView]]">
+							</tricomp-reservation-list-item>
+
+						</template>
+					</template>
+				</triblock-scroll-container>
+			</template>
+
+			<template is="dom-if" if="[[listView]]">
+				<template is="dom-repeat" items="[[reservationsGroupByDate]]">
+					<tricomp-reservation-list-group
+						group="[[item]]"
+						current-user="[[currentUser]]"
+						is-card="[[!listView]]"
+						is-last-group="[[_computeIsLastGroup(index)]]"
+						hidden="[[_isLoading]]">
+					</tricomp-reservation-list-group>
+				</template>
+			</template>
+		</template>
+
+		<template is="dom-if" if="[[!reservationsGroupByDate]]">
+			<div class="no-reservations-placeholder" hidden="[[_isLoading]]">
+				<div>You do not have any reservations in progress for [[selectedMonth]].</div>
+			</div>
+		</template>
+
+		<triblock-popup id="roomPopup" with-backdrop>
+			<tricomp-reservation-room-details id="roomDetails" action-label="[[actionLabel]]"></tricomp-reservation-room-details>
+		</triblock-popup>
+
+		<paper-dialog id="cancelDialog"
+			class="cancel-dialog"
+			with-backdrop>
+			<p>Please wait while we cancel your reservation.</p>
+			<paper-spinner active></paper-spinner>
+		</paper-dialog>
+
+		<paper-toast id="toast" text=""></paper-toast>
+
+	</template>
+	<script>
+		Polymer({
+
+			is: "triapp-reservation-list",
+
+			behaviors: [
+				TriReservationActionsBehavior,
+				TriReservationUtilitiesBehavior,
+				TriPlatViewBehavior,
+				TriDateUtilities,
+				TriBlockViewResponsiveBehavior
+			],
+
+			properties: {
+				reservationsGroupByDate: Array,
+				selectedMonth: String,
+				initialMonth: {
+					type: Object,
+					notify: true
+				},
+				count: {
+					type: Number,
+					computed: "_computeRecordCount(reservationsGroupByDate)",
+					notify: true
+				},
+				homeApp: {
+					type: String
+				},
+				listView: {
+					type: Boolean,
+					value: false,
+					reflectToAttribute: true
+				},
+				rangeStart: String,
+				rangeEnd: String,
+				actionLabel: String,
+				_isLoading: {
+					type: Boolean,
+					computed: "_isBusy(isBusy, myReservationEventsLoading, reservationInstancesLoading, reservationsForPersonLoading)"
+				},
+				_range: {
+					type: Object,
+					value: function() {
+						return {
+							start: "",
+							end: ""
+						}
+					}
+				}
+			},
+
+			listeners: {
+				"navigate-reservation-open": "_handleOpenReservation",
+				"dom-change": "_handleDomChange",
+				"reservation-resources-change": "_handleReservationResourcesChange",
+				"reservation-room-detail-open": "_handleOpenRoomDetails",
+				"reservation-room-location-close": "_handleCloseRoomDetails"
+			},
+
+			observers: [
+				'_handleEvents(myReservationEvents, currentUser._TimeZoneId)',
+				'_setInitialYearMonth(currentUser._TimeZoneId)',
+				'_setNewRange(rangeStart, rangeEnd)',
+				"_observeRange(_range)"
+			],
+
+			_isBusy: function(isBusy, myReservationEventsLoading, reservationInstancesLoading, reservationsForPersonLoading) {
+				return isBusy || myReservationEventsLoading || reservationInstancesLoading || reservationsForPersonLoading;
+			},
+
+			_handleOpenReservation: function(e) {
+				var reservationId = e.detail.reservationId;
+				var occurrenceStart = e.detail.occurrenceStart != null ? this.toMilliseconds(e.detail.occurrenceStart): -1;
+				var occurrenceEnd = e.detail.occurrenceEnd != null ? this.toMilliseconds(e.detail.occurrenceEnd): -1;
+				if (reservationId) {
+					this.fire("set-busy");
+
+					var url = this.mainUrl;
+					if (this.homeApp) {
+						url += "?homeApp=" + this.homeApp + "&";
+					}
+					url += "#!/open/" + reservationId + "/" + occurrenceStart + "/" + occurrenceEnd;
+
+					this._openUrl(url);
+				} else {
+					console.error("Cannot open reservation because [reservationId] was not specified.");
+				}
+			},
+
+			_openUrl: function(url) {
+				this.fire("set-busy");
+				this.async(function() {
+					location.assign(url);
+				});
+			},
+
+			_computeRecordCount: function(reservationGroups) {
+				var count = (Boolean(reservationGroups) && reservationGroups.length > 0) ? reservationGroups[0].length : 0;
+				return count;
+			},
+
+			_setInitialYearMonth: function(timezone) {
+				var mo = moment();
+
+				var lang = document.querySelector('html').getAttribute("lang") || 'en';
+				var monthNameMo = moment.tz(mo, timezone);
+				monthNameMo.locale(lang);
+				var monthName = monthNameMo.format("MMMM");
+
+				this.set('selectedMonth', monthName);
+
+				var startMo = mo.clone();
+				startMo = startMo.set({'date': 1, 'hour': 0, 'minute': 0, 'second': 0, 'millisecond': 0});
+				var startISOpreTZ = startMo.format("YYYY-MM-DDTHH:mm:ss.SSSZ");
+				var startISO = this.normalizeToTimezone(startISOpreTZ, timezone);
+
+				var endMo = startMo.clone();
+				endMo = endMo.add(1, "M");
+				var endISOpreTZ = endMo.format("YYYY-MM-DDTHH:mm:ss.SSSZ");
+				var endISO = this.normalizeToTimezone(endISOpreTZ, timezone);
+
+				// Set initial month
+				var initialMonth = {
+					startDate: startMo,
+					endDate: endMo
+				};
+				this.set("initialMonth", initialMonth);
+
+				this._setRange(startISO, endISO);
+			},
+
+			_sortEvents: function(events, timezone) {
+				events.sort(function(a, b) {
+					var aMo = moment(a._Start_Datetime).tz(timezone);
+					var bMo = moment(b._Start_Datetime).tz(timezone);
+
+					if (aMo._d > bMo._d) {
+						return 1
+					} else if (aMo._d < bMo._d) {
+						return -1;
+					} else {
+						return 0;
+					}
+				});
+			},
+
+			_bindMatchingEventInstance: function(reservationInstances, event) {
+				var rdSpecId = this._getEventId(event);
+
+				for (var i = 0; i < reservationInstances.length; i++) {
+					var reservationInstance = reservationInstances[i];
+
+					// match-up the instace based on the Reservation Definition specId and the StartDateTime of the event
+					if (reservationInstance._rdSpecId == rdSpecId && reservationInstance.startDateTime == event._Start_Datetime) {
+						event.reservationInstance = reservationInstance;
+						break;
+					}
+				}
+			},
+
+			_getEventId: function(event) {
+				if (!event._Event_Id) {
+					return event._Master_Recurring_Event_Id;
+				}
+
+				return event._Event_Id;
+			},
+
+			_handleEvents: function(events, timezone) {
+				var reservationDateGroups = [];
+
+				if (events && events.length > 0 && timezone) {
+
+					this.$.reservationInstances.refresh().then(function() {
+						var reservationInstances = this.$.reservationInstances.data;
+
+						this._sortEvents(events, timezone);
+
+						var tempReservationDateGroup = [];
+						var tempReservationStartMo = null;
+						var nowMo = moment().tz(timezone);
+
+						for (var i = 0; i < events.length; i++) {
+							var reservation = events[i];
+
+							// preserve the Start Time before it has been timezone-converted
+							reservation._Orig_Start_Datetime = reservation._Start_Datetime;
+							var reservationStartMo = moment(reservation._Start_Datetime).tz(timezone);
+
+							// preserve the End Time before it has been timezone-converted
+							reservation._Orig_End_Datetime = reservation._End_Datetime;
+							var reservationEndMo = moment(reservation._End_Datetime).tz(timezone);
+
+							// if we are already beyond the end time of the reservation, discard it
+							if (reservationEndMo.isBefore(nowMo, "second")) {
+								continue;
+							}
+
+							// only bind instances for today
+							if (this._isToday(nowMo, reservationStartMo, timezone) || this._isToday(nowMo, reservationEndMo, timezone)) {
+								this._bindMatchingEventInstance(reservationInstances, reservation);
+
+								// if there is a bound instance, discard this event if the meeting has been checked-out/ended, or cancelled
+								if (reservation.reservationInstance && (reservation.reservationInstance.actualEnd || reservation.reservationInstance.cancellationDateTime)) {
+									continue;
+								}
+							}
+
+							if (!tempReservationStartMo) {
+								if (reservationStartMo.isBefore(nowMo, "day") ) {
+									tempReservationStartMo = nowMo;
+								} else {
+									tempReservationStartMo = reservationStartMo;
+								}
+							}
+
+							if (this.listView) {
+								if (reservationStartMo.isSame(tempReservationStartMo, "day") || reservationStartMo.isBefore(tempReservationStartMo, "day")) {
+									tempReservationDateGroup.push(reservation);
+								} else {
+									reservationDateGroups.push(tempReservationDateGroup);
+									tempReservationDateGroup = [];
+									tempReservationStartMo = reservationStartMo;
+									tempReservationDateGroup.push(reservation);
+								}
+							} else {
+							// put them all in a single grouping - since we're not doing daily grouping like the reservation list
+								tempReservationDateGroup.push(reservation);
+							}
+						}
+
+						// Push the temporary array after the `for` loop
+						if (tempReservationDateGroup && tempReservationDateGroup.length !== 0) {
+							reservationDateGroups.push(tempReservationDateGroup);
+						}
+
+						this._resetReservationDateGroups(reservationDateGroups);
+					}.bind(this));
+				} else {
+					this._resetReservationDateGroups(reservationDateGroups);
+				}
+			},
+
+			_resetReservationDateGroups: function(reservationDateGroups) {
+				this.debounce('_resetReservationGroups', function () {
+					this.set("reservationsGroupByDate", null);
+					this.async(function() {
+						if (reservationDateGroups.length == 0) {
+							this.set("reservationsGroupByDate", null);
+						} else {
+							this.set("reservationsGroupByDate", reservationDateGroups);
+						}
+					});
+				});
+			},
+
+			_isToday: function(todayMo, datetimeMo, timezone) {
+				if (!todayMo) {
+					todayMo = moment().tz(timezone);
+				}
+
+				return datetimeMo.isSame(todayMo, 'day');
+			},
+
+			created: function() {
+				// TODO: To be fixed
+				moment.locale("en");
+			},
+
+			doRefresh: function() {
+				this.debounce('doRefresh', function () {
+					if (this.$.myReservationEvents) {
+						this.$.myReservationEvents.refresh();
+					}
+				});
+			},
+
+			_setRange: function(start, end) {
+				var range = new Object();
+
+				range.start = start;
+				range.end = end;
+
+				this.set("_range", range);
+			},
+
+			_handleDomChange: function() {
+				this._cardsNotifyResize();
+			},
+
+			_handleReservationResourcesChange: function() {
+				this._cardsNotifyResize();
+			},
+
+			_cardsNotifyResize: function() {
+				this.debounce(
+					"cardsChanged",
+					function() {
+						var cardsContainer = document.querySelector("#cardsContainer");
+						if (cardsContainer) {
+							cardsContainer.notifyResize();
+						}
+					},
+					500
+				);
+			},
+
+			_setNewRange: function(start, end) {
+				if (start && end && start !== "" && end !== "") {
+					this._setRange(start, end);
+				}
+			},
+
+			_computeIsLastGroup: function(index) {
+				if (this.reservationsGroupByDate.length - 1 === index) {
+					return true;
+				} else {
+					return false;
+				}
+			},
+
+			_handleOpenRoomDetails: function(e) {
+				var item = e.detail;
+				this.$.roomDetails.eventItem = item.eventItem;
+				this.$.roomDetails.applicationSettings = item.applicationSettings;
+				this.$.roomPopup.openPopup();
+			},
+
+			_handleCloseRoomDetails: function(){
+				this.$.roomPopup.closePopup();
+			},
+
+			_observeRange: function(range) {
+				Polymer.RenderStatus.afterNextRender(this, function() {
+					this.$.myReservationEvents.refresh();
+				});
+			}
+
+		});
+	</script>
+</dom-module>

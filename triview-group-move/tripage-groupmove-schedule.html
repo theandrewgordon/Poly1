@@ -1,0 +1,56 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<!-- TRIRIGA Platform Components -->
+<link rel="import" href="../triplat-debug/triplat-debug.html">
+<link rel="import" href="../triplat-routing/triplat-routing.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+
+
+<!-- Polymer Iron Components -->
+<link rel="import" href="../iron-dropdown/iron-dropdown.html">
+
+<!-- Polymer Paper Components -->
+<link rel="import" href="../paper-button/paper-button.html">
+
+<dom-module id="tripage-groupmove-schedule">
+  <style>
+  </style>
+
+  <template>
+
+    <triplat-route id="scheduleRoute" name="scheduleRouteGroupMove"></triplat-route>
+
+    <triplat-ds id="currentUser" name="currentUser" data="{{currentUser}}"></triplat-ds>
+
+        <span>SCHEDULE</span>
+
+    <h2>Welcome <b>{{currentUser.firstName}},</b></h2>
+
+    <div class="layout horizontal flex">
+       <paper-button raised noink on-tap="_resetWelcome">Reset Skip Welcome Option</paper-button>
+    </div>
+
+  </template>
+</dom-module>
+
+<script>
+  Polymer({
+    is: "tripage-groupmove-schedule",
+
+    behaviors: [TriBlockPageContainerBehavior],
+
+    properties: {
+
+    },
+
+    //=========================================================
+		// Property _resetWelcome
+		//------------------------------------------
+		// Objective: Reset skip welcome
+		//=========================================================
+    _resetWelcome: function() {
+      this.currentUser.skipGroupMoveWelcome = false;
+      this.$.currentUser.updateRecord(this.currentUser._id, TriPlatDs.RefreshType.BOTH);
+    },
+  });
+</script>

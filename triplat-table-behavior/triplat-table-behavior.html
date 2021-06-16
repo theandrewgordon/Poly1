@@ -1,0 +1,143 @@
+<script>
+	TriPlatTableBehavior = {
+
+		properties : {
+
+			/**
+			 * Indicates there is a tri-fixed-table
+			 */
+			_isFixedTable: {
+				type: Boolean,
+				value: false
+			},
+
+			/**
+			 * Name of field whose value determines the display order
+			 */
+			sortField: {
+				type: String,
+				value: ""
+			},
+			
+			/**
+			 * Reverse the sort order
+			 */
+			sortDescending: {
+				type: Boolean,
+				value: true
+			},
+
+			/**
+			 * Name of field whose value determines the display order between records that have equal `sortField` values
+			 */
+			secondSortField: {
+				type: String,
+				value: ""
+			},
+
+			/**
+			 * Reverse the secondary sort order
+			 */
+			secondSortDescending: {
+				type: Boolean,
+				value: true
+			},
+
+			/**
+			 * Object that maps `sortField`s to corresponding `secondSortField`s
+			 */
+			sortMap: {
+				type: Object,
+				value: {}
+			}
+			
+		},
+
+		ready: function() {
+			var fixedTable = Polymer.dom(this.root).querySelector("div[tri-fixed-table]");
+			if (fixedTable) {
+				this.set("_isFixedTable", true);
+				// trigger _handleResize when the window is resized
+				window.addEventListener("resize", this._handleResize.bind(this));
+			}
+		},
+
+		/**
+		 * Update the sortField.
+		 *
+		 * Requirements: Apply this function as a handler on an element with its `data-column` attribute set to the desired sort field.
+		 *               The sort icon must have the "sort-icon" class and be a descendent of the handling element.
+		 */
+		_handleColumnSort: function(e) {
+			var oldSortCol = this.sortField;
+			if (oldSortCol && oldSortCol != "") {
+				// reset current sort icon
+				var oldIcon = Polymer.dom(this.root).querySelector('div[data-column="'+oldSortCol+'"] .sort-icon');
+				oldIcon.setAttribute("icon", "sort");
+			}
+
+			var newSortCol = e.currentTarget.getAttribute("data-column");
+			var icon = Polymer.dom(e.currentTarget).querySelector(".sort-icon");
+			if (this.sortField == newSortCol) {
+				if (this.sortDescending) {
+					// reset search to no sort
+					this.set("sortField", "");
+					this.set("sortDescending", false);
+					icon.setAttribute("icon", "sort");
+				} else {
+					// switch to descending sort
+					this.set("sortDescending", true);
+					icon.setAttribute("icon", "sort-descending");
+				}
+			} else {
+				// new search column
+				this.set("sortField", newSortCol);
+				this.set("sortDescending", false);
+				icon.setAttribute("icon", "sort-ascending");
+			}
+
+			if (this.sortMap.hasOwnProperty(newSortCol)) {
+				this._handleSecondColumnSort(this.sortMap[newSortCol]);
+			}
+		},
+
+		/**
+		 * Update the secondSortField.
+		 */
+		_handleSecondColumnSort: function(secondSortField) {
+			if (this.secondSortField == secondSortField) {
+				if (this.secondSortDescending) {
+					// reset search to no sort
+					this.set("secondSortField", "");
+					this.set("secondSortDescending", false);
+				} else {
+					// switch to descending sort
+					this.set("secondSortDescending", true);
+				}
+			} else {
+				// new search column
+				this.set("secondSortField", secondSortField);
+				this.set("secondSortDescending", false);
+			}
+		},
+
+		/**
+		 * Calculate the thead offset based on tbody scrollbar presence
+		 *
+		 * Requirements: `thead` element must have id="tableHead".
+		 *               `tbody` element must have id="tableBody".
+		 *
+		 * This function will be automatically called on window resize for components with a tri-fixed-table. However, it needs to be manually triggered for the following scenarios:
+		 * - when the table dom-repeat template has been changed (handle the dom-change event; this will account for calculation on page refresh as well)
+		 * - when the table appears on the screen (this could include page navigation or a button that switches to the table layout)
+		 */
+		_handleResize: function() {
+			// The following width calc will work as long as tableBody doesn't have a border left/right.
+			var tableHead = Polymer.dom(this.root).querySelector("div[tri-thead]");
+			var tableBody = Polymer.dom(this.root).querySelector("div[tri-tbody]");
+			var scrollbarWidth = tableBody.offsetWidth - tableBody.clientWidth;
+			tableHead.style.paddingRight = "" + scrollbarWidth + "px";
+		},
+		
+	};
+</script>

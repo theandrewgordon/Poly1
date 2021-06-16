@@ -1,0 +1,223 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-tooltip/paper-tooltip.html">
+
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icons/communication-icons.html">
+<link rel="import" href="../iron-icons/hardware-icons.html">
+<link rel="import" href="../iron-icons/av-icons.html">
+<link rel="import" href="../iron-icons/device-icons.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<link rel="import" href="theme.html">
+
+<dom-module id="tricomp-move-results-item">
+
+	<link rel="import" type="css" href="shared.css">
+
+	<style>
+
+		:host {
+			@apply(--layout-vertical);
+			flex-shrink: 0;
+			padding: 10px;
+		}
+
+		.action-button {
+			width: 50%;
+			font-weight: 500;
+			font-size: 16px;
+		}
+
+		
+		.banner {
+			@apply(--layout-vertical);
+			@apply(--layout-start);
+			@apply(--layout-relative);
+		}
+
+		.banner-left {
+            height: var(--legend-color-box-size, 100px); 
+            width: var(--legend-color-box-size, 10px); 
+            @apply(--layout-flex);
+		}
+
+		.info-container {
+			@apply(--layout-vertical);
+			@apply(--layout-flex);
+			padding-bottom: 20px;
+			padding-top: 10px;
+			padding-right: 10px;
+			/*overflow-x: hidden;*/
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			width:70%;
+		}
+
+		.info-container-space {
+			@apply(--layout-horizontal);
+			padding-bottom: 0px;
+		}
+
+		.lower-main-content {
+			@apply(--layout-horizontal);
+			padding-top: 0px;
+
+		}
+		
+		paper-button {
+			--paper-button: {
+				margin: 0;
+			};
+		}
+
+		.recurrence-count {
+			font-weight: bold;
+		}
+
+		.space-actions-container {
+			@apply(--layout-horizontal);
+			@apply(--layout-center-center);
+			padding-bottom: 10px;
+		}
+
+		.space-details-container {
+			@apply(--layout-flex);
+			min-width: 0;
+			@apply(--layout-vertical);
+			font-size: 14px;
+			line-height: 17px;
+			padding: 0px 10px;
+		}
+
+		.space-details-icon-container {
+			@apply(--layout-vertical);
+			@apply(--layout-center-center);
+		}
+
+		.space-detail-item {
+			font-size: 14px;
+			color: var(--ibm-cool-gray-60);
+		}
+
+		.space-detail-item-bold {
+			font-size: 14px;
+			font-weight: bold;
+			color: var(--ibm-cool-gray-60);
+		}
+
+		.space-detail-item-room {
+			font-size: 16px;
+			font-weight: bold;
+		}
+
+		.space-image-container {
+			@apply(--layout-vertical);
+			@apply(--layout-start);
+			@apply(--layout-relative);
+		}
+		.space-image {
+			width: 64px;
+			height: 64px;
+		}
+
+		.space-image-placeholder-icon {
+			--triplat-icon-height: 63px;
+			--triplat-icon-width: 63px;
+			--triplat-icon-fill-color: var(--tri-primary-content-accent-color);
+		}
+
+		.space-name-container {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			@apply(--layout-start-justified);
+		}
+		.space-name {
+			padding-top: 5px;
+			padding-right: 10px;
+			font-size: 20px;
+			font-weight: 500;
+			line-height: 19px;
+		}
+
+	</style>
+
+	<template>
+
+		<tricore-url raw-url="/getCompanyFile.jsp?fileLoc=" bind-url="{{imgUrl}}"></tricore-url>
+
+		<div class="lower-main-content">
+
+			<div class="info-container-space">
+				
+				<div class="banner" hidden$="{{!_matchesOrgSpecified(item)}}">
+					<div class="banner-left" style="background-color: #5AA700;opacity: 0.95;"></div>
+				</div>
+
+				<div class="banner" hidden$="{{!_matchesOrgOther(item)}}">
+					<div class="banner-left" style="background-color: #BE9B00;opacity: 0.95;"></div>
+				</div>
+				<span>&nbsp;</span>
+			</div>
+
+			<div class="info-container">
+
+				<div class="info-container-space">
+
+					<div class="space-image-container" hidden$="{{!displayImages}}">
+						<iron-image id="roomImage" class="space-image" alt="Room" src="{{_computeImageUrl(item.spaceImage, imgUrl)}}" sizing="cover" hidden$="[[!roomImageLoaded]]" loaded="{{roomImageLoaded}}"></iron-image> <!-- placeholder-icon="ibm:picturefile" height="63px" width="63px" loading="{{roomImageLoading}}" preload -->
+						<triplat-icon class="space-image-placeholder-icon" icon="picturefile" hidden$="[[roomImageLoaded]]"></triplat-icon>
+					</div>
+
+					<div class="space-details-container">
+						<div class="space-name-container">
+							<span class="space-name space-detail-item">{{item.space}}</span>
+						</div>
+						<div class="space-detail-item">[[item.building]]</div>
+						<div class="space-detail-item">[[item.floor]]</div>
+						<div class="space-detail-item-bold">[[item.spaceClass]]</div>
+						<div class="space-detail-item">[[_roundArea(item.area.value)]]&nbsp;[[item.area.uom]]</div>
+					</div>
+
+					
+				</div>
+
+				<span>&nbsp;</span>
+				
+				<div class="space-actions-container">
+					<paper-button on-tap="_handleSelectSpace" class="action-button" noink>Select</paper-button>
+				</div>
+
+			</div>
+		</div>
+
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-move-results-item",
+		behaviors: [MoveRequestBehavior],
+
+		properties: {
+			item: {
+				type: Object,
+				observer: "_handleItemChange"
+			},
+			displayImages: Boolean,
+		},
+
+		_handleSelectSpace: function(e) {
+			console.log("_handleSelectSpace...");
+			var spaceId = this.item._id;
+			this.fire("action-select-space", { 'spaceId' : spaceId });
+		},
+
+		_handleItemChange: function(item) {
+
+		}
+		
+	});
+</script>

@@ -1,0 +1,219 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017-2018 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<!-- This is a lazy-loaded component, DO NOT add imports here, add them to its corresponding -imports.html file. -->
+<dom-module id="tricomp-portal-item-news">
+	<template>
+		<style>
+			:host {
+				@apply --layout-horizontal;
+				font-size: 20px;
+				background-color: white;
+			}
+
+			.container {
+				@apply --layout-vertical;
+				@apply --layout-flex;
+				padding: 0px;
+			}
+
+			.carousel {
+				--triblock-carousel-buttons-color: var(--ibm-blue-70);
+				--triblock-carousel-content-container:{
+					-ms-flex: 1 1 0.000000001px;
+					-webkit-flex: 1;
+					flex: 1;
+					-webkit-flex-basis: 0.000000001px;
+					flex-basis: 0.000000001px;
+				};
+				--triblock-carousel-dot-indicator: {
+					margin-top: -25px;
+				};
+			}
+
+			.news {
+				@apply --layout-horizontal;
+				@apply --layout-flex;
+				position: relative;
+				height: 100%;
+				width: 100%;
+			}
+			
+			.image-container triplat-image,
+
+			.news-text  {
+				flex: 1;
+			}
+
+			.image-container {
+				@apply --layout-horizontal;
+				@apply --layout-flex;
+			}
+			:host([small-screen-width]) .image-container {
+				@apply --layout-vertical-reverse;
+			}
+
+			.news-text {
+				@apply --layout-vertical;
+				padding: 25px 46px 44px 80px;
+				font-size: 18px;
+                color: var(--ibm-blue-80) !important;
+				background: rgba(230, 242, 244, 1);
+			}
+
+			:host([small-screen-width]) .news-text {
+				@apply --layout-horizontal;
+				padding: 12px 12px 12px 15px;
+			}
+			
+			.news-text p {
+				margin: 0 0 5px 0;
+			}
+
+			.text-box {
+				@apply --layout-flex;
+			}
+			:host(:not([small-screen-width])) .text-box {
+				@apply --layout-vertical;
+				@apply --layout-center-justified;
+			}
+			:host([small-screen-width]) .text-box {
+				padding-right: 18px;
+			}
+
+			.news-title {
+				position: relative;
+				overflow: hidden;
+				max-height: 2.4em;
+				line-height: 1.2em;    	
+				font-size: 30px;
+                color: var(--ibm-blue-60) !important;
+			}
+
+			:host([small-screen-width]) .news-title {
+				font-size: 22px;
+			}
+
+			tricomp-multiline-overflow-text {
+				--multiline-overflow-text-ellipsis-background: rgb(230, 242, 244);
+			}
+
+			.news-button {
+				@apply --layout-self-center;
+    			border: 2px solid var(--ibm-blue-70) !important;
+				padding: 9px 12px !important;
+				background-color: transparent !important;
+				font-size: 14px;
+				color: var(--ibm-blue-80) !important;
+
+			}
+
+			:host([small-screen-width]) .news-button {
+				padding: 9px !important;
+			}
+			.news-button:hover {
+				background-color: var(--ibm-blue-80) !important;
+				color: white !important;
+			}
+			:host(:not([small-screen-width])) .news-text .news-button {
+				@apply --layout-self-end;
+			}
+		</style>
+
+		<triplat-ds id="portalNews" name="news" data="{{news}}" force-server-filtering>
+			<triplat-query>
+				<triplat-query-filter name="recordLanguage" operator="equals" value="[[currentUser._Language]]"></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<div class="container">
+			<triblock-carousel id="newsCarousel" class="carousel" disable-auto-slide show-scroll-buttons>
+				<template is="dom-repeat" items="[[news]]">
+					<div class="news">
+						 <div class="image-container">
+							<triplat-image class="news-image" src="[[item.image]]" height="{{_imageHeight}}" width="100%" sizing="cover"></triplat-image>
+						    <div class="news-text">
+								<div class="text-box">
+									<p>[[item.subHeadline]]</p>
+									<p id$="[[_newsTitleId(index)]]" class="news-title">
+										<tricomp-multiline-overflow-text
+											text="[[item.headline]]"
+											parentElement="[[_newsTitleEl(index)]]"
+											no-gradient></tricomp-multiline-overflow-text>
+									</p>
+								</div>
+								<paper-button class="news-button" secondary data-url$="[[item.url]]" on-tap="_redirectToReadMoreLink" hidden$="[[!_hasUrl(item.url)]]">Read more >></paper-button>
+							</div>
+						</div> 
+					</div>
+				</template>
+			</triblock-carousel>
+		</div>
+	</template>
+	<script>
+		Polymer({
+			is: "tricomp-portal-item-news",
+
+			behaviors: [
+				TriPortalItemBehavior,
+				TriBlockViewResponsiveBehavior
+			],
+
+			properties: {
+				news: {
+					type: Array,
+					notify: true
+				},
+
+				_imageHeight: {
+					type: String,
+					value: '300px',
+				}
+			},
+
+			observers: ['_screenWidthChanged(smallScreenWidth, mediumScreenWidth)'],
+
+			listeners: {
+				"newsCarousel.selected-changed": "_carouselSelectedChanged"
+			},
+
+			_carouselSelectedChanged: function(e) { 
+				var index = e.detail.value;
+				
+				var overflowTextEl = this.$$("#newsTitle" + index + " tricomp-multiline-overflow-text");
+				if (overflowTextEl) {
+					overflowTextEl.verifyContent();
+				}
+			},
+
+			_newsTitleId: function(index) {
+				return "newsTitle" + index;
+			},
+
+			_newsTitleEl: function(index) {
+				return this.$$("#newsTitle" + index);
+			},
+
+			_redirectToReadMoreLink: function(e) {
+				var url = e.target.dataset.url;
+				if(url){
+					window.open(url);
+				}
+			}, 
+
+			_hasUrl: function(url){
+				return url;
+			},
+
+			_screenWidthChanged: function(small, medium){
+				// Image size should be 700x300 or 7:3 ratio
+				if(small){
+					this._imageHeight = '300px';
+				} else if (medium) {
+					this._imageHeight = '219px';
+				} else{
+					this._imageHeight = '300px';
+				}
+			}
+		});
+	</script>
+</dom-module>

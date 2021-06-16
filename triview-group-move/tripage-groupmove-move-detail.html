@@ -1,0 +1,286 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-progress-gauge/triplat-progress-gauge.html">
+
+<link rel="import" href="../triblock-page-container-behavior/triblock-page-container-behavior.html">
+
+<link rel="import" href="../triplat-loading-indicator/triplat-loading-indicator.html">
+
+<dom-module id="tripage-groupmove-move-detail">
+
+	<style>
+
+		h1 {
+			text-align: center;
+		}
+
+		iron-icon {
+			min-width: 24px;
+		}
+
+		section {
+			border-top: 1px solid black;
+			padding: 15px;
+		}
+
+		.action-button-label {
+			padding-left: 10px;
+		}
+
+		.approval-history-section {
+			@apply(--layout-vertical);
+			overflow: auto;
+		}
+
+		.approval-history-table-container {
+			@apply(--layout-self-center);
+			@apply(--layout-horizontal);
+			margin-top: 8px;
+			width: 100%;
+		}
+
+		.approval-history-table {
+			width: 100%;
+			@apply(--layout-flex);
+		}
+		
+		.approval-history-table-column {
+			@apply(--layout-flex);
+		}
+
+		.contacts-section {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			@apply(--layout-wrap);
+		}
+
+		.contacts-section > * {
+			@apply(--layout-flex);
+			padding: 5px 0;
+			min-width: 250px; 
+		}
+
+		.drawer-content {
+			@apply(--layout-flex);
+			margin-left: 5px;
+			margin-right: 5px;
+			margin-bottom: 5px;
+		}
+
+		.description {
+			margin-right: 10px;
+			overflow-x: auto;
+		}
+
+		.description-container {
+			@apply(--layout-horizontal);
+			@apply(--layout-wrap);
+			@apply(--layout-center);
+		}
+
+		.description-section {
+			@apply(--layout-vertical);
+		}
+
+		.description-section-action-buttons {
+			@apply(--layout-horizontal);
+			@apply(--layout-center-center);
+		}
+
+		.description-section-content {
+			@apply(--layout-horizontal);
+			@apply(--layout-center-center);
+			@apply(--layout-wrap);
+		}
+
+		.description-section-content > * {
+			@apply(--layout-flex);
+			padding: 5px 0;
+			min-width: 250px; 
+		}
+
+		.description-textarea {
+			width: 90%;
+		}
+
+		.header-section {
+			@apply(--layout-horizontal);
+			@apply(--layout-center-center);
+			border-bottom: 1px solid black;
+		}
+
+		.header-section > h1 {
+			@apply(--layout-flex);
+		}
+
+		.facilities-contact-container {
+			@apply(--layout-vertical);
+		}
+
+		.main-container {
+			@apply(--layout-vertical);
+		}
+
+		.manager-container {
+			@apply(--layout-vertical);
+		}
+
+		.profile-image-placeholder {
+			border: 1px solid black;
+			height: 150px;
+			width: 150px;
+		}
+
+		.reason {
+			overflow-x: auto;
+		}
+
+		.reason-container {
+			@apply(--layout-horizontal);
+			@apply(--layout-wrap);
+		}
+
+		.requestor-detail-section {
+			@apply(--layout-horizontal);
+			@apply(--layout-center-justified);
+			@apply(--layout-wrap);
+			padding: 15px;
+		}
+
+		.requestor-detail-image {
+			@apply(--layout-vertical);
+			@apply(--layout-center-center);
+			margin-right: 5px;
+		}
+
+		.requestor-detail-item {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			margin: 2px;
+		}
+
+		.requestor-detail-text {
+			@apply(--layout-vertical);
+			overflow-x: auto;
+		}
+
+		.title {
+			font-weight: bold;
+		}
+
+		.left-section {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+		}
+
+		.back {
+			color: var(--tri-primary-color);
+			@apply(--layout-self-start);
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			padding-top: 10px;
+			padding-bottom: 5px;
+			cursor: pointer;
+		}
+
+		.heading-title {
+			text-align: left;
+			margin: 2px;
+			padding-left: 20px;
+		}
+		
+		.header-icon{
+			height: 40px;
+			width: 40px;
+			color: var(--tri-primary-color-100);
+			padding-top: 0px;
+			padding-bottom: 10px;
+			padding-left:12px;
+			padding-right: 0px;
+			min-width: 40px;
+		}
+
+		.inline-block-section{
+			display:inline-block;
+		}
+
+		.action {
+			@apply(--layout);
+			@apply(--layout-center-center);
+			padding-left: 20px;
+			min-width: 124px;
+			border-left: 1px solid var(--tri-separator-color);
+		}
+
+		.button {
+			@apply(--layout-horizontal);
+			@apply(--layout-center-center);
+		}
+		
+		.progress {
+			@apply(--layout-horizontal);
+			padding-right: 30px;
+		}
+
+		.status {
+			@apply(--layout-vertical);
+			@apply(--layout-self-center);
+			font-size: 14px;
+			color: var(--tri-secondary-color);
+		}
+		
+		.right-section {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+		}
+		
+		.container {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-fit);
+			min-height: 0;
+		}
+
+		tricomp-request-drawer {
+			background-color: var(--tri-primary-color);
+		}
+		
+		triplat-progress-gauge {
+			--triplat-progress-gauge-percent-font-size: 12px;
+			--triplat-progress-gauge-value-font-size: 24px;
+			--triplat-progress-gauge-circle-stroke-color: var(--tri-primary-content-accent-color);
+			margin-right: 10px;
+			font-size: 24px;
+			font-weight: bold;
+			width: 66px;
+			height: 66px;
+		}
+
+	</style>
+
+	<template>
+
+	<span>MOVE DETAILS</span> 
+	</template>
+
+</dom-module>
+
+<script>
+	Polymer({
+
+		is: "tripage-groupmove-move-detail",
+
+		behaviors: [TriBlockPageContainerBehavior],
+		
+		properties: {
+			
+			_completRequestHandler: Object,
+		},
+		
+		listeners: {
+
+		},
+
+
+	});
+</script>

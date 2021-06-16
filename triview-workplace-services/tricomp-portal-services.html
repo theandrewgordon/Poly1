@@ -1,0 +1,150 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017-2018 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+<!-- This is a lazy-loaded component, DO NOT add imports here, add them to its corresponding -imports.html file. -->
+<dom-module id="tricomp-portal-services">
+	<template>
+		<style>
+			:host {
+				@apply --layout-horizontal;
+				background-color: var(--ibm-blue-70);
+				color: white;
+			}
+
+			.container {
+				@apply --layout;
+				@apply --layout-flex;
+				@apply --layout-horizontal;
+				max-width: 1100px;
+				margin: 0 auto;
+			}
+
+			:host([small-screen]){
+				padding: 0px;
+			}
+
+			:host([small-screen]) .container{
+				@apply --layout-vertical;
+				padding: 0px;
+			}
+
+			tricomp-portal-service-item {
+				@apply --layout-flex;
+			}
+
+			:host(:not([small-screen-width])) .container {
+				@apply --layout-center-center;
+			}
+
+			:host(:not([small-screen-width])) .container > tricomp-portal-service-item {
+				max-width: 400px;
+			}
+		</style>
+
+		<!-- Check authorization for Move Me -->
+		<triplat-auth-check app-name="moveMe"
+			auth="{{moveMeAuth}}">
+		</triplat-auth-check>
+
+		<!-- Check authorization for Locate -->
+		<triplat-auth-check app-name="locate"
+			auth="{{_locateAuth}}">
+		</triplat-auth-check>
+
+		<div class="container">
+			<tricomp-portal-service-item 
+				aria-label="Reserve"
+				title="Reserve a room Check availability Find a space to work"
+				type="reservation"
+				label="Reserve"
+				icon="ibm-medium:reserve"
+				hidden$="[[!_hasAppAuth(reserveAuth)]]">
+				<div help-text id="reservelabel">
+					<div aria-label="Reserve a room">Reserve a room</div>
+					<div aria-label="Check availability">Check availability</div>
+					<div aria-label="Find a space to work">Find a space to work</div>
+				</div>
+			</tricomp-portal-service-item>
+
+			<tricomp-portal-service-item 
+				aria-label="Request Service"
+				title="See a problem? Need help? Need a repair?"
+				type="serviceRequest"
+				label="Request Service"
+				icon="ibm-medium:service-request"
+				hidden$="[[!_hasAppAuth(serviceRequestAuth)]]">
+				<div help-text id="reqservicelabel">
+					<div aria-label="See a problem?">See a problem?</div>
+					<div aria-label="Need help?">Need help?</div>
+					<div aria-label="Need a repair?">Need a repair?</div>
+				</div>
+			</tricomp-portal-service-item>
+
+			<tricomp-portal-service-item 
+				aria-label="Move Me"
+				title="Find a space View floor plans Request a move"
+				type="moveRequest"
+				label="Move Me"
+				icon="ibm:move"
+				hidden$="[[!_hasAppAuth(moveMeAuth)]]">
+				<div help-text id="movemelabel">
+					<div aria-label="Find a space">Find a space</div>
+					<div aria-label="View floor plans">View floor plans</div>
+					<div aria-label="Request a move">Request a move</div>
+				</div>
+			</tricomp-portal-service-item>
+
+			<tricomp-portal-service-item
+				aria-label="Locate"
+				title="Find people Find rooms"
+				type="locate"
+				label="Locate" 
+				icon="ibm:location"
+				hidden$="[[!_hasAppAuthRead(_locateAuth)]]">
+				<div help-text id="locateLabel">
+					<div aria-label="Find people">Find people</div>
+					<div aria-label="Find rooms">Find rooms</div>
+					<div>&nbsp;</div>
+				</div>
+			</tricomp-portal-service-item>
+		</div> 
+
+	</template>
+	<script>
+		Polymer({
+			is: "tricomp-portal-services",
+
+			behaviors: [
+				TriPortalItemBehavior,
+				TriBlockViewResponsiveBehavior
+			],
+
+			properties: {
+				_selectedBuilding: {
+					type: Object,
+					value: null
+				},
+				locationSearching: {
+					type: Boolean,
+					value: true
+				},
+				locationSearchError: {
+					type: Boolean,
+				},
+				locationSearchThresholdDistance: {
+					type: Number,
+					value: 100
+				},
+				_locateAuth: {
+					type: Object
+				}
+			},
+
+			_hasAppAuth: function(auth){
+				return auth.hasLicense && auth.canCreate;
+			},
+
+			_hasAppAuthRead: function(auth) {
+				return auth.hasLicense && auth.canRead;
+			}
+		});
+	</script>
+</dom-module>

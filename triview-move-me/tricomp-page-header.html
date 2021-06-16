@@ -1,0 +1,121 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../triplat-signout-button/triplat-signout.html">
+<link rel="import" href="../triplat-icon/ibm-icons.html">
+
+<dom-module id="tricomp-page-header">
+
+	<style>
+		:host {
+			@apply(--layout-horizontal);
+			@apply(--layout-center-center);
+			background-color: var(--tri-header-background-color);
+			border-bottom: 1px solid var(--tri-header-color);
+		}
+
+		paper-icon-button {
+			width: 40px;
+			height: 40px;
+		}
+		paper-icon-button[invisible] {
+			visibility: hidden;
+		}
+
+		.back-button, .signout-button, .home-button {
+			color: var(--tri-header-color);
+		}
+
+		.title {
+			@apply(--layout-flex);
+			font-size: 18px;
+			font-weight: light;
+			text-align: center;
+			@apply(--paper-font-common-nowrap);
+			color: var(--tri-header-color);
+		}
+
+		.wrapper-while-we-dont-support-desktop {
+			@apply(--layout-horizontal);
+			@apply(--layout-center-center);
+			max-width: var(--max-width-while-we-dont-support-desktop);
+			width: 100%;
+		}
+
+		.wrapper-when-we-do-support-desktop {
+			@apply(--layout-horizontal);
+			@apply(--layout-center-center);
+			width: 100%;
+		}
+
+		.rtl-icon-mirror {
+			transform: scaleX(-1);
+		}
+
+	</style>
+
+	<template>
+
+		<template is="dom-if" if="[[!screenLarge]]"> 
+		<div class="wrapper-while-we-dont-support-desktop">
+			<paper-icon-button title="Home" icon="ibm:home" class="home-button" invisible$="[[!showHomeButton]]" disabled="[[!showHomeButton]]" noink on-tap="_backTap" hidden$="[[!showHomeButton]]" aria-label="Home"></paper-icon-button>
+			<paper-icon-button id="backArrow" title="Back" icon="ibm-glyphs:back" class="back-button" invisible$="[[!showBackButton]]" disabled="[[!showBackButton]]" noink on-tap="_backTap" hidden$="[[showHomeButton]]" aria-label="Back"></paper-icon-button>
+			<div class="title">[[title]]</div>
+			<paper-icon-button title="Sign Out" icon="ibm:sign-out" class="signout-button" noink on-tap="_signoutTap" aria-label="Sign Out"></paper-icon-button>
+		</div>
+		</template>
+
+		<template is="dom-if" if="[[screenLarge]]"> 
+		<div class="wrapper-when-we-do-support-desktop">
+			<paper-icon-button title="Home" icon="ibm:home" class="home-button" invisible$="[[!showHomeButton]]" disabled="[[!showHomeButton]]" noink on-tap="_backTap" hidden$="[[!showHomeButton]]" aria-label="Home"></paper-icon-button>
+			<paper-icon-button id="backArrow" title="Back" icon="ibm-glyphs:back" class="back-button" invisible$="[[!showBackButton]]" disabled="[[!showBackButton]]" noink on-tap="_backTap" hidden$="[[showHomeButton]]" aria-label="Back"></paper-icon-button>
+			<div class="title">[[title]]</div>
+			<paper-icon-button title="Sign Out" icon="ibm:sign-out" class="signout-button" noink on-tap="_signoutTap" aria-label="Sign Out"></paper-icon-button>
+		</div>
+		</template>
+
+		<triplat-signout id="signout"></triplat-signout>
+
+	</template>
+	
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-page-header",
+
+		properties : {
+			showBackButton: {
+				type: Boolean,
+				value: false
+			},
+			showHomeButton: {
+				type: Boolean,
+				value: false
+			},
+			title: String
+		},
+
+		_homeTap: function() {
+			this.fire("home-tap");
+		},
+
+		_backTap: function() {
+			this.fire("back-tap");
+		},
+
+		_signoutTap: function() {
+			this.$.signout.signout();
+		},
+
+		attached: function() {
+			var textDirectionValue = document.querySelector('body').getAttribute('dir');
+			if(textDirectionValue==="rtl"){
+				var backArrow = this.$$("#backArrow");
+				if (backArrow)
+				    backArrow.classList.add('rtl-icon-mirror');
+			}
+		},
+
+	});
+</script>

@@ -1,0 +1,137 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../iron-media-query/iron-media-query.html">
+
+<dom-module id="tricomp-card-and-table-view">
+
+	<template>
+
+		<iron-media-query query="{{_computeResponsiveWidthQuery(responsiveWidth)}}" query-matches="{{_largeScreenWidth}}"></iron-media-query>
+
+		<content></content>
+
+	</template>
+
+	<script>
+		Polymer({
+
+			is: "tricomp-card-and-table-view",
+
+			/**
+			 * Fired after the layout is changed.
+			 *
+			 * @event layout-change
+			 */
+
+			properties : {
+
+				/**
+				 * Sets or gets current layout. Either "table" or "card".
+				 */
+				currentLayout: {
+					type: String,
+					value: "table",
+					notify: true
+				},
+
+				/**
+				 * Layout will automatically change to card layout at or beneath this width
+				 */
+				responsiveWidth: {
+					type: String,
+					value: '800px'
+				},
+				
+			},
+
+			observers: [
+				"_handleLayoutChange(currentLayout)",
+				"_handleScreenWidthChange(_largeScreenWidth)"
+			],
+
+			ready: function() {
+				// initialize layout based on Local Web Storage of user
+				this.refreshLayout();
+			},
+
+			/**
+			 * Set the layout to the value in Local Web Storage (if supported)
+			 */
+			refreshLayout: function() {
+				if(typeof(Storage) !== "undefined") {
+					// Web Storage supported
+					if (localStorage.layoutPreference) this.set("currentLayout", localStorage.layoutPreference);
+					else localStorage.layoutPreference = this.currentLayout;
+				}
+			},
+
+			/**
+			 * Toggle the current layout
+			 */
+			toggleLayout: function() {
+				if (this.currentLayout == "card") {
+					this.set("currentLayout", "table");
+					localStorage.layoutPreference = "table";
+				}
+				else if (this.currentLayout == "table") {
+					this.set("currentLayout", "card");
+					localStorage.layoutPreference = "card";
+				}
+			},
+
+			_computeResponsiveWidthQuery: function(width) {
+				if (width && width != "") return "(min-width: " + width + ")";
+				else return "";
+			},
+
+			_handleLayoutChange: function(currentLayout) {
+				if (currentLayout == "card") {
+					// hide all distributed elements with 'table-container' attribute
+					var tableLayoutElements = Polymer.dom(this).querySelectorAll("[table-container]");
+					tableLayoutElements.forEach(function(tableLayoutElement) {
+						tableLayoutElement.setAttribute("hidden", "true");
+					});
+
+					// show all distributed elements with 'card-container' attribute
+					var cardLayoutElements = Polymer.dom(this).querySelectorAll("[card-container]");
+					cardLayoutElements.forEach(function(cardLayoutElement) {
+						cardLayoutElement.removeAttribute("hidden");
+					});
+
+					this.fire("layout-change", {"layout": "card"});
+				} else if (currentLayout == "table") {
+					// hide all distributed elements with 'card-container' attribute
+					var cardLayoutElements = Polymer.dom(this).querySelectorAll("[card-container]");
+					cardLayoutElements.forEach(function(cardLayoutElement) {
+						cardLayoutElement.setAttribute("hidden", "true");
+					});
+
+					// show all distributed elements with 'table-container' attribute
+					var tableLayoutElements = Polymer.dom(this).querySelectorAll("[table-container]");
+					tableLayoutElements.forEach(function(tableLayoutElement) {
+						tableLayoutElement.removeAttribute("hidden");
+					});
+
+					this.fire("layout-change", {"layout": "table"});
+				}
+			},
+
+			_handleScreenWidthChange: function(isLarge) {
+				if (isLarge) {
+					var layoutPreference = localStorage.layoutPreference;
+					if (layoutPreference == "table") {
+						this.set("currentLayout", "table");
+					} else if (layoutPreference == "card") {
+						this.set("currentLayout", "card");
+					} else {
+						this.set("currentLayout", "table");
+					}
+				} else {
+					this.set("currentLayout", "card");
+				}
+			},
+			
+		});
+	</script>
+
+</dom-module>

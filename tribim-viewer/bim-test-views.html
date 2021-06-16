@@ -1,0 +1,121 @@
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-input/paper-input.html">
+
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-file/triplat-file.html">
+
+<dom-module id="bim-test-views">
+	<style>
+	    html, body {
+			margin           : 0;
+			padding          : 0;
+			height           : 100%;
+			width            : 100%;
+			font-family      : arial; 
+	    }
+		.item {
+			cursor           : pointer;
+		}
+
+	</style>
+	<template>
+		<div>
+			<triplat-ds id="model" name="forgeViews" data="{{views}}"></triplat-ds>		
+			<triplat-ds name="user" data="{{user}}"></triplat-ds>		
+			<table>
+				<tr>
+					<th>ID</th>
+					<th>Title</th>
+					<th>Detail</th>
+					<th>Is Public?</th>
+					<th></th>
+					<th></th>
+				</tr>
+			    <template id="repeat" is="dom-repeat" items="[[views]]">
+			    	<tr>
+						<td on-click="_selectRow" class="item">{{item._id}}</td>
+						<td>{{item.description }}</td>
+						<td>{{item.detail}}</td>
+						<td>
+						  	<paper-checkbox checked="{{item.shared}}" ></paper-checkbox>
+						</td>
+						<td>
+							<paper-button raised on-click="_deleteViewRow">Delete</paper-button>
+						</td>
+						<td>
+							<paper-icon-button icon="delete-forever" on-click="_deleteViewRow" alt="Delete model">
+							</paper-icon-button>
+						</td>
+			    	</tr>
+				</template>
+			</table>
+			<div style="display:inline-flex; width: 100%;">
+				<div style="display:inline; width: 100%;">
+					<paper-input label="Title" floating-label value="{{view.description}}"></paper-input>
+					<paper-input label="Detail" floating-label value="{{view.detail}}"></paper-input>
+					<paper-input label="URN" floating-label value="{{view.urn}}"></paper-input>
+				  	<paper-checkbox checked="{{view.shared}}" >Is Public</paper-checkbox>
+					<paper-input label="ID" floating-label value="{{view._id}}"></paper-input>
+					<div>
+						{{view.viewerState}}
+					</div>
+				    <triplat-file value="{{view.viewerState}}" show-download-link show-clear-button show-upload-button>
+				    	        <span label>Viewer State</span>
+				    </triplat-file>
+				</div>
+			</div>
+			<div>
+			 	<div style="display: inline-flex;">
+					<paper-button raised on-click="_addView">Add</paper-button>
+					<paper-button raised on-click="_updateView">Update</paper-button>
+					<paper-button raised on-click="_deleteView">Delete</paper-button>
+				</div>
+			</div>
+		</div>
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "bim-test-views",
+
+	    ready: function() {
+	    	this.selector = 0;
+	    	this.view = {
+	    		description    : "",
+	    		detail         : "",
+	    		urn            : "",
+	    		shared         : false,
+	    		user           : "",
+//	    		viewerState    : "",
+//	    		_id            : "",
+	    	};
+	    },
+
+	    _addView : function(
+			event
+		) {
+//			this.view.viewerState = JSON.stringify( this.view );
+			this.view.user = this.user._userAccount
+			var v = this.view;
+			var u = this.user;
+			var vs = this.views;
+     		this.$.model.createRecord( this.view, TriPlatDs.RefreshType.BOTH, "actions", "create")
+     			.then ( (newID) => { console.log( "Create " + newID) },
+					    ( err ) => { console.error( err ); } ); 
+		},
+
+		_selectRow : function(
+			event
+		) {
+			var item = event.model.item;
+			this.set( "view.description", item.description );
+			this.set( "view.detail",      item.detail );
+			this.set( "view.urn",         item.urn );
+			this.set( "view._id",         item._id );
+			this.set( "view.shared",      item.shared );
+		},
+	});
+</script>

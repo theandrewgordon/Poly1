@@ -1,0 +1,436 @@
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-query/triplat-query.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+<link rel="import" href="../triplat-routing/triplat-routing.html">
+<link rel="import" href="../triplat-search-input/triplat-search-input.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-selector/iron-selector.html">
+<link rel="import" href="../paper-badge/paper-badge.html">
+
+<link rel="import" href="tricomp-assessment-header.html">
+<link rel="import" href="tricomp-assessment-logs.html">
+<link rel="import" href="tricomp-assessment-discrepancies.html">
+<link rel="import" href="tricomp-discrepancy-logs-people.html">
+<link rel="import" href="tricomp-discrepancy-logs-excluded.html">
+<link rel="import" href="tricomp-discrepancy-logs-assets.html">
+<link rel="import" href="../triblock-page-container-behavior/triblock-page-container-behavior.html">
+<link rel="import" href="../triview-space-assessment/tricomp-search-input.html">
+
+<link rel="import" href="tricomp-discrepancy-comment.html">
+<link rel="import" href="tricomp-discrepancy-comment-details.html">
+
+<dom-module id="tripage-assessment-details">
+	<style>
+
+		:host {
+			@apply(--layout-fit);
+			@apply(--layout-vertical);
+		}
+
+		.main {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+		}
+
+		iron-selector {
+			@apply(--layout-scroll);
+		}
+
+		tricomp-search-input {
+			margin: 10px 0px 10px 10px;
+		}
+		
+		#details-vertical-tabs {
+			@apply(--layout-block);
+			@apply(--layout-vertical);
+			@apply(--layout-scroll);
+			background-color: var(--tri-primary-color);
+			width: 80px;
+			text-align: center;
+		}
+
+		#details-vertical-tabs div {
+			@apply(--layout-vertical);
+			@apply(--layout-center);
+			color: white;
+			font-size: 14px;
+			cursor: pointer;
+			padding: 10px;
+		}
+
+		#details-vertical-tabs .asset-icon {
+			padding: 0px;
+		}
+
+		#details-vertical-tabs iron-icon.asset-icon {
+			height: 44px;
+			width: 44px;
+		}
+
+		#details-vertical-tabs triplat-icon .icon {
+			height: 44px;
+			width: 44px;
+		}
+
+		#details-vertical-tabs div.iron-selected {
+			background-color: var(--tri-primary-dark-color);
+		}
+		
+		#tab-content-container {
+			@apply(--layout-flex);
+			@apply(--layout-scroll);
+			background-color: var(--tri-body-background-color);
+		}
+
+		.header {
+			display: block;
+			padding: 10px 40px;
+			@apply(--layout);
+			@apply(--layout-horizontal);
+			@apply(--layout-justified);
+		}
+		
+		.accessibility {
+			display: none;
+		}
+
+		.container {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			min-width: 0;
+		}
+
+		iron-pages > * {
+			margin: 0px 10px 10px 10px;
+		}
+
+		tricomp-assessment-header {
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+		}
+
+		.badge {
+   			position: relative;
+		}
+
+		.badge[data-badge]:after {
+   			content: attr(data-badge);
+   			position: absolute;
+   			top: -3px;
+   			right: -3px;
+   			font-size: .7em;
+   			background: #ff4081;
+   			color: white;
+   			width: 18px;
+   			height: 18px;
+   			text-align: center;
+   			line-height: 18px;
+   			border-radius: 50%;
+		}
+
+		paper-dialog {
+			--paper-dialog: {
+				width: 60%;
+				overflow: auto;
+			};
+		}
+		
+	</style>
+
+	<template>
+	
+		<triplat-route name="assessmentLogsList" params="{{assessmentParams}}"></triplat-route>
+
+		<triplat-ds  name="security" data="{{security}}"></triplat-ds> 
+
+		<triplat-ds id="assessmentDS" name="mySpaceAssessments" data="{{assessment}}">
+			<triplat-ds-instance instance-id="{{assessmentParams.assessmentId}}"></triplat-ds-instance>
+		</triplat-ds>
+
+		<triplat-ds id="assessmentLogsDSOnDetails" name="assessmentLogs" data="{{logs}}">
+			<triplat-ds-context name="mySpaceAssessments" context-id="{{assessmentParams.assessmentId}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="discrepantSpacesDs" name="discrepantSpaces" data="{{discrepantSpaces}}">
+			<triplat-ds-context name="mySpaceAssessments" context-id="{{assessmentParams.assessmentId}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="personDiscrepancyLogsDsOnDetails" name="personDiscrepancyLogs" data="{{personDiscrepancyLogs}}">
+			<triplat-ds-context name="mySpaceAssessments" context-id="{{assessmentParams.assessmentId}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="assetDiscrepancyLogsDsOnDetails" name="assetDiscrepancyLogs" data="{{assetDiscrepancyLogs}}">
+			<triplat-ds-context name="mySpaceAssessments" context-id="{{assessmentParams.assessmentId}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<tricomp-assessment-header
+			id="assessmentHeader"
+			description="{{assessment.description}}"
+			city="{{assessment.city.value}}"
+			building="{{assessment.building.value}}"
+			floor="{{assessment.floor.value}}"
+			assessor="{{assessment.assignedTo}}"
+			completed-date="{{assessment.completedDate}}"
+			mismatch-log-count="{{discrepantSpaces.length}}"
+			total-log-count="{{logs.length}}"
+			assessment-id="{{assessmentParams.assessmentId}}"
+			on-refresh-assessment-ds="_handleDsRefresh">
+		</tricomp-assessment-header>
+		<div class="main">
+			<iron-selector id="details-vertical-tabs" selected="{{_selectedPage}}" role="region" aria-labelledby="verticalTab">
+	        	<div>
+	        		<triplat-icon id="spaces" class$="{{_spacesClassStyle}}" icon="location-map" tab-index="-1"></triplat-icon>
+	        		<div tabindex="0">Spaces</div>
+	        	</div>
+	        	<div>
+	            	<triplat-icon id="people" class$="{{_peopleClassStyle}}" icon="user-profile" tab-index="-1"></triplat-icon>
+	            	<div tabindex="0">People</div>
+	        	</div>
+	        	<div>
+	            	<iron-icon id="asset" class$="{{_assetClassStyle}}" icon="hardware:laptop-mac" tabindex="-1"></iron-icon>
+	            	<div tabindex="0">Assets</div>
+	        	</div>
+	        	<div>
+        			<iron-icon id="excluded" class$="{{_excludedClassStyle}}" icon="icons:delete" tabindex="-1" data-badge$="{{countExcludedDiscrepancyLogs}}"></iron-icon>
+	            	<div tabindex="0">Excluded</div>
+	        	</div>
+			</iron-selector>
+			<div class="container">
+				<tricomp-search-input value="{{_searchTerms}}" aria-labelledby="searchInput"></tricomp-search-input>
+				<iron-pages id="tab-content-container" selected="{{_selectedPage}}">
+					<tricomp-assessment-logs
+						id="spaceDiscripancyLogs"
+						search-terms="{{_searchTerms}}"
+						history-assessment="{{historyAssessment}}"
+						on-show-comment="_handleSelectedPersonChange"
+						on-refresh-datasources="_handleRefreshDatasources"
+						on-update-discrepancy-log="_handleClearRejectComment">
+					</tricomp-assessment-logs>		
+					<tricomp-discrepancy-logs-people 
+						id="personDiscrepancyLogs"
+						search-terms="{{_searchTerms}}"
+						history-assessment="{{historyAssessment}}"
+						on-show-comment="_handleSelectedPersonChange"
+						on-update-discrepancy-log="_handleClearRejectComment">
+					</tricomp-discrepancy-logs-people>	
+					<tricomp-discrepancy-logs-assets 
+						id="assetDiscrepancyLogs"
+						search-terms="{{_searchTerms}}"
+						history-assessment="{{historyAssessment}}"
+						on-show-comment="_handleSelectedPersonChange"
+						on-update-discrepancy-log="_handleClearRejectComment">
+					</tricomp-discrepancy-logs-assets>
+					<tricomp-discrepancy-logs-excluded 
+						id="excludedDiscrepancyLogs"
+						search-terms="{{_searchTerms}}"
+						history-assessment="{{historyAssessment}}"
+						count-excluded-discrepancy-logs="{{countExcludedDiscrepancyLogs}}"
+						on-refresh-datasources="_handleRefreshDatasources"
+						on-update-discrepancy-log="_handleClearRejectComment">
+					</tricomp-discrepancy-logs-excluded>		
+       			</iron-pages>
+			</div>
+		</div>
+		
+		<paper-dialog id="discrepancyCommentDialog">
+			<h2>Exclude Mismatch</h2>
+			<tricomp-discrepancy-comment 
+				id="assetDiscrepancyLogComment"
+				review-comment="{{selectedDiscrepancyLog.reviewComment}}"
+				view-type="{{viewType}}"
+				on-update-discrepancy-log="_handleUpdateComment">
+				<tricomp-discrepancy-comment-details
+					discrepancy-log="{{selectedDiscrepancyLog}}">
+				</tricomp-discrepancy-comment-details>
+			</tricomp-discrepancy-comment>	
+		</paper-dialog>
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tripage-assessment-details",
+		
+		behaviors: [TriBlockPageContainerBehavior],
+
+		properties : {
+
+			_selectedPage : {
+				type : Number,
+				value : 0
+			},
+			
+			viewType : String,
+			searchTerms : String,
+			selectedDiscrepancyLog : Object,
+			historyAssessment: Boolean,
+			countExcludedDiscrepancyLogs: Number,
+
+			_spacesClassStyle : {
+				type : String,
+				value : "icon"
+			},
+
+			_peopleClassStyle: {
+				type : String,
+				value : "icon"
+			},
+
+			_assetClassStyle: {
+				type : String,
+				value : "asset-icon"
+			},
+
+			_excludedClassStyle: {
+				type : String,
+				value : "asset-icon"
+			}
+		
+		},
+
+		observers: [
+			'_handleHistorySpaceAssessment(assessment,security)',
+			'_handleExcludedCountChanged(countExcludedDiscrepancyLogs)'
+		],
+
+		listeners: {
+			"personDiscrepancyLogsDsOnDetails.ds-update-complete" : "_handleAssessmentLogRefresh",
+			"assetDiscrepancyLogsDsOnDetails.ds-update-complete" : "_handleAssessmentLogRefresh",
+		},
+
+		_openDiscrepancyDialog : function() {
+			this.$.discrepancyCommentDialog.open();
+		},
+
+		_closeDiscrepancyDialog : function() {
+			this.$.discrepancyCommentDialog.close();
+		},
+
+		reset: function() {
+			this.set("historyAssessment", false);
+			this.$.spaceDiscripancyLogs.reset();
+			this._handleDisplayAssessmentLog();
+		},
+
+		_handleRefreshDatasources: function(){
+			this.$.spaceDiscripancyLogs.refresh(this.selectedDiscrepancyLog);
+			this.$.personDiscrepancyLogs.refreshPersonDiscrepancyDs();
+			this.$.assetDiscrepancyLogs.refreshAssetDiscrepancyDs();
+			this.$.excludedDiscrepancyLogs.refreshDiscrepancyLogsDs();
+		},
+
+		_handleDisplayAssessmentLog: function() {
+			this.set("_selectedPage", 0);
+
+		},
+
+		_handleSelectedPersonChange: function(e) {
+			var _selectedDiscrepancyLog = e.detail.discrepancyLog;
+			this._setViewType(e.detail.viewType);
+			this.set("selectedDiscrepancyLog", _selectedDiscrepancyLog);
+			this.$.discrepancyCommentDialog.open();
+		},
+
+		_handleUpdateComment: function(e) {
+			var _discrepancyLog = this.selectedDiscrepancyLog;
+
+			_discrepancyLog.reviewComment = e.detail.comment;
+			var viewType = e.detail.viewType;
+
+			this._handleUpdateDiscrepancyLog(_discrepancyLog,viewType);
+			this._closeDiscrepancyDialog();
+		},
+
+		_handleClearRejectComment: function(e) {
+			var _discrepancyLog = e.detail.selectedDiscrepancyLog;
+			var viewType = e.detail.viewType;
+
+			this.set("selectedDiscrepancyLog", _discrepancyLog)
+			this._handleUpdateDiscrepancyLog(_discrepancyLog,viewType);
+			this._closeDiscrepancyDialog();
+		},
+
+		_setSelectedPage: function(viewType) {
+			
+			this.set("_selectedPage",this._getSelectedPageId(viewType));
+			
+		},
+		_setViewType : function (viewType) {
+			this.set("viewType",viewType);
+		},
+		_getSelectedPageId: function(viewType) {
+
+			if (viewType=="both"){
+				return 0;
+			}
+
+			if (viewType=="people"){
+				return 1;
+			}
+
+			if (viewType=="asset"){
+				return 2;
+			}
+		},
+
+		_handleUpdateDiscrepancyLog: function(discrepancyLog,viewType) {
+			if (!discrepancyLog) {
+				return;
+			}
+			if (viewType == "people") {
+				this.$.personDiscrepancyLogsDsOnDetails.updateRecord(discrepancyLog._id, TriPlatDs.RefreshType.SERVER, "defaultActions", "update");
+			}
+			if (viewType=="asset"){
+				this.$.assetDiscrepancyLogsDsOnDetails.updateRecord(discrepancyLog._id, TriPlatDs.RefreshType.SERVER, "defaultActions", "update");
+			}	
+			if (viewType=="both"){
+				this.$.spaceDiscripancyLogs._handleUpdateDiscrepancyLog(discrepancyLog);
+			}
+		},
+
+		_handleAssessmentLogRefresh: function() {
+			this.$.spaceDiscripancyLogs.refresh(this.selectedDiscrepancyLog);
+			this.$.excludedDiscrepancyLogs.refreshDiscrepancyLogsDs();
+		},
+
+		_pageAttached : function() {
+			this.fire("details-page-attached");
+		},
+
+		_pageDetached : function() {
+
+			this.fire("details-page-detached");
+		},
+
+		_handleDsRefresh: function() {
+			this.fire("refresh-assessment-ds");
+		},
+
+		_handleHistorySpaceAssessment: function(assessment,security) {
+			if (!assessment) {
+				return;
+			}
+			if (security.canRead && !security.canUpdate){
+				this.set("historyAssessment", true);
+				this.$.assessmentHeader.makeReadOnly();
+			}
+			else{
+				if (assessment.status_en_US == "History") {
+					this.set("historyAssessment", true);
+					this.$.assessmentHeader.makeReadOnly();
+				} else {
+					this.set("historyAssessment", false);
+					this.$.assessmentHeader.makeEditable();
+				}
+			}
+		},
+
+		_handleExcludedCountChanged : function(countExcludedDiscrepancyLogs) {
+			if (countExcludedDiscrepancyLogs > 0) {
+				this.set('_excludedClassStyle', "asset-icon badge");
+			} else {
+				this.set('_excludedClassStyle', "asset-icon");
+			}
+		}
+		
+    });
+</script>

@@ -1,0 +1,94 @@
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-selector/iron-selector.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-image/triplat-image.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+
+<link rel="import" href="../iron-icon/iron-icon.html">
+
+<link rel="import" href="tricomp-search-input.html">
+
+<dom-module id="tricomp-asset-item">
+
+	<style>
+
+		:host {
+			@apply(--layout-horizontal);
+			padding: 20px;
+		}
+
+		div.contact, div.location {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+		}
+
+		div.image { 
+			padding-right: 20px;
+		}
+
+		div.image > * {
+			@apply(--layout-self-center);
+		}
+		
+		triplat-icon {
+			color: #5A5A5A;
+			width: 70px;
+			height: 70px;
+		}
+
+		.header {
+			font-size: 1.2em;
+			font-weight: bold;
+		}
+		
+	</style>
+
+	<template>
+		<div class="image">
+			<triplat-icon icon="hardware:hardware:laptop-mac" hidden$="{{asset.image}}"></triplat-icon>
+			<triplat-image src="{{asset.image}}" width="70px" height="70px" sizing="contain" hidden$="{{!asset.image}}"></triplat-image>
+		</div>
+		<div class="contact">
+			<div class="header">
+				<span>{{asset.name}}</span>
+			</div>
+			<div>
+				<label>ID: </label><span class="value">{{asset.id}}</span>
+			</div>
+			<div>
+				<label>Spec Class: </label><span class="value">{{asset.specClass}}</span>
+			</div>
+			<div>
+				<label>Asset Type: </label><span class="value">{{asset.type}}</span>
+			</div>
+			<div>
+				<label>Organization: </label><span class="value">{{asset.organization}}</span>
+			</div>
+		</div>
+		<div class="location">
+			<div class="header">
+				<label>Current Location</label>
+			</div>
+			<div>
+				<label>Building: </label><span class="value">{{asset.building}}</span>
+			</div>
+			<div>
+				<label>Floor: </label><span class="value">{{asset.floor}}</span>
+			</div>
+			<div>
+				<label>Space: </label><span class="value">{{asset.space}}</span>
+			</div>
+		</div>
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+
+		is: "tricomp-asset-item",
+
+		properties: {
+			asset : Object
+		}
+	});
+</script>

@@ -1,0 +1,255 @@
+<link rel="import" href="../triplat-view-behavior/triplat-view-behavior.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-routing/triplat-routing.html">
+<link rel="import" href="../triplat-responsive-viewport/triplat-responsive-viewport.html">
+<link rel="import" href="../triplat-signout-button/triplat-signout-button.html">
+<link rel="import" href="../paper-material/paper-material.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-dialog/paper-dialog.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icons/communication-icons.html">
+<link rel="import" href="../iron-pages/iron-pages.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../paper-header-panel/paper-header-panel.html">
+<link rel="import" href="../paper-toolbar/paper-toolbar.html">
+<link rel="import" href="../paper-toast/paper-toast.html">
+<link rel="import" href="../triplat-responsive-viewport/triplat-responsive-viewport.html">
+
+<link rel="import" href="../triapp-accessibility/triapp-accessibility.html">
+
+<link rel="import" href="tripage-my-space-assessments.html">
+<link rel="import" href="tripage-new-assessment.html">
+<link rel="import" href="tripage-walkthru.html">
+<link rel="import" href="tricomp-accessibility.html">
+<link rel="import" href="tricomp-error-prompt.html">
+
+<dom-module id="triview-space-assessment">
+
+	<style>
+
+		:host {
+			@apply(--layout-fit);
+			@apply(--layout-vertical);
+			background-color: var(--tri-body-background-color);
+		}
+
+		paper-header-panel {
+			@apply(--layout-flex);
+		}
+
+		paper-toolbar {
+			background-color: var(--tri-header-background-color);
+			color: var(--tri-header-color);
+			font-size: 0.85em;
+		}
+
+		paper-toolbar section {
+			padding-left: 30px;
+		}
+
+		paper-toolbar,
+		paper-toolbar /deep/ div.toolbar-tools {
+			height: 45px;
+		}
+
+		.toolbar-title {
+			@apply(--layout-flex);
+			font-family: "Helvetica Neue", Helvetica, Arial, Roboto;
+			font-size: 20px;
+			line-height: 28px;
+			margin-left: 4px;
+			pointer-events: none;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			overflow: hidden;
+		}
+
+		triplat-route-selector {
+			@apply(--layout-fit);
+		}
+
+		iron-pages {
+			@apply(--layout-fit);
+		}
+
+		.accessibility {
+			display: none;
+		}
+
+		.error-dialog {
+			overflow: auto;
+		}
+
+	</style>
+
+	<template>
+
+		<triapp-accessibility></triapp-accessibility>
+		<tricomp-accessibility></tricomp-accessibility>
+
+		<triplat-ds id="currentUserDs" name="currentUser" data="{{currentUser}}"></triplat-ds>
+
+
+		<triplat-ds id="securityDS" name="security" data="{{security}}"></triplat-ds>
+		
+		<triplat-route id="mySpaceAssessmentsRoute" name="mySpaceAssessments" path="/"></triplat-route>
+		<triplat-route name="newSpaceAssessment" path="/new"></triplat-route>
+		<triplat-route id="walkthruAssessmentRoute" name="walkthruAssessment" path="/:assessmentId"></triplat-route>
+		<paper-dialog modal with-backdrop id="errorDialog" class="error-dialog" aria-label="Error dialog"><tricomp-error-prompt error-details="{{_errorDetails}}" is-admin="{{currentUser._Admin}}" on-error-details-collapse-or-expand="_handleErrorDetailsCollapseOrExpand"></tricomp-error-prompt></paper-dialog>
+
+		<paper-header-panel mode="seamed" role="region" aria-labelledby="menu">	
+			<paper-toolbar aria-labelledby="menu">
+				<span class="toolbar-title">IBM TRIRIGA : <b>Space Assessment</b></span>
+				<section>
+					<span><span>{{currentUser.firstName}}</span> <span>{{currentUser.lastName}}</span></span>
+				</section>
+				<section>
+					<triplat-signout-button></triplat-signout-button>
+				</section>
+			</paper-toolbar>
+
+			<triplat-route-selector>
+				<iron-pages>
+					<tripage-my-space-assessments
+						default-route
+						id="mySpaceAssessmentsPage"
+						create-permission= "[[createAssessmentPermission]]"
+						route="mySpaceAssessments">
+					</tripage-my-space-assessments>
+
+					<tripage-new-assessment
+						id="newAssessmentPage"
+						route="newSpaceAssessment"
+						create-permission= "[[createAssessmentPermission]]"
+						on-assessment-created="_handleAssessmentCreated"
+						on-back="_handleNewAssessmentBack">
+					</tripage-new-assessment>
+
+					<tripage-walkthru
+						id="walkthruPage"
+						default-route
+						route="walkthruAssessment">
+					</tripage-walkthru>
+				</iron-pages>
+			</triplat-route-selector>
+			
+		</paper-header-panel>
+
+		<div>
+			<paper-toast id="assessmentCreatedToast" text="Space assessment has been created."></paper-toast>
+			<paper-toast id="assessmentInProgressToast" text="Space assessment is now in progress."></paper-toast>
+			<paper-toast id="assessmentCompletedToast" text="Space assessment has been completed."></paper-toast>
+
+			<paper-toast id="spaceMarkedDiscrepant" text="Space has been marked discrepant."></paper-toast>
+			<paper-toast id="spaceMarkedNonDiscrepant" text="Space has been marked non-discrepant."></paper-toast>
+			<paper-toast id="assessmentLogCommentsUpdated" text="Log comments have been updated."></paper-toast>
+
+			<paper-toast id="discrepancyLogCreated" text="Discrepancy log has been created."></paper-toast>
+			<paper-toast id="discrepancyLogDeleted" text="Discrepancy log has been deleted."></paper-toast>
+		</div>
+
+		<triplat-responsive-viewport min-width="899"></triplat-responsive-viewport>
+
+	</template>
+</dom-module>
+<script>
+	Polymer({
+		is: "triview-space-assessment",
+
+		behaviors: [TriPlatViewBehavior],
+
+		properties: {
+
+			createAssessmentPermission: Boolean,
+		},
+
+		ready: function() {
+			var __dictionary__title =  "Space Assessment";
+            document.title = __dictionary__title;
+        },
+
+        observers : [
+			'_handleSetSecurityPermission(security,currentUser)'
+		],
+
+		listeners : {
+			'newAssessmentPage.assessment-created' : '_handleAssessmentCreated',
+			'walkthruPage.assessment-in-progress' : '_showAssessmentInProgressToast',
+			'walkthruPage.assessment-completed' : '_showAssessmentCompletedToast',
+
+			'walkthruPage.space-marked-discrepant' : '_showSpaceMarkedDiscrepantCreatedToast',
+			'walkthruPage.space-marked-non-discrepant' : '_showSpaceMarkedNonDiscrepantCreatedToast',
+			'walkthruPage.assessment-log-updated' : '_showLogCommentsUpdatedToast',
+			
+			"ds-add-error": "_handleDSError",
+			"ds-create-error": "_handleDSError",
+			"ds-delete-error": "_handleDSError",
+			"ds-get-error": "_handleDSError",
+			"ds-perform-action-error": "_handleDSError",
+			"ds-remove-error": "_handleDSError",
+			"ds-update-error": "_handleDSError"
+		},
+
+		_handleNewAssessmentBack: function() {
+			this.$.mySpaceAssessmentsRoute.navigate();
+		},
+
+		_handleSetSecurityPermission: function(security,currentUser) {
+			
+			if (security.mySpaceAssessments_defaultActions_create) {
+				this.set('createAssessmentPermission',true);
+			} else {
+				this.set('createAssessmentPermission',false);	
+			}
+		},
+
+		_handleAssessmentCreated: function(e) {
+			this.$.walkthruAssessmentRoute.navigate({assessmentId: e.detail.id});
+			this.$.assessmentCreatedToast.show();
+		},
+
+		_handleDSError: function(e) {
+			var errorDetails = e.detail;
+
+			if (errorDetails.status != 403) {
+				if (errorDetails) this.set("_errorDetails", errorDetails);
+				this.$.errorDialog.open();
+			}
+		},
+
+		_handleErrorDetailsCollapseOrExpand: function() {
+			this.async(function() {
+				this.$.errorDialog.center();
+			}.bind(this), 300);
+		},
+
+		_showAssessmentInProgressToast : function(e) {
+			this.$.assessmentInProgressToast.show();
+		},
+
+		_showAssessmentCompletedToast : function(e) {
+			this.$.assessmentCompletedToast.show();
+		},
+
+		_showSpaceMarkedDiscrepantCreatedToast : function(e) {
+			this.$.spaceMarkedDiscrepant.show();
+		},
+
+		_showSpaceMarkedNonDiscrepantCreatedToast : function(e) {
+			this.$.spaceMarkedNonDiscrepant.show();
+		},
+
+		_showLogCommentsUpdatedToast : function(e) {
+			this.$.assessmentLogCommentsUpdated.show();
+		},
+
+		_showDiscrepancyLogCreatedToast : function(e) {
+			this.$.discrepancyLogCreated.show();
+		},
+
+		_showDiscrepancyLogDeletedToast : function(e) {
+			this.$.discrepancyLogDeleted.show();
+		}
+
+	});
+</script>

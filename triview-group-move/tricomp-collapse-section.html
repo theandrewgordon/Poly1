@@ -1,0 +1,114 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<!-- TRIRIGA Platform Components -->
+<link rel="import" href="../triplat-image/triplat-image.html">
+
+<!--
+Tririga Component:
+`tricomp-collapse-section` is a component that provides a collapsable left section.
+
+Example:
+    <tricomp-collapse-section>
+      <div class="tricomp-collapse-section-collapsable"></div>
+      <div class="tricomp-collapse-section-static"></div>
+    </tricomp-collapse-section>
+
+### Styling
+The following custom properties are available for styling:
+Custom property | Description | Default
+----------------|-------------|----------
+`--tricomp-collapse-section-collapsable-flex` | Host collapsable component's flex | 1
+`--tricomp-collapse-section-collapsable-background-color` | Host collapsable component's background-color | `white`
+`--tricomp-collapse-section-static-flex` | Host static component's flex | 2
+
+### Requirements
+The element required 2 internal containers with specific classes, as indicated in the example of use above.
+It is recommended to style these 2 classes with:
+    @apply(--layout-flex);
+    @apply(--layout-vertical);
+Container Class | Description
+----------------|--------------
+`tricomp-collapse-section-collapsable` | The content of the collapsable container
+`tricomp-collapse-section-static` | The content of the static container
+-->
+
+<dom-module id="tricomp-collapse-section">
+  <style>
+    /*=========================================
+     * Table of Contents
+     *-----------------------------
+     * Host
+     * Container - container-collapsable
+     * Container - container-static
+     *=========================================*/
+
+    /* Host */
+    :host {
+      @apply(--layout-flex);
+      @apply(--layout-horizontal);
+			@apply(--layout-fit);
+    }
+    /* End Host */
+
+
+    /* Container - container-collapsable */
+    .container-collapsable {
+      display: flex;
+			flex: var(--tricomp-collapse-section-collapsable-flex, 1);
+			background-color: var(--tricomp-collapse-section-collapsable-background-color, white);
+      overflow: auto;
+    }
+    /* End Container - container-collapsable */
+
+
+    /* Container - container-static */
+    .container-static {
+      @apply(--layout-flex);
+			@apply(--layout-vertical);
+			flex: var(--tricomp-collapse-section-static-flex, 2);
+	    box-sizing: border-box;
+			min-height: 0;
+			max-width: 100%;
+			width: 30%;
+      overflow: auto;
+      background-color: white;
+    }
+    /* End Container - container-static */
+  </style>
+
+  <template>
+    <iron-collapse id="collapse" class="container-collapsable" horizontal opened="{{opened}}">
+      <content select=".tricomp-collapse-section-collapsable"></content>
+    </iron-collapse><!-- end .container-collapsable -->
+
+    <section class="container-static">
+      <content select=".tricomp-collapse-section-static"></content>
+    </section><!-- end .container-static -->
+  </template>
+</dom-module>
+
+<script>
+  Polymer({
+    is: "tricomp-collapse-section",
+
+    properties: {
+      opened: {
+        type: Boolean,
+        notify: true,
+        value: false
+      },
+    },
+
+    _collapseToggle: function() {
+      this.$.collapse.toggle();
+    },
+
+    _collapseShow: function() {
+      this.$.collapse.show();
+    },
+
+    _collapseHide: function() {
+      this.$.collapse.hide();
+    },
+  });
+</script>

@@ -1,0 +1,77 @@
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+
+<dom-module id="tricomp-search-input">
+	<style>
+		:host {
+			@apply(--layout-horizontal);
+			background-color: var(--tri-primary-content-background-color);
+			border-bottom: 1px solid var(--tri-primary-color);
+			width: 500px;
+			height: 44px;
+			color: #454545;
+		}
+
+		iron-icon {
+			color: var(--tri-primary-content-color);
+			cursor: pointer;
+			@apply(--layout-self-center);
+			width: 22px;
+			height: 22px;
+			padding: 11px;
+		}
+
+		.search-icon {
+			color: var(--tri-primary-color);
+			cursor: context-menu;
+		}
+
+		input {
+			@apply(--layout-flex);
+			width: 100%;
+			border: none;
+			outline: none;
+			background-color: inherit;
+			font-size: 1.0em;
+			color: var(--tri-primary-content-color);
+			padding: 5px;
+
+		}
+
+		.accessibility {
+               display: none;
+          }
+        input::-ms-clear {
+  		     display: none;
+		 }
+
+	</style>
+	<template>
+		<input is="iron-input" bind-value="{{value}}" type="text" aria-labelledby="searchInput" placeholder="Type to search">
+		<triplat-icon class="search-icon" icon="search" hidden="{{value}}"></triplat-icon>
+		<iron-icon icon="icons:close" hidden="{{!value}}" on-tap="reset" on-keypress="reset" aria-labelledby="clearSearchInput" tabindex="0" role="button"></iron-icon>
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-search-input",
+
+		properties: {
+
+			value: {
+				type: String,
+				notify: true,
+				readOnly: false
+			}
+		},
+
+		reset : function() {
+			if (this.value) {
+				this.set('value', "");
+			}
+		}
+
+	});
+</script>

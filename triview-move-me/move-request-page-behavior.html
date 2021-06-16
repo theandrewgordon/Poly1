@@ -1,0 +1,71 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<script>
+    MoveRequestPageBehavior = {
+
+    	properties: {
+			_isPageActive: {
+				type: Boolean,
+				value: false
+			},
+
+			specId: {
+				type: String,
+				value: null,
+			},
+
+			pageContextId: {
+				type: String,
+				value: null,
+			},
+		},
+
+		observers: [
+			"_handleActive(_isPageActive, specId)",
+		],
+
+		_handleActive: function(_isPageActive, specId) {
+			// console.log("MoveRequestPageBehavior._handleActive");
+			// console.log(_isPageActive);
+			// console.log(specId);
+
+			if (_isPageActive) {
+				this.set("pageContextId", specId);
+			} else {
+				this.set("pageContextId", null);
+			}
+		},
+
+		_handleRouteActive: function(e) {
+			// console.log("MoveRequestPageBehavior._handleRouteActive");
+
+			this._setPageActive(e.detail.active);
+		},
+
+		_setPageActive: function(isActive) {
+			// console.log("MoveRequestPageBehavior._setPageActive");
+
+			this.set("_isPageActive", isActive);
+
+			if (isActive == true) {
+				this._pageAttached();
+			} else {
+				this._pageDetached();
+			}
+		},
+
+		_pageAttached : function() {
+			// console.log("MoveRequestPageBehavior._pageAttached");
+
+			if (this.specId) {
+			} else {
+				// trigger the main application initialization
+				this.fire("init");
+			}
+		},
+
+		_pageDetached : function() {
+			// console.log("MoveRequestPageBehavior._pageDetached");
+		},
+    };
+</script>

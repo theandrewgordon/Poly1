@@ -1,0 +1,214 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../tricore-url/tricore-url.html">
+
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+
+<link rel="import" href="../iron-image/iron-image.html">
+
+<link rel="import" href="tribehav-reservation-utilities.html">
+
+<dom-module id="tricomp-reservation-room">
+    <template>
+        <style>
+             :host {
+                @apply(--layout-horizontal);
+                @apply(--layout-center);
+            }
+            
+            .image-container {
+                padding-right: 20px;
+            }
+            
+            iron-image {
+                width: 64px;
+                height: 64px;
+            }
+            
+            .box-room-icon {
+                @apply(--layout-horizontal);
+                @apply(--layout-center-center);
+                overflow: hidden;
+                height: 64px;
+                width: 64px;
+                border-radius: 100%;
+                background-color: var(--ibm-gray-50);
+            }
+            
+            .room-image-placeholder-icon {
+                --triplat-icon-height: 30px;
+                --triplat-icon-width: 30px;
+                --triplat-icon-fill-color: white;
+            }
+            
+            .room-details-container {
+                @apply(--layout-vertical);
+                @apply(--layout-flex);
+                min-width: 0;
+            }
+            
+            .room-container {
+                @apply(--layout-horizontal);
+                @apply(--layout-center);
+                margin-bottom: 5px;
+            }
+            :host[is-card] .room-container {
+                margin-bottom: 0;
+            }
+             :host[small-screen-width] .room-container,
+             :host[is-card] .room-container {
+                @apply(--layout-justified);
+            }
+            
+            .room {
+                max-height: 2.4em;
+                line-height: 1.2em;
+                font-size: var(--room-name-font-size, 18px);
+                font-weight: var(--room-name-font-weight, normal);
+                overflow: hidden;
+            }
+            :host[is-card] .room {
+                max-height: none;
+                line-height: normal;
+                font-size: 14px;
+                font-weight: bold;
+            }
+
+            .room-count {
+                font-weight: normal;
+                white-space: nowrap;
+            }
+            
+            .box-icon {
+                @apply(--layout-horizontal);
+                @apply(--layout-center);
+            }
+            
+             :host[no-icon] .box-icon {
+                display: none;
+            }
+            
+            .divider-line {
+                height: 24px;
+                width: 1px;
+                margin-right: 10px;
+                margin-left: 10px;
+                background: var(--ibm-gray-10);
+            }
+            :host[is-card] .divider-line {
+                height: 18px;
+            }
+            
+            .location-icon {
+                flex-shrink: 0;
+                height: 22px;
+                width: 22px;
+                padding: 0px;
+                color: var(--ibm-blue-50);
+            }
+            
+            .building,
+            .floor {
+                @apply(--paper-font-common-nowrap);
+            }
+            
+            .building {
+                font-size: var(--room-building-font-size, 14px);
+            }
+            
+            .floor {
+                font-size: var(--room-floor-font-size, 14px);
+            }
+            
+            .bookingStatus {
+                color: red;
+            }
+        </style>
+
+        <tricore-url raw-url="/getCompanyFile.jsp?fileLoc=" bind-url="{{imgUrl}}"></tricore-url>
+
+        <template is="dom-if" if="[[_showImage(applicationSettings, isCard)]]">
+            <div class="image-container">
+                <iron-image src="[[_computeImageUrl(eventItem.image, imgUrl)]]" 
+                    sizing="cover" 
+                    hidden$="[[!eventItem.image]]"></iron-image>
+                <div class="box-room-icon" hidden$="[[eventItem.image]]">
+                    <triplat-icon class="room-image-placeholder-icon" 
+                        icon="picturefile"></triplat-icon>
+                </div>
+            </div>
+        </template>
+
+        <div class="room-details-container">
+            <div class="room-container">
+                <span class="room">
+                    [[eventItem.location]]
+                    <template is="dom-if" if="[[_computeDisplayTotalRooms(totalRooms)]]">
+                        <span class="room-count">(1 of [[totalRooms]])</span>
+                    </template>
+                </span>
+                <div class="box-icon">
+                    <span class="divider-line"></span>
+                    <triplat-icon class="location-icon" icon="ibm-glyphs:location" on-tap="_handleOpenRoomDetails"></triplat-icon>
+                </div>
+            </div>
+            <div class="floor">[[eventItem.floor.value]]</div>
+            <div class="building">[[eventItem.building]]</div>
+            <div hidden$="[[!eventItem.bookingStatus]]" class="bookingStatus">[[eventItem.bookingStatus]]</div>
+        </div>
+    </template>
+    <script>
+
+        Polymer({
+
+            is: "tricomp-reservation-room",
+
+            behaviors: [TriBlockViewResponsiveBehavior, TriReservationUtilitiesBehavior],
+
+            properties: {
+                eventItem: Object,
+                applicationSettings: Object,
+                isCard: {
+                    type: Boolean,
+                    value: false,
+                    reflectToAttribute: true
+                },
+                noIcon: {
+                    type: Boolean,
+                    value: false,
+                    reflectToAttribute: true
+                },
+                totalRooms: {
+                    type: Number,
+                    value: 0
+                }
+            },
+
+            _showImage: function (applicationSettings, isCard) {
+                if (isCard) {
+                    return false;
+                } else if (applicationSettings) {
+                    return !applicationSettings.disableImages;
+                } else {
+                    return false;
+                }
+            },
+
+            _handleOpenRoomDetails: function (e) {
+                e.stopPropagation();
+                // TODO: Workaround for room details
+                var details = {
+                    eventItem: this.eventItem,
+                    applicationSettings: this.applicationSettings
+                };
+                this.fire("reservation-room-detail-open", details);
+            },
+
+            _computeDisplayTotalRooms: function(total) {
+                return (total > 1) ? true : false;
+            } 
+
+        });
+
+    </script>
+</dom-module>

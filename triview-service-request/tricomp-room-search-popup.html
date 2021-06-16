@@ -1,0 +1,334 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2020 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-collapse/iron-collapse.html">
+
+<link rel="import" href="../paper-button/paper-button.html">
+
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-loading-indicator/triplat-loading-indicator.html">
+
+<link rel="import" href="../triblock-popup/triblock-popup.html">
+<link rel="import" href="../triblock-tabs/triblock-tabs.html">
+
+<link rel="import" href="tricomp-room-floorplan-selector.html">
+<link rel="import" href="tricomp-room-list-selector.html">
+<link rel="import" href="tristyles-service-request-app.html">
+
+<dom-module id="tricomp-room-search-popup">
+	<template>
+		<style include="service-request-tabs">
+			#popup {
+				@apply(--layout-vertical);
+				width: 80%;
+				height: 80%;
+				max-width: 650px;
+				padding: 15px 0px 0px 0px;
+			}
+
+			:host(:not([small-screen])) #popup {
+				border:5px solid var(--tri-primary-content-accent-color);
+			}
+
+			.no-spaces-alert {
+				@apply(--layout-flex);
+				@apply(--layout-vertical);
+				@apply(--layout-center-center);
+				font-weight: bolder;
+			}
+
+			.popup-header {
+				@apply(--layout-horizontal);
+				border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			}
+
+			:host([small-screen]) .popup-header {
+				@apply(--layout-vertical);
+			}
+
+			.building-room-header {
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+			}
+
+			:host-context([dir="ltr"]) .building-room-text {
+				padding-left: 15px;
+			}
+
+			:host-context([dir="rtl"]) .building-room-text {
+				padding-right: 15px;
+			}
+
+			.building-room-text {
+				font-size: 18px;
+				color:#464646;
+			}
+
+			.header-divider {
+				height: 32px;
+			}
+
+			:host([small-screen]) .header-divider {
+				display: none;
+			}
+
+			:host-context([dir="ltr"]) .header-divider {
+				padding-right: 15px;
+				border-right: 1px solid var(--tri-primary-content-accent-color);
+			}
+
+			:host-context([dir="rtl"]) .header-divider {
+				padding-left: 15px;
+				border-left: 1px solid var(--tri-primary-content-accent-color);
+			}
+
+			triblock-tabs {
+				min-width: 250px;
+				--triblock-tabs-height: 45px;
+			}
+
+			:host(:not([small-screen])) triblock-tabs {
+				@apply(--layout-flex);
+			}
+
+			iron-pages {
+				@apply(--layout-flex);
+				@apply(--layout-vertical);
+			}
+
+			iron-pages * {
+				@apply(--layout-flex);
+			}
+
+			.loading-indicator {
+				--triplat-loading-indicator-clear-background: transparent;
+			}
+			
+			.room-details-collapse {
+				@apply(--layout-horizontal);
+				position: absolute;
+				right: 0;
+				bottom: 0;
+				left: 0;
+				background-color: var(--tri-body-background-color);
+			}
+			
+			.room-details-container {
+				@apply(--layout-flex);
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+				padding: 11px;
+			}
+			
+			.room-details-text {
+				@apply(--layout-flex);
+				@apply(--layout-vertical);
+			}
+			
+			.room-name {
+				font-weight: bolder;
+			}
+
+			:host([small-screen]) triblock-popup {
+				padding: 10px;
+			}
+		</style>
+
+		<triplat-ds id="floorRoomsAndPeople" name="floorRoomsAndPeople" data="{{_roomsList}}"
+				loading="{{_loadingRooms}}"	force-server-filtering manual>
+			<triplat-ds-context name="lookupBuilding" context-id="[[building.id]]"></triplat-ds-context>
+			<triplat-ds-context name="buildingFloors" context-id="[[_floorId]]"></triplat-ds-context>
+		</triplat-ds>
+
+		<triblock-popup id="popup" with-backdrop title="Select a Room" aria-label="Select a Room" restore-focus-on-close>
+			<template is="dom-if" if="[[!_showNoRoomMessage]]">
+				<div class="popup-header">
+					<div class="building-room-header">
+						<span class="building-room-text">[[building.value]], [[floor.value]]</span>
+						<div class="header-divider"></div>
+					</div>
+					<triblock-tabs selected="{{_selectedTab}}" hidden$="[[_showOnlyList]]" 
+							fit-container>
+						<triblock-tab id="floorplanTab" label="Floor Plan"></triblock-tab>
+						<triblock-tab id="listTab" label="List"></triblock-tab>
+					</triblock-tabs>
+				</div>
+
+				<iron-pages selected="{{_selectedTab}}" selected-attribute="enabled" attr-for-selected="tab">
+					<tricomp-room-floorplan-selector tab="floorplanTab" rooms-list="[[_roomsList]]" 
+							floor-id="[[_floorId]]" selected-space="{{_selectedSpace}}" current-room="[[_currentRoom]]"
+							loading="{{_graphicLoading}}" has-graphic="{{_hasGraphic}}" svg-aria-label="[[floor.value]]">
+					</tricomp-room-floorplan-selector>
+
+					<tricomp-room-list-selector id="listSelector" tab="listTab" rooms-list="[[_roomsList]]" 
+							selected-space="{{_selectedSpace}}" current-room="[[_currentRoom]]">
+					</tricomp-room-list-selector>
+				</iron-pages>
+			</template>
+
+			<template is="dom-if" if="[[_showNoRoomMessage]]">
+				<div class="no-spaces-alert">
+					<span class="tri-h2">There are no rooms to display.</span>
+				</div>
+			</template>
+
+			<triplat-loading-indicator class="loading-indicator" 
+					show="[[_computeLoading(_graphicLoading, _loadingRooms)]]">
+			</triplat-loading-indicator>
+
+			<iron-collapse id="roomDetails" class="room-details-collapse" 
+					opened="[[_computeShowRoomDetails(_selectedSpace)]]">
+				<div class="room-details-container">
+					<div class="room-details-text">
+						<div class="room-name tri-h3">[[_selectedSpace.space]]</div>
+						<template is="dom-repeat" items="[[_selectedSpace.peopleList]]">
+							<span>[[item]]</span>
+						</template>
+						<span>[[_selectedSpace.spaceClass]]</span>
+					</div>
+					<paper-button id="selectRoomButton" on-tap="_selectRoom">Select Room</paper-button>
+				</div>
+			</iron-collapse>
+		</triblock-popup>
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-room-search-popup",
+
+			behaviors: [
+				TriBlockViewResponsiveBehavior
+			],
+
+			properties: {
+				building: {
+					type: Object
+				},
+
+				floor: {
+					type: Object
+				},
+
+				room: {
+					type: Object,
+					notify: true
+				},
+
+				_selectedSpace: {
+					type: Object
+				},
+
+				_roomsList: {
+					type: Array,
+					observer: "_handleRoomListChange"
+				},
+
+				_showNoRoomMessage: {
+					type: Boolean,
+					value: false
+				},
+
+				_floorId: {
+					type: String
+				},
+
+				_currentRoom: {
+					type: Object,
+					value: null
+				},
+
+				_loadingRooms: {
+					type: Boolean,
+					value: false
+				},
+
+				_graphicLoading: {
+					type: Boolean,
+					value: false
+				},
+
+				_hasGraphic: {
+					type: Boolean,
+					value: false
+				},
+
+				_selectedTab: {
+					type: String
+				},
+
+				_showOnlyList: {
+					type: Boolean,
+					value: false
+				}
+			},
+
+			observers: [
+				"_computeShowOnlyList(_hasGraphic, _graphicLoading, _loadingRooms)"
+			],
+
+			open: function () {
+				this._selectedSpace = null;
+				if (this._isNotEmpty(this.building) && this._isNotEmpty(this.floor)) {
+					this.$$("#listSelector").refresh();
+					this.$.popup.openPopup();
+					if (this._floorId != this.floor.id || this._roomList == null) {
+						this._selectedTab = "floorplanTab";
+						this._floorId = this.floor.id;
+						this.$.floorRoomsAndPeople.refresh();
+					}
+					this._currentRoom = this._isNotEmpty(this.room) ? { _id: this.room.id } : null;
+				}
+			},
+
+			close: function() {
+				this.$.popup.closePopup();
+			},
+
+			_isNotEmpty: function (obj) {
+				return obj != null && obj.id != null && obj.id != "";
+			},
+
+			_computeLoading: function (graphicLoading, loadingRooms) {
+				return graphicLoading || loadingRooms;
+			},
+
+			_computeShowRoomDetails: function (selectedSpace) {
+				if (selectedSpace != null && (this._currentRoom == null || selectedSpace._id != this._currentRoom._id)) {
+					this.$.selectRoomButton.setAttribute('aria-hidden', 'false');
+					return true;
+				} else {
+					this.$.selectRoomButton.setAttribute('aria-hidden', 'true');
+					return false;
+				}
+			},
+
+			_selectRoom: function () {
+				this.room = {
+					id: this._selectedSpace._id,
+					value: this._selectedSpace.space
+				};
+				this.$.popup.close();
+			},
+
+			_handleRoomListChange: function (newRoomList) {
+				this._showNoRoomMessage = newRoomList && newRoomList.length == 0;
+			},
+
+			_computeShowOnlyList: function(hasGraphic, graphicLoading, loadingRooms) {
+				this._showOnlyList = !(loadingRooms || graphicLoading) && !hasGraphic;
+				var  selectedTab = "";
+				if (this._showOnlyList) {
+					selectedTab = "listTab";
+				} else {
+					selectedTab = "floorplanTab";
+				}
+				this.debounce(
+					"tricomp-room-selector-popup-set-selected-tab",
+					this.set.bind(this, "_selectedTab",  selectedTab),
+					20
+				);
+			}
+
+		});
+	</script>
+</dom-module>

@@ -1,0 +1,257 @@
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../iron-list/iron-list.html">
+<link rel="import" href="../iron-media-query/iron-media-query.html">
+
+<link rel="import" href="tricomp-search-input.html">
+<link rel="import" href="../tri-loading-indicator/tri-loading-indicator.html">
+
+<dom-module id="tricomp-multi-space-selector-list">
+
+	<style>
+
+		:host {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			background-color: var(--tri-body-background-color);
+		}
+
+		iron-list {
+			@apply(--layout-flex);
+			@apply(--layout-scroll);
+			min-width: 0;
+			min-height: 0;
+		}
+
+		:host > div:first-of-type {
+			border-top: none;
+		}
+		
+		.space-item {
+			@apply(--layout);
+			@apply(--layout-horizontal);
+			background-color: white;
+			flex-shrink: 0;
+			padding: 20px 40px 20px 40px;
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			cursor: pointer;
+		}
+
+		.space-item:focus{
+			outline: -webkit-focus-ring-color auto 5px;
+			outline-color: -webkit-focus-ring-color;
+			outline-style: auto;
+			outline-width: 5px;
+			background-color: #f3faff
+		}
+		
+		[tri-selected] {
+			background-color: #C0E6FF;
+		}
+
+		.value {
+			color: var(--tri-focus-color);
+		}
+
+		label {
+			color: var(--tri-focus-label-color);
+		}
+
+		.space-item .row {
+			@apply(--layout-flex);
+		}
+
+		.space-item .row .fields {
+			@apply(--layout-flex);
+		}
+
+		@media (min-width: 769px) {
+			.space-item .row .fields {
+				@apply(--layout-horizontal);
+			}
+
+			.space-item .row .fields span {
+				@apply(--layout-flex);
+			}
+		}
+
+		@media (max-width: 768px) {
+			.space-item .row .fields {
+				@apply(--layout-vertical);
+			}
+		}
+
+	</style>
+
+	<template>
+
+		<tri-loading-indicator show="[[!loaded]]"></tri-loading-indicator>
+
+		<iron-media-query query="(min-width: 1250px)" query-matches="{{_largeScreenWidth}}"></iron-media-query>
+		<iron-media-query query="(max-width: 768px)" query-matches="{{_verticalScreenWidth}}"></iron-media-query>
+
+		<iron-list id="ironList" items="{{filteredSpaces}}">
+			<template>
+				<div tri-record-id$="{{item._id}}" class="space-item" tri-selected$="{{item._selected}}" on-tap="_onSpaceTap" tabindex="0" on-keypress="_keyPressHandler">
+					<div class="row"> 
+						<div class="fields">
+							<span class="id"><label>ID: </label><span class="value">{{item.id}}</span></span>
+							<span class="name"><label>Name: </label><span class="value">{{_handleShowSpaceName(item.space, _largeScreenWidth, _verticalScreenWidth)}}</span></span>
+							<span class="type"><label>Type: </label><span class="value">{{item.spaceClass}}</span></span>
+							<span class="occupancy"><label>Occupancy: </label><span class="value">{{item.occupancyStatus}}</span></span>
+						</div>
+					</div>
+				</div>
+			</template>
+		</iron-list>
+		
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-multi-space-selector-list",
+
+		properties : {
+			allSpaces : Array,
+			filteredSpaces : Array,
+			selectedSpaces : {
+				type : Array,
+				notify : true
+			},
+			searchTerms : String,
+			loaded : {
+				type : Boolean,
+				notify : true
+			},
+			ignoreFloorPlan : Boolean,
+
+			_internalSet : {
+				type : Boolean,
+				value : false
+			}
+		},
+		
+		observers : [
+			'_handleSelectedSpacesChanged(selectedSpaces.*)',
+			"_onAllSpacesChanged(allSpaces)"
+		],
+
+		// TODO: set loaded to true when dom is posted
+		_onAllSpacesChanged: function(allSpaces) {
+			this.set('loaded', true);
+		},
+		
+		// Modified outside and inside
+		_handleSelectedSpacesChanged : function(selectedSpacesChanged) {
+			if (selectedSpacesChanged.path == "selectedSpaces") {
+				var newSelectedSpaces = selectedSpacesChanged.value;
+				if (newSelectedSpaces) {
+					for (var i = 0; i < newSelectedSpaces.length; i++) {
+						this._select(newSelectedSpaces[i]);
+					}
+				}
+			} else if (selectedSpacesChanged.path == 'selectedSpaces.splices') {
+				var indexSplice = selectedSpacesChanged.value.indexSplices[0];
+
+				var removed = indexSplice.removed;
+				for (var i = 0; i < removed.length; i++) {
+					var toRemoveId = removed[i]._id;
+					this._deselect(removed[i]);
+				}
+
+				for (var i = 0; i < indexSplice.addedCount; i++) {
+					var addedSpace = indexSplice.object[indexSplice.index + i];
+					// TODO: Why is this undefined to begin with?
+					if (addedSpace) {
+						this._select(addedSpace);
+					}
+				}
+		    }
+		},
+
+		_onSpaceTap: function(e) {
+			var selectedSpaceModel = this.$.ironList.modelForElement(e.target);
+			var selectedSpace = selectedSpaceModel.item;
+			if (selectedSpace._selected) {
+				this._remove(selectedSpace);
+			} else {
+				this._add(selectedSpace);
+			}
+		},
+
+		_select : function(selectedSpace) {
+			var index = this.filteredSpaces.indexOf(selectedSpace);
+			if (index >= 0) {
+				this.set("filteredSpaces." + index + "._selected", true);
+			}
+		},
+
+		_deselect : function(selectedSpace) {
+			var index = this.filteredSpaces.indexOf(selectedSpace);
+			if (index >= 0) {
+				this.set("filteredSpaces." + index + "._selected", false);
+			}
+		},
+
+		_remove : function(selectedSpace) {
+			var index = this.selectedSpaces.indexOf(selectedSpace);
+			if (index != -1) {
+				this.splice('selectedSpaces', index, 1);
+			}
+		},
+
+		_add : function(selectedSpace) {
+			var index = this.selectedSpaces.indexOf(selectedSpace);
+			if (index == -1) {
+				this.push('selectedSpaces', selectedSpace);
+			}
+		},
+
+		selectAll : function() {
+			for (var i = 0; i < this.filteredSpaces.length; i++) {
+				this._add(this.filteredSpaces[i]);
+			}
+		},
+
+		deselectAll : function() {
+			for (var i = 0; i < this.filteredSpaces.length; i++) {
+				this._remove(this.filteredSpaces[i]);
+			}
+		},
+		
+		reset : function() {
+			this.set('loaded', false);
+		},
+
+		_handleShowSpaceName: function(space, largeScreenWidth, verticalScreenWidth) {
+			if (space) {
+				if (largeScreenWidth) {
+					if (space.length > 25) {
+						space = space.substring(0, 25) + '...';
+					}
+				} else {
+					if (verticalScreenWidth) {
+						if (space.length > 25) {
+							space = space.substring(0, 25) + '...';
+						}
+					} else {
+						if (space.length > 15) {
+							space = space.substring(0, 15) + '...';
+						}
+					}
+				}
+			}
+
+			return space;
+		},
+
+		_keyPressHandler: function(e){
+			var code = e.keyCode;
+			if (code == (13 || 32)){
+				this._onSpaceTap(e);
+			}
+		},
+
+    });
+</script>

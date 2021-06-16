@@ -1,0 +1,190 @@
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-routing/triplat-routing.html">
+<link rel="import" href="../triplat-image/triplat-image.html">
+<link rel="import" href="../triplat-date-picker/triplat-date-picker.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-selector/iron-selector.html">
+<link rel="import" href="../paper-button/paper-button.html">
+
+<link rel="import" href="../triplat-table-behavior/triplat-table-behavior.html">
+
+<dom-module id="tricomp-discrepancy-logs-assets">
+
+	<style>
+
+		:host {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			background-color: #ffffff;
+			margin: 10px;
+		}
+
+		.wrap-text {
+			width:200px;
+		}
+
+		.icon-container {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-center-center);
+		}
+
+		.asset-icon {
+			width: 40px;
+			height: 40px;
+			color: #5A5A5A;
+		}
+
+		.table-view {
+			width: 100%;
+		}
+
+		.table-row {
+			background-color: white !important; 
+		}
+		
+		.action {
+			@apply(--layout);
+			@apply(--layout-center-center);
+		}
+
+	</style>
+
+	<template>
+
+		<triplat-route name="assessmentLogsList" params="{{assessmentParams}}"></triplat-route>
+		
+		<triplat-ds id="assetDiscrepancyLogsDs" name="assetDiscrepancyLogs" filtered-data="{{assetDiscrepancyLogs}}">
+			<triplat-ds-context name="mySpaceAssessments" context-id="{{assessmentParams.assessmentId}}"></triplat-ds-context>
+
+			<triplat-query>
+				<triplat-query-filter name="approve" operator="equals" value="true"></triplat-query-filter>
+				<triplat-query-and></triplat-query-and>
+				<triplat-query-filter  name="space" operator="contains" value="{{searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="approve" operator="equals" value="true"></triplat-query-filter>
+				<triplat-query-and></triplat-query-and>
+				<triplat-query-filter  name="spaceClass" operator="contains" value="{{searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="approve" operator="equals" value="true"></triplat-query-filter>
+				<triplat-query-and></triplat-query-and>
+				<triplat-query-filter  name="discrepancyType" operator="contains" value="{{searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="approve" operator="equals" value="true"></triplat-query-filter>
+				<triplat-query-and></triplat-query-and>
+				<triplat-query-filter  name="asset.value" operator="contains" value="{{searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="approve" operator="equals" value="true"></triplat-query-filter>
+				<triplat-query-and></triplat-query-and>
+				<triplat-query-filter  name="comment" operator="contains" value="{{searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="approve" operator="equals" value="true"></triplat-query-filter>
+				<triplat-query-and></triplat-query-and>
+				<triplat-query-filter  name="reviewComment" operator="contains" value="{{searchTerms}}" ignore-if-blank></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+		<div tri-table class="table-view">
+			<div tri-thead class="table-header">
+				<div tri-tr class="table-header-row">
+					<div tri-th class="table-header-icon"></div>
+					<div tri-th class="table-header-column">Action</div>
+					<div tri-th class="table-header-column">Space</div>
+					<div tri-th class="table-header-column">Space Class</div>
+					<div tri-th class="table-header-column">Asset</div>
+					<div tri-th class="table-header-column">Assessment Comment</div>
+					<div tri-th class="table-header-column">Review Comment</div>
+					<div tri-th class="table-header-icon"></div>
+				</div>
+			</div>
+			<div tri-tbody class="table-body">
+				<template id="assetDiscrepancyLogsTemplate" is="dom-repeat" items="{{assetDiscrepancyLogs}}">
+					<div tri-tr>
+						<div tri-td class="table-column-icon">
+							<triplat-image src="{{item.image}}" width="40px" height="40px" sizing="contain" hidden$="{{!_handleDisplayImage(item.image)}}"></triplat-image>
+							<div class="icon-container" hidden$="{{_handleDisplayImage(item.image)}}">
+								<iron-icon class="asset-icon" icon="hardware:laptop-mac"></iron-icon>
+							</div>
+						</div>
+						<div tri-td class="table-column">
+							<span>{{item.discrepancyType_en_US}}</span>
+						</div>
+						<div tri-td class="table-column"><span>{{item.space}}</span></div>
+						<div tri-td class="table-column"><span>{{item.spaceClass}}</span></div>
+						<div tri-td class="table-column"><span>{{item.asset.value}}</span></div>
+						<div tri-td class="table-column-comment"><span>{{item.comment}}</span></div>	
+						<div tri-td class="table-column-comment"><span>{{item.reviewComment}}</span></div>	
+						<div tri-td>
+							<div class="action">
+		    					<paper-button on-tap="_handleReject" hidden="{{item.approve}}" disabled="{{historyAssessment}}">Undo</paper-button>
+		    					<paper-button on-tap="_handleAccept" hidden="{{!item.approve}}" disabled="{{historyAssessment}}">Exclude</paper-button>
+							</div>
+						</div>
+					</div>
+				</template>
+			</div>
+		</div>
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-discrepancy-logs-assets",
+
+		behaviors : [TriPlatTableBehavior],
+
+		properties : {
+
+			searchTerms : String,
+			historyAssessment: Boolean,
+			
+		},
+
+		_handleReject: function(e) {
+			var _selectedDiscrepancyLog = this.$.assetDiscrepancyLogsTemplate.itemForElement(e.target);
+			_selectedDiscrepancyLog.approve = true;
+			_selectedDiscrepancyLog.reviewComment = "";
+			var rtn = {'selectedDiscrepancyLog':_selectedDiscrepancyLog,'viewType' : "asset"};
+			this.fire("update-discrepancy-log", rtn);
+
+		},
+
+		_handleAccept: function(e) {
+			var _selectedDiscrepancyLog = this.$.assetDiscrepancyLogsTemplate.itemForElement(e.target);
+			_selectedDiscrepancyLog.approve = false;
+			this._handleDisplayComment(_selectedDiscrepancyLog);
+		},
+
+		_handleDisplayComment: function(discrepancyLog) {
+			var rtn = {'discrepancyLog':discrepancyLog,'viewType' : "asset"};
+
+			this.fire("show-comment", rtn);
+		},
+
+		_handleDisplayImage : function(image) {
+			if(!image) {
+				return false;
+			}
+			else
+			{
+				return true;
+			}  
+		},
+
+		_handleDisplayDiscrepancyType: function(discrepancyType) {
+			var __dictionary__displayText = "";
+
+			if(discrepancyType == "Add Asset") {
+				__dictionary__displayText = "Add";
+			} else {
+				__dictionary__displayText = "Remove";
+			}
+
+			return __dictionary__displayText;
+		},
+
+		refreshAssetDiscrepancyDs: function() {
+			this.$.assetDiscrepancyLogsDs.refresh();
+		}
+    });
+</script>

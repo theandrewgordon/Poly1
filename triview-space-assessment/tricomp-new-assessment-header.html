@@ -1,0 +1,354 @@
+<link rel="import" href="../triplat-progress-gauge/triplat-progress-gauge.html">
+<link rel="import" href="../triplat-date-picker/triplat-date-picker.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-query/triplat-query.html">
+<link rel="import" href="../triplat-select-input/triplat-select-input.html">
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-icons/hardware-icons.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../paper-input/paper-input.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../paper-spinner/paper-spinner.html">
+<link rel="import" href="../neon-animation/animations/slide-from-right-animation.html">
+<link rel="import" href="../neon-animation/animations/slide-right-animation.html">
+<link rel="import" href="../iron-media-query/iron-media-query.html">
+
+<link rel="import" href="tricomp-assigned-person-dialog.html">
+
+<dom-module id="tricomp-new-assessment-header">
+	<style>
+		:host {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+		}
+
+		.back {
+			color: var(--tri-primary-color);
+			@apply(--layout-self-center);
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			padding-bottom: 5px;
+			cursor: pointer;
+		}
+
+		.back iron-icon,
+		.back span {
+			font-size: 16px;
+		}
+
+		.back iron-icon {
+			width: 32px;
+			height: 32px;
+		}
+
+		.action {
+			@apply(--layout);
+			@apply(--layout-center-center);
+			margin-right: 20px;
+			min-width: 82px;
+		}
+		
+		paper-button {
+			@apply(--layout-vertical);
+			@apply(--layout-center-justified);
+			@apply(--tri-active-button);
+			height: 44px;
+			font-size: 14px;
+			font-weight: bold;
+			padding-left: 18px;
+			padding-right: 18px;
+			--paper-button-flat-keyboard-focus: {
+				border: 2px dotted white;
+			}
+		}
+
+		paper-button[disabled] {
+			@apply(--tri-disabled-button);
+		}
+
+		#allPeopleDialog {
+			position: absolute;
+			top: 0px;
+			left: 0px;
+			right: 0px;
+			bottom: 0px;
+		}
+
+		#allPeopleDialog>tricomp-assigned-person-dialog {
+			@apply(--layout-fit);
+		}
+
+		.accessibility {
+               display: none;
+        }
+
+        .header-fields {
+        	@apply(--layout);
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			padding: 0px 30px;
+		}
+
+		.header-fields .detail {
+			@apply(--layout-flex);
+		}
+
+		.header-fields .detail div {
+			@apply(--layout-flex);
+		}
+
+		.header-fields .detail div > * { 
+			padding: 0px 5px;
+		}
+
+		.header-fields .detail div > paper-checkbox {
+			padding-top: 30px;
+		}
+
+        @media (min-width: 769px) {
+			.header-fields .detail div {
+				@apply(--layout-horizontal);
+			}
+
+			.header-fields .detail div > * { 
+				@apply(--layout-flex);
+			}
+		}
+
+		@media (max-width: 768px) {
+			.header-fields .detail div {
+				@apply(--layout-vertical);
+			}
+		}
+
+	</style>
+	<template>
+
+		<triplat-ds name="currentUser" data="{{currentUser}}"></triplat-ds>
+
+		<triplat-ds id="allBuildingsDs" name="allBuildings" data="{{_allBuildings}}">
+			<triplat-query>
+				<triplat-query-scroll-page scroller="{{_buildingScroller}}" size="50"></triplat-query-scroll-page>
+				<triplat-query-filter name="name" operator="contains" value="{{_buildingSearchValue}}" ignore-if-blank></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<triplat-ds id="allFloorsDs" name="allFloors" filtered-data="{{_allFloors}}">
+			<triplat-ds-context name="allBuildings" context-id="{{building.id}}"></triplat-ds-context>
+			<triplat-query>
+				<triplat-query-filter name="floorName" operator="contains" value="{{_floorSearchValue}}" ignore-if-blank></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<iron-media-query query="(min-width: 769px)" query-matches="{{_largeScreenWidth}}"></iron-media-query>
+
+		<paper-dialog id="allPeopleDialog"
+				aria-label="All people dialog"
+				entry-animation="slide-from-right-animation"
+				exit-animation="slide-right-animation">
+			<tricomp-assigned-person-dialog 
+				id="allPeopleComp">
+			</tricomp-assigned-person-dialog>
+		</paper-dialog>
+
+		<div class="back" on-tap="_handleBackTap">
+			<iron-icon icon="{{_backIcon}}" tabindex="0" on-keypress="_handleKeyPress" aria-labelledby="backToAssessment" role="button"></iron-icon>
+			<span hidden$="{{!_largeScreenWidth}}">{{backLabel}}</span>
+		</div>
+
+		<div class="header-fields">
+			<div class="detail">
+				<div>
+					<triplat-select-input
+						id="building"
+						value="{{building}}"
+						search-value="{{_buildingSearchValue}}"
+						scroller="{{_buildingScroller}}"
+						value-name="name"
+						select-src="[[_allBuildings]]"
+						floating-label
+						label="Building *">
+					</triplat-select-input>
+
+					<triplat-select-input
+						id="floor"
+						value="{{floor}}"
+						search-value="{{_floorSearchValue}}" 
+						value-name="floorName"
+						select-src="[[_allFloors]]"
+						floating-label
+						label="Floor *"
+						aria-label="Floor">
+					</triplat-select-input>
+				</div>
+				<div>
+					<paper-input id="description" label="Description" value="{{description}}" aria-labelledby="descriptionInput"></paper-input>
+					<triplat-date-picker id="date" value="{{dueDate}}" label="Due Date *" error-msg="{{directEntryErrorMsg}}" aria-label="Date Picker" display-format="{{currentUser._DateFormat}}" on-change="_handleShowInvalidMsg" disable-error-msg></triplat-date-picker>
+				</div>
+				<div>
+					<paper-input id="assignedTo" label="Assigned To *" value="{{selectedPerson.value}}" on-tap="_handleOpenAllPeopleDialog" hidden$="{{!managerCreated}}" aria-labelledby="assignedToInput" on-keypress="_handleAssignedToKeyPress" readonly></paper-input>
+					<paper-checkbox checked="{{autoApprove}}" hidden$="{{!managerCreated}}">Auto Approve</paper-checkbox>
+				</div>
+			</div>
+		</div>
+
+		<div class="action">
+			<paper-button id="actionButton" hidden$="{{loading}}" on-tap="_handleActionTap" aria-labelledby="{{actionLabel}}" tabindex="0">{{actionLabel}}</paper-button>
+			<paper-spinner hidden="{{!loading}}" active="{{loading}}"></paper-spinner>
+		</div>
+
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-new-assessment-header",
+
+		properties: {
+
+			backLabel : String,
+
+			progress : Number,
+
+			description: {
+				type: String,
+				notify: true
+			},
+
+			building: {
+				type: String,
+				notify: true
+			},
+
+			floor: {
+				type: String,
+				notify: true
+			},
+
+			dueDate: {
+				type: String,
+				notify: true
+			},
+
+			autoApprove: {
+				type: Boolean,
+				value: false,
+				notify: true
+			},
+
+			selectedPerson: {
+				type: Object,
+				notify: true
+			},
+			
+			actionLabel : String,
+
+			managerCreated: Boolean,
+			
+			_backIcon: {
+				type: String,
+				value: "hardware:keyboard-arrow-left"
+			},
+
+			loading : {
+				type : Boolean,
+				value : false
+			}
+		},
+
+		observers : [
+			'_handleBuildingSearchValueChanged(building)',
+		],
+
+		listeners : {
+			'allFloorsDs.ds-get-complete' : '_handleFloorsLoaded',
+			'allPeopleComp.close-dialog' : '_handleCloseAllPeopleDialog',
+			'allPeopleComp.select-person' : '_handleSelectedPersonChanged'
+		},
+
+		_handleShowInvalidMsg: function() {
+			var __dictionary__invalidDate = "Invalid date";
+
+			this.$.date._hightLighted = null;
+
+			if (this.$.date._invalid) {
+				this.$.date._hightLighted = __dictionary__invalidDate;
+			}
+		},
+
+		attached: function() {
+			var textDirectionValue = document.querySelector('body').getAttribute('dir');
+			if (textDirectionValue === "rtl") {
+				this.set("_backIcon", "hardware:keyboard-arrow-right");
+			}
+		},
+
+		_handleBuildingSearchValueChanged : function(building) {
+			if (!building) {
+				this.$.floor._clearValue();
+			}
+		},
+
+		_handleFloorsLoaded : function() {
+			var floors = this.$.allFloorsDs.data;
+			if (floors && floors.length == 1) {
+				this.$.floor.set("value", {
+					id: floors[0]._id, 
+					value: floors[0].floorName
+				});
+			} else {
+				this.$.floor._clearValue();
+			}
+		},
+
+		_handleBackTap: function() {
+			this.fire("back");
+		},
+
+		_handleActionTap: function() {
+			this.fire("action");
+		},
+
+		_handleOpenAllPeopleDialog: function() {
+			this.$.allPeopleDialog.open();
+		},
+
+		_handleCloseAllPeopleDialog: function() {
+			this.$.allPeopleDialog.close();
+		},
+
+		_handleSelectedPersonChanged: function(e) {
+			var person = {
+				id: e.detail._id,
+				value: e.detail.name
+			};
+
+			this.set("selectedPerson", person);	
+		},
+
+		_handleKeyPress : function(event, detail, sender){
+			var code=event.keyCode;
+			if (code==(13 || 32)){
+				this.fire("back");
+			}
+		},
+
+		_handleAssignedToKeyPress : function(e){
+			var keyCode = e.keyCode;
+			if (keyCode == 13) {
+				this._handleOpenAllPeopleDialog();
+			}
+		},
+
+		reset : function() {
+			this.$.building._clearValue();
+			this.$.floor._clearValue();
+			this.$.actionButton.disabled = false;
+			this.set("selectedPerson", "");
+			this.$.date.clearDateValue();
+		}
+
+	});
+</script>

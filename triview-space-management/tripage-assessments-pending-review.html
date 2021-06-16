@@ -1,0 +1,349 @@
+<link rel="import" href="../triplat-routing/triplat-routing.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-query/triplat-query.html">
+<link rel="import" href="../triplat-search-input/triplat-search-input.html">
+<link rel="import" href="../triplat-table-behavior/triplat-table-behavior.html">
+
+<link rel="import" href="../triblock-page-container-behavior/triblock-page-container-behavior.html">
+
+<link rel="import" href="../tri-loading-indicator/tri-loading-indicator.html">
+
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icons/hardware-icons.html">
+<link rel="import" href="../iron-input/iron-input.html">
+
+<link rel="import" href="tricomp-completed-assessment-card.html">
+	
+<dom-module id="tripage-assessments-pending-review">
+
+	<style>
+
+		:host {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			min-height: 0;
+			flex-shrink: 0;
+		}
+		
+		.assessment-card-container {
+			@apply(--layout-flex);
+			@apply(--layout-scroll);
+			align-content: flex-start;
+			min-width: 0;
+		}
+
+		.assessment-card {
+			margin: 0px 0px 20px 20px;
+			box-sizing: border-box;
+		}
+
+		@media (min-width: 1560px) {
+			.assessment-card {
+				width: calc(25% - 25px);
+			}
+		}
+
+		@media (max-width: 1559px) and (min-width: 1160px) {
+			.assessment-card {
+				width: calc(33.3333% - 26px);
+			}
+		}
+
+		@media (max-width: 1159px) and (min-width: 800px) {
+			.assessment-card {
+				width: calc(50% - 30px);
+			}
+		}
+
+		@media (max-width: 799px) {
+			.assessment-card {
+				width: calc(100% - 40px);
+			}
+		}
+
+		.assessment-col-description {
+			@apply(--layout-flex-2);
+		}
+
+		.assessment-col-status {
+			@apply(--layout-flex);
+		}
+
+		.assessment-col-city {
+			@apply(--layout-flex);
+		}
+
+		.assessment-col-building {
+			@apply(--layout-flex);
+		}
+
+		.assessment-col-floor {
+			@apply(--layout-flex);
+		}
+
+		.assessment-col-date {
+			@apply(--layout-flex);
+		}
+
+		.assessment-header-cell {
+			cursor: pointer;
+		}
+		
+		.assessment-row:hover {
+			cursor: pointer;
+			background-color: var(--tri-primary-light-color) !important;
+		}
+
+		.assessment-table-container {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-scroll);
+			background-color: var(--tri-primary-content-background-color);
+			padding: 0 10px;
+			min-height: 0;
+			min-width: 0;
+		}
+
+		.assessment-table {
+			box-sizing: border-box;
+			width: 100%;
+			min-width: 621px; /* 100px/col * 6 cols + 21px scrollbar = 621px... had to set this for scrolling to work properly */
+		}
+
+		.internet-explorer-fix {
+			@apply(--layout-horizontal);
+			@apply(--layout-wrap);
+			@apply(--layout-start);
+			@apply(--layout-start-justified);
+		}
+
+		.no-assessments-container {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			@apply(--layout-center-center);
+		}
+
+		.no-assessments-message {
+			font-weight: bold;
+			font-size: 1.5em;
+			text-align: center;
+		}
+
+		.sort-icon {
+			--iron-icon-height: 16px;
+			--iron-icon-width: 16px;
+		}
+
+		.sort-icon[icon="sort"] {
+			color: var(--ibm-gray-10);
+		}
+
+	</style>
+
+	<template>
+
+		<triplat-ds name="currentUser" data="{{currentUser}}"></triplat-ds>
+
+		<triplat-ds id="myCompletedSpaceAssessmentsDs" name="myCompletedSpaceAssessments" data="{{_unfilteredMyCompletedAssessments}}" filtered-data="{{_myCompletedAssessments}}" loading="{{_myCompletedAssessmentsLoading}}">
+			<triplat-query>
+				<triplat-query-filter name="description" operator="contains" value="{{searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="city" operator="contains" value="{{searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="building.value" operator="contains" value="{{searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="floor.value" operator="contains" value="{{searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="status" operator="contains" value="{{searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="assessor" operator="contains" value="{{searchTerms}}" ignore-if-blank></triplat-query-filter>
+				
+				<triplat-query-sort name="{{sortField}}" desc="{{sortDescending}}"></triplat-query-sort>
+			</triplat-query>
+		</triplat-ds>
+
+		<tri-loading-indicator show="{{_computeLoading(_myCompletedAssessmentsLoading, _myCompletedAssessmentsReady)}}" hide-background></tri-loading-indicator>
+		
+		<div class="assessment-card-container" hidden$="{{_hideAssessmentCards(tableLayout, _unfilteredMyCompletedAssessments.length)}}">
+			<div class="internet-explorer-fix">
+				<template id="assessmentsCardTemplateOnPendingReview" is="dom-repeat" items="{{_myCompletedAssessments}}">
+					<tricomp-completed-assessment-card
+						class="assessment-card"
+						image="{{item.image}}"
+						description="{{item.description}}"
+						city="{{item.city}}"
+						building="{{item.building.value}}"
+						floor="{{item.floor.value}}"
+						completed-date="{{item.completedDate}}"
+						date-format="{{currentUser._DateFormat}}"
+						assessor="{{item.assessor}}"
+						total-assessed="{{item.totalAssessmentSpaces}}"
+						total-updates="{{item.totalUpdates}}"
+						on-drill-key-press="_handleCardDrillKeyPress"
+						on-tap="_handleOpenCardAssessment">
+					</tricomp-completed-assessment-card>
+				</template>
+			</div>
+		</div>
+
+		<div class="assessment-table-container" hidden$="{{_hideAssessmentTable(tableLayout, _unfilteredMyCompletedAssessments.length)}}">
+			<div tri-fixed-table class="assessment-table">
+				<div tri-thead>
+					<div tri-tr>
+						<div class="assessment-col-description">
+							<div tri-th class="assessment-header-cell" on-tap="_handleColumnSort" data-column="description"><span label>Description</span>&nbsp;<triplat-icon class="sort-icon" icon="sort" tabindex="-1"></triplat-icon></div>
+						</div>
+						<div class="assessment-col-status">
+							<div tri-th class="assessment-header-cell" on-tap="_handleColumnSort" data-column="status"><span label>Status</span>&nbsp;<triplat-icon class="sort-icon" icon="sort" tabindex="-1"></triplat-icon></div>
+						</div>
+						<div class="assessment-col-city">
+							<div tri-th class="assessment-header-cell" on-tap="_handleColumnSort" data-column="city"><span label>City</span>&nbsp;<triplat-icon class="sort-icon" icon="sort" tabindex="-1"></triplat-icon></div>
+						</div>
+						<div class="assessment-col-building">
+							<div tri-th class="assessment-header-cell" on-tap="_handleColumnSort" data-column="building.value"><span label>Building</span>&nbsp;<triplat-icon class="sort-icon" icon="sort" tabindex="-1"></triplat-icon></div>
+						</div>
+						<div class="assessment-col-floor">
+							<div tri-th class="assessment-header-cell" on-tap="_handleColumnSort" data-column="floor.value"><span label>Floor</span>&nbsp;<triplat-icon class="sort-icon" icon="sort" tabindex="-1"></triplat-icon></div>
+						</div>
+						<div class="assessment-col-date">
+							<div tri-th class="assessment-header-cell" on-tap="_handleColumnSort" data-column="completedDate"><span label>Date Assessed</span>&nbsp;<triplat-icon class="sort-icon" icon="sort-descending" tabindex="-1"></triplat-icon></div>
+						</div>
+					</div>
+				</div>
+
+				<div tri-tbody>
+					<template is="dom-repeat" id="assessmentsTableTemplateOnPendingReview" items="{{_myCompletedAssessments}}" on-dom-change="_handleTableTemplateDomChange">
+						<div tri-tr class="assessment-row" on-tap="_handleOpenTableAssessment" tabindex="0" on-keypress="_keyPressHandler">
+							<div class="assessment-col-description">
+								<div tri-td>{{item.description}}</div>
+							</div>
+							<div class="assessment-col-status">
+								<div tri-td>{{item.status}}</div>
+							</div>
+							<div class="assessment-col-city">
+								<div tri-td>{{item.city}}</div>
+							</div>
+							<div class="assessment-col-building">
+								<div tri-td>{{item.building.value}}</div>
+							</div>
+							<div class="assessment-col-floor">
+								<div tri-td>{{item.floor.value}}</div>
+							</div>
+							<div class="assessment-col-date">
+								<div tri-td><triplat-date-picker value="{{item.completedDate}}" readonly display-format="{{currentUser._DateFormat}}"></triplat-date-picker></div>
+							</div>
+						</div>
+					</template>
+				</div>
+			</div>
+		</div>
+
+		<template is="dom-if" if="{{_isZero(_unfilteredMyCompletedAssessments.length)}}">
+			<div class="no-assessments-container" tabindex="0">
+				<p class="no-assessments-message">You don't have any assessments pending review.</p>
+			</div>
+		</template>
+
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tripage-assessments-pending-review",
+
+		behaviors: [TriBlockPageContainerBehavior, TriPlatTableBehavior],
+
+		properties: {
+
+			_myCompletedAssessmentsReady: {
+				type: Boolean,
+				value: false
+			},
+
+			searchTerms : String,
+
+			tableLayout: {
+				type: Boolean,
+				value: false
+			},
+
+			countCompletedAssessments: {
+				type: Number,
+				notify: true
+			}
+
+		},
+
+		observers: [
+			"_handleMyCompletedAssessmentsReady(_unfilteredMyCompletedAssessments)",
+			"_handleTableLayoutChange(tableLayout)"
+		],
+
+		ready: function() {
+			this.set("sortField", "completedDate");
+		},
+
+		refreshData: function() {
+			this.$.myCompletedSpaceAssessmentsDs.refresh();
+		},
+
+		_computeLoading: function(loading, ready) {
+			return loading || !ready;
+		},
+
+		_handleOpenCardAssessment: function(e) {
+			var selectedAssessment = this.$.assessmentsCardTemplateOnPendingReview.itemForElement(e.target);
+			if (selectedAssessment) {
+				this.fire("open-assessment", { assessmentId : selectedAssessment._id });
+			}
+		},
+
+		_handleOpenTableAssessment: function(e) {
+			var selectedAssessment = this.$.assessmentsTableTemplateOnPendingReview.itemForElement(e.target);
+			if (selectedAssessment) {
+				this.fire("open-assessment", { assessmentId : selectedAssessment._id });
+			}
+		},
+
+		_handleCardDrillKeyPress: function(e) {
+			var keyCode = e.detail.keyCode;
+
+			if (keyCode == 13) {
+				this._handleOpenCardAssessment(e);
+			}
+		},
+
+		_hideAssessmentCards: function(tableLayout, dataLength) {
+			return tableLayout || dataLength == 0;
+		},
+
+		_hideAssessmentTable: function(tableLayout, dataLength) {
+			return !tableLayout || dataLength == 0;
+		},
+
+		_handleMyCompletedAssessmentsReady: function(data) {
+			if (data) {
+				this.set("_myCompletedAssessmentsReady", true);
+				this.set("countCompletedAssessments", data.length);
+			}
+		},
+
+		_handleTableLayoutChange: function(isTableLayout) {
+			if (isTableLayout) this._handleResize();
+		},
+
+		_handleTableTemplateDomChange: function(e) {
+			this._handleResize();
+		},
+
+		_isZero: function(val) {
+			return val == 0;
+		},
+
+		_pageAttached : function() {
+			this.fire("completed-list-attached");
+			this._handleResize();
+		}
+
+	});
+</script>

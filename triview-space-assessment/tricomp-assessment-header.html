@@ -1,0 +1,335 @@
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-icons/hardware-icons.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../paper-input/paper-input.html">
+<link rel="import" href="../paper-button/paper-button.html">
+
+<link rel="import" href="../triplat-progress-gauge/triplat-progress-gauge.html">
+<link rel="import" href="../triplat-date-picker/triplat-date-picker.html">
+<link rel="import" href="../triplat-weather/triplat-weather-forecast.html">
+
+<link rel="import" href="tricomp-accessibility.html">
+
+<dom-module id="tricomp-assessment-header">
+	<style>
+		:host {
+			@apply(--layout-horizontal);
+			background-color: var(--tri-body-background-color);
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			padding: 10px 20px;
+		}
+
+		.left-section {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+		}
+
+		.back {
+			color: var(--tri-primary-color);
+			@apply(--layout-self-start);
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			padding-bottom: 5px;
+			cursor: pointer;
+		}
+
+		.back iron-icon,
+		.back span {
+			font-size: 16px;
+		}
+
+		.back iron-icon {
+			width: 32px;
+			height: 32px;
+		}
+
+		.description {
+			@apply(--layout-block);
+			color: #464646;
+			padding: 0px 20px;
+			font-weight: bold;
+			font-size: 24px;
+		}
+
+		.details {
+			@apply(--layout-wrap);
+			padding: 0px 20px;
+			margin-top: 5px;
+		}
+
+		.details .right-divider {
+			border-right: 1px solid #c7c7c7;
+			padding: 0px 10px;
+			font-size: 14px;
+			color: #777677;
+		}
+
+		.details .no-divider {
+			padding: 0px;
+			font-size: 14px;
+			color: #777677;
+		}
+
+		.details > *:last-child {
+			border-right: none;
+		}
+
+		.right-section {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+		}
+
+		.progress {
+			@apply(--layout-horizontal);
+			padding-right: 30px;
+		}
+
+		.status {
+			@apply(--layout-vertical);
+			@apply(--layout-self-center);
+			font-size: 14px;
+			color: #777677;
+		}
+
+		.status span span {
+			font-size: 12px;
+		}
+
+		triplat-progress-gauge {
+			--triplat-progress-gauge-percent-font-size: 12px;
+			--triplat-progress-gauge-value-font-size: 24px;
+			--triplat-progress-gauge-circle-stroke-color: #C7C7C7;
+			margin-right: 10px;
+			font-size: 24px;
+			font-weight: bold;
+			width: 66px;
+			height: 66px;
+		}
+
+		.action {
+			@apply(--layout);
+			@apply(--layout-center-center);
+			padding-left: 20px;
+			min-width: 124px;
+			border-left: 1px solid var(--tri-separator-color);
+		}
+
+		paper-button[disabled] {
+			@apply(--tri-disabled-button);
+		}
+
+		paper-button {
+			@apply(--layout-vertical);
+			@apply(--layout-center-justified);
+			@apply(--tri-active-button);
+			height: 44px;
+			font-size: 14px;
+			font-weight: bold; 
+			padding-left: 18px;
+			padding-right: 18px;
+			--paper-button-flat-keyboard-focus: {
+				border: 2px dotted white;
+			}
+		}
+
+		.accessibility {
+			display: none;
+		}
+
+		.weather-forecast {
+			@apply(--layout-vertical);
+			padding: 10px 20px 10px 10px;
+			color: var(--ibm-gray-50);
+		}
+
+			.weather-title {
+				font-size: 12px;
+				font-style: italic;
+			}
+
+				.weather-data {
+					@apply(--layout-vertical);
+					@apply(--layout-self-center);
+					text-align: center;
+				}
+
+					.blurb {
+						padding: 5px;
+					}
+
+					.temps {
+						@apply(--layout-horizontal);
+						@apply(--layout-self-center);
+						font-size: 14px;
+					}
+
+						.max-temp {
+							padding-right: 12px;
+						}
+
+	</style>
+	<template>
+		<triplat-ds name="currentUser" data="{{currentUser}}"></triplat-ds>
+		
+		<triplat-weather-forecast
+		 	auto
+		 	language="[[currentUser._Locale]]"
+		 	units="[[_computeUnits(currentUser.temperatureUnitIV)]]"
+		 	postal-and-country-code="{{_computePostalAndCountryCodes(postalCode, countryCode)}}"
+		 	date="{{_computeDueDate(dueDate)}}"
+		 	forecast="{{forecast}}" ></triplat-weather-forecast>
+
+		<div class="left-section">
+			<div class="back" on-tap="_handleBackTap">
+				<iron-icon icon="{{_backIcon}}" aria-labelledby="backToAssessment" on-keypress="_keyPressHandler" tabindex="0"></iron-icon>
+				<span>My Assessments</span>
+			</div>
+			<span class="description">{{description}}</span>
+			<div class="details">
+				<span class$="{{_displayDivider(city)}}">{{city}}</span>
+				<span class$="{{_displayDivider(building)}}">{{building}}</span>
+				<span class$="{{_displayDivider(floor)}}">{{floor}}</span>
+			</div>
+		</div>
+		<div class="right-section">
+			<div class="weather-forecast" hidden$="[[!forecast]]">
+				<div class="weather-title">
+					<span>Weather for [[forecast.dow]],</span>
+					<triplat-date-picker class="date" value="{{dueDate}}" readonly display-format="[[currentUser._DateFormat]]"></triplat-date-picker>
+				</div>
+				<div class="weather-data">
+					<div class="blurb">[[forecast.day.phrase_32char]]</div>
+					<div class="temps" hidden$="[[!_computeIsEnglishUnit(currentUser.temperatureUnitIV)]]">
+						<div class="max-temp" hidden$="[[!forecast.max_temp]]">High: [[forecast.max_temp]]°F</div>
+						<div class="min-temp" hidden$="[[!forecast.min_temp]]">Low: [[forecast.min_temp]]°F</div>
+					</div>
+					<div class="temps" hidden$="[[_computeIsEnglishUnit(currentUser.temperatureUnitIV)]]">
+						<div class="max-temp" hidden$="[[!forecast.max_temp]]">High: [[forecast.max_temp]]°C</div>
+						<div class="min-temp" hidden$="[[!forecast.min_temp]]">Low: [[forecast.min_temp]]°C</div>
+					</div>
+				</div>
+			</div>
+			<div class="progress">
+				<triplat-progress-gauge id="progressGauge" progress="{{progress}}"></triplat-progress-gauge>
+				<div class="status">
+					<span>{{status}}</span>
+					<span hidden$="{{!_showSpacesCompletedCount(statusEN)}}"><span>{{completed}}</span><span> out of </span><span>{{total}}</span> <span>assessed</span></span>
+				</div>
+			</div>
+			<div class="action">
+				<paper-button id="button" hidden="{{loading}}" on-tap="_handleActionTap" disabled tabindex="0">Complete</paper-button>
+			<paper-spinner hidden="{{!loading}}" active="{{loading}}"></paper-spinner>
+			</div>
+		</div>
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-assessment-header",
+
+		properties: {
+
+			progress : Number,
+			description : String,
+			building : String,
+			floor : String,
+			creationDate : Number,
+			completionDate : Number, 
+			status : String,
+			statusEN : String,
+			completed : Number,
+			total : Number,
+			_backIcon: {
+				type: String,
+				value: "hardware:keyboard-arrow-left"
+			},
+
+			loading : {
+				type : Boolean,
+				value : false
+			}, 
+			dueDate: String, 
+			postalCode: Number,
+			countryCode: String
+
+		},
+
+		_computeIsEnglishUnit: function(tempUnit) {
+			return "e" === this._computeUnits(tempUnit);
+		},
+
+		_computeUnits: function(tempUnit) {
+			if (tempUnit === "degrees-fahrenheit") {
+				return "e";
+			} else if (tempUnit === "degrees-celsius") {
+				return "m";
+			} else {
+				console.warn(tempUnit + "is not supported. Defaulting to degrees-fahrenheit.");
+				return "e";
+			}
+		},
+
+		_computePostalAndCountryCodes: function(postalCode, countryCode) {
+			return postalCode + ":" + countryCode;
+		}, 
+
+		_computeDueDate: function(date) {
+			return date ? new Date(date) : null;
+		},
+
+		attached: function() {
+			var textDirectionValue = document.querySelector('body').getAttribute('dir');
+			if (textDirectionValue === "rtl") {
+				this.set("_backIcon", "hardware:keyboard-arrow-right");
+			}
+		},
+
+		_displayDivider : function(value) {
+			if (value) {
+				return "right-divider";
+			} else {
+				return "no-divider";
+			}
+		},
+
+		_showCompletionDate : function(statusEN) {
+			return statusEN === "Completed";
+		},
+
+		_showSpacesCompletedCount : function(statusEN) {
+			return statusEN === "New" || statusEN === "In Progress";
+		},
+
+		_handleBackTap: function() {
+			this.fire("back");
+		},
+
+		_handleActionTap: function() {
+			this.fire("action");
+		},
+
+		disableButton : function() {
+			this.$.button.disabled = true;
+		},
+
+		enableButton : function() {
+			this.$.button.disabled = false;
+		},
+
+		makeReadOnly : function() {
+			this.disableButton();
+		},
+
+		makeEditable : function() {
+			this.enableButton();
+		},
+
+		_keyPressHandler: function(event, detail, sender){
+			var code=event.keyCode;
+			if (code==(13 || 32)){
+				this._handleBackTap(event);
+			}
+		},
+	});
+</script>

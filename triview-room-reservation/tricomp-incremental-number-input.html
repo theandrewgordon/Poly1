@@ -1,0 +1,320 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../paper-input/paper-input.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../triplat-icon/ibm-icons-glyphs.html">
+<!-- <link rel="import" href="../iron-validator-behavior/iron-validator-behavior.html"> -->
+
+<dom-module id="tricomp-incremental-number-input">
+	<template>
+		<style>
+
+			:host {
+				padding-top: var(--tricomp-incremental-number-input-padding-top, 8px);
+				position: relative;
+				font-size: 16px;
+			}
+			:host:not([float-label]) {
+				@apply(--layout-horizontal);
+				@apply(--layout-baseline);
+			}
+			:host[float-label] {
+				@apply(--layout-vertical);
+			}
+
+			.input-container {
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+			}
+
+			input {
+				-moz-appearance: textfield;
+			}
+			input::-ms-clear {
+				display: none;
+			}
+			input::-webkit-inner-spin-button,
+			input::-webkit-outer-spin-button {
+				-webkit-appearance: none;
+				margin: 0;
+			}
+
+			label[float-label] {
+				font-size: 12px;
+				padding-right: 10px;
+				font-weight: 400;
+				font-family: var(--tri-font-family);
+			}
+
+			paper-icon-button {
+				height: 34px;
+				width: 34px;
+			}
+
+			paper-input-container {
+				--paper-input-container-input: {
+					padding: 0;
+				}
+				--paper-input-container-input: {
+					font-family: var(--tri-font-family);
+					text-align: center;
+					width: var(--tricomp-incremental-number-input-min-width, 60px);
+				};
+			}
+
+		</style>
+
+		<label hidden$="[[!label]]" for="numberinput" float-label$="[[floatLabel]]">[[label]]</label>
+
+		<div class="input-container">
+			<paper-icon-button primary disabled$="[[_disableDecrementButton(disabled, value)]]" icon="ibm-glyphs:incremental-input-minus" on-tap="_decrementTap" tab-index="0" aria-label="Decrement"></paper-icon-button>
+
+			<paper-input-container auto-validate no-label-float disabled$="[[disabled]]" invalid="[[invalid]]">
+				<input is="iron-input" id="numberinput"
+						allowed-pattern="[[_computeAllowedPattern(preventNegative)]]"
+						autofocus$="[[autofocus]]"
+						bind-value="{{value}}"
+						disabled$="[[disabled]]"
+						inputmode$="[[inputmode]]"
+						invalid="{{invalid}}"
+						max$="[[max]]"
+						min$="[[min]]"
+						name$="[[name]]"
+						on-input="_onUserInput"
+						placeholder$="[[placeholder]]"
+						prevent-invalid-input
+						readonly$="[[readonly]]"
+						required$="[[required]]"
+						step$="[[step]]"
+						tabindex$="[[tabindex]]"
+						title$="[[title]]"
+						type="number">
+						<!-- on-bind-value-changed="_onValueChanged" -->
+				<paper-input-error>[[errorMessage]]</paper-input-error>
+			</paper-input-container>
+
+			<paper-icon-button primary disabled$="[[_disableIncrementButton(disabled, value)]]" icon="ibm-glyphs:incremental-input-add" on-tap="_incrementTap"  tab-index="0" aria-label="Increment"></paper-icon-button>
+		</div>
+
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-incremental-number-input",
+
+			/*behaviors: [ Polymer.IronValidatorBehavior ],*/
+
+			/**
+			* Fired whenever the user changes the input value, either by tapping the increment/decrement buttons or by typing in the input
+			*
+			* @event user-change
+			*/
+
+			properties: {
+				/*
+				* Allow blank value
+				*/
+				/*allowEmpty: {
+					type: Boolean,
+					value: false
+				},*/
+
+				/*
+				* Value to default to when input is NaN or outside of allowed range
+				*/
+				/*default: {
+					type: Number
+				},*/
+
+				/*
+				* Disable any input
+				*/
+				disabled: {
+					type: Boolean,
+					value: false
+				},
+
+				/*
+				* Error message displayed when input is invalid (NaN, < min, or > max)
+				*/
+				errorMessage: {
+					type: String,
+					value: ""
+				},
+
+				/*
+				* Display the label above the input at 75% of its size
+				*/
+				floatLabel: {
+					type: Boolean,
+					value: false,
+					reflectToAttribute: true
+				},
+
+				/*
+				* Indicates that the input is invalid
+				*/
+				invalid: {
+					type: Boolean,
+					notify: true,
+				},
+
+				/*
+				* Label for input
+				*/
+				label: String,
+
+				/*
+				* Maximum allowed value. If a value greater than max is entered, `value` will immediately be changed to max.
+				*/
+				max: {
+					type: Number
+				},
+
+				/*
+				* Minimum allowed value. If a value less than min is entered, `value` will immediately be changed to min.
+				*/
+				min: {
+					type: Number,
+				},
+
+				/*
+				* Prevent user from typing in '-'. This will be automatically set to true if 'min' >= 0.
+				*/
+				preventNegative: {
+					type: Boolean
+				},
+
+				/*
+				* Amount added/subtracted when incrementing/decrementing
+				*/
+				step: {
+					type: Number,
+					value: 1
+				},
+
+				/*
+				* String value for input
+				*/
+				value: {
+					type: String,
+					notify: true
+				}
+			},
+
+			/**
+			* Decrement `value`.
+			*/
+			decrement: function() {
+				if (this.invalid && this.max != null) {
+					this.set("value", Number(this.max));
+				} else {
+					this.set("value", Number(this.value) - Number(this.step));
+				}
+			},
+
+			/**
+			* Increment `value`.
+			*/
+			increment: function() {
+				if (this.invalid && this.min != null) {
+					this.set("value", Number(this.min));
+				} else {
+					this.set("value", Number(this.value) + Number(this.step));
+				}
+			},
+
+			ready: function() {
+				// initialize 'preventNegative' based on 'min'
+				if (typeof this.preventNegative == 'undefined' && this.min && this.min >= 0) this.set("preventNegative", true);
+			},
+
+			/**
+			* See Polymer.IronValidatorBehavior.
+			*/
+			/*validate: function(value) {
+				var value = Number(value);
+				if (isNaN(value)) return false;
+				if (value < Number(this.min)) return false;
+				if (value > Number(this.max)) return false;
+				return true;
+			},*/
+
+			_computeAllowedPattern: function(preventNegative) {
+				return preventNegative ? "[0-9]" : "[0-9-]";
+			},
+
+			_decrementTap: function() {
+				this.decrement();
+				this.fire("user-change", {"value": this.value});
+			},
+
+			_disableDecrementButton: function(disabled, value) {
+				if (disabled) return true;
+
+				var value = Number(value);
+				if (isNaN(value)) return true;
+				if (value <= Number(this.min)) return true;
+
+				return false;
+			},
+
+			_disableIncrementButton: function(disabled, value) {
+				if (disabled) return true;
+
+				var value = Number(value);
+				if (isNaN(value)) return true;
+				if (value >= Number(this.max)) return true;
+
+				return false;
+			},
+
+			_incrementTap: function() {
+				this.increment();
+				this.fire("user-change", {"value": this.value});
+			},
+
+			_onUserInput: function(e) {
+				this.fire("user-change", {"value": this.value});
+			},
+
+			/*_onValueChanged: function(e) {
+				// resize input?
+				// var value = e.detail.value;
+				// var canvas = document.createElement("canvas");
+				// var context = canvas.getContext("2d");
+				// context.font = this.$.input.style.font;
+				// var valueWidth = context.measureText(value).width;
+				// valueWidth += 10; // add some additional width
+				// this.$.input.style.width = valueWidth + "px";
+
+				// fix invalid values
+				var value = e.detail.value;
+				if (isNaN(value) || !value) {
+					this.async(function() {
+						if (this.default != null && Number(this.default) < Number(this.max) && Number(this.default) > Number(this.min)) {
+							this.set("value", Number(this.default));
+						} else if (this.min != null) {
+							this.set("value", Number(this.min));
+						} else if (this.max != null) {
+							this.set("value", Number(this.max));
+						} else {
+							this.set("value", 0);
+						}
+					});
+				}
+				else if (Number(value) > Number(this.max)) {
+					this.async(function() {
+						this.set("value", Number(this.max));
+					});
+				} else if (Number(value) < Number(this.min)) {
+					this.async(function() {
+						this.set("value", Number(this.min));
+					});
+				}
+			}*/
+
+		});
+
+	</script>
+</dom-module>

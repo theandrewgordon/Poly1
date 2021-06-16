@@ -1,0 +1,328 @@
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-routing/triplat-routing.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-icons/hardware-icons.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-spinner/paper-spinner.html">
+
+<link rel="import" href="../triview-space-assessment/tricomp-prompt.html">
+
+<dom-module id="tricomp-assessment-header">
+	<style>
+		:host {
+			@apply(--layout-horizontal);
+			background-color: var(--tri-body-background-color);
+			padding: 10px 20px;
+			min-height: 88px;
+		}
+
+		.left-section {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+		}
+
+		.back {
+			color: var(--tri-primary-color);
+			@apply(--layout-self-start);
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			padding-bottom: 5px;
+			cursor: pointer;
+		}
+
+		.back iron-icon,
+		.back span {
+			font-size: 16px;
+		}
+
+		.back iron-icon {
+			width: 32px;
+			height: 32px;
+		}
+
+		.description {
+			@apply(--layout-block);
+			color: #464646;
+			padding: 0px 20px;
+			font-weight: bold;
+			font-size: 24px;
+		}
+
+		.details {
+			@apply(--layout-wrap);
+			padding: 0px 20px;
+			margin-top: 5px;
+		}
+
+		.details .right-divider {
+			border-right: 1px solid #c7c7c7;
+			padding: 0px 10px;
+			font-size: 14px;
+			color: #777677;
+		}
+
+		.details .no-divider {
+			padding: 0px;
+			font-size: 14px;
+			color: #777677;
+		}
+
+		.details > *:last-child {
+			border-right: none;
+		}
+
+		.right-section {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+		}
+
+		.summary {
+			@apply(--layout-horizontal);
+			padding-right: 30px;
+			color: #777677;
+		}
+
+		.results {
+			@apply(--layout-vertical);
+			@apply(--layout-self-center);
+			font-size: 14px;
+		}
+
+		.completion {
+			font-size: 12px;
+		}
+		
+		.action {
+			@apply(--layout);
+			@apply(--layout-center-center);
+			padding-left: 20px;
+			min-width: 124px;
+			border-left: 1px solid var(--tri-separator-color);
+		}
+
+		paper-button[disabled] {
+			@apply(--tri-disabled-button);
+		}
+
+		paper-button {
+			@apply(--layout-vertical);
+			@apply(--layout-center-justified);
+			@apply(--tri-active-button);
+			height: 44px;
+			font-size: 14px;
+			font-weight: bold;
+			padding-left: 18px;
+			padding-right: 18px;
+		}
+
+		#confirmationDialog {
+			@apply(--layout-vertical);
+		}
+
+		#confirmationDialog .button-container {
+			@apply(--layout-horizontal);
+			@apply(--layout-self-end);
+		}
+
+		.confirm-dialog-button {	
+			@apply(--tri-button);
+			margin-left: 20px;
+		}
+
+		triplat-date-picker {
+			font-size: 12px;
+		}
+
+		.accessibility {
+			display: none;
+		}
+	</style>
+	<template>
+
+		<triplat-ds name="currentUser" data="{{currentUser}}"></triplat-ds>
+
+		<div class="left-section">
+			<div class="back" on-tap="_handleBackTap">
+				<iron-icon icon="{{_backIcon}}" aria-labelledby="backToAssessment" on-keypress="_keyPressHandler" tabindex="0" role="button"></iron-icon>
+				<span>My Assessments</span>
+			</div>
+			<span class="description">{{description}}</span>
+			<div class="details">
+				<span class$="{{_displayDivider(city)}}">{{city}}</span>
+				<span class$="{{_displayDivider(building)}}">{{building}}</span>
+				<span class$="{{_displayDivider(floor)}}">{{floor}}</span>
+			</div>
+		</div>
+		<div class="right-section">
+			<div class="summary">
+				<div class="results">
+					<span class="status">
+						<span>{{mismatchLogCount}}</span><span>&nbsp;{{_isUpdatesPlural(mismatchLogCount)}}</span> 
+						<span>out of</span>
+						<span>{{totalLogCount}}</span><span>&nbsp;{{_isSpacesPlural(totalLogCount)}}&nbsp;</span><span>assessed</span>					
+					</span>
+
+					<div class="completion">
+						<span>Assessed by</span>&nbsp;<span>{{assessor}}</span>&nbsp;<span>on</span>
+						<triplat-date-picker id="completedDate" class="value" value="{{completedDate}}" readonly display-format="{{currentUser._DateFormat}}"></triplat-date-picker>
+					</div>
+				</div>
+			</div>
+			<div class="action">
+				<paper-button id="approveButton" hidden="{{_approvalLoading}}" on-tap="_openConfirmationDialog" role="button" aria-labelledby="approveAssessment" disabled>Apply</paper-button>
+				<paper-spinner hidden="{{!_approvalLoading}}" active="{{_approvalLoading}}"></paper-spinner>
+			</div>
+		</div>
+
+		<triplat-ds id="assessmentDs" name="mySpaceAssessments" data="{{assessment}}">
+			<triplat-ds-instance instance-id="{{assessmentId}}"></triplat-ds-instance>
+		</triplat-ds>
+
+		<paper-dialog id="confirmationDialog" aria-labelledby="confirmationDialog_h2">
+			<tricomp-prompt
+				id="confirmationDialogPrompt"
+				title-label="Confirmation"
+				message-label="{{_getConfirmationMessage()}}"
+				options="yes-no"
+				always-show>
+			</tricomp-prompt>
+		</paper-dialog>
+		
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-assessment-header",
+
+		properties: {
+
+			description : String,
+			city : String,
+			building : String,
+			floor : String,
+			assessor : String,
+			completedDate : Number,
+			mismatchLogCount : Number,
+			totalLogCount : Number,
+			assessmentId : Number,
+			
+			_backIcon: {
+				type: String,
+				value: "hardware:keyboard-arrow-left"
+			},
+
+			_approvalLoading : {
+				type : Boolean,
+				value : false
+			}
+
+		},
+
+		listeners: {
+			"assessmentDs.ds-perform-action-complete" : "_handleApproveCompleted",
+			
+			'confirmationDialogPrompt.yes' : '_handleApprove',
+			'confirmationDialogPrompt.no' : '_closeConfirmationDialog',
+			'confirmationDialogPrompt.close' : '_closeConfirmationDialog',
+		},
+
+		_isSpacesPlural : function(count) {
+			if (count == 0 || count > 1) {
+				var __dictionary__spaces = "spaces";
+				return __dictionary__spaces;
+			} else {
+				var __dictionary__space = "space";
+				return  __dictionary__space;
+			}
+		},
+
+		_isUpdatesPlural : function(count) {
+			if (count == 0 || count > 1) {
+				var __dictionary__updates = "updates";
+				return __dictionary__updates;
+			} else {
+				var __dictionary__update = "update";
+				return  __dictionary__update;
+			}
+		},
+
+		_isRed : function(mismatchLogCount) {
+			if (mismatchLogCount && mismatchLogCount > 0) {
+				return true;
+			} else {
+				return false;
+			}
+		},
+
+		attached: function() {
+			var textDirectionValue = document.querySelector('body').getAttribute('dir');
+			if (textDirectionValue === "rtl") {
+				this.set("_backIcon", "hardware:keyboard-arrow-right");
+			}
+		},
+
+		_displayDivider : function(value) {
+			if (value) {
+				return "right-divider";
+			} else {
+				return "no-divider";
+			}
+		},
+
+		_handleBackTap: function() {
+			this.fire("back");
+		},
+
+		_handleActionTap: function() {
+			this.fire("action");
+		},
+
+
+
+
+
+		
+
+		_handleApproveCompleted: function() {
+			this.set('_approvalLoading', false);
+			this.fire("refresh-assessment-ds");
+			this._handleBackTap();
+		},
+
+		_handleApprove: function() {
+			this.set('_approvalLoading', true);
+			this.$.assessmentDs.performAction(TriPlatDs.RefreshType.SERVER, "defaultActions", "approve");
+		},
+
+		_getConfirmationMessage : function() {
+			var __dictionary__confirmationMessage = "You will no longer be able to make changes to this assessment after this process. Are you sure you want to apply the actions included in this assessment?";
+			return __dictionary__confirmationMessage;
+		},
+
+		_openConfirmationDialog : function() {
+			this.$.confirmationDialog.open();
+		},
+
+		_closeConfirmationDialog : function() {
+			this.$.confirmationDialog.close();
+		},
+
+		makeReadOnly : function() {
+			this.$.approveButton.disabled = true;
+		},
+
+		makeEditable : function() {
+			this.$.approveButton.disabled = false;
+		},
+
+		_handleKeyPress: function(e) {
+      		var keyCode = e.keyCode;
+
+      		if (keyCode == 13) {
+      			this._handleOpenAssessment(e);
+      		}
+      	}
+	});
+</script>

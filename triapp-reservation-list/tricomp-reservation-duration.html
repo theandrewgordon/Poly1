@@ -1,0 +1,140 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-datetime-picker/triplat-datetime-picker.html">
+
+<link rel="import" href="tribehav-reservation-utilities.html">
+
+<dom-module id="tricomp-reservation-duration">
+    <template>
+        <style>
+            .time-duration-container {
+                @apply(--layout-horizontal);
+            }
+            
+            .time-duration-container * {
+                font-size: 14px;
+            }
+            
+            .times-container {
+                @apply(--layout-horizontal);
+                @apply(--layout-wrap);
+                min-width: 0;
+            }
+            
+            .multi-day-times-container {
+                @apply(--layout-vertical);
+                min-width: 0;
+                padding-bottom: 6px;
+            }
+            
+            .time-box {
+                @apply(--layout-horizontal);
+                @apply(--layout-center);
+                @apply(--paper-font-common-nowrap);
+                min-width: 0;
+            }
+            
+            .recurring-icon-container {
+                @apply(--layout-vertical);
+                @apply(--layout-center-center);
+                padding-left: 5px;
+            }
+            
+            .recurring-icon {
+                width: 16px;
+                height: 16px;
+                color: var(--ibm-gray-50);
+            }
+        </style>
+
+        <div class="time-duration-container">
+            <div class$="[[_computeTimesContainerClass(eventItem._Start_Datetime, eventItem._End_Datetime, currentUser._TimeZoneId)]]" hidden$="[[eventItem._All_Day]]">
+                <div class="time-box">
+                    <triplat-datetime-picker 
+                        value="[[eventItem._Start_Datetime]]" 
+                        display-format="[[_computeTimeDisplayFormat(currentUser._DateTimeFormat)]]"
+                        time-zone="[[currentUser._TimeZoneId]]" 
+                        readonly></triplat-datetime-picker>
+                    <div>&nbsp;-&nbsp;</div>
+                    <triplat-datetime-picker 
+                        hidden$="[[_isSameDate(currentUser._TimeZoneId, eventItem._Start_Datetime, eventItem._End_Datetime)]]"
+                        value="[[eventItem._Start_Datetime]]" 
+                        display-format="[[_computeDateDisplayFormat(currentUser._DateTimeFormat)]]"
+                        time-zone="[[currentUser._TimeZoneId]]" 
+                        readonly></triplat-datetime-picker>
+                </div>
+
+                <div class="time-box">
+                    <triplat-datetime-picker 
+                        value="[[eventItem._End_Datetime]]" 
+                        display-format="[[_computeTimeDisplayFormat(currentUser._DateTimeFormat)]]"
+                        time-zone="[[currentUser._TimeZoneId]]" 
+                        readonly></triplat-datetime-picker>
+                    <div hidden$="[[_isSameDate(currentUser._TimeZoneId, eventItem._Start_Datetime, eventItem._End_Datetime)]]">
+                        &nbsp;-&nbsp;
+                        <triplat-datetime-picker 
+                            value="[[eventItem._End_Datetime]]" 
+                            display-format="[[_computeDateDisplayFormat(currentUser._DateTimeFormat)]]"
+                            time-zone="[[currentUser._TimeZoneId]]" 
+                            readonly></triplat-datetime-picker>
+                    </div>
+                </div>
+            </div>
+
+            <div class="recurring-icon-container" hidden$="[[!_isSeries(eventItem)]]">
+                <iron-icon icon="ibm:recurring" class="recurring-icon" hidden$="[[_isSeriesException(eventItem)]]"></iron-icon>
+                <iron-icon icon="ibm:recurring-exception" class="recurring-icon" hidden$="[[!_isSeriesException(eventItem)]]"></iron-icon>
+            </div>
+        </div>
+    </template>
+    <script>
+        
+        Polymer({
+
+            is: "tricomp-reservation-duration",
+
+            behaviors: [TriReservationUtilitiesBehavior],
+
+            properties: {
+                eventItem: Object,
+                currentUser: Object,
+                isCard: {
+                    type: Boolean,
+                    value: false,
+                    reflectToAttribute: true
+                }
+            },
+
+            _computeTimesContainerClass: function (startDateTime, endDateTime, timezone) {
+                if (this._isSameDate(timezone, startDateTime, endDateTime)) {
+                    return "times-container";
+                } else {
+                    return "multi-day-times-container";
+                }
+            },
+
+            _computeTimeDisplayFormat: function (userDateTimeFormat) {
+                if (userDateTimeFormat) {
+                    var dateTimeFormatSplit = userDateTimeFormat.trim().split(" ");
+                    var time = dateTimeFormatSplit[1];
+                    var amPm = dateTimeFormatSplit.length > 2 ? dateTimeFormatSplit[2] : null;
+
+                    return amPm && amPm.indexOf("a") > -1 ? time + amPm : time;
+                }
+            },
+
+            _computeDateDisplayFormat: function (userDateTimeFormat) {
+                if (userDateTimeFormat) {
+                    var dateTimeFormatSplit = userDateTimeFormat.trim().split(" ");
+                    return dateTimeFormatSplit[0].startsWith("dd") || dateTimeFormatSplit[0].endsWith("dd") ? "ddd DD MMM" : "ddd, MMM DD";
+                }
+            },
+
+            _isSeriesException: function (eventItem) {
+                return eventItem._Recurring_Event_Exception;
+            }
+
+        });
+
+    </script>
+</dom-module>

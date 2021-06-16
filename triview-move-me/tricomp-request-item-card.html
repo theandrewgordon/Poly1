@@ -1,0 +1,399 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-debug/triplat-debug.html">
+<link rel="import" href="../triplat-date-picker/triplat-date-picker.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+
+<link rel="import" href="../tricore-url/tricore-url.html">
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icons/hardware-icons.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+
+<link rel="import" href="tricomp-alert-message.html">
+
+<link rel="import" href="theme.html">
+
+<dom-module id="tricomp-request-item-card">
+
+	<link rel="import" type="css" href="shared.css">
+
+	<style>
+
+		.actions-buttons {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			width: 50%;
+		}
+
+		.actions-container {
+			@apply(--layout-vertical);
+			@apply(--layout-center);
+			margin: 0px 10px 0px 10px;
+			padding-top: 10px;
+		}
+
+		.alert-message {
+			margin-bottom: 10px
+		}
+
+		.content {
+			font-size: 14px;
+			background-color: white;
+			border: 1px solid var(--tri-primary-content-accent-color);
+			color: var(--tri-primary-content-color);
+			cursor: pointer;
+			margin: 0px 0px 20px 20px;
+			@apply(--tri-inbox-card);
+			@apply(--layout-horizontal);
+			border: 1px solid var(--ibm-gray-10);
+		}
+
+		.delete-button {
+			@apply(--layout-flex);
+			font-size: 16px;
+			width: 50%;
+		}
+
+		.info-blank-line {
+			height: 10px;
+		}
+
+		.icon-container {
+			@apply(--layout-vertical);
+			@apply(--layout-start);
+			padding-left: 10px;
+		}
+
+
+		.info-container {
+			@apply(--layout-vertical);
+			@apply(--layout-flex);
+			padding-bottom: 3px;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			width:70%;
+		}
+
+		.status-container {
+			@apply(--layout-vertical);
+			@apply(--layout-flex);
+			padding-top: 5px;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			width:70%;
+		}
+
+		.info-line {
+			@apply(--layout-horizontal);
+			text-align: left;
+			font-size: 14px;
+			font-weight: normal;
+			font-family: var(--tri-font-family);
+			color: var(--ibm-cool-gray-50) !important;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			max-width: 300px;
+		}
+
+		.info-line-bold {
+			@apply(--layout-horizontal);
+			text-align: left;
+			font-size: 14px;
+			font-weight: bold;
+			font-family: var(--tri-font-family);
+			color: var(--ibm-cool-gray-100) !important;
+			overflow-x: hidden;
+		}
+
+		.lower-main-content {
+			@apply(--layout-horizontal);
+			padding-top: 3px;
+		}
+
+		.main-content {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			padding: 20px;
+			overflow-x: hidden;
+			white-space: nowrap;
+		}
+
+		.move-request {
+			@apply(--layout-horizontal);
+			text-align: left;
+			font-size: 18px;
+			font-weight: bold;
+			font-family: var(--tri-font-family);
+			color: var(--ibm-cool-gray-100) !important;
+			overflow-x: hidden;
+		}
+
+		.profile-image-placeholder {
+			padding-right: 20px;
+			color: var(--tri-secondary-color);
+			height: 64px;
+			width: 64px;
+		}	
+
+		.upper-main-content {
+			@apply(--layout-horizontal);
+			padding-bottom: 3px;
+		}
+
+		.upper-main-content[selected] {
+			background-color: var(--tri-primary-light-color);
+		}
+
+	</style>
+
+	<template>
+
+		<tricore-url id="urlGen"></tricore-url>
+
+		<triplat-ds name="currentUser" data="{{currentUser}}" loading="{{currentUserLoading}}"></triplat-ds>
+
+		<triplat-ds	name="facilitiesProject" data="{{facilitiesProject}}" loading="{{facilitiesProjectLoading}}">
+			<triplat-ds-context name="myMoveRequests" context-id="[[identifier]]"></triplat-ds-context>
+		</triplat-ds>
+		<triplat-ds	name="workTask" data="{{workTask}}" loading="{{workTaskLoading}}">
+			<triplat-ds-context name="myMoveRequests" context-id="[[identifier]]"></triplat-ds-context>
+		</triplat-ds>
+ 
+        <div class="content" id="content" on-tap="_handleOpenRequest" read$="{{read}}" unread$="{{!read}}" selected$="{{selected}}" tabindex="0" on-keypress="_keyPressHandler">
+			<div class="main-content">
+
+                <!-- Dates, etc -->
+				<div class="upper-main-content">
+					<div>
+						<iron-icon class="profile-image-placeholder" icon="ibm:user-profile"></iron-icon>
+					</div>
+				
+					<div class="info-container">
+
+					    <div class="move-request">Move Request</div>
+
+						<div class="info-line">Request ID:</div>
+						<div class="info-line-bold">{{requestId}}</div>
+
+						<div class="info-line">Requested move date:</div>
+						<div class="info-line">
+						<triplat-date-picker class="info-line-bold" readonly display-format="[[currentUser._DateFormat]]" value="{{requestedMoveDate}}"></triplat-date-picker>
+						</div>
+
+						<div class="info-line">Scheduled move date:</div>
+						<div class="detail-item title" hidden$="{{_isEmpty(workTask.plannedStart)}}">
+							<triplat-date-picker readonly class="info-line-bold" display-format="[[currentUser._DateFormat]]" value="[[workTask.plannedStart]]"></triplat-date-picker>
+						</div>
+						<div class="detail-item title" hidden$="{{!_isEmpty(workTask.plannedStart)}}">
+							<div class="detail-item title" hidden$="{{_isEmpty(facilitiesProject.plannedStart)}}">	
+								<triplat-date-picker readonly class="info-line-bold" display-format="[[currentUser._DateFormat]]" value="[[facilitiesProject.plannedStart]]"></triplat-date-picker>
+							</div>
+							<div class="detail-item title" hidden$="{{!_isEmpty(facilitiesProject.plannedStart)}}">
+								<div class="info-line-bold">Pending</div>
+							</div>
+						</div>
+					</div>
+
+				</div>
+
+				<div class="lower-main-content">
+					
+					<div class="status-container">
+						<tricomp-alert-message info id="successlMessage" class="alert-message" hidden$="{{!_isSubmitted(status)}}">{{_getStatus(status)}}</tricomp-alert-message>
+
+						<tricomp-alert-message info id="reviewMessage" class="alert-message" hidden$="{{!_isReviewInProgress(status)}}">{{_getStatus(status)}}</tricomp-alert-message>
+
+						<tricomp-alert-message info id="revisionMessage" class="alert-message" hidden$="{{!_isRevisionInProgress(status)}}">{{_getStatus(status)}}</tricomp-alert-message>
+
+						<tricomp-alert-message success id="completedMessage" class="alert-message" hidden$="{{!_isCompleted(status)}}">{{_getStatus(status)}}</tricomp-alert-message>
+
+						<!--span>&nbsp;</span-->
+
+						<div class="actions-container" hidden="{{!_isIssued(status)}}">
+							<div class="actions-buttons">
+							<paper-button 
+								id="delete" 
+								class="delete-button danger-outline"
+								disabled="{{!deleteAction}}"
+								on-tap="_handleCancel" 
+								on-keypress="_keyPressHandlerCancel"
+								noink>Cancel</paper-button>
+							</div>
+						</div>
+					</div>
+
+		        </div> 
+
+			</div>
+
+		</div>
+
+		<paper-dialog id="cancelDialog" modal entry-animation="scale-up-animation" exit-animation="fade-out-animation" with-backdrop>
+			<div aria-labelledby="cancelDialogDescription">
+				<p>Are you sure you want to cancel this request?</p>
+				<div class="buttons">
+					<paper-button dialog-confirm autofocus noink>Yes</paper-button>
+					<paper-button secondary dialog-dismiss noink>No</paper-button>
+				</div>
+			</div>
+			<div id="cancelDialogDescription" hidden=true> 
+				Are you sure you want to cancel this request?
+			</div>
+		</paper-dialog>
+
+	</template>
+
+</dom-module>
+
+<script>
+	Polymer({
+
+		is: "tricomp-request-item-card",
+
+		properties: {
+			selected: {
+				type: Boolean,
+				value: false,
+				notify: true,
+				reflectToAttribute: true
+			},
+			requestId: String,
+			requestClass: String,
+			role: String,
+			requestedMoveDate: String,
+			scheduledMoveDate: String,
+			projectPlannedStart: String,
+			taskPlannedStart: String,
+			deleteAction: String,
+			identifier: String,
+		},
+
+		listeners: {
+			'cancelDialog.iron-overlay-closed': '_handleCancelDialogClose',
+      	},
+
+		_handleCancel: function(e) {
+			//console.log("tricomp-request-item._handleCancel");
+			e.stopPropagation();
+			this.$.cancelDialog.open();
+		},
+
+		_handleCancelDialogClose: function(e, detail) {
+			if (detail && detail.confirmed) {
+				this._doCancel();
+			}
+		},
+
+		_doCancel: function(e) {
+			// this.$.notYetImplementedDialog.open();
+			this.fire("action-delete", { 'requestId' : this.identifier });
+		},
+
+		_computeSmartObjectURL: function(specId) {
+			if (!specId)
+				return "";
+
+			var url = this.$.urlGen.getUrl("/WebProcess.srv?objectId=750000&actionId=750011&specId=" + specId);
+
+			return url;
+		},
+
+		_isEmptyString: function(val) {
+			return !val || val == "";
+		},
+
+		_isEmpty: function(val) {
+			return !val || val == "";
+		},
+
+		_calculateTotal: function(room, assets, equipment, person){
+		   return  room + assets + equipment + person;
+		},
+
+		_getStatus: function (status) {
+			if (status == "Issued") {
+				var __dictionary__submittedStatus = "Submitted";
+				return __dictionary__submittedStatus;
+			}
+			else if (status == "Review In Progress") {
+				var __dictionary__approvalStatus = "Waiting For Approval";
+				return __dictionary__approvalStatus;
+			}
+			else if (status == "Revision In Progress") {
+				var __dictionary__revisionStatus = "Revision In Progress";
+				return __dictionary__revisionStatus;
+			}
+			else if (status == "Completed") {
+				var __dictionary__completedStatus = "Completed";
+				return __dictionary__completedStatus;
+			}
+			var __dictionary__unknownStatus = "Unknown";
+			return __dictionary__unknownStatus;
+		},
+		
+		_isSubmitted: function (status) {
+			if (status == "Issued") {
+				return true;
+			}
+			return false;
+		},
+
+		_isReviewInProgress: function (status) {
+			if (status == "Review In Progress") {
+				return true;
+			}
+			return false;
+		},
+
+		_isRevisionInProgress: function (status) {
+			if (status == "Revision In Progress") {
+				return true;
+			}
+			return false;
+		},
+
+		_isIssued: function (status) {
+			if ((status == "Issued") || (status == "Revision In Progress")) { 
+				return true;
+			}
+			return false;
+		},
+
+
+		_isCompleted: function (status) {
+			if (status == "Completed") {
+				return true;
+			}
+			return false;
+		},
+
+		_handleOpenRequest: function(e) {
+			//console.log("_handleOpenRequest not implemented...");
+			var requestId = this.identifier;
+			this.fire("navigate-readonly-summary-page", { 'requestId' : requestId });			
+		},
+
+		_keyPressHandler: function(event, detail, sender){
+            var code = event.keyCode;
+			//accept Enter key 
+			if(code == 13){
+				this._handleOpenRequest(event);
+			}
+		},
+
+		_keyPressHandlerCancel: function(event, detail, sender){
+            var code = event.keyCode;
+			//accept Enter key 
+			if(code == 13){
+				this._handleCancel(event);
+			}
+		},
+
+
+	});
+</script>

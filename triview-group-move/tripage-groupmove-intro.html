@@ -1,0 +1,874 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<!-- TRIRIGA Platform Components -->
+<link rel="import" href="../triplat-debug/triplat-debug.html">
+<link rel="import" href="../triplat-routing/triplat-routing.html">
+<link rel="import" href="../triplat-image/triplat-image.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+
+<!-- TRIRIGA Block Components -->
+<link rel="import" href="../triblock-page-container-behavior/triblock-page-container-behavior.html">
+
+<!-- Polymer Iron Components -->
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icons/communication-icons.html">
+<link rel="import" href="../iron-icons/hardware-icons.html">
+<link rel="import" href="../iron-icons/av-icons.html">
+<link rel="import" href="../iron-input/iron-input.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<!-- Polymer Paper Components -->
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-material/paper-material.html">
+<link rel="import" href="../paper-input/paper-input.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-header-panel/paper-header-panel.html">
+<link rel="import" href="../paper-fab/paper-fab.html">
+<link rel="import" href="../paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../paper-spinner/paper-spinner.html">
+
+<!-- Local Components -->
+
+<dom-module id="tripage-groupmove-intro">
+
+	<style>
+		/*=========================================
+		 * Table of Contents
+		 *-----------------------------
+		 * Host
+		 * Elements
+		 * Buttons
+		 * Container - instructions-container
+		 * Container - instructions
+		 * Container - box-intro
+		 * Container - box-icons
+		 * Container - box-content
+		 * Container - box-item
+		 * Container - box-checkbox
+		 * Paper Checkbox
+		 * Spinner
+		 * Grid
+		 *=========================================*/
+
+		/* Host */
+		:zhost * {
+			border-width: 1px;
+			border-style: dashed;
+		}
+
+		:host {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			overflow: hidden;
+
+			background-color: var(--tri-primary-dark-color);
+			font-family: var(--tri-font-family);
+			color: var(--tri-header-color);
+
+			--paper-checkbox-unchecked-color: var(--tri-header-color);
+			--paper-checkbox-label-color: var(--tri-header-color);
+
+			--triplat-icon-height: 60px;
+			--triplat-icon-width: 60px;
+		}
+		/* End Host */
+
+
+		/* Elements */
+		h2,
+		h3 {
+			margin-top: 0px;
+			font-weight: 300;
+		}
+
+		h2 {
+			margin-bottom: 0.4em;
+			font-size: 2.5em;
+		}
+
+		h3 {
+			margin-bottom: 5px;
+			font-size: 20px;
+		}
+		/* End Elements */
+
+
+		/* Buttons */
+		.button-tririga {
+			margin: 0px 0px 10px 0px;
+			margin-left: 0px;
+			height: 40px;
+			color: var(--tri-header-color);
+			font-size: 14px;
+			font-family: var(--tri-font-family);
+			font-weight: normal;
+			background-color: var(--tri-primary-color-40) !important;
+		}
+
+		.start-button {
+			@apply(--layout);
+			@apply(--layout-vertical);
+			@apply(--layout-center-justified);
+
+			font-family: Roboto;
+			font-size: 1.75em;
+		}
+		/* End Buttons */
+
+
+		/* Container - welcome-page */
+		.welcome-page {
+			padding-left: 15px;
+			padding-right: 15px;
+			/*background-color: var(--ibm-blue-20);*/
+			background-color: var(--tri-primary-dark-color);
+			overflow-y: auto;
+			overflow-x: hidden;
+		}
+		/* End Container - welcome-page */
+
+
+		/* Container - instructions-container */
+		.instructions-container {
+			@apply(--layout-vertical);
+			@apply(--layout-center);
+
+			background-color: var(--tri-info-icon-button-hover-color);
+		}
+		/* End Container - instructions-container */
+
+
+		/* Container - instructions */
+		.instructions {
+		}
+
+		@media (min-width: 1280px) {
+			.instructions {
+				width: 70%;
+				padding: 5px;
+			}
+		}
+
+		@media (min-width: 800px) and (max-width: 1279px) {
+			.instructions {
+				width: 75%;
+				padding: 5px;
+			}
+		}
+
+		@media (max-width: 800px) {
+			.instructions {
+				width: 90%;
+				padding: 5px;
+			}
+		}
+
+		@media (max-width: 450px) {
+			.instructions {
+				width: 95%;
+				font-size: 1.2em;
+			}
+		}
+		/* End Container - instructions */
+
+
+		/* Container - box-intro */
+		.box-intro {
+			margin-top: 2.5em;
+    	margin-bottom: 2em;
+		}
+			.box-intro p {
+				margin: 0px 0px 2px 0px;
+				font-size: 1.1em;
+				font-weight: 300;
+			}
+		/* End Containers - box-intro */
+
+
+		/* Container - box-icons */
+		.box-icons {
+			display: flex;
+			flex-direction: row;
+			margin-bottom: 3em;
+			text-align: center;
+		}
+
+		.box-icons-img {
+			flex: 1;
+		}
+
+			.box-icons-img img {
+				max-width: 100%;
+			}
+
+			.box-icons-img p {
+				margin: 0;
+				font-size: 1.6em;
+	    	font-weight: 100;
+			}
+
+		.box-icons-icon {
+			border: 1px solid white;
+			border-radius: 100%;
+			padding: 1em;
+		}
+
+		.box-icons-divisor {
+			@apply(--layout-vertical);
+			flex: 1;
+		}
+			.box-icons-divisor > div {
+				position: relative;
+				height: 0.4em;
+			}
+				.box-icons-divisor > div:first-child {
+					border-bottom: 0.1em solid white;
+				}
+					.box-icons-divisor > div:first-child::before {
+						transform: rotate(90deg);
+					}
+					.box-icons-divisor > div:first-child::after {
+						transform: rotate(0deg);
+					}
+				.box-icons-divisor > div:last-child {
+					border-top: 0.1em solid white;
+				}
+					.box-icons-divisor > div:last-child::before {
+						transform: rotate(180deg);
+					}
+					.box-icons-divisor > div:last-child::after {
+						transform: rotate(270deg);
+					}
+
+				.box-icons-divisor > div:first-child::before,
+				.box-icons-divisor > div:first-child::after,
+				.box-icons-divisor > div:last-child::before,
+				.box-icons-divisor > div:last-child::after {
+					content: " ";
+					position: absolute;
+					width: 0.4em;
+					height: 0.4em;
+					border: 1px solid white;
+					border-width: 0 0.1em 0.1em 0 !important;
+					border-bottom-right-radius: 6px;
+					box-shadow: 4px 4px 0 var(--tri-primary-dark-color);
+				}
+				.box-icons-divisor > div:first-child::before,
+				.box-icons-divisor > div:last-child::before {
+					left: -0.1em;
+				}
+				.box-icons-divisor > div:first-child::after,
+				.box-icons-divisor > div:last-child::after {
+					right: -0.1em;
+				}
+				.box-icons-divisor > div:first-child::before,
+				.box-icons-divisor > div:first-child::after {
+					bottom: -0.05em;
+				}
+				.box-icons-divisor > div:last-child::before,
+				.box-icons-divisor > div:last-child::after {
+					top: -0.05em;
+				}
+
+		.box-under-icons {
+			@apply(--layout-horizontal);
+			@apply(--layout-center-center);
+			margin-bottom: 3em;
+		}
+
+		.box-under-icons-text {
+			padding: 0 1em;
+		}
+			.box-under-icons-text p {
+				display: inline-block;
+				min-width: 60px;
+				margin: 0px;
+				padding-top: 0.3em;
+				text-align: center;
+				font-size: 17px;
+				font-weight: 200;
+			}
+
+		.box-under-icons-divisor {
+			flex: 1;
+		}
+		/* End Container - box-icons */
+
+
+		/* Container - box-content */
+		.box-content h3 {
+			margin: 0px;
+			font-size: 1.2em;
+		}
+		.box-content p {
+			margin: 0px;
+			font-size: 1.1em;
+			font-weight: 100;
+		}
+		.box-content > div {
+			margin-bottom: 1.8em;
+		}
+
+		.box-content-details h3 {
+			margin-bottom: 0.4em;
+		}
+		/* End Container - box-content */
+
+
+		/* Container - box-item */
+		.box-item {
+			margin-bottom: 60px;
+		}
+			.box-item p {
+				margin: 0px;
+				font-size: 14px;
+				font-weight: 300;
+			}
+
+		.box-item-inner {
+			display: flex;
+			flex-direction: row;
+    	flex-wrap: nowrap;
+		}
+
+		.box-item-icon {
+			padding: 0px 20px 0px 10px;
+		}
+
+		.box-item-text {
+			flex: 2;
+			padding-right: 10px;
+		}
+		@media (min-width: 768px) {
+			.box-item-text {
+				padding-right: 20px;
+			}
+		}
+		/* End Container - box-item */
+
+
+		/* Container - box-checkbox */
+		.box-checkbox {
+			margin-top: 3.5em;
+			margin-bottom: 3.5em;
+			font-size: 14px;
+		}
+			.box-checkbox > div:last-child {
+				padding-top: 10px;
+				padding-bottom: 10px;
+			}
+
+		.box-checkbox-text {
+			text-align: center;
+		}
+		/* End Container - box-checkbox */
+
+
+		/* Paper Checkbox */
+		paper-checkbox {
+			--paper-checkbox-size: 22px;
+		}
+		/* End Paper Checkbox */
+
+
+		/* Spinner */
+		.spinner-container {
+			@apply(--layout);
+			@apply(--layout-vertical);
+			@apply(--layout-center);
+		}
+
+		.spinner-message {
+			font-family: Roboto;
+			font-size: 2.0em;
+			text-align: center;
+		}
+
+		paper-spinner {
+			@apply(--tri-loading-spinner);
+		}
+		/* End Spinner */
+
+
+		/* Grid */
+		.grid-row {
+	    box-sizing: border-box;
+			display: block;
+			width: 100%;
+		}
+		.grid-row:before,
+		.grid-row:after {
+		  content: " ";
+		  display: table;
+		}
+		.grid-row:after {
+			clear: both;
+		}
+
+		.grid-col {
+	    box-sizing: border-box;
+			position: relative;
+			min-height: 1px;
+    	width: 100%;
+	    float: left;
+		}
+
+		.col-xs-12 {
+		  width: 100%;
+		}
+		.col-xs-11 {
+		  width: 91.66666667%;
+		}
+		.col-xs-10 {
+		  width: 83.33333333%;
+		}
+		.col-xs-9 {
+		  width: 75%;
+		}
+		.col-xs-8 {
+		  width: 66.66666667%;
+		}
+		.col-xs-7 {
+		  width: 58.33333333%;
+		}
+		.col-xs-6 {
+		  width: 50%;
+		}
+		.col-xs-5 {
+		  width: 41.66666667%;
+		}
+		.col-xs-4 {
+		  width: 33.33333333%;
+		}
+		.col-xs-3 {
+		  width: 25%;
+		}
+		.col-xs-2 {
+		  width: 16.66666667%;
+		}
+		.col-xs-1 {
+		  width: 8.33333333%;
+		}
+
+		.col-xs-offset-12 {
+		  margin-left: 100%;
+		}
+		.col-xs-offset-11 {
+		  margin-left: 91.66666667%;
+		}
+		.col-xs-offset-10 {
+		  margin-left: 83.33333333%;
+		}
+		.col-xs-offset-9 {
+		  margin-left: 75%;
+		}
+		.col-xs-offset-8 {
+		  margin-left: 66.66666667%;
+		}
+		.col-xs-offset-7 {
+		  margin-left: 58.33333333%;
+		}
+		.col-xs-offset-6 {
+		  margin-left: 50%;
+		}
+		.col-xs-offset-5 {
+		  margin-left: 41.66666667%;
+		}
+		.col-xs-offset-4 {
+		  margin-left: 33.33333333%;
+		}
+		.col-xs-offset-3 {
+		  margin-left: 25%;
+		}
+		.col-xs-offset-2 {
+		  margin-left: 16.66666667%;
+		}
+		.col-xs-offset-1 {
+		  margin-left: 8.33333333%;
+		}
+		.col-xs-offset-0 {
+		  margin-left: 0%;
+		}
+
+		@media only screen and (min-width: 768px) {
+			.col-sm-12 {
+		    width: 100%;
+		  }
+		  .col-sm-11 {
+		    width: 91.66666667%;
+		  }
+		  .col-sm-10 {
+		    width: 83.33333333%;
+		  }
+		  .col-sm-9 {
+		    width: 75%;
+		  }
+		  .col-sm-8 {
+		    width: 66.66666667%;
+		  }
+		  .col-sm-7 {
+		    width: 58.33333333%;
+		  }
+		  .col-sm-6 {
+		    width: 50%;
+		  }
+		  .col-sm-5 {
+		    width: 41.66666667%;
+		  }
+		  .col-sm-4 {
+		    width: 33.33333333%;
+		  }
+		  .col-sm-3 {
+		    width: 25%;
+		  }
+		  .col-sm-2 {
+		    width: 16.66666667%;
+		  }
+		  .col-sm-1 {
+		    width: 8.33333333%;
+		  }
+
+			.col-sm-offset-12 {
+		    margin-left: 100%;
+		  }
+		  .col-sm-offset-11 {
+		    margin-left: 91.66666667%;
+		  }
+		  .col-sm-offset-10 {
+		    margin-left: 83.33333333%;
+		  }
+		  .col-sm-offset-9 {
+		    margin-left: 75%;
+		  }
+		  .col-sm-offset-8 {
+		    margin-left: 66.66666667%;
+		  }
+		  .col-sm-offset-7 {
+		    margin-left: 58.33333333%;
+		  }
+		  .col-sm-offset-6 {
+		    margin-left: 50%;
+		  }
+		  .col-sm-offset-5 {
+		    margin-left: 41.66666667%;
+		  }
+		  .col-sm-offset-4 {
+		    margin-left: 33.33333333%;
+		  }
+		  .col-sm-offset-3 {
+		    margin-left: 25%;
+		  }
+		  .col-sm-offset-2 {
+		    margin-left: 16.66666667%;
+		  }
+		  .col-sm-offset-1 {
+		    margin-left: 8.33333333%;
+		  }
+		  .col-sm-offset-0 {
+		    margin-left: 0%;
+		  }
+		}
+
+		@media only screen and (min-width: 992px) {
+			.col-md-12 {
+		    width: 100%;
+		  }
+		  .col-md-11 {
+		    width: 91.66666667%;
+		  }
+		  .col-md-10 {
+		    width: 83.33333333%;
+		  }
+		  .col-md-9 {
+		    width: 75%;
+		  }
+		  .col-md-8 {
+		    width: 66.66666667%;
+		  }
+		  .col-md-7 {
+		    width: 58.33333333%;
+		  }
+		  .col-md-6 {
+		    width: 50%;
+		  }
+		  .col-md-5 {
+		    width: 41.66666667%;
+		  }
+		  .col-md-4 {
+		    width: 33.33333333%;
+		  }
+		  .col-md-3 {
+		    width: 25%;
+		  }
+		  .col-md-2 {
+		    width: 16.66666667%;
+		  }
+		  .col-md-1 {
+		    width: 8.33333333%;
+		  }
+
+		  .col-md-offset-12 {
+		    margin-left: 100%;
+		  }
+		  .col-md-offset-11 {
+		    margin-left: 91.66666667%;
+		  }
+		  .col-md-offset-10 {
+		    margin-left: 83.33333333%;
+		  }
+		  .col-md-offset-9 {
+		    margin-left: 75%;
+		  }
+		  .col-md-offset-8 {
+		    margin-left: 66.66666667%;
+		  }
+		  .col-md-offset-7 {
+		    margin-left: 58.33333333%;
+		  }
+		  .col-md-offset-6 {
+		    margin-left: 50%;
+		  }
+		  .col-md-offset-5 {
+		    margin-left: 41.66666667%;
+		  }
+		  .col-md-offset-4 {
+		    margin-left: 33.33333333%;
+		  }
+		  .col-md-offset-3 {
+		    margin-left: 25%;
+		  }
+		  .col-md-offset-2 {
+		    margin-left: 16.66666667%;
+		  }
+		  .col-md-offset-1 {
+		    margin-left: 8.33333333%;
+		  }
+		  .col-md-offset-0 {
+		    margin-left: 0%;
+		  }
+		}
+
+		@media (min-width: 1200px) {
+		  .col-lg-12 {
+		    width: 100%;
+		  }
+		  .col-lg-11 {
+		    width: 91.66666667%;
+		  }
+		  .col-lg-10 {
+		    width: 83.33333333%;
+		  }
+		  .col-lg-9 {
+		    width: 75%;
+		  }
+		  .col-lg-8 {
+		    width: 66.66666667%;
+		  }
+		  .col-lg-7 {
+		    width: 58.33333333%;
+		  }
+		  .col-lg-6 {
+		    width: 50%;
+		  }
+		  .col-lg-5 {
+		    width: 41.66666667%;
+		  }
+		  .col-lg-4 {
+		    width: 33.33333333%;
+		  }
+		  .col-lg-3 {
+		    width: 25%;
+		  }
+		  .col-lg-2 {
+		    width: 16.66666667%;
+		  }
+		  .col-lg-1 {
+		    width: 8.33333333%;
+		  }
+
+		  .col-lg-offset-12 {
+		    margin-left: 100%;
+		  }
+		  .col-lg-offset-11 {
+		    margin-left: 91.66666667%;
+		  }
+		  .col-lg-offset-10 {
+		    margin-left: 83.33333333%;
+		  }
+		  .col-lg-offset-9 {
+		    margin-left: 75%;
+		  }
+		  .col-lg-offset-8 {
+		    margin-left: 66.66666667%;
+		  }
+		  .col-lg-offset-7 {
+		    margin-left: 58.33333333%;
+		  }
+		  .col-lg-offset-6 {
+		    margin-left: 50%;
+		  }
+		  .col-lg-offset-5 {
+		    margin-left: 41.66666667%;
+		  }
+		  .col-lg-offset-4 {
+		    margin-left: 33.33333333%;
+		  }
+		  .col-lg-offset-3 {
+		    margin-left: 25%;
+		  }
+		  .col-lg-offset-2 {
+		    margin-left: 16.66666667%;
+		  }
+		  .col-lg-offset-1 {
+		    margin-left: 8.33333333%;
+		  }
+		  .col-lg-offset-0 {
+		    margin-left: 0%;
+		  }
+		}
+		/* End Grid */
+
+	</style>
+
+	<template>
+		<triplat-ds id="currentUser" name="currentUser" data="{{currentUser}}"></triplat-ds>
+
+		<triplat-ds id="currentPerson" name="currentPerson" data="{{currentPerson}}"></triplat-ds>
+
+		<triplat-route id="introRoute" name="introRouteGroupMove"></triplat-route>
+
+		<div class="welcome-page">
+
+			<div class="grid-row">
+				<div class="grid-col col-sm-10 col-sm-offset-1 col-md-8 col-md-offset-2">
+					<div class="box-intro col-xs-12">
+						<h2>Welcome <b>{{currentUser.firstName}}</b></h2>
+						<p>Let us show you around a bit. Create requests to move groups of people and assets. Submit. Quick. Done.</p>
+					</div><!-- end . box-intro -->
+
+					<div class="box-icons">
+						<div class="box-icons-img">
+							<img src="images/search_welcome.png" alt="Search">
+							<p>Search</p>
+						</div><!-- end .box-icons-img -->
+
+						<div class="box-icons-img">
+							<img src="images/locate_welcome.png" alt="Locate">
+							<p>Locate</p>
+						</div><!-- end .box-icons-img -->
+
+						<div class="box-icons-img">
+							<img src="images/schedule_welcome.png" alt="Schedule">
+							<p>Schedule</p>
+						</div><!-- end .box-icons-img -->
+
+						<div class="box-icons-img">
+							<img src="images/submit_welcome.png" alt="Submit">
+							<p>Submit</p>
+						</div><!-- end .box-icons-img -->
+					</div><!-- end .box-icons -->
+
+					<div class="box-content">
+						<div class="box-content-details col-xs-12">
+							<h3><b>Search</b></h3>
+
+							<p>Search by people, assets, equipment, or rooms, and add them to your request.</p>
+						</div><!-- end .box-content-search -->
+
+						<div class="box-content-details col-xs-12">
+							<h3><b>Locate</b></h3>
+
+							<p>Select where to move each person, asset, equipment, or room function.</p>
+						</div><!-- end .box-content-details -->
+
+						<div class="box-content-details col-xs-12">
+							<h3><b>Schedule</b></h3>
+
+							<p>Select a date for the group move.</p>
+						</div><!-- end .box-content-move -->
+
+						<div class="box-content-details col-xs-12">
+							<h3><b>Submit</b></h3>
+
+							<p>When you're ready, submit your request.</p>
+						</div><!-- end .box-content-move -->
+					</div><!-- end .box-content -->
+
+					<div class="grid-row box-checkbox">
+						<div class="grid-col col-xs-6 col-xs-offset-3 col-sm-4 col-sm-offset-4">
+							<paper-button raised noink class="button-tririga" on-tap="_handleNext">Got it</paper-button>
+						</div><!-- end .grid-col -->
+
+						<div class="grid-col col-xs-12 box-checkbox-text">
+							<paper-checkbox id="skipWelcome" class="blue">Skip this screen next time</paper-checkbox>
+						</div><!-- end .grid-col -->
+					</div><!-- end .grid-row -->
+				</div><!-- end .grid-col -->
+			</div><!-- end .grid-row -->
+		</div><!-- end .welcome-page -->
+
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+
+		is: "tripage-groupmove-intro",
+		behaviors: [TriBlockPageContainerBehavior],
+
+		properties: {
+			preCreateComplete: {
+				type: Boolean,
+				value: false
+			},
+      	},
+
+		listeners: {
+			"introRoute.route-active": "_handleRouteActive",
+		},
+
+		_handleRouteActive: function(e) {
+			var active = e.detail.active;
+			if (active !== true) {
+				return;
+			}
+
+			this._pageAttached();
+		},
+
+		_pageAttached : function() {
+			if (this.$.spinner)
+				this.$.spinner.reset();
+			this.fire("init");
+		},
+
+		_computeModelLoading: function(preCreateComplete) {
+			return !preCreateComplete;
+		},
+
+		//=========================================================
+		// Property _handleNext
+		//------------------------------------------
+		// Objective: Handle next button
+		//=========================================================
+		_handleNext: function() {
+			var skip = this.$.skipWelcome.checked;
+			sessionStorage.setItem("skipWelcome", true);
+
+			// If Statement: Check if the checkbox is selected
+			if (skip) {
+				// Set skipGroupMoveWelcome to true
+				this.set("currentPerson.skipGroupMoveWelcome", true);
+
+				// Update currentPerson DS
+				this.$.currentPerson.updateRecord(this.currentPerson._id, TriPlatDs.RefreshType.BOTH);
+
+			} else {
+				this.currentPerson.skipGroupMoveWelcome = false;
+			}// end if
+
+			// Fires 'next' event
+			this.fire("next");
+		},
+	});
+</script>

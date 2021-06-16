@@ -1,0 +1,138 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
+
+<dom-module id="tricomp-multiline-overflow-text">
+    <template>
+        <style>
+            .ellipsis {
+                position: absolute;
+                right: 0;
+                bottom: 0;
+                width: 3em;
+                line-height: var(--multiline-overflow-text-ellipsis-line-height, normal);
+                text-align: right;
+                background-size: 100% 100%;
+                background: -webkit-gradient(linear, left top, right top, from(rgba(255, 255, 255, 0)), to(white), color-stop(50%, white));
+                background: -moz-linear-gradient(to right, rgba(255, 255, 255, 0), white 50%, white);			
+                background: -o-linear-gradient(to right, rgba(255, 255, 255, 0), white 50%, white);
+                background: -ms-linear-gradient(to right, rgba(255, 255, 255, 0), white 50%, white);
+                background: linear-gradient(to right, rgba(255, 255, 255, 0), white 50%, white);
+            }
+            :host[no-gradient] .ellipsis {
+                width: 1.5em;
+                background: var(--multiline-overflow-text-ellipsis-background, white);
+            }
+        </style>
+
+        <div id="innerBox">
+            <template id="domRepeat" is="dom-repeat" items="[[_textArray]]">
+                <template is="dom-if" if="[[item]]">[[item]]</template>
+            </template>
+
+            <content></content>
+        </div>
+
+        <div class="ellipsis" hidden="[[_hideEllipsis]]">…</div>
+    </template>
+    <script>
+        
+        Polymer({
+
+            is: "tricomp-multiline-overflow-text",
+
+            behaviors: [ Polymer.IronResizableBehavior ],
+
+            properties: {
+                /**
+                * String value to be used as the text content.
+                */	
+                text: {
+                    type: String,
+                    value: ""
+                },
+
+                /**
+                * Object value that should indicate the parent element
+                * of this component
+                */	
+                parentElement: Object,
+
+                /**
+                * Boolean value that indicate if a gradient should not 
+                * be displayed in the ellipsis container
+                */	
+                noGradient: {
+                    type: Boolean,
+                    value: false,
+                    reflectToAttribute: true
+                },
+
+                _textArray: {
+                    type: Array,
+                    value: []
+                },
+
+                _hideEllipsis: {
+                    type: Boolean,
+                    value: true
+                }
+            },
+
+            observers: [
+                "_observeText(text)"
+            ],
+
+            listeners: {
+                "iron-resize": "_handleResize",
+                "domRepeat.dom-change": "_handleDomChange"
+            },
+
+            _observeText: function(text) {
+                this.set("_textArray", []);
+
+                if (text && text !== "") {
+                    this.push("_textArray", text);
+                }
+            },
+
+            _checkOverflowText: function() {
+                var outerBox = this.parentElement;
+                var innerBox = outerBox.querySelector("#innerBox");
+
+                if (outerBox && innerBox) {
+                    var outerBoxHeight = outerBox.offsetHeight;
+                    var innerBoxHeight = innerBox.offsetHeight;
+
+                    this._hideEllipsis = (innerBoxHeight > outerBoxHeight) ? false : true;
+                }
+            },
+
+            _handleResize: function() {
+                this.debounce(
+                    "resize",
+                    function() {
+                        this._checkOverflowText();
+                    },
+                    200
+                );
+            },
+
+            _asyncCheckOverflowText: function() {
+                this.async(function() {
+                    this._checkOverflowText();
+                }, 200);
+            },
+
+            _handleDomChange: function() {
+                this._asyncCheckOverflowText();
+            },
+
+            verifyContent: function() {
+                this._asyncCheckOverflowText();
+            }
+
+        });
+
+    </script>
+</dom-module>

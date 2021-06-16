@@ -1,0 +1,857 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-view-behavior/triplat-view-behavior.html">
+<link rel="import" href="../tricore-home-app-behavior/tricore-home-app-behavior.html">
+
+<link rel="import" href="../triplat-debug/triplat-debug.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+<link rel="import" href="../triplat-routing/triplat-routing.html">
+<link rel="import" href="../triplat-signout-button/triplat-signout-button.html"> 
+<link rel="import" href="../triblock-page-container-behavior/triblock-page-container-behavior.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+
+<link rel="import" href="../triplat-loading-indicator/triplat-loading-indicator.html">
+
+<link rel="import" href="../paper-material/paper-material.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icons/communication-icons.html">
+<link rel="import" href="../iron-pages/iron-pages.html">
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<link rel="import" href="../paper-header-panel/paper-header-panel.html">
+<link rel="import" href="../paper-toolbar/paper-toolbar.html">
+<link rel="import" href="../paper-toast/paper-toast.html">
+<link rel="import" href="../paper-menu/paper-menu.html"> 
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-dialog/paper-dialog.html">
+
+<link rel="import" href="../neon-animation/neon-animated-pages.html">
+<link rel="import" href="../neon-animation/neon-animatable.html">
+<link rel="import" href="../neon-animation/neon-animations.html">
+
+<link rel="import" href="../triblock-app-layout/triblock-app-layout.html">
+
+<link rel="import" href="theme.html">
+
+<link rel="import" href="move-request-behavior.html">
+
+<link rel="import" href="tricomp-page-toolbar.html">
+<link rel="import" href="tricomp-error-prompt.html">
+<link rel="import" href="tricomp-alert.html">
+
+<link rel="import" href="tripage-new-from-portal.html">
+<link rel="import" href="tripage-new.html">
+<link rel="import" href="tripage-request-list.html">
+<link rel="import" href="tripage-move-criteria.html">
+<link rel="import" href="tripage-move-results.html">
+<link rel="import" href="tripage-request-summary.html">
+<link rel="import" href="tripage-asset-details.html">
+<link rel="import" href="tripage-request-view.html">
+
+<dom-module id="tricomp-move-request">
+
+	<link rel="import" type="css" href="shared.css">
+
+	<style>
+
+		triplat-route-selector {
+			@apply(--layout-fit);
+			@apply(--layout-vertical);
+		}
+
+		iron-pages, 
+		iron-pages > * {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+		}
+
+		.error-dialog {
+			overflow: auto;
+		}
+
+		#toast {
+   		 	--paper-toast-background-color: var(--tri-success-icon-button-press-color); 
+    		--paper-toast-color: var(--tri-primary-content-background-color); 
+  		}
+
+  		triblock-app-layout{
+  			--paper-header-panel-body:{
+  				background-color: var(--ibm-neutral-2);
+  			};
+  		}
+
+	</style>
+
+	<template>
+
+		<triplat-route id="newRoute" name="newRouteMoveRequest"  path="/"></triplat-route>
+
+		<triplat-route id="newFromPortalRoute" name="newFromPortalRouteMoveRequest"  path="/new"></triplat-route>
+
+		<triplat-route id="openRoute" name="openRouteMoveRequest" path="/open"></triplat-route>
+		
+		<triplat-route id="requestListRoute" name="requestListRouteMoveRequest" path="/list" on-route-active="_handleRequestListRouteActive"></triplat-route>
+		
+		<triplat-route id="moveCriteriaRoute" name="moveCriteriaRouteMoveRequest" path="/search" on-route-active="_handleMoveCriteriaRouteActive"></triplat-route>
+
+		<triplat-route id="moveResultsRoute" name="moveResultsRouteMoveRequest"  path="/results" on-route-active="_handleMoveResultsRouteActive"></triplat-route>
+
+		<triplat-route id="assetDetailsRoute" name="assetDetailsRouteMoveRequest"  path="/assetDetails/:assetId"></triplat-route>
+
+		<triplat-route id="requestSummaryRoute" name="requestSummaryRouteMoveRequest"  path="/summary" on-route-active="_handleSummaryRouteActive"></triplat-route>
+
+        <triplat-route id="viewRoute" name="viewRouteMoveRequest" path="/view/:requestId"></triplat-route>
+
+		<triplat-ds id="myMoveRequests" name="myMoveRequests" data="{{myRequestsData}}" manual>
+			<triplat-query>
+				<triplat-query-filter name="requestClass" operator="equals" value="Individual Move" ignore-if-blank></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+		
+		<triplat-ds id="moveRequest" name="moveRequest" data="{{moveRequest}}" loading="{{moveRequestLoading}}">
+			<triplat-ds-context name="myMoveRequests" context-id="{{preCreateRequestId}}">
+			</triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds name="applicationSettings" data="{{applicationSettings}}"></triplat-ds>
+
+		<triplat-ds id="moveRequestFromPortalDS" name="myMoveRequests" data="{{moveRequestFromPortal}}" manual>
+		</triplat-ds>
+
+        <tricore-url id="triurl" hidden></tricore-url>
+
+        <triplat-loading-indicator show="[[isPreCreating]]"></triplat-loading-indicator>
+
+		<triblock-app-layout home-app="[[homeApp]]" app-label="[[homeAppLabel]]" show-mobile-back-button="[[_showMobileBackButton]]" mobile-page-label="[[_mobilePageLabel]]" disable-edge-swipe>
+			<triblock-banner-button home tap-handler="_handleNavigateHome"></triblock-banner-button>
+			
+			<triblock-banner-button back tap-handler="_handleBackTap"></triblock-banner-button>
+
+			<triplat-route-selector content>
+
+				<iron-pages id="animatedPages" class="page-container" selected-item="{{selectedRouteContainer}}">
+					<tripage-request-list
+						id="requestListPage"
+						route="requestListRouteMoveRequest"
+						is-busy="{{isBusy}}"
+						screen-large="{{screenLarge}}">
+					</tripage-request-list>
+
+					<tripage-move-criteria
+						id="moveCriteriaPage"
+						route="moveCriteriaRouteMoveRequest"							
+						is-busy="{{isBusy}}"
+						screen-large="{{screenLarge}}"
+						new-search="{{newSearch}}"
+						spec-id="[[preCreateRequestId]]">
+					</tripage-move-criteria>
+
+					<tripage-move-results
+						id="moveResultsPage"
+						route="moveResultsRouteMoveRequest"
+						is-busy="{{isBusy}}"
+						spec-id="[[preCreateRequestId]]"
+						pin-space="[[pinSpace]]"
+						organization="{{organization}}"
+						screen-large="{{screenLarge}}">
+					</tripage-move-results>
+
+					<tripage-asset-details
+						id="assetDetailsPage"
+						route="assetDetailsRouteMoveRequest"
+						is-busy="{{isBusy}}"
+						spec-id="[[preCreateRequestId]]"
+						screen-large="{{screenLarge}}">
+					</tripage-asset-details>
+
+					<tripage-request-summary
+						id="requestSummaryPage"
+						route="requestSummaryRouteMoveRequest"
+						is-busy="{{isBusy}}"
+						spec-id="[[preCreateRequestId]]"
+						readonly="{{readonly}}"
+						skip-search="{{skipSearch}}"
+						screen-large="{{screenLarge}}">
+					</tripage-request-summary>
+
+					<tripage-request-view 
+					    route="viewRouteMoveRequest">
+					</tripage-request-view>
+
+					<tripage-new-from-portal route="newFromPortalRouteMoveRequest" on-request-new-from-portal="_onNewRequestFromPortal"></tripage-new-from-portal>
+				</iron-pages>
+
+			</triplat-route-selector>
+		</triblock-app-layout>
+
+		<paper-toast id="toast" text=""></paper-toast>
+
+		<paper-dialog modal with-backdrop id="errorDialog" class="error-dialog">
+			<tricomp-error-prompt error-details="{{_errorDetails}}" is-admin="{{currentUser._Admin}}" on-error-details-collapse-or-expand="_handleErrorDetailsCollapseOrExpand"></tricomp-error-prompt>
+		</paper-dialog>
+
+		<tricomp-alert id="cancelToast" type="success" message-label="Request Cancelled" duration="3000"></tricomp-alert>
+		<tricomp-alert id="submitToast" type="success" message-label="Request Cancelled" duration="3000"></tricomp-alert>
+
+	</template>
+</dom-module>
+<script>
+
+	Polymer({
+		is: "tricomp-move-request",
+
+		behaviors: [TriPlatViewBehavior, MoveRequestBehavior, TriHomeAppBehavior],
+
+		properties: {
+			requestManager: Object,
+
+			selectedResources: Array,
+
+			moveRequest: Object,
+
+			orderId: {
+				type: String,
+				notify: true,
+				value: "-1",
+			},
+
+			resourceId: {
+				type: String,
+				notify: true,
+				value: "-1",
+			},
+
+			currentRequestId: {
+				type: String,
+				value: null,
+			},
+
+			initstart: Date,
+
+			initend: Date,
+
+			requestManagerSpecId: {
+				type: String,
+				value: null,
+			},
+
+			preCreateRequestId: {
+				type: String,
+				value: null,
+			},
+
+			isPreCreating: {
+				type: Boolean,
+				value: false,
+				observer: '_calcPreCreateComplete',
+			},
+
+			preCreateComplete: {
+				type: Boolean,
+				value: false,
+			},
+
+			requestManagerLoading: {
+				type: Boolean,
+				value: true,
+			},
+
+			entryAnimation: {
+				type: String,
+				value: "slide-from-right-animation",
+			},
+
+			exitAnimation: {
+				type: String,
+				value: "slide-left-animation",
+			},
+
+			isBackDooPrecreate: {
+				type: Boolean,
+				value: false,
+			},
+			screenLarge: {
+				type: Boolean,
+				value: false,
+			},
+			readonly: {
+				type: Boolean,
+				value: false,
+			},
+			skipSearch: {
+				type: Boolean,
+				value: false,
+			},
+			newSearch: {
+				type: Boolean,
+				value: true,
+			},
+			pinSpace: Object,
+
+			organization: String,
+
+			_requestListRouteActive: {
+				type: Boolean, 
+				value: false
+			},
+			_moveCriteriaRouteActive: {
+				type: Boolean, 
+				value: false
+			},
+			_moveResultsRouteActive: {
+				type: Boolean, 
+				value: false
+			},
+			_summaryRouteActive: {
+				type: Boolean, 
+				value: false
+			},
+
+			_showMobileBackButton: {
+				type: Boolean,
+				value: false
+			},
+
+			_listCriteriaRedirect: {
+				type: Boolean,
+				value: false
+			},
+
+			_mobilePageLabel: String,
+
+		},
+
+		observers: [
+			"_handleSelectedRouteContainerChanged(selectedRouteContainer)",
+		],
+
+		listeners: {
+
+			"myMoveRequests.ds-create-complete": "_handlePreCreateComplete",
+
+			"start-over": "_handleStartOver",
+
+			"init": "_init",
+			"open": "_open",
+
+			"navigate-start": "_handleStart",
+
+			"navigate-move-criteria": "_handleMoveCriteriaPage",
+			"navigate-move-criteria-back": "_handleMoveCriteriaPageBack",
+
+			"navigate-request-list": "_handleRequestListDramatic",
+			"navigate-request-open": "_handleRequestOpen",
+			"navigate-request-new": "_handleRequestNew",
+
+			"navigate-move-results": "_handleMoveResultsPage",
+			"navigate-move-results-back": "_handleMoveResultsPageBack",
+			"navigate-asset-details": "_handleAssetDetailsPage",
+			"navigate-asset-details-back": "_handleAssetDetailsPageBack",
+			"action-select-space": "_handleSelectSpace",
+			
+			"navigate-summary-page": "_handleSummaryPage",
+			"navigate-summary-skip-page": "_handleSummarySkipPage",
+			"navigate-readonly-summary-page": "_handleReadonlySummaryPage",
+
+			"navigate-home": "_handleNavigateHome",
+
+			"action-submit": "_handleSubmit",
+			"action-delete": "_handleDelete",
+			"action-cancel": "_handleCancel",
+			"action-done": "_handleDone",
+
+			"ds-add-error": "_handleDSError",
+			"ds-create-error": "_handleDSError",
+			"ds-delete-error": "_handleDSError",
+			"ds-get-error": "_handleDSError",
+			"ds-perform-action-error": "_handleDSError",
+			"ds-remove-error": "_handleDSError",
+			"ds-update-error": "_handleDSError",
+
+			"list-criteria-redirect": '_handleListCriteriaRedirect',
+		},
+
+	   	ready: function() {
+			if (((screen.height <= 736) && (screen.width <= 414)) ||
+				((screen.height <= 414) && (screen.width <= 736))) {
+				this.screenLarge = false;
+			}
+			else {
+				this.screenLarge = true;
+			}
+			console.log("Device Height & Width: ", screen.height, ", ", screen.width);
+
+		},
+
+		attached: function() {
+			Polymer.RenderStatus.afterNextRender(this, function() {
+				this.$.myMoveRequests.refresh();
+			});
+		},
+
+		_isBusy: function(isBusy) {
+			return isBusy;
+		},
+
+		_handleSelectedRouteContainerChanged: function(routeContainer) {
+			// console.log("_handleSelectedRouteContainerChanged");
+			// console.log(routeContainer);
+			if (!routeContainer) {
+				return;
+			}
+
+			var routeName = routeContainer.getAttribute('route');
+			if (!routeName)
+				return;
+		},
+
+		_calcPreCreateComplete: function() {
+			if (this.preCreateComplete) {
+				this.set("initend", new Date());
+			}
+		},
+
+		_navigateDramatic: function(navigateTo) {
+			this.set("entryAnimation", "scale-up-animation");
+			this.set("exitAnimation", "scale-down-animation");
+
+			this.async(function() {
+				navigateTo.navigate();
+			});
+		},
+
+		_navigateForwards: function(navigateTo, context) {
+			// console.log("_navigateForwards");
+			// console.log(navigateTo);
+			// console.log(context);
+			this.set("entryAnimation", "slide-from-right-animation");
+			this.set("exitAnimation", "slide-left-animation");
+
+			this.set("entryAnimation", "scale-up-animation");
+			this.set("exitAnimation", "scale-down-animation");
+
+			this.async(function() {
+				if (context) {
+					navigateTo.navigate(context);
+				} else {					
+					navigateTo.navigate();
+				}
+			});
+		},
+
+		_navigateBackwards: function(navigateTo) {
+			this.set("entryAnimation", "slide-from-left-animation");
+			this.set("exitAnimation", "slide-right-animation");
+
+			this.set("entryAnimation", "scale-up-animation");
+			this.set("exitAnimation", "scale-down-animation");
+
+			this.async(function() {
+				navigateTo.navigate();
+			});
+		},
+
+		_handleStartOver: function() {
+			// console.log("_handleStartOver");
+			if (!this.isPreCreating) {
+				this.initRequest();
+			}
+		},
+
+		_handleStart: function() {
+			// console.log("_handleStart");
+		},
+
+		_handleMoveCriteriaPage: function() {
+			// console.log("_handleRoomCriteriaPage");
+			this.set("newSearch", true);
+			this._navigateForwards(this.$.moveCriteriaRoute);
+		},
+
+		_handleMoveCriteriaPageBack: function() {
+			// console.log("_handleRoomCriteriaPageBack");
+			this.set("newSearch", false);
+			this._navigateBackwards(this.$.moveCriteriaRoute);
+		},
+
+		_handleMoveResultsPage: function(e) {
+			// console.log("_handleRoomResultsPage");
+			var searchObject = e.detail.searchObject;
+			if (searchObject.space) {
+				this.set("pinSpace", searchObject.space[0]);	
+			}
+			else {
+				this.set("pinSpace", null);
+			}
+    		this.set("organization", null);
+			this.set("organization", searchObject.organization);
+			this._navigateForwards(this.$.moveResultsRoute);
+		},
+
+		_handleMoveResultsPageBack: function() {
+			// console.log("_handleRoomResultsPage");
+			this._navigateBackwards(this.$.moveResultsRoute);
+		},
+
+		_handleAssetDetailsPage: function(e) {
+			// console.log("_handleRoomDetailsPage");
+			var spaceId = e.detail.spaceId;
+			this._navigateForwards(this.$.assetDetailsRoute, {spaceId: spaceId});
+		},
+
+		_handleAssetDetailsPageBack: function() {
+			// console.log("_handleRoomCriteriaPageBack");
+			this._navigateBackwards(this.$.requestSummaryRoute);
+		},
+
+		_refreshRequestList: function() {
+			// console.log("_refreshRequestList");
+			this.$.requestListPage._refreshRequestList();
+		},
+
+		_refreshRequestData: function() {
+			// console.log("_refreshRequestList");
+			this.$.roomCriteriaPage._refreshRequestData();
+			this.$.roomResultsPage._refreshRequestData();
+			this.$.requestSummaryPage._refreshRequestData();
+		},
+
+		_handleDSError: function(e) {
+			var errorDetails = e.detail;
+			if (errorDetails.status != 403){
+				if (errorDetails) this.set("_errorDetails", errorDetails);
+				this.$.errorDialog.open();
+			}
+		},
+
+		_handleErrorDetailsCollapseOrExpand: function() {
+			this.async(function() {
+				this.$.errorDialog.center();
+			}.bind(this), 300);
+		},
+
+		_handleRequestListDramatic: function() {
+			// console.log("_handleRequestListDramatic");
+			this._clearBusy();
+			this._navigateDramatic(this.$.requestListRoute);
+		},
+
+		_handleSummaryPage: function(e) {
+			// console.log("_handleSummaryPage");
+			this.set("readonly", false);
+			this.set("skipSearch", false);
+			this._navigateDramatic(this.$.requestSummaryRoute);
+		},
+
+		_handleSummarySkipPage: function(e) {
+			// console.log("_handleSummaryPage");
+			this.set("readonly", false);
+			this.set("skipSearch", true);
+			this._navigateDramatic(this.$.requestSummaryRoute);
+		},
+
+		_handleReadonlySummaryPage: function(e) {
+			// console.log("_handleReadonlySummaryPage");
+			var requestId = e.detail.requestId;
+			this.set("preCreateRequestId", requestId);
+			this.set("readonly", true);
+			this._navigateForwards(this.$.requestSummaryRoute);
+		},
+
+		_handleSelectSpace: function(e) {
+			// console.log("_handleSelectSpace");		
+			var spaceId = e.detail.spaceId;
+			this._setBusy();
+
+			this.set("moveRequest.toSpace.id", spaceId);
+						
+			this.$.moveRequest.updateRecord("actionGroup", "onchange-move-to-space").then(function() {
+					this.$.moveRequest.refresh().then(function() {
+					this.async(function() {
+						this.fire("navigate-summary-page");
+						this._addSpaceSuccess();
+					});
+				}.bind(this));					
+			}.bind(this));
+
+			this._clearBusy();
+		},
+
+		_addSpaceSuccess: function() {
+			// this.$.toast.text = "Space Added";
+			// this.$.toast.show();
+		},
+
+		_navigateDramatic: function(navigateTo) {
+			// this.set("entryAnimation", "fade-in-animation");
+			this.set("entryAnimation", "scale-up-animation");
+			this.set("exitAnimation", "scale-down-animation");
+
+			this.async(function() {
+				navigateTo.navigate();
+			});
+		},
+
+		_handleRequestNew: function(e) {
+			//console.log("_handleRequestNew");
+			this.set("userInterfaceID", this._getUserInterfaceID());
+			this.set("newSearch", false);
+			this.set("newSearch", true);
+			this.initRequest();
+		},
+
+		_handleRequestNewFirstTime: function(e) {
+			// console.log("_handleRequestNewFirstTime");
+
+			this.set("userInterfaceID", this._getUserInterfaceID());
+
+			this._navigateForwards(this.$.newRoute);
+		},
+
+		_init: function() {
+			if (!this.userInterfaceID) {
+				this.async(function() {
+					if (this.homeUrl) {
+						this._handleNavigateHome();
+					} else {
+						this.fire("navigate-request-list");
+					}
+				});
+			} else {
+				//this._handleStartOver();
+			}
+		},
+
+		_open : function() {
+			// console.log("tricomp-room-request._open");
+			if (!this.userInterfaceID) {
+				this.fire("navigate-request-list");
+			} else {
+				this.async(function() {
+					this._handleStartOver();
+				});
+			}
+		},
+
+		initRequest: function() {
+			this.set("preCreateRequestId", null);
+			this.set("start", new Date());
+			this.set("maxStep", 0);
+
+			// console.log("Initialization Start: " + this.start);
+			this.preCreateRequest();
+		},
+
+		preCreateRequest : function() {
+			// console.log("pre-creating...");
+			this.set("preCreateComplete", false);
+			this.set("isPreCreating", true);
+			this._navigateForwards(this.$.newRoute);
+
+			var newRequest = {};
+			this.$.myMoveRequests.createRecord(newRequest, TriPlatDs.RefreshType.BOTH, "actionGroup", "preCreate");
+		},
+
+		_handlePreCreateComplete: function(e) {
+			this._onPrecreateComplete(e.detail);
+		},
+
+		_onPrecreateComplete: function(newId) {
+			this.set("preCreateRequestId", newId);
+
+			this.async(function() {
+				this.set("isPreCreating", false);
+			});
+
+
+			this.set("preCreateComplete", true);
+
+			this.fire("navigate-move-criteria");
+		},
+
+
+		_preCreateStart: function() {
+			// console.log("_preCreateStart");
+			this.set("preCreateComplete", false);
+			this.set("isPreCreating", true);
+		},
+
+		_preCreateComplete: function() {
+			// console.log("_preCreateComplete");
+			this.async(function() {
+				this.set("preCreateComplete", true);
+				this.set("isPreCreating", false);
+
+				this._clearBusy();
+			});
+		},
+
+		_handleSubmit: function(e) {
+			this._setBusy();
+
+			this.$.moveRequest.updateRecord(TriPlatDs.RefreshType.BOTH, "actionGroup", "submit").then(function() {
+
+				if (this.homeUrl) {
+					this._handleNavigateHome();
+				} else {
+					this.$.myMoveRequests.refresh().then(function() {
+						this.async(function() {
+							this._submitSuccess();
+							this.set("preCreateRequestId", null);
+
+							this._refreshRequestList();
+							this.fire("navigate-request-list");
+
+							this._clearBusy();
+						});
+					}.bind(this));
+				}
+
+			}.bind(this));
+		},
+
+		_submitSuccess: function() {
+			var __dictionary__successMessage = "Your Move Request has been successfully created.  Request ID ";
+			this.$.submitToast.message = __dictionary__successMessage + this.moveRequest.requestID;
+			this.$.submitToast.open();
+		},
+
+		_handleCancel: function() {
+			this.async(function() {
+				this._handleNavigateHome();
+			});
+		},
+
+		_handleDelete: function(e) {
+			// console.log("_handleCancel");
+			// console.log(e);
+			var requestId = e.detail.requestId;
+			this.set("preCreateRequestId", requestId);
+			this._setBusy();
+
+			this.$.moveRequest.refresh().then(function() {
+				this.$.moveRequest.updateRecord(TriPlatDs.RefreshType.SERVER, "actionGroup", "delete").then(function() {
+					this.async(function() {
+						this._cancelSuccess();
+						this.set("preCreateRequestId", null);
+
+						this.$.requestListPage.setFirstPass(false);
+						this._refreshRequestList();
+						//this._refreshRequestData();
+
+						this._clearBusy();
+
+						this._handleRequestListDramatic();
+					});
+				}.bind(this));
+			}.bind(this));
+		},
+
+		_cancelSuccess: function() {
+			var __dictionary__cancelMessage = "Request Cancelled";
+			this.$.cancelToast.message = __dictionary__cancelMessage;
+			this.$.cancelToast.open();
+		},
+
+		_refreshRequestList: function() {
+				this.$.requestListPage._refreshRequestList();
+		},
+
+		_refreshRequestData: function() {
+			this.$.roomCriteriaPage._refreshRequestData();
+			this.$.roomResultsPage._refreshRequestData();
+			this.$.requestSummaryPage._refreshRequestData();
+		},		
+
+		_handleRequestListRouteActive: function(e) {
+			if (e.detail.active && !this._requestListRouteActive) {
+				this.set('_requestListRouteActive', true);
+				this.set('_showMobileBackButton', false);
+				this.set('_mobilePageLabel', null);
+			} else {
+				this.set('_requestListRouteActive', false);
+			}
+		},
+
+		_handleMoveCriteriaRouteActive: function(e) {
+			if (e.detail.active && !this._moveCriteriaRouteActive) {
+				this.set('_moveCriteriaRouteActive', true);
+				if (this._listCriteriaRedirect) {
+					this.set('_listCriteriaRedirect', false);
+				} else {
+					this.set('_showMobileBackButton', true);
+					this.set('_mobilePageLabel', "Search for a Room");
+				}
+			} else {
+				this.set('_moveCriteriaRouteActive', false);
+			}
+		},
+
+		_handleMoveResultsRouteActive: function(e) {
+			if (e.detail.active && !this._moveResultsRouteActive) {
+				this.set('_moveResultsRouteActive', true);
+				this.set('_showMobileBackButton', true);
+				this.set('_mobilePageLabel', "Available Rooms");
+			} else {
+				this.set('_moveResultsRouteActive', false);
+			}
+		},
+
+		_handleSummaryRouteActive: function(e) {
+			if (e.detail.active && !this._summaryRouteActive) {
+				this.set('_summaryRouteActive', true);
+				this.set('_showMobileBackButton', true);
+				this.set('_mobilePageLabel', "Summary");
+			} else {
+				this.set('_summaryRouteActive', false);
+			}
+		},
+
+		_handleBackTap: function() {
+			window.history.back();
+		},
+
+		_computeShowBackButton: function(requestListRouteActive) {
+			return !requestListRouteActive;
+		},
+
+		_handleListCriteriaRedirect: function(e) {
+			this.set('_showMobileBackButton', false);
+			this.set('_listCriteriaRedirect', true);
+		},
+
+		_handleNavigateHome: function(e) {
+			if (this.homeUrl) {
+ 				 location.assign(this.homeUrl);
+			} else {
+				this.set("newSearch", true);
+				this.fire("navigate-request-list");
+			}
+
+		},
+
+		 _getDefaultAppLabel: function() {
+			var __dictionary__appLabel =  "Move Me";
+			return __dictionary__appLabel;
+        },
+
+		_onNewRequestFromPortal: function() {
+			var newRequest = {};
+			this.$.moveRequestFromPortalDS.createRecord(newRequest, TriPlatDs.RefreshType.NONE, "actionGroup", "preCreate")
+				.then(function (newId) {
+					if (newId) {
+						this._onPrecreateComplete(newId);
+					} else {
+						console.error("Something went wrong with the precreate.");
+					}
+				}.bind(this),
+					function() {
+							console.error("Something went wrong with the precreate.");
+					}	
+				);
+		},
+
+	});
+</script>

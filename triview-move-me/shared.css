@@ -1,0 +1,185 @@
+.page-main {
+	@apply(--layout-vertical);
+	@apply(--layout-flex);
+	@apply(--layout-self-center);
+
+	min-height: 0;
+
+	overflow-x: hidden;
+	overflow-y: auto;
+
+	background-color: var(--tri-primary-content-background-color);
+
+	max-width: var(--max-width-while-we-dont-support-desktop);
+	width: 100%;
+	overflow-y: scroll;
+  	-webkit-overflow-scrolling: touch;
+	box-sizing: border-box; /* This is necessary to prevent any padding applied on page-main elements from overflowing (happens on small screen) */
+}
+
+.page-main > * {
+	flex-shrink: 0; /* prevent all children from shrinking - we want content to overflow and be scrollable */
+}
+
+.page-main[disabled] * {
+	opacity: .8;
+	pointer-events: none;
+}
+
+.page-main-large {
+	@apply(--layout-vertical);
+	@apply(--layout-flex);
+	@apply(--layout-self-center);
+
+	min-height: 0;
+
+	overflow-x: hidden;
+	overflow-y: auto;
+
+	background-color: var(--tri-primary-content-background-color);
+
+	width: 100%;
+
+	box-sizing: border-box; /* This is necessary to prevent any padding applied on page-main elements from overflowing (happens on small screen) */
+}
+
+.page-main-large-horizontal {
+	@apply(--layout-horizontal);
+	@apply(--layout-flex);
+	@apply(--layout-self-center);
+
+	min-height: 0;
+
+	overflow-x: hidden;
+	overflow-y: auto;
+
+	background-color: var(--tri-primary-content-background-color);
+
+	width: 100%;
+
+	box-sizing: border-box; /* This is necessary to prevent any padding applied on page-main elements from overflowing (happens on small screen) */
+}
+
+.page-main-large > * {
+	flex-shrink: 0; /* prevent all children from shrinking - we want content to overflow and be scrollable */
+}
+
+.page-main-large[disabled] * {
+	opacity: .8;
+	pointer-events: none;
+}
+
+.page-main-large-split {
+	@apply(--layout-vertical);
+	@apply(--layout-flex);
+
+	min-height: 0;
+	overflow: hidden;
+	background-color: var(--tri-primary-content-background-color);
+
+	width: 100%;
+
+	padding: 10px;	
+}
+
+.page-message {
+	@apply(--layout-horizontal);
+	@apply(--layout-wrap);
+	@apply(--layout-scroll);
+	max-height: 64px;
+
+	padding: 5px;
+
+	flex-shrink: 0;
+
+	background-color: var(--tri-danger-color);
+}
+
+.message {
+	color: white;
+	text-align: center;
+}
+
+.page-title {
+	@apply(--layout-horizontal);
+	@apply(--layout-center-center);
+
+	font-size: larger;
+	font-weight: bolder;
+
+	min-height: 48px;
+
+	padding-top: 2px;
+
+	padding-left: 2px;
+	padding-right: 2px;
+}
+
+
+.empty-data-message {
+	@apply(--layout-center-center);
+	text-align: center;
+	padding: 20px;
+}
+
+.field-container {
+	@apply(--layout-vertical);
+	padding: 8px 0;
+}
+.field-label {
+	font-size: .75em;
+	color: var(--tri-primary-content-label-color);
+}
+
+.required-asterisk {
+	color: var(--tri-danger-color);
+	font-size: 20px;
+}
+
+paper-button {
+	font-size: 14px;
+}
+
+paper-button.delete-button {
+	@apply(--tri-danger-outline-button);
+}
+paper-button.delete-button:hover {
+	@apply(--tri-danger-outline-button-hover);
+}
+
+paper-button.delete-button:focus {
+	@apply(--tri-danger-outline-button-press);
+}
+paper-checkbox {
+	--paper-checkbox-size: 24px;
+}
+
+paper-tabs {
+	--paper-tabs-selection-bar-color: var(--tri-primary-color);
+	--paper-tabs-selection-bar: {
+		height: 4px;
+	};
+	--paper-tabs: {
+		background-color: transparent;
+	};
+}
+paper-tab {
+	--paper-tab: {
+		@apply(--layout-flex);
+		color: var(--tri-primary-color);
+		font-family: var(--tri-font-family);
+		font-size: 18px;
+	};
+}
+paper-tab.iron-selected {
+	font-weight: bold;
+}
+
+triplat-date-picker,
+triplat-datetime-picker {
+	--triplat-date-picker-icon-color: var(--tri-primary-color);
+}
+
+tricomp-page-toolbar{
+	@apply(--layout-fixed-bottom);
+}

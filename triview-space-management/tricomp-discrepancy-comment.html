@@ -1,0 +1,92 @@
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-autogrow-textarea/iron-autogrow-textarea.html">
+<link rel="import" href="../paper-button/paper-button.html">
+
+<dom-module id="tricomp-discrepancy-comment">
+
+	<style>
+		:host {
+			@apply(--layout-vertical);
+			background-color: #ffffff;
+			margin: 10px;
+		}
+
+		.row .value {
+			color: var(--tri-focus-color);
+		}
+
+		.row label {
+			color: var(--tri-focus-label-color);
+		}
+
+		iron-autogrow-textarea {
+			@apply(--layout-flex);
+			width: 700px;
+        	overflow:hidden;
+        	-ms-overflow-style: none;
+		}
+
+		.discrepancy-log-list-container {
+			@apply(--layout-vertical);
+		}
+
+		.selected-item-info {
+			@apply(--layout);
+			@apply(--layout-vertical);
+			padding: 10px;
+		}
+
+		paper-button {
+			@apply(--tri-button);
+			cursor: pointer;
+		}
+
+		.add-comment {
+			padding: 15px;
+		}
+
+	</style>
+
+	<template>
+		<div class="discrepancy-log-list-container">	
+
+			<content></content>
+			
+			<div class="selected-item-info row">
+				<label>Comment: </label>
+				<div class="layout horizontal">
+					<iron-autogrow-textarea id="discrepancyComment" bind-value="{{reviewComment}}" rows="4"></iron-autogrow-textarea>
+					<div class="add-comment">
+						<paper-button on-tap="_handleUpdateDiscrepancyLog">Done</paper-button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-discrepancy-comment",
+
+		properties: {
+			reviewComment: String,
+			viewType: String
+		},
+
+		_handleUpdateDiscrepancyLog: function() {
+			if (!this.reviewComment) {
+				this.reviewComment = "";
+			}
+			
+			var rtn = {'comment':this.reviewComment, 'viewType': this.viewType};
+
+			this.fire("update-discrepancy-log", rtn);
+		},
+
+		reset: function() {
+			this.set("reviewComment", "");
+		}
+
+	});
+</script>

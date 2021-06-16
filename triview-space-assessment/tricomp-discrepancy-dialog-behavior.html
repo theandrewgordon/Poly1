@@ -1,0 +1,73 @@
+<script>
+	TriCompDiscrepancyDialogBehavior = {
+
+		properties: {
+			discrepancyType : String,
+			selected : {
+				type: Object,
+				value: null
+			},
+			actionMode : {
+				type : Boolean,
+				value : false
+			},
+			_selectedPage : Number,
+
+			assessmentId : Number,
+			space : Object,
+			assessmentLog : {
+				type : Object,
+				notify : true
+			},
+			_comment : String
+		},
+
+		observers : [
+			'_handleDiscrepancyTypeChanged(discrepancyType)',
+		],
+		
+   		listeners : {
+			'comment.action-tapped' : '_handleActionTapped'
+		},
+
+
+		_handleActionTapped : function() {
+   			var assessmentLogData = null;
+   			if (this.assessmentLog) {
+   				assessmentLogData = this.assessmentLog;
+   			} else { 
+   				assessmentLogData = {
+   					assessmentId : this.assessmentId,
+   					spaceId : this.space._id
+   				};
+   			}
+   			this._handleDiscrepancy(this.space, assessmentLogData, this.discrepancyType, this._comment, this.selected);
+   			this._handleClose();
+		},
+
+		_handleDiscrepancyTypeChanged : function(discrepancyType) {
+			if (discrepancyType.indexOf("Add") != -1) {
+				this.set('actionMode', true);
+			} else if (discrepancyType.indexOf("Remove") != -1) {
+				this.set('actionMode', false);
+			}
+		},
+
+		showAddPage : function() {
+			this.set('_selectedPage', 0);
+		},
+
+		showRemovePage : function() {
+			this.set('_selectedPage', 1)
+		},
+
+		_handleClose : function() {
+			this.fire('close');
+		},
+
+		_fireDiscrepancyLogCreatedEvent : function() {
+			this.fire('discrepancy-log-created');
+		},
+		
+	};
+</script>

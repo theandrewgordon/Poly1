@@ -1,0 +1,174 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../triplat-icon/ibm-icons.html">
+
+<dom-module id="tricomp-alert-message">
+	<template>
+
+		<style>
+
+			:host {
+				@apply(--layout-horizontal);
+				background-color: var(--tricomp-alert-message-bg-color, --tri-primary-color);
+				@apply(--tricomp-alert-message);
+			}
+			:host[info] {
+				background-color: var(--tricomp-alert-message-info-bg-color, --tri-info-color);
+			}
+			:host[success] {
+				background-color: var(--tricomp-alert-message-success-bg-color, --tri-success-color);
+			}
+			:host[warning] {
+				background-color: var(--tricomp-alert-message-warning-bg-color, --tri-warning-color);
+			}
+			:host[major-warning] {
+				background-color: var(--tricomp-alert-message-major-warning-bg-color, --tri-major-warning-color);
+			}
+			:host[danger] {
+				background-color: var(--tricomp-alert-message-danger-bg-color, --tri-danger-color);
+			}
+			:host[error] {
+				background-color: var(--tricomp-alert-message-error-bg-color, --tri-error-color);
+			}
+
+			.status-icon-container {
+				@apply(--layout-vertical);
+				@apply(--layout-start);
+				padding: 5px;
+			}
+			.status-icon {
+				--iron-icon-height: var(--tricomp-alert-message-icon-size, 24px);
+				--iron-icon-width: var(--tricomp-alert-message-icon-size, 24px);
+				color: var(--tricomp-alert-message-icon-color, white);
+			}
+
+			.message-container {
+				@apply(--layout-flex);
+				@apply(--layout-vertical);
+				@apply(--layout-center-justified);
+				background-color: var(--tricomp-alert-message-message-bg-color, rgba(255, 255, 255, 0.8));
+				padding: 5px 5px 5px 10px;
+			}
+
+			.message {
+				@apply(--tricomp-alert-message-message);
+			}
+
+			.title {
+				font-weight: bold;
+				@apply(--tricomp-alert-message-title);
+			}
+
+			.tooltip-indicator-icon-container {
+				@apply(--layout-vertical);
+				@apply(--layout-start);
+				background-color: var(--tricomp-alert-message-message-bg-color, rgba(255, 255, 255, 0.8));
+				padding: 5px;
+			}
+			.tooltip-indicator-icon {
+				--iron-icon-height: 24px;
+				--iron-icon-width: 24px;
+				color: var(--tricomp-alert-message-bg-color, --tri-primary-color);
+			}
+			:host[info] .tooltip-indicator-icon {
+				color: var(--tricomp-alert-message-info-bg-color, --tri-info-color);
+			}
+			:host[success] .tooltip-indicator-icon {
+				color: var(--tricomp-alert-message-success-bg-color, --tri-success-color);
+			}
+			:host[warning] .tooltip-indicator-icon {
+				color: var(--tricomp-alert-message-warning-bg-color, --tri-warning-color);
+			}
+			:host[major-warning] .tooltip-indicator-icon {
+				color: var(--tricomp-alert-message-major-warning-bg-color, --tri-major-warning-color);
+			}
+			:host[danger] .tooltip-indicator-icon {
+				color: var(--tricomp-alert-message-danger-bg-color, --tri-danger-color);
+			}
+			:host[error] .tooltip-indicator-icon {
+				color: var(--tricomp-alert-message-error-bg-color, --tri-error-color);
+			}
+
+		</style>
+
+		<div class="status-icon-container">
+			<iron-icon class="status-icon" icon="[[_computeIcon(icon, info, success, warning, majorWarning, danger, error)]]"></iron-icon>
+		</div>
+
+		<div class="message-container">
+			<div class="title">[[alertTitle]]</div>
+			<div class="message"><content></content></div>
+		</div>
+
+		<div class="tooltip-indicator-icon-container" hidden$="[[!showTooltipIndicatorIcon]]">
+			<iron-icon class="tooltip-indicator-icon" icon="ibm:menuoverflow"></iron-icon>
+		</div>
+		
+	</template>
+
+	<script>
+		Polymer({
+
+			is: 'tricomp-alert-message',
+
+			properties: {
+				alertTitle: {
+					type: String,
+					value: ""
+				},
+				icon: {
+					type: String,
+					value: ""
+				},
+				showTooltipIndicatorIcon: {
+					type: Boolean,
+					value: false
+				},
+
+				info: {
+					reflectToAttribute: true,
+					type: Boolean,
+					value: false
+				},
+				success: {
+					reflectToAttribute: true,
+					type: Boolean,
+					value: false
+				},
+				warning: {
+					reflectToAttribute: true,
+					type: Boolean,
+					value: false
+				},
+				majorWarning: {
+					reflectToAttribute: true,
+					type: Boolean,
+					value: false
+				},
+				danger: {
+					reflectToAttribute: true,
+					type: Boolean,
+					value: false
+				},
+				error: {
+					reflectToAttribute: true,
+					type: Boolean,
+					value: false
+				},
+			},
+
+			_computeIcon: function(icon, info, success, warning, majorWarning, danger, error) {
+				if (icon && icon != "") return icon;
+				else if (info) return "ibm:status-info";
+				else if (success) return "ibm:status-success";
+				else if (warning) return "ibm:status-warning";
+				else if (majorWarning) return "ibm:status-warning-major";
+				else if (danger) return "ibm:status-warning-major";
+				else if (error) return "ibm:status-error";
+				else return "";
+			}
+		});
+	</script>
+</dom-module>

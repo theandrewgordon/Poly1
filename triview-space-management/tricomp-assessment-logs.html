@@ -1,0 +1,105 @@
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-selector/iron-selector.html">
+
+<link rel="import" href="tricomp-assessment-log-item.html">
+
+<dom-module id="tricomp-assessment-logs">
+
+	<style>
+
+		:host {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			background-color: var(--tri-body-background-color);
+		}
+
+		.search-bar {
+			@apply(--layout-horizontal);
+			@apply(--layout-justified);
+			padding-top: 10px;
+			padding-bottom: 10px;
+		}
+
+		iron-selector {
+			@apply(--layout-scroll);
+			border-top: 1px solid var(--tri-primary-content-accent-color);
+			background-color: var(--tri-focus-background-color);
+		}
+
+	</style>
+
+	<template>
+		
+		<triplat-route name="assessmentLogsList" params="{{assessmentParams}}"></triplat-route>
+
+		<triplat-ds id="assessmentLogsDS" name="assessmentLogs" filtered-data="{{assessmentLogs}}">
+			<triplat-ds-context name="mySpaceAssessments" context-id="{{assessmentParams.assessmentId}}"></triplat-ds-context>
+			<triplat-query>
+				 <triplat-query-filter name="discrepantSpace" operator="equals" value="true"></triplat-query-filter>
+				 <triplat-query-and></triplat-query-and>
+    			 <triplat-query-filter name="space.value" operator="contains" value="{{searchTerms}}" ignore-if-blank></triplat-query-filter>
+    			 <triplat-query-or></triplat-query-or>
+    			  <triplat-query-filter name="discrepantSpace" operator="equals" value="true"></triplat-query-filter>
+				 <triplat-query-and></triplat-query-and>
+    			 <triplat-query-filter name="spaceClass" operator="contains" value="{{searchTerms}}" ignore-if-blank></triplat-query-filter>
+    			 <triplat-query-or></triplat-query-or>
+    			  <triplat-query-filter name="discrepantSpace" operator="equals" value="true"></triplat-query-filter>
+				 <triplat-query-and></triplat-query-and>
+    			 <triplat-query-filter name="description" operator="contains" value="{{searchTerms}}" ignore-if-blank></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+		
+		<template is="dom-repeat" id="assessmentLogsTemplate" items="{{assessmentLogs}}">
+			<tricomp-assessment-log-item
+				tri-record-id$="[[item._id]]"
+				log="{{item}}"
+				read-only="{{historyAssessment}}">
+			</tricomp-assessment-log-item>
+		</template>
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-assessment-logs",
+
+		properties : {
+
+			historyAssessment : Boolean,
+			
+			searchTerms : String,
+			selectedDiscrepancyLog: Object,
+			
+		},
+
+		listeners: {
+			"assessmentLogsDS.ds-get-complete" : "refreshDiscrepancyLogDs"
+		},
+		
+		_handleUpdateDiscrepancyLog: function(discrepancyLog) {
+			var element = Polymer.dom(this.root).querySelector("[tri-record-id='" + discrepancyLog.assessmentLogId + "']")
+			element._handleUpdateDiscrepancyLog(discrepancyLog);
+		},
+
+		refresh: function(discrepancyLog) {
+			this.set("selectedDiscrepancyLog", discrepancyLog);
+			this.$.assessmentLogsDS.refresh();
+			this.refreshDiscrepancyLogDs();
+		},
+
+		refreshDiscrepancyLogDs: function() {
+			if (this.selectedDiscrepancyLog) {
+				var element = Polymer.dom(this.root).querySelector("[tri-record-id='" + this.selectedDiscrepancyLog.assessmentLogId + "']");
+				if (element) {
+					element.refresh();
+				}	
+			}
+		},
+
+		reset: function(){
+			this.set("historyAssessment",null);
+			this.set("selectedDiscrepancyLog",null);
+		}
+
+    });
+</script>

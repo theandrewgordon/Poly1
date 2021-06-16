@@ -1,0 +1,334 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017-2018 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<!-- This is a lazy-loaded component, DO NOT add imports here, add them to its corresponding -imports.html file. -->
+<dom-module id="trimain-workplace-services">
+	<style>
+		.nav-container {
+			@apply --layout-vertical;
+			background-color: var(--tri-header-background-color);
+		}
+
+		triblock-side-nav {
+			/* flex the nav's height */
+			@apply --layout-flex;
+
+			/* override the nav background color */
+			--triblock-side-nav-bg-color: var(--tri-header-background-color);
+
+			/* override the menu items to have the icon on the left and the text on the right */
+			--triblock-side-nav-item: {
+				@apply --layout-horizontal;
+				@apply --layout-start-justified;
+			}
+
+			/* force the width of the nav to be 100% of it's space */
+			--triblock-side-nav-width: 100%;
+
+			/* min height of each nav item */
+			--triblock-side-nav-item-min-height: 100px;
+
+			--triblock-side-nav-item-label-font-size: 20px;
+			--triblock-side-nav-item-icon-height: 64px;
+			--triblock-side-nav-item-icon-width: 64px;
+
+			/* pad the nav item label */
+			--triblock-side-nav-item-label: {
+				padding-left: 10px;
+				padding-right: 10px;
+			}
+
+			/* hide the focused band (since we're really not using it for "selection") */
+			--triblock-side-nav-item-focused-band: {
+				display: none;
+			}
+		}
+
+		triblock-side-nav[collapsed] {
+			/* flex the nav's height */
+			@apply --layout-flex;
+
+			/* override the nav background color */
+			--triblock-side-nav-bg-color: var(--tri-header-background-color);
+
+			/* override the menu items to have the icon on the left and the text on the right */
+			--triblock-side-nav-item: {
+				@apply --layout-vertical;
+				@apply --layout-start-justified;
+			}
+
+			/* force the width of the nav to be 100% of it's space */
+			/*--triblock-side-nav-width: 100%;*/
+
+			/* min height of each nav item */
+			--triblock-side-nav-item-min-height: 20px;
+
+			--triblock-side-nav-item-label-font-size: 8px;
+			--triblock-side-nav-item-icon-height: 32px;
+			--triblock-side-nav-item-icon-width: 32px;
+
+			/* pad the nav item label */
+			--triblock-side-nav-item-label: {
+				padding-left: 0px;
+				padding-right: 0px;
+			}
+
+			/* hide the focused band (since we're really not using it for "selection") */
+			--triblock-side-nav-item-focused-band: {
+				display: none;
+			}
+		}
+
+		.portal-content {
+			@apply --layout-flex;
+			@apply --layout-horizontal;
+			@apply --layout-wrap;
+			-webkit-overflow-scrolling: auto;
+			overflow: auto;
+		}
+
+		.portal-item {
+			width: 100%;
+		}
+
+		.portal-item[maximized] {
+			height: 100%;
+		}
+
+		#reservations[maximized] {
+			height: 100%;
+		}
+
+		#requests[maximized] {
+			height: 100%;
+		}
+
+		#news {
+			min-height: 300px;
+			max-width: 1440px;
+			margin: 0 auto;
+		}
+
+		:host([medium-screen-width]) #news {
+			min-height: 219px;
+		}
+
+		triplat-loading-indicator {
+			z-index: 9999;
+			--triplat-loading-indicator-clear-background: rgba(0, 0, 0, 0.12);
+			--triplat-loading-indicator-container: {
+				position: fixed;
+			}
+		}
+	</style>
+
+	<template>
+		<triplat-ds id="currentUser" name="currentUser" data="{{currentUser}}">
+		</triplat-ds>
+
+		<!-- Check authorization for Reserve -->
+		<triplat-auth-check app-name="roomReservation"
+			auth="{{reserveAuth}}"
+			on-check-complete="_handlePortalItemForReserve">
+		</triplat-auth-check>
+
+		<!-- Check authorization for Service Request -->
+		<triplat-auth-check app-name="serviceRequest"
+			auth="{{serviceRequestAuth}}"
+			on-check-complete="_handlePortalItemForServiceRequest">
+		</triplat-auth-check>
+
+		<triplat-route id="mainPortalRoute" name="mainPortalPage" path="/"></triplat-route>
+		<triplat-route id="requestsRoute" name="requestsPage" path="/requests"></triplat-route>
+
+		<triplat-route-selector id="routeSelector" page>
+			<iron-pages>
+				<div class="portal-container" route="mainPortalPage" default-route>
+					<triplat-loading-indicator show="[[_isBusy(isBusy)]]"></triplat-loading-indicator>
+
+					<div id="portalContent" class="portal-content">
+						<tricomp-portal-item-welcome id="welcome" class="portal-item"
+							current-user="[[currentUser]]">
+						</tricomp-portal-item-welcome>
+
+						<tricomp-portal-services id="services" class="portal-item" 
+							reserve-auth="[[reserveAuth]]"
+							service-request-auth="[[serviceRequestAuth]]">
+						</tricomp-portal-services>
+
+						<tricomp-portal-item-reservations id="reservations" class="portal-item"
+							current-user="[[currentUser]]"
+							home-app="[[homeApp]]">
+						</tricomp-portal-item-reservations>
+
+						<tricomp-portal-item-requests id="requests" class="portal-item" 
+							on-show-more="_navigateToRequesstPage"
+							current-user="[[currentUser]]"
+							home-app="[[homeApp]]"
+							hidden="[[_noRequests]]">
+						</tricomp-portal-item-requests>
+
+						<tricomp-portal-item-news id="news" class="portal-item"
+							current-user="[[currentUser]]"
+							news="{{_news}}"
+							hidden=[[_hideNews(_news)]]>
+						</tricomp-portal-item-news>
+					</div>
+				</div>
+				<tricomp-portal-item-requests id="requests" class="portal-item" route="requestsPage"
+					maximized
+					current-user="[[currentUser]]"
+					home-app="[[homeApp]]"
+					hidden$="[[_noRequests]]">
+				</tricomp-portal-item-requests>
+			</iron-pages>
+		</triplat-route-selector>
+	</template>
+	<script>
+		Polymer({
+			is: "trimain-workplace-services",
+
+			behaviors: [TriBlockViewResponsiveBehavior,
+						TriLazyLoadingBehavior],
+
+			properties: {
+				isBusy: {
+					type: Boolean,
+					value: false
+				},
+				isLoading: {
+					type: Boolean,
+					value: false
+				},
+				homeApp: {
+					type: String,
+				},
+				collapsedNav: {
+					type: Boolean,
+					value: false,
+				},
+				_noRequests: {
+					type: Boolean,
+					value: false,
+				},
+				_news: {
+					type: Array
+				}
+			},
+
+			listeners: {
+				"set-busy": "_setBusy",
+				"clear-busy": "_clearBusy",
+				"refreshReservations": "_handleRefreshReservations",
+				"refreshRequests": "_handleRefreshRequests",		
+				"requests.requests-changed": '_handleRequestsChanged'
+			},
+
+			_navigateToRequesstPage: function(){
+	          	this.$.requestsRoute.navigate();
+	        },
+
+	        _navigateToMainPortalPage: function(){
+	        	this.$.mainPortalRoute.navigate();
+	        },
+
+			_createWindowMessageListener: function(e) {
+				// special listener for passing messages between windows
+				window.addEventListener("message", function(e) {
+					this._handleWindowMessageEvents(e);
+				}.bind(this), false);
+			},
+
+			_handleWindowMessageEvents: function(e) {
+				// console.log("_handleWindowMessageEvents");
+				// console.log(e);
+
+				var eventName = e.data;
+				if (eventName && typeof eventName === 'string') {
+					this.fire(eventName);
+				}
+			},
+
+			_handleRefreshReservations: function(e) {
+				// console.log("_handleRefreshReservations");
+				// console.log(e);
+
+				this.$.reservations.doRefresh();
+			},
+
+			_handleRefreshRequests: function(e) {
+				// console.log("_handleRefreshRequests");
+				// console.log(e);
+
+				this.$.requests.doRefresh();
+			},
+
+			_clearNavSelection: function() {
+				this.set("selectedNav", "");
+			},
+
+			ready: function() {
+				Polymer.RenderStatus.afterNextRender(this, function() {
+					this.async(function() {
+						this._loadPortalItems();
+					});
+				});
+
+				this._createWindowMessageListener();
+			},
+
+			_isBusy: function(isBusy) {
+				return isBusy;
+			},
+
+			_setBusy: function() {
+				this.set("isBusy", true);
+			},
+
+			_clearBusy: function() {
+				this.set("isBusy", false);
+			},
+
+			_loadPortalItems: function() {
+				this.loadResource(this.$.welcome, 'tricomp-portal-item-welcome.html');
+				this.loadResource(this.$.services, 'tricomp-portal-services.html');
+				this.loadResource(this.$.news, 'tricomp-portal-item-news.html');
+			},
+
+			_handlePortalItemForReserve: function(e) {
+				this._loadPortalItem(e.detail, this.$.reservations, 'tricomp-portal-item-reservations.html');
+			},
+
+			_handlePortalItemForServiceRequest: function(e) {
+				this._loadPortalItem(e.detail, this.$.requests, 'tricomp-portal-item-requests.html');
+			},
+
+			_loadPortalItem: function(detail, element, source){
+				if(this._hasPermission(detail)){
+					Polymer.RenderStatus.afterNextRender(this, function() {
+							this.async(function() {
+								this.loadResource(element, source);
+							});
+					});
+				}
+			},
+
+			_hasPermission: function(detail){
+				return detail.hasLicense && detail.canRead && detail.canUpdate;
+			},
+
+			_handleRequestsChanged: function(e) {
+				var activeRequests = e.detail
+
+				if (!activeRequests.length) {
+					this.set("_noRequests", true);
+				} else {
+					this.set("_noRequests", false);
+				}
+			},
+
+			_hideNews: function(news) {
+				return !news || (news && news.length == 0);
+			}
+		});
+	</script>
+</dom-module>

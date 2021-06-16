@@ -1,0 +1,127 @@
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icons/hardware-icons.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<link rel="import" href="../triplat-date-picker/triplat-date-picker.html">
+<link rel="import" href="../triplat-progress-gauge/triplat-progress-gauge.html">
+
+<dom-module id="tricomp-progress-assessment-card">
+
+	<style>
+
+		.progress-container {
+			@apply(--layout-vertical);
+			@apply(--layout-center);
+			width: 80px;
+			min-width: 0;
+			padding: 20px 0;
+		}
+		.progress-container[hide-drill] {
+			padding-right: 20px;
+		}
+
+		.progress-label {
+			min-width: 0;
+			overflow: hidden;
+			white-space: nowrap;
+			text-overflow: ellipsis;
+			padding-top: 7px;
+			font-size: 13px;
+		}
+
+		.progress-gauge {
+			--triplat-progress-gauge-percent-font-size: 14px;
+			--triplat-progress-gauge-value-font-size: 24px;
+			font-weight: bold;
+			width: 70px;
+			height: 70px;
+		}
+
+		:host {
+			cursor: pointer;
+			background-color: var(--tri-primary-content-background-color);
+			border: 1px solid var(--tri-primary-content-accent-color);
+			color: var(--tri-primary-content-color);
+			@apply(--layout-horizontal);
+			@apply(--tricomp-progress-assessment-card);
+		}
+
+		.card-title {
+			font-weight: bold;
+		}
+
+		.date {
+			height: 300px;
+		}
+
+		.drill {
+			width: 40px;
+			height: 40px;
+			color: var(--tri-primary-color);
+			@apply(--layout-self-center);
+		}
+
+		.info-container {
+			@apply(--layout-flex);
+			min-width: 0;
+			padding: 20px 0 20px 20px;
+			font-size: 14px;
+		}
+
+		.info-line {
+  			overflow: hidden;
+  			white-space: nowrap;
+  			text-overflow: ellipsis;
+		}​
+
+	</style>
+
+	<template>
+
+		<div class="info-container">
+			<div class="info-line card-title">{{description}}</div>
+			<div class="info-line"><triplat-date-picker class="date" value="{{dueDate}}" readonly display-format="{{dateFormat}}"></triplat-date-picker></div>
+			<div class="info-line">{{city}}</div>
+			<div class="info-line">{{building}}</div>
+			<div class="info-line">{{floor}}</div>
+			<div class="info-line" hidden$="{{!hideDrill}}">{{assessor}}</div>
+		</div>
+		<div class="progress-container" hide-drill$="{{hideDrill}}">
+			<triplat-progress-gauge class="progress-gauge" progress="{{assessmentProgress}}"></triplat-progress-gauge>
+			<div class="progress-label">{{status}}</div>
+		</div>
+		<iron-icon class="drill" hidden$="{{hideDrill}}" icon="hardware:keyboard-arrow-right" aria-labelledby="openAssessment" role="button" tabindex="0" on-keypress="_handleKeyPress"></iron-icon>
+
+	</template>
+
+</dom-module>
+
+<script>
+	Polymer({
+
+		is: "tricomp-progress-assessment-card",
+
+		properties: {
+			description: String,
+			city: String,
+			building: String,
+			floor: String,
+			assessmentProgress: String,
+			status: String,
+			dateFormat: String,
+			assessor: String,
+			dueDate: String,
+			hideDrill: {
+				type: Boolean,
+				value: false
+			}
+		},
+
+		_handleKeyPress: function(e) {
+			var keyCode = e.keyCode;
+			this.fire("drill-key-press", {keyCode: keyCode});
+		}
+
+	});
+</script>

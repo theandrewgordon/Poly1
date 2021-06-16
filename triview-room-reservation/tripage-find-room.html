@@ -1,0 +1,218 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<!-- This is a lazy-loaded component, DO NOT add imports here, add them to its corresponding -imports.html file. -->
+<dom-module id="tripage-find-room">
+	<template>
+		<style include="shared-page-styles">
+			:host {
+				@apply(--layout-vertical);
+			}
+
+			.page-header {
+				background-color: var(--ibm-neutral-2);
+			}
+			:host([small-screen]) .page-header {
+				background-color: var(--tri-header-color);
+				padding: 5px 10px 5px 10px;
+			}
+			
+			:host(:not([small-screen])) .reservation-page-content {
+				@apply(--layout-flex);
+				@apply(--layout-horizontal);
+			}
+			:host([small-screen]) .reservation-page-content {
+				@apply(--layout-vertical);
+			}
+
+			.updating-request {
+				padding: 6px;
+			}
+
+			.reservation-page-left-panel {
+				@apply(--layout-vertical);
+				flex-shrink: 0;
+			}
+			:host(:not([small-screen])) .reservation-page-left-panel {
+				@apply(--layout-flex-none);
+				width: 33%;
+			}
+
+			.reservation-page-right-panel {
+				@apply(--layout-vertical);
+				flex-shrink: 0;
+				padding-top: 20px;
+				background-color: var(--tri-primary-content-background-color);
+			}
+			:host(:not([small-screen])) .reservation-page-right-panel {
+				@apply(--layout-flex-8);
+				border-left: 1px solid var(--ibm-gray-10);
+			}
+			:host([small-screen]) .reservation-page-right-panel {
+				flex-shrink: 0;
+				border-top: 1px solid var(--ibm-gray-10);
+			}
+
+			:host(:not([small-screen])) .comments {
+				@apply(--layout-flex);
+			}
+
+			#roomCriteriaPage {
+				@apply(--layout-flex);
+			}
+
+			.header {
+				padding: 0px 20px;
+				font-weight: lighter;
+			}
+
+		</style>
+
+		<triplat-route id="reservationFindRoomRoute" name="reservationFindRoom" params="{{pageParams}}" on-route-active="_handleRouteActive" active="{{_active}}"></triplat-route>
+
+		<div class="page-header" hidden$="[[smallScreen]]">
+			<div class="header-text tri-h2">New Reservation</div>
+			<div class="action-bar" hidden$="[[!_hasBookedRooms]]">
+				<paper-button on-tap="_handleReturnToSummary">Return to summary</paper-button>
+			</div>
+		</div>
+
+		<triblock-responsive-layout id="responsiveLayout" class="reservation-page-content" switch-view current-view-id="reservation-page-left-panel">
+			<div class="reservation-page-left-panel" id="reservation-page-left-panel" has-back-button page-label="New Reservation">
+				<tricomp-room-criteria
+					id="roomCriteriaPage"
+					is-outlook-embedded="[[isOutlookEmbedded]]"
+					override-building-id="[[buildingId]]"
+					current-user="[[currentUser]]"
+					favorite-rooms="{{favoriteRooms}}"
+					reservation-manager="{{reservationManager}}"
+					reservation-locations="{{reservationLocations}}"
+					spec-id="[[specId]]"
+					active="[[_active]]"
+					on-responsive-layout-switch-view="_handleLayoutSwitchToRoomResults"
+					has-booked-rooms="[[_hasBookedRooms]]">
+				</tricomp-room-criteria>
+			</div>
+			<div class="reservation-page-right-panel" id="reservation-page-right-panel" has-back-button page-label="Available Rooms" back-to="reservation-page-left-panel">
+				<div class="header tri-h3" hidden$="{{smallScreen}}">Available Rooms</div>
+				<tricomp-room-results
+					id="roomResultsPage"
+					is-outlook-embedded="[[isOutlookEmbedded]]"
+					current-user="[[currentUser]]"
+					application-settings="[[applicationSettings]]"
+					favorite-rooms="{{favoriteRooms}}"
+					reservation-manager="{{reservationManager}}"
+					reservation-locations="{{reservationLocations}}"
+					resource-id="[[resourceId]]"
+					spec-id="[[specId]]"
+					is-loading="{{isLoading}}"
+					is-workspace-room="[[_isRoomTypeWorkspace(reservationManager.searchRoomType, _workspaceId)]]">
+				</tricomp-room-results>
+			</div>
+		</triblock-responsive-layout>
+
+	</template>
+	<script>
+		Polymer({
+
+			is: "tripage-find-room",
+
+			behaviors: [
+				TriRoomReservationUtilBehavior,
+				TriBlockViewResponsiveBehavior,
+				TriValidationBehavior
+			],
+
+			properties: {
+				reservationLocations: {
+						type: Array
+				},
+
+				active: {
+					type: Boolean,
+					value: false
+				},
+
+				isLoading: {
+					type: Boolean,
+					value: false,
+					notify: true
+				},
+
+				buildingId: Number,
+				isOutlookEmbedded: Boolean,
+				currentUser: Object,
+				applicationSettings: Object,
+				favoriteRooms: Array,
+				reservationManager: Object,
+				specId: String,
+
+			},
+
+			listeners: {
+				"update-search-results": "_handleUpdateSearch", 
+				"book-room": "_resetResponsiveLayout"
+			},
+
+			_computeDisableUserLocation: function(reservationManager) {
+				return (reservationManager && Boolean(reservationManager.reservation.id));
+			},
+
+			_handleLocationChanged: function(e) {
+				if (e && e.detail && e.detail.building) {
+					var location = e.detail.building;
+					var building = {id: location._id, value: location.building};
+
+					this.fire("set-building-id", {buildingId: building.id});
+				}
+			},
+
+			_handleRouteActive: function(e) {
+				if (e.detail.active) {
+					this.async(function() {
+						// if this route is active without the specId, it means the user refreshed the page/route
+						// we need to init the reservation managaer
+						if (!this.specId) {
+							this.fire('navigate-init', this.pageParams);
+						} else {
+							this.$.roomCriteriaPage._pageAttached();
+							this.hideResults();
+						}
+					});
+				} else {
+					this.$.roomResultsPage._pageDetached();
+				}
+			},
+
+			_handleUpdateSearch: function() {
+				this._updateSearchResults();
+			},
+
+			_updateSearchResults: function() {
+				this.$.roomResultsPage._pageAttached(true);
+				this.$.roomResultsPage.refresh();
+			},
+
+			attached: function() {
+				Polymer.RenderStatus.afterNextRender(this, function() {
+				});
+			},
+
+			_handleLayoutSwitchToRoomResults: function(e) {
+				Polymer.RenderStatus.afterNextRender(this.$.roomResultsPage, this.$.roomResultsPage.notifyResize);
+				this.$.responsiveLayout.switchToViewId(e.detail.viewId);
+			},
+
+			_handleReturnToSummary: function(e) {
+				this.fire("navigate-summary-page");
+			},
+
+			hideResults: function() {
+				this.$.roomResultsPage.hideResultsSection();
+			},
+
+			_resetResponsiveLayout: function(){
+				this.$.responsiveLayout.switchToViewIndex(0);
+			}
+		});
+	</script>
+</dom-module>

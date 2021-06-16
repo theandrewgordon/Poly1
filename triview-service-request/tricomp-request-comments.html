@@ -1,0 +1,114 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017-2018 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../paper-spinner/paper-spinner.html">
+
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triblock-responsive-layout/triblock-view-responsive-behavior.html">
+
+<link rel="import" href="../triapp-comments/triapp-comments.html">
+
+<link rel="import" href="tribehav-scroll-field-into-view.html">
+
+<dom-module id="tricomp-request-comments">
+	<template>
+		<style>
+			:host {
+				@apply --layout-vertical;
+			}
+
+			:host > * {
+				flex-shrink: 0;
+			}
+
+			.comments-title {
+				margin-bottom: 0.5em;
+				font-weight: lighter;
+				padding-bottom: 4px;
+			}
+
+			.comment-list-loading {
+				width: 20px;
+				height: 20px;
+			}
+		</style>
+
+		<triplat-ds name="comments" id="commentsDS" data="{{_comments}}" disable
+				on-ds-create-complete="_handleCommentCreateComplete" loading="{{_commentsDSLoading}}">
+			<triplat-ds-context name="myRequest" context-id="{{request._id}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<div class="comments-title tri-h3">
+			<span>Comments and Photos</span>
+			<paper-spinner class="comment-list-loading" active="[[_commentsDSLoading]]"></paper-spinner>
+		</div>
+
+		<triapp-comments class="comments" id="appComments"
+				current-user="[[currentUser]]" 
+				comments="[[_comments]]"
+				loading="[[_commentsDSLoading]]"
+				on-add-comment="_onAddComment">
+		</triapp-comments>
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-request-comments",
+
+			behaviors: [
+				TriBlockViewResponsiveBehavior,
+				TriScrollFieldIntoViewBehavior
+			],
+
+			properties: {
+				request: {
+					type: Object,
+					observer: "_handleRequestChanged"
+				},
+
+				currentUser: Object,
+
+				readOnly: {
+					type: Boolean,
+					value: false
+				},
+
+				_comments: {
+					type: Array,
+					notify: true
+				},
+
+				_commentsDSLoading: {
+					type: Boolean,
+					value: false
+				}
+			},
+
+			observers: [
+				"_onRequest(request)"
+			],
+
+			_onRequest: function() {
+				Polymer.RenderStatus.afterNextRender(this, function(){
+					this.$.commentsDS.disable = false;
+				});
+			},
+
+			_onAddComment: function(e) {
+				this.$.commentsDS.createRecord(e.detail.comment, TriPlatDs.RefreshType.SERVER,"defaultActions","create");
+			},
+
+			_initNewComment: function(){
+				this.$.appComments.createNewComment();
+			},
+
+			_handleCommentCreateComplete: function() {
+				this._initNewComment()
+			},
+
+			_handleRequestChanged: function(newRequest, oldRequest) {
+				this.fire('field-changed');
+			}
+
+		});
+	</script>
+</dom-module>

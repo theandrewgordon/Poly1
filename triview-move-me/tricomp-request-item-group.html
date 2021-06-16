@@ -1,0 +1,148 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-date-picker/triplat-date-picker.html">
+<link rel="import" href="../triplat-debug/triplat-debug.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-date-utilities/triplat-date-utilities.html">
+
+<link rel="import" href="../iron-icons/iron-icons.html">
+
+<link rel="import" href="tricomp-request-item.html">
+<link rel="import" href="tricomp-request-item-card.html">
+ 
+<dom-module id="tricomp-request-item-group">
+	<style>
+		:host {
+			@apply(--layout-vertical);
+			min-height: 0;
+			flex-shrink: 0;
+		}
+
+		.header {
+			background-color: var(--ibm-gray-40);
+			color: white;
+			padding: 4px 7px 4px 7px;
+		}
+
+		.today {
+			background-color: var(--ibm-teal-40);
+		}
+
+		.date {
+			font-size: 35px;
+		}
+
+		.request-item {
+			@apply(--layout-horizontal);
+			padding: 10px;
+			border-bottom: 1px solid var(--ibm-gray-30);
+		}
+
+		tricomp-request-item:last-of-type {
+
+		}
+
+		tricomp-request-item:first-of-type {
+			border-top: 1px solid var(--ibm-gray-10);
+		}
+
+		tricomp-request-item:nth-of-type(even) {
+			background-color: var(--ibm-neutral-2);
+		}
+
+		@media (min-width: 1560px) {
+			.inbox-card {
+				width: calc(25% - 5px);
+			}
+		}
+
+		@media (max-width: 1559px) and (min-width: 1160px) {
+			.inbox-card {
+				width: calc(33.3333% - 7px);
+			}
+		}
+
+		@media (max-width: 1159px) and (min-width: 650px) {
+			.inbox-card {
+				width: calc(50% - 10px);
+			}
+		}
+
+		@media (max-width: 649px) {
+			.inbox-card {
+				width: calc(100% - 20px);
+			}
+		}
+		
+		.inbox-card-container {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-wrap);
+			align-content: flex-start;
+            min-width: 0;
+			outline: none;
+			border: 0;
+		}
+
+
+	</style>
+	<template>
+		
+		<triplat-ds id="currentUser" name="currentUser" data="{{currentUser}}"></triplat-ds>
+		
+		<div id="requestsCards" hidden$="{{screenLarge}}">
+
+			<template is="dom-repeat" items="{{group}}">
+				<tricomp-request-item
+					item="{{item}}"
+					spec-id="{{specId}}"
+					disabled="[[!_isPageActive]]">
+				</tricomp-request-item>
+			</template>
+
+		</div>
+
+		<div id="requestsCardsLarge" card-container class="inbox-card-container" hidden$="{{!screenLarge}}">
+
+			<template is="dom-repeat" items="{{group}}">
+	
+				<tricomp-request-item-card
+					hidden$="{{!screenLarge}}"
+					class="inbox-card"
+					id$="{{_computeCardId(item._id)}}"
+					requested-move-date="{{item.moveDate}}"
+					scheduled-move-date="{{item.moveDate}}"	
+					project-planned-start="{{item.projectPlannedStart}}"
+					task-planned-start="{{item.taskPlannedStart}}"								
+					request-id="{{item.requestID}}"
+					delete-action="{{item.delete}}"
+					identifier="{{item._id}}"
+					selected="{{item.selected}}"
+					on-select="_handleInboxSelect"
+					on-card-tap="_handleOpenRequest"
+					status="{{item.status}}">
+				</tricomp-request-item-card>
+				
+			</template>
+
+		</div>
+
+	</template>
+
+</dom-module>
+<script>
+	Polymer({
+		is: "tricomp-request-item-group",
+		behaviors: [TriDateUtilities],
+
+		properties: {
+			group: Array,
+		},
+
+		_computeCardId: function(id) {
+			if (id) return "card"+id;
+			return "";
+		},
+
+	});
+</script>

@@ -1,0 +1,136 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../iron-a11y-keys/iron-a11y-keys.html">
+
+<link rel="import" href="../triblock-responsive-layout/triblock-view-responsive-behavior.html">
+
+<dom-module id="tricomp-request-list-title">
+	<template>
+		<style>
+			#title-bar {
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+				@apply(--layout-start-justified);
+				padding: 5px 30px;
+				margin-bottom: 15px;
+			}
+			:host([small-screen-width]) #title-bar {
+				padding: 5px 15px;
+			}
+			:host([maximized]) #title-bar {
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+				margin-top: 20px;
+				padding: 5px 15px;
+			}
+
+			#title-label {
+				@apply(--paper-font-common-nowrap);
+				@apply(--layout-flex);
+				margin-right: 10px;
+				font-size: 28px;
+				font-weight: 100;
+			}
+			:host([maximized]) #title-label {
+				font-size: 22px;
+				font-weight: bold;
+			}
+			:host([small-screen-width]:not([maximized])) #title-label {
+				font-size: 22px;
+			}
+
+			#title-count {
+				padding-left: 15px;
+				font-weight: bolder;
+			}
+
+			.title-link {
+				@apply(--layout-self-end);
+				font-size: 14px;
+			}
+
+			:host([small-screen-width]) .action-bar {
+				@apply(--layout);
+				background-color: var(--tri-footer-background-color);
+				color: var(--tri-footer-color);
+				padding: 5px;
+				@apply(--layout-center-center);
+				@apply(--layout-fixed-bottom);
+				z-index: 102;
+			}
+		</style>
+
+		<iron-a11y-keys id="linkKeys" target="[[_targetLink]]" keys="enter" on-keys-pressed="_fireShowMore"></iron-a11y-keys>
+
+		<div id="title-bar">
+			<span id="title-label">My Requests<span hidden$="[[maximized]]" id="title-count">[[count]]</span></span>
+
+			<span id="showmorelink" 
+				class="tri-link title-link" 
+				on-tap="_fireShowMore" 
+				tabindex="0" 
+				role="link"
+				hidden$="[[_hideShowMore(maximized)]]"> Show more ></span>
+
+			<div class="action-bar">
+				<paper-button 
+					hidden$="[[!_computeShowRequestButton(showNewRequest, maximized, auth)]]" 
+					footer$="[[smallScreenWidth]]"
+					on-tap="_onNewRequestTap" 
+					noink>New Request</paper-button>
+			</div>
+		</div>
+	</template>
+
+	<script>
+		Polymer({
+
+			is: "tricomp-request-list-title",
+
+			behaviors: [
+				TriBlockViewResponsiveBehavior
+			],
+
+			properties: {
+				count: Number,
+
+				auth: Object,
+
+				maximized: {
+					type: Boolean,
+					value: false,
+					reflectToAttribute: true
+				},
+
+				showNewRequest: {
+					type: Boolean,
+					value: false
+				},
+
+				_targetLink: {
+					type: Object,
+					value: function() {
+						return this.$.showmorelink;
+					}
+				}
+			},
+
+			_fireShowMore: function(){
+				this.fire("show-more");
+			},
+
+			_hideShowMore: function(maximized) {
+				return maximized ? true : false;
+			},
+
+			_computeShowRequestButton: function(showNewRequest, maximized, auth){
+				return showNewRequest && maximized && auth.canCreate;
+			},
+
+			_onNewRequestTap: function(){
+				this.fire("new-request");
+			}
+
+		});
+	</script>
+</dom-module>

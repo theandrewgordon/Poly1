@@ -1,0 +1,110 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<script>
+
+(function() {
+
+	var originalRequest;
+	var unsavedRequest = {}
+
+	TriRequestUnsavedChangesBehavior = {
+		// Check if there're unsaved fields
+		unsavedFields: function(req, isNewReq) {
+			if (originalRequest && originalRequest._id && originalRequest._id !== "") {
+				unsavedRequest = req;
+
+				if (isNewReq) {
+					return this._unsavedRequestFor() || 
+							this._unsavedBuilding() || 
+							this._unsavedFloor() || 
+							this._unsavedRoom() || 
+							this._unsavedCategory() || 
+							this._unsavedDescription() ||
+							this.unsavedComments();
+				} else {
+					return this.unsavedComments();
+				}
+			}
+		},
+
+		unsavedComments: function() {
+			return this._unsavedCommentsText() || 
+					this._unsavedCommentsPhoto();
+		},
+
+		// Set the original request - to have the previous data of a request
+		setAsOriginalRequest: function(req) {
+			var originalRequestString = JSON.stringify(req);
+			if (originalRequestString) {
+				originalRequest = JSON.parse(originalRequestString);
+			}
+			unsavedRequest = {}
+		},
+
+		// Check if a request property was changed
+		_checkUnsavedRequestProperty: function(property, selector, selectorProperty) {
+			var emptyObj = { id: "", value: "" };
+			var request = originalRequest;
+
+			if (selector && selectorProperty) {
+				request[property] = (request[property]) ? request[property] : "";
+				var field = (document.querySelector(selector)) ? document.querySelector(selector).value : "";
+				return (request[property] !== field);
+			} else {
+				request[property] = (request[property]) ? request[property] : emptyObj;
+				unsavedRequest[property] = (unsavedRequest[property]) ? unsavedRequest[property] : emptyObj
+				return (request[property].id !== unsavedRequest[property].id) && (request[property].value !== unsavedRequest[property].value);
+			}
+		},
+
+		// Check if the comment field was changed
+		_checkUnsavedText: function(selector, property) {
+			var unsavedComment = false;
+			var commentField = document.querySelectorAll(selector);
+
+			// 'for' statement is required because comments field exist in 2 different views
+			for (var i = 0; i < commentField.length; i++) {
+				var comment = commentField[i][property];
+				if (comment && comment !== "") {
+					unsavedComment = true;
+				}
+			}
+			return unsavedComment;
+		},
+
+		_unsavedRequestFor: function() {
+			return this._checkUnsavedRequestProperty("requestedFor");
+		},
+
+		_unsavedBuilding: function() {
+			return this._checkUnsavedRequestProperty("building");
+		},
+
+		_unsavedFloor: function() {
+			return this._checkUnsavedRequestProperty("floor");
+		},
+
+		_unsavedRoom: function() {
+			return this._checkUnsavedRequestProperty("room");
+		},
+
+		_unsavedCategory: function() {
+			return this._checkUnsavedRequestProperty("requestCategory");
+		},
+
+		_unsavedDescription: function() {
+			return this._checkUnsavedRequestProperty("desc", "#descriptionField", "value");
+		},
+
+		_unsavedCommentsText: function() {
+			return this._checkUnsavedText("textarea.comment-add-textarea", "value");
+		},
+
+		_unsavedCommentsPhoto: function() {
+			return this._checkUnsavedText("#addPhoto", "src");
+		}
+	}
+
+})();
+
+</script>

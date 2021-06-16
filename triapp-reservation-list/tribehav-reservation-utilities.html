@@ -1,0 +1,370 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017-2019 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<script>
+
+(function () {
+
+	TriReservationUtilitiesBehavior = {
+
+		properties: {
+			isBusy: {
+				type: Boolean,
+				notify: true,
+				value: false
+			},
+
+			currentReservationId: {
+				type: String,
+				value: null,
+			},
+
+			reservationManagerSpecId: {
+				type: String,
+				value: null,
+				notify: true
+			},
+
+			isOutlookEmbedded: {
+				type: Boolean,
+				value: false
+			},
+
+			occurrenceStart: {
+				type: String,
+				value: null
+			},
+
+			occurrenceEnd: {
+				type: String,
+				value: null
+			}
+		},
+
+		listeners: {
+			"action-toggle-room-favorite": "_handleToggleRoomFavorite",
+		},
+
+		/**
+			* Room Favorite
+			*/
+		_handleToggleRoomFavorite: function (e) {
+			var roomId = e.detail.roomId;
+			if (!roomId) {
+				return;
+			}
+
+			var isFavorite = e.detail.isFavorite;
+			var selectedRoom = { _id: roomId };
+
+			if (isFavorite) {
+				this.$.favoriteRooms.addRecord(selectedRoom, TriPlatDs.RefreshType.CLIENT).then(function () {
+				}.bind(this));
+			} else {
+				this.$.favoriteRooms.removeRecord(selectedRoom, TriPlatDs.RefreshType.CLIENT).then(function () {
+				}.bind(this));
+			}
+		},
+
+		/**
+			* Reservation Manager Functions
+			*/
+
+		/**
+			* Used to determine whether to create/fetch a Reservation Manager or to reset the context
+			*/
+		_getRM: function (reservationId, buildingId) {
+			return new Promise(function (resolve) {
+				if (!this.reservationManager) {
+					this._createRM(reservationId, buildingId).then(function () {
+						resolve();
+					}.bind(this));
+				} else {
+					this._resetContext(reservationId, buildingId).then(function () {
+						resolve();
+					}.bind(this));
+				}
+			}.bind(this));
+		},
+
+		_createRM: function (reservationId, buildingId) {
+			return new Promise(function (resolve) {
+
+				if (this.isOutlookEmbedded) {
+
+				} else {
+					var preCreate = {
+						start: this._getDefaultStartDate(),
+						end: this._getDefaultEndDate(),
+						isUX: true,
+						searchBuilding: buildingId ? { id: buildingId } : {}
+					};
+
+					this._cleanupOldRMs();
+
+					this.$.myReservationManagers.refresh().then(function () {
+						if (this.myReservationManagers && this.myReservationManagers.length > 0) {
+							var existingReservationManager = this.myReservationManagers[0];
+
+							if (existingReservationManager && existingReservationManager._id) {
+								this._initRM(existingReservationManager._id, reservationId, true).then(function () {
+									resolve();
+								}.bind(this));
+							} else {
+								this.$.myReservationManagers.createRecord(preCreate, TriPlatDs.RefreshType.SERVER, "actions", "preCreate").then(function (newId) {
+									this._initRM(newId, reservationId, false).then(function () {
+										resolve();
+									}.bind(this));
+								}.bind(this));
+							}
+						} else {
+							this.$.myReservationManagers.createRecord(preCreate, TriPlatDs.RefreshType.SERVER, "actions", "preCreate").then(function (newId) {
+								this._initRM(newId, reservationId, false).then(function () {
+									resolve();
+								}.bind(this));
+							}.bind(this));
+						}
+					}.bind(this));
+				}
+			}.bind(this));
+		},
+
+		/**
+			* Used to reset the reservation manager context (when creating new or opening existing reservations)
+			*/
+		_resetContext: function (reservationId, buildingId) {
+			return new Promise(function (resolve) {
+				this.reservationManager.userMessage = "";
+				this.reservationManager.reservationStartTime = this.occurrenceStart;
+				this.reservationManager.reservationEndTime = this.occurrenceEnd;
+
+				var wfParams = {};
+				wfParams.reservation = reservationId;
+
+				this.$.reservationManager.updateRecord(TriPlatDs.RefreshType.SERVER, "actions", "resetContext", wfParams).then(function () {
+					this.$.reservationLocations.refresh().then(function () {
+						this.$.exceptionOccurrences.refresh().then(function () {
+							this.$.reservationManagerInstance.refresh().then(function () {
+								resolve();
+							}.bind(this));
+						}.bind(this));
+					}.bind(this));
+				}.bind(this));
+			}.bind(this));
+		},
+
+		/**
+			* Used to cancel a reservation (via the Reservation Manager)
+			*/
+		_cancelRM: function () {
+			return new Promise(function (resolve) {
+				this.$.reservationManager.updateRecord(TriPlatDs.RefreshType.SERVER, "actions", "cancel").then(function () {
+					this.set("currentReservationId", null);
+
+					resolve();
+				}.bind(this));
+			}.bind(this));
+		},
+
+		/**
+			* Cleanup any old Reservation Managers (see myOldReservationManagers datasource)
+			*/
+		_cleanupOldRMs: function () {
+			return new Promise(function (resolve) {
+				this.$.myOldReservationManagers.refresh().then(function () {
+					var myOldReservationManagers = this.myOldReservationManagers;
+					var RMsToDelete = [];
+					for (var index = 0; index < myOldReservationManagers.length; index++) {
+						var oldReservationManager = myOldReservationManagers[index];
+
+						RMsToDelete.push(oldReservationManager._id);
+					}
+
+					if (RMsToDelete.length > 0) {
+						this.$.myOldReservationManagers.deleteRecord(RMsToDelete, TriPlatDs.RefreshType.NONE).then(function () {
+							resolve();
+						})
+					} else {
+						resolve();
+					}
+				}.bind(this));
+			}.bind(this));
+		},
+
+		/**
+			* Used to initialize a Reservation Manager
+			*/
+		_initRM: function (id, reservationId, isReinit) {
+			return new Promise(function (resolve) {
+				this.reservationManagerSpecId = id;
+
+				this.$.reservationManager.refresh().then(function () {
+					if (reservationId) {
+						this._resetContext(reservationId).then(function () {
+							resolve();
+						}.bind(this));
+					} else {
+						if (isReinit) {
+							this.$.reservationManager.updateRecord(TriPlatDs.RefreshType.SERVER, "actions", "resetContext").then(function () {
+								this.$.reservationLocations.refresh().then(function () {
+									this.$.exceptionOccurrences.refresh().then(function () {
+										this.$.reservationManagerInstance.refresh().then(function () {
+											resolve();
+										}.bind(this));
+									}.bind(this));
+								}.bind(this));
+							}.bind(this));
+						} else {
+							resolve();
+						}
+					}
+				}.bind(this));
+			}.bind(this));
+		},
+
+		_goReservationList: function () {
+			if (this.reservationManager) {
+				this._setBusy();
+				this.$.reservationManager.updateRecord(TriPlatDs.RefreshType.SERVER, "actions", "cleanup").then(function () {
+					this._clearBusy();
+
+					this._refreshReservationList();
+					this.fire("navigate-reservation-list");
+				}.bind(this));
+			} else {
+				this._refreshReservationList();
+				this.fire("navigate-reservation-list");
+			}
+		},
+
+		// TODO: Refactor - centralized datasource management?
+		_refreshReservationList: function () {
+			this._setBusy();
+
+			this.$.reservationInstances.refresh().then(function () {
+				this._clearBusy();
+
+				if (this.$.reservationListPage) this.$.reservationListPage._refreshReservationList();
+				if (this.$.myReservationEvents) this.$.myReservationEvents.refresh();
+			}.bind(this));
+		},
+
+		// TODO: Refactor?
+		_getDefaultStartDate: function () {
+			var returnValue = null;
+
+			if (this.isOutlookEmbedded) {
+				if (this.outlookDataObserver && this.outlookDataObserver.startDate) {
+					returnValue = this.outlookDataObserver.startDate;
+				} else {
+					// Generating a new date because there is no outlookDataObserver.startDate
+					returnValue = new Date();
+				}
+			} else {
+				returnValue = new Date();
+			}
+
+			return returnValue;
+		},
+
+		// TODO: Refactor?
+		_getDefaultEndDate: function () {
+			var returnValue = null;
+
+			if (this.isOutlookEmbedded) {
+				if (this.outlookDataObserver && this.outlookDataObserver.endDate) {
+					returnValue = this.outlookDataObserver.endDate;
+				} else {
+					// Generating a new date because there is no outlookDataObserver.endDate
+					returnValue = new Date();
+				}
+			} else {
+				returnValue = new Date();
+			}
+
+			return returnValue;
+		},
+
+		_setToastMsg: function (msg) {
+			if (this.$.toast) {
+				this.$.toast.text = msg;
+				this.$.toast.show();
+			}
+		},
+
+		_cancelSuccess: function () {
+			var __dictionary__toastCancelText = "Reservation Cancelled";
+			this._setToastMsg(__dictionary__toastCancelText);
+		},
+
+		_checkinSuccess: function () {
+			var __dictionary__toastCheckinText = "You are checked-in.";
+			this._setToastMsg(__dictionary__toastCheckinText);
+		},
+
+		_checkoutSuccess: function () {
+			var __dictionary__toastCheckoutText = "You have been checked-out.";
+			this._setToastMsg(__dictionary__toastCheckoutText);
+		},
+
+		_earlyendSuccess: function () {
+			var __dictionary__toastEarlyendText = "Your meeting has been ended early.";
+			this._setToastMsg(__dictionary__toastEarlyendText);
+		},
+
+		_setBusy: function () {
+			this.set("isBusy", true);
+		},
+
+		_clearBusy: function () {
+			this.set("isBusy", false);
+		},
+
+		_isBusy: function () {
+			return this.isBusy;
+		},
+
+		_isSameDate: function (timezone, datetime1, datetime2) {
+			if (!datetime2) {
+				datetime2 = new Date();
+			}
+
+			var d1Mo = moment(datetime1).tz(timezone);
+			var d2Mo = moment(datetime2).tz(timezone);
+
+			return d1Mo.isSame(d2Mo, 'day');
+		},
+
+		_isSeries: function (eventItem) {
+			return eventItem._Part_of_Recurring_Event;
+		},
+
+		_computeImageUrl: function (img, baseUrl) {
+			if (!img) {
+				return "";
+			}
+
+			var url = baseUrl + img;
+
+			return url;
+		},
+
+		// Determine if this is an outlook reservation being opened outside an outlook embedded scenario.
+		_isOutsideOutlook: function(isOutlookEmbedded, reservationManager) {
+			return !isOutlookEmbedded && this._isOutlookMeeting(reservationManager);
+		},
+
+		// Determine if this should be read-only due to the fact that this is an outlook meeting being opened outside of outlook.
+		_isReadOnlyOutlook: function(isOutlookEmbedded, reservationManager) {
+			return this._isOutsideOutlook(isOutlookEmbedded, reservationManager);
+		},
+
+		// Determine if this should be read-only (like trying to edit from non-outlook embedded scenarios).
+		_isOutlookMeeting: function(reservationManager) {
+			return reservationManager != null && reservationManager.iCalUID != null && reservationManager.iCalUID.length > 0;
+		}
+
+	}
+
+})();
+
+</script>

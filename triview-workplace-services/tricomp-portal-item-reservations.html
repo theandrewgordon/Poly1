@@ -1,0 +1,67 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+<!-- This is a lazy-loaded component, DO NOT add imports here, add them to its corresponding -imports.html file. -->
+<dom-module id="tricomp-portal-item-reservations">
+	<template>
+		<style>
+			:host {
+				padding: 25px 0 19px 0;
+				background-color: var(--ibm-neutral-2);
+			}
+
+			.container {
+				padding: 0px;
+				height: 100%;
+				max-width: 100%;
+			}
+
+			#roomReservation {
+				width: 100%;
+				height: 100%;
+			}
+		</style>
+
+		<div class="container">
+			<triapp-reservation-list
+					id="roomReservation"
+					model-and-view="roomReservation"
+					instance-id="-1"
+					count="{{reservationCount}}"
+					home-app="[[homeApp]]">
+			</triapp-reservation-list>
+		</div>
+	</template>
+	<script>
+		Polymer({
+			is: "tricomp-portal-item-reservations",
+
+			behaviors: [TriPortalItemBehavior,
+						TriLazyLoadingBehavior],
+
+			properties: {
+			},
+
+			observers: [
+			],
+
+			listeners: {
+			},
+
+			attached: function() {
+				Polymer.RenderStatus.afterNextRender(this, function() {
+					this.async(function() {
+						this._loadApp();
+					});
+				});
+			},
+
+			_loadApp: function() {
+				this.loadResource(this.$.roomReservation, '../triapp-reservation-list/triapp-reservation-list.html').then(function() {
+				});
+			},
+
+			doRefresh: function() {
+				this.$.roomReservation.doRefresh();
+			}
+		});
+	</script>
+</dom-module>

@@ -1,0 +1,325 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+<link rel="import" href="../triplat-datetime-picker/triplat-datetime-picker.html">
+<link rel="import" href="../triplat-date-picker/triplat-date-picker.html">
+
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-checkbox/paper-checkbox.html">
+
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../iron-icons/av-icons.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
+
+<link rel="import" href="tristyles-room-reservation-app.html">
+
+<dom-module id="tricomp-room-criteria-when-advanced">
+	<template>
+		<style include="shared-page-styles">
+
+			:host {
+				@apply(--layout-vertical);
+			}
+
+			.time-options-section {
+				padding-top: 10px;
+			}
+
+			.start-end-rule-checkbox-container {
+				@apply(--layout-flex);
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+			}
+
+			.start-end-rule-checkbox {
+				padding: 10px 0;
+			}
+
+			.row-container {
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+			}
+
+			.row-container.tappable {
+				cursor: pointer;
+			}
+
+			.row-container.tappable[disabled] {
+				pointer-events: none;
+				cursor: default;
+			}
+
+			.date-picker-label {
+				@apply(--layout-horizontal);
+			}
+
+			.repeats-value {
+				@apply(--layout-flex);
+				padding: 20px 0 20px 20px;
+			}
+
+			.tri-link[disabled] {
+				cursor: default !important;
+				color: var(--tri-disabled-dark-color) !important;
+			}
+
+			.tri-link[disabled]:hover {
+				text-decoration: none !important;
+			}
+
+			:host-context([dir="rtl"]) .expand-button {
+				transform: scaleX(-1);
+			}
+
+		</style>
+
+		<div class="time-options-section">
+			<div class="row-container">
+				<div class="start-end-rule-checkbox-container">
+					<paper-checkbox id="allDayToggleButton" class="start-end-rule-checkbox" disabled$="[[_disableDate]]"
+							 checked="[[allDayEvent]]" noink on-change="_handleUserChangedAllDay">All day event</paper-checkbox>
+				</div>
+				<div class="tri-link" on-tap="_handleBasicTap" 
+					hidden$="[[_hideBasicButton]]" disabled$="[[_disableDate]]">Basic</div>
+			</div>
+
+			<div hidden$="[[allDayEvent]]" tab-index="0">
+				<triplat-datetime-picker
+					required
+					null-date-invalid
+					readonly$="[[_disableDate]]"
+					time-zone="[[currentUser._TimeZoneId]]"
+					display-format="[[currentUser._DateTimeFormat]]"
+					value="[[startTime]]"
+					on-datetime-picker-user-change="_handleUserChangedStartTime"
+					label="Start Date"
+					aria-label="Start Date"
+					on-iron-overlay-opened="_onDatetimeOverlayOpened">
+					<div label class="date-picker-label"><span class="required-asterisk">*</span><iron-icon icon="av:play-arrow" class="start-reservation-time-icon"></iron-icon>Start</div>
+				</triplat-datetime-picker>
+				<triplat-datetime-picker
+					required
+					null-date-invalid
+					readonly$="[[_disableDate]]"
+					time-zone="[[currentUser._TimeZoneId]]"
+					display-format="[[currentUser._DateTimeFormat]]"
+					value="[[endTime]]"
+					on-datetime-picker-user-change="_handleUserChangedEndTime"
+					label="End Date"
+					aria-label="End Date"
+					on-iron-overlay-opened="_onDatetimeOverlayOpened">
+					<div label class="date-picker-label"><span class="required-asterisk">*</span><iron-icon icon="av:stop" class="end-reservation-time-icon"></iron-icon>End</div>
+				</triplat-datetime-picker>
+			</div>
+
+			<div hidden$="[[!allDayEvent]]" tab-index="0">
+				<triplat-date-picker
+					class="start-end-date-picker"
+					required
+					null-date-invalid
+					readonly$="[[_disableDate]]"
+					time-zone="[[currentUser._TimeZoneId]]"
+					display-format="[[currentUser._DateFormat]]"
+					value="[[startDate]]"
+					on-date-picker-user-change="_handleUserChangedStartDate"
+					label="Start Date"
+					aria-label="Start Date">
+					<div label class="date-picker-label"><span class="required-asterisk">*</span><iron-icon icon="av:play-arrow" class="start-reservation-time-icon"></iron-icon>Start</div>
+				</triplat-date-picker>
+				<triplat-date-picker
+					class="start-end-date-picker"
+					required
+					null-date-invalid
+					readonly$="[[_disableDate]]"
+					time-zone="[[currentUser._TimeZoneId]]"
+					display-format="[[currentUser._DateFormat]]"
+					value="[[endDate]]"
+					on-date-picker-user-change="_handleUserChangedEndDate"
+					label="End Date"
+					aria-label="End Date">
+					<div label class="date-picker-label"><span class="required-asterisk">*</span><iron-icon icon="av:stop" class="end-reservation-time-icon"></iron-icon>End</div>
+				</triplat-date-picker>
+			</div>
+		</div>
+
+		<div class="row-container tappable" disabled$="[[_disableRecurrence]]"
+				on-tap="_handleNavigateRecurrence">
+			<div class="repeats-value" tabindex="0" aria-label$="[[_computeRecurrenceRuleDisplayLabel(reservationEditMode, recurrenceRuleLabel)]]">
+				[[_computeRecurrenceRuleDisplayLabel(reservationEditMode, recurrenceRuleLabel)]]
+			</div>
+			<paper-icon-button primary class="expand-button" icon="ibm-glyphs:expand-open"
+					hidden$="[[_disableRecurrence]]" aria-label="Change Recurrence">
+			</paper-icon-button>
+		</div>
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-room-criteria-when-advanced",
+
+			behaviors: [
+				Polymer.IronResizableBehavior
+			],
+
+			properties: {
+				currentUser: {
+					type: Object
+				},
+
+				reservationEditMode: {
+					type: String
+				},
+
+				recurrenceRuleLabel: {
+					type: String
+				},
+
+				recurringMeeting: {
+					type: Boolean,
+					value: false
+				},
+
+				showBasicButton: {
+					type: Boolean,
+					value: false
+				},
+
+				disabled: {
+					type: Boolean,
+					value: false
+				},
+
+				allDayEvent: {
+					type: Boolean,
+					value: false,
+					notify: true
+				},
+
+				startTime: {
+					type: String,
+					notify: true
+				},
+
+				endTime: {
+					type: String,
+					notify: true
+				},
+
+				startDate: {
+					type: String,
+					notify: true
+				},
+
+				endDate: {
+					type: String,
+					notify: true
+				},
+
+				_disableRecurrence: {
+					type: Boolean,
+					value: false,
+					computed: "_computeDisableRecurrence(reservationEditMode, disabled)"
+				},
+
+				_disableDate: {
+					type: Boolean,
+					value: false,
+					computed: "_computeDisableDate(recurringMeeting, disabled)"
+				},
+
+				_hideBasicButton: {
+					type: Boolean,
+					value: false,
+					computed: "_computeHideBasicButton(showBasicButton, disabled)"
+				},
+
+				_isMobileDevice: {
+					type: Boolean,
+					value: function() {
+						var isMobile = navigator.userAgent.match(/Android/i)
+							|| navigator.userAgent.match(/webOS/i)
+							|| navigator.userAgent.match(/iPhone/i)
+							|| navigator.userAgent.match(/iPad/i)
+							|| navigator.userAgent.match(/iPod/i)
+							|| navigator.userAgent.match(/BlackBerry/i)
+							|| navigator.userAgent.match(/Windows Phone/i);
+						return isMobile;
+					}
+				}
+			},
+
+			_handleBasicTap: function(e) {
+				if (!this._disableDate) {
+					this.fire("open-criteria-when-basic");
+				}
+			},
+
+			_handleNavigateRecurrence: function(e) {
+				this.fire("navigate-recurrence", {"backEventName": "navigate-room-criteria-back"});
+			},
+
+			_computeDisableRecurrence: function(reservationEditMode, disabled) {
+				return (reservationEditMode != "Occurrence" && reservationEditMode != "Series") ||  
+					disabled;
+			},
+
+			_computeDisableDate: function(recurringMeeting, disabled) {
+				return recurringMeeting || disabled;
+			},
+
+			_computeHideBasicButton: function(showBasicButton, disabled) {
+				return !showBasicButton || disabled;
+			},
+
+			_computeRecurrenceRuleDisplayLabel: function(reservationEditMode, recurrenceRuleLabel) {
+				var __dictionary__seriesDisplayLabel = "You are changing a series occurrence.";
+				if (reservationEditMode != "Occurrence" && reservationEditMode != "Series") {
+					return __dictionary__seriesDisplayLabel;
+				}
+				return recurrenceRuleLabel;
+			},
+
+			_handleUserChangedStartTime: function(event) {
+				event.stopPropagation();
+				this.fire("change-start-time", {reservationStartTime: event.detail.value});
+			},
+
+			_handleUserChangedEndTime: function(event) {
+				event.stopPropagation();
+				this.fire("change-end-time", {reservationEndTime: event.detail.value});
+			},
+
+			_handleUserChangedAllDay: function(event) {
+				event.stopPropagation();
+				this.fire("change-all-day", {reservationAllDay: event.currentTarget.checked});
+			},
+
+			_handleUserChangedStartDate: function(event) {
+				event.stopPropagation();
+				this.fire("change-start-date", {reservationStartDate: event.detail.value});
+			},
+
+			_handleUserChangedEndDate: function(event) {
+				event.stopPropagation();
+				this.fire("change-end-date", {reservationEndDate: event.detail.value});
+			},
+
+			/**
+			 * On mobile devices when the keyboard is opened the viewport area is smaller. 
+			 * When the keyboard is opened and clicking on datetime-picker, the keyboard will close 
+			 * (because the focus is no longer on the input field), but the calendar overlay from
+			 * triplat-datetime-picker will open based on the smaller viewport, when keyboard was opened.
+			 * It's necessary to notify resize after the calendar overlay is opened, 
+			 * so the overlay will be position based on the current viewport area.
+			 */
+			_onDatetimeOverlayOpened: function(event) {
+				var windowScrollY = window.scrollY;
+				var bodyScrollTop = document.querySelector("body").scrollTop;
+				if (this._isMobileDevice && (windowScrollY != 0 || bodyScrollTop != 0)) {
+					this.async(function() {
+						this.notifyResize();
+					}.bind(this), 300);
+				}
+			}
+		});
+	</script>
+</dom-module>

@@ -1,0 +1,212 @@
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-selector/iron-selector.html">
+
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+
+<link rel="import" href="tricomp-search-input.html">
+
+<dom-module id="tricomp-assessment-logs">
+
+	<style>
+
+		:host {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			background-color: var(--tri-body-background-color);
+		}
+
+		iron-selector {
+			@apply(--layout-scroll);
+			background-color: var(--tri-primary-content-background-color);
+		}
+
+		.row.enabled * {
+			cursor: pointer;
+		}
+
+		.row-content {
+			@apply(--layout);
+			@apply(--layout-horizontal);
+			padding: 20px 20px 15px 20px;
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+		}
+
+		.detail {
+			@apply(--layout-flex);
+		}
+
+		.icon-status {
+			@apply(--layout-vertical);
+			@apply(--layout-center-center);
+			border-radius: 50%;
+			width: 40px;
+			height: 40px;
+			background-color: var(--ibm-gray-20);
+			color: white;
+		}
+
+		.icon-status.discrepant {
+			background-color: var(--tri-danger-color);
+		}
+
+		.icon-status.non-discrepant {
+			background-color: var(--tri-success-color);
+		}
+
+		.dialogButton {
+			@apply(--layout);
+			@apply(--layout-vertical);
+			@apply(--tri-button);
+			float: right;
+		}
+
+		paper-dialog {
+			padding-bottom: 15px;
+		}
+
+		.drill {
+			width: 40px;
+			height: 40px;
+			color: var(--tri-primary-color);
+			@apply(--layout-self-center);
+		}
+
+		.enabled .drill {
+			color: var(--tri-primary-color);
+		}
+
+		.disabled .drill {
+			color: var(--ibm-gray-10);
+		}
+
+		.accessibility {
+			display: none;
+		}
+
+		.assessmentDetail {
+			@apply(--layout-flex);
+		}
+
+		.assessmentDetail div{
+			padding-bottom: 5px;
+		}
+
+		@media (min-width: 1024px) {
+			.assessmentDetail {
+				@apply(--layout-horizontal);
+			}
+
+			.assessmentDetail div{
+				@apply(--layout-flex);
+			}
+
+			.assessmentDetail div label{
+				width: 150px;
+			}
+
+			.assessmentDetail div span{
+				@apply(--layout-flex);
+			}
+		}
+
+		@media (max-width: 1023px) {
+			.assessmentDetail {
+				@apply(--layout-vertical);
+			}
+		}
+
+	</style>
+
+	<template>
+
+		<triplat-ds name="currentUser" data="{{currentUser}}"></triplat-ds>
+
+		<iron-selector id="logsSelector" selected-item="{{selectedLog}}">
+			<template is="dom-repeat" id="logsTemplate" items="{{_filter(logs, searchTerms)}}">
+				<div class$="{{_determineEnabledStyle(item.discrepantSpace, item.discrepancyCount)}}" on-tap="handleOpenActions" >
+					<div class="row-content">
+						<div class="detail">
+							<div class="assessmentDetail">
+								<div>
+									<label>Space: </label><span>{{_handleShowSpaceName(item.space.value)}}</span>
+								</div>
+								<div class="classification">
+									<label>Classification: </label><span>{{item.spaceClass}}</span>
+								</div>
+				    		</div>	
+				    		<div class="assessmentDetail">
+								<div class="action" hidden$="{{!item.discrepantSpace}}">
+				    				<label>Total Actions: </label><span>{{item.discrepancyCount}}</span>
+				    			</div>
+				    		</div>	
+				    	</div>
+			    		<div class$="{{_computeIconStatusClass(item.discrepantSpace)}}">
+			    			<triplat-icon icon="icons:report-problem" hidden$="{{!item.discrepantSpace}}" aria-labelledby="discrepantIcon"></triplat-icon>
+							<triplat-icon icon="icons:check" hidden$="{{item.discrepantSpace}}" aria-labelledby="consistentIcon"></triplat-icon>
+						</div>
+						<triplat-icon class="drill" icon="hardware:keyboard-arrow-right" tabindex="0" on-keypress="_handleKeyPress" aria-labelledby="openAssessmentDetail" role="button"></triplat-icon>
+
+					</div>
+				</div>
+			</template>
+		</iron-selector>
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-assessment-logs",
+
+		properties : {
+
+			logs : Object,
+			selectedLog : Object,
+			searchTerms : String
+		},
+
+		_computeIconStatusClass: function(isDiscrepantSpace) {
+			return isDiscrepantSpace ? "icon-status discrepant" : "icon-status non-discrepant";
+		},
+
+		_determineEnabledStyle : function(discrepantSpace, discrepancyCount) {
+			return discrepantSpace && discrepancyCount > 0 ? "row enabled" : "row disabled";
+		},
+
+		render : function() {
+			this.$.logsTemplate.render();
+		},
+
+		_filter : function(logs, searchTerms) {			
+			if (!searchTerms) {
+				return logs;
+			}
+			var lowerLogsFilter = searchTerms.toLowerCase();
+			return logs.filter(function(log) {
+				return (log.space.value.toLowerCase().indexOf(lowerLogsFilter) != -1)
+						|| log.spaceClass.toLowerCase().indexOf(lowerLogsFilter) != -1
+			});
+		},
+
+		handleOpenActions : function (e) {
+			var selectedLog = this.$.logsTemplate.itemForElement(e.target);
+			if (selectedLog.discrepantSpace && selectedLog.discrepancyCount > 0) {
+				this.fire("open-actions", selectedLog);
+			} 
+		},
+
+		_handleShowSpaceName: function(space) {
+			if (space && space.length > 25) {
+				space = space.substring(0, 25) + '...';
+			}
+
+			return space;
+		},
+		
+		_handleKeyPress: function(e) {
+      		var code = e.keyCode;
+      		if (code==(13 || 32)){
+      			this.handleOpenActions(e);
+      		}
+      	},
+    });
+</script>

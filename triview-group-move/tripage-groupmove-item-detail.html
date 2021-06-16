@@ -1,0 +1,5277 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<!-- TRIRIGA Platform Components -->
+<link rel="import" href="../triplat-debug/triplat-debug.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-query/triplat-query.html">
+<link rel="import" href="../triplat-select-input/triplat-select-input.html">
+<link rel="import" href="../triplat-table-behavior/triplat-table-behavior.html">
+<link rel="import" href="../triplat-progress-gauge/triplat-progress-gauge.html">
+
+<!-- TRIRIGA Block Components -->
+<link rel="import" href="../triblock-page-container-behavior/triblock-page-container-behavior.html">
+<link rel="import" href="../triblock-tabs/triblock-tabs.html">
+<link rel="import" href="../triblock-tabs/triblock-tab.html">
+<link rel="import" href="../triblock-tabs/triblock-tab-nav-layout.html">
+
+<!-- Polymer Paper Components -->
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-input/paper-textarea.html">
+<link rel="import" href="../paper-header-panel/paper-header-panel.html">
+<link rel="import" href="../paper-styles/paper-styles.html">
+<link rel="import" href="../paper-tooltip/paper-tooltip.html">
+<link rel="import" href="../paper-spinner/paper-spinner.html">
+
+<!-- Polymer Iron Components -->
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../iron-collapse/iron-collapse.html">
+
+<link rel="import" href="../tri-loading-indicator/tri-loading-indicator.html">
+
+<link rel="import" href="tricomp-groupmove-detail-header.html">
+<link rel="import" href="tricomp-comments-new.html">
+<link rel="import" href="tricomp-accordion-image.html">
+<link rel="import" href="tricomp-collapse-section.html">
+<link rel="import" href="tricomp-alert.html">
+
+
+<dom-module id="tripage-groupmove-item-detail">
+
+	<style>
+		/*=========================================
+		 * Table of Contents
+		 *-----------------------------
+		 * Host
+		 * Buttons
+		 * Container - General
+		 * Container - tricomp-collapse-section
+		 * Container - image-icon
+		 * Container - mli-detail-image
+		 * Container - container-collapse-action
+		 * Container - container-loading-mli
+		 *=========================================*/
+
+		 /* Host */
+ 		:host {
+ 			/*=========================================
+  			 * Tricomp Collapse Section
+  			 *=========================================*/
+  			--tricomp-collapse-section-collapsable-flex: 2;
+  			--tricomp-collapse-section-static-flex: 1;
+  			--paper-input-container-label-floating:{
+  				font-size:14px;
+  				webkit-transform: translateY(-75%) scale(1);
+     			transform: translateY(-75%) scale(1);
+  			};
+ 		}
+ 		@media(min-width: 768px) {
+  			:host {
+  				/*=========================================
+  				 * Tricomp Collapse Section
+  				 *=========================================*/
+  				--tricomp-collapse-section-collapsable-flex: 1;
+  				--tricomp-collapse-section-static-flex: 2;
+  			}
+  		}
+ 		/* End Host */
+
+
+		/* Buttons */
+ 		.btn-menu {
+			position: relative;
+			flex: 1;
+			flex-direction: row !important;
+			height: auto;
+			min-width: initial;
+			margin: 0;
+			/*padding: 1em !important;*/
+			padding-top: 17px !important;
+    		padding-left: 24px !important;
+			align-items: flex-start !important;
+    	justify-content: flex-start !important;
+			background-color: transparent !important;
+			color: var(--tri-disabled-icon-button-color) !important;
+			transition: 0.2s;
+		}
+			.btn-menu:hover {
+				background-color: var(--tri-primary-content-accent-color) !important;
+			}
+			.btn-menu triplat-icon {
+				padding-top: 6px;
+
+				--triplat-icon-width: 30px;
+				--triplat-icon-height: 35px;
+			}
+			.btn-menu .btn-inner {
+				display: inline-block;;
+			}
+				.btn-menu:hover .btn-inner {
+					display: none;
+				}
+			.btn-menu .btn-inner-hover {
+				display: none;
+			}
+				.btn-menu:hover .btn-inner-hover {
+					display: inline-block;
+				}
+			.btn-menu span {
+				font-size: 10px;
+				color: var(--tri-primary-content-color);
+			}
+
+		.btn-inner triplat-icon {
+			--triplat-icon-fill-color: var(--tri-primary-color);
+			--triplat-icon-stroke-color: var(--tri-primary-color);
+		}
+		.btn-inner-hover triplat-icon {
+			--triplat-icon-fill-color: var(--tri-info-color);
+			--triplat-icon-stroke-color: var(--tri-info-color);
+		}
+ 		/* End Buttons */
+
+
+ 		/* Container - General */
+ 		/* End Container - General */
+
+
+		/* Container - tricomp-collapse-section */
+		.tricomp-collapse-section-collapsable,
+		.tricomp-collapse-section-static {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+		}
+
+		.tricomp-collapse-section-collapsable {
+			max-width: 100%;
+		}
+		/* End Container - tricomp-collapse-section */
+
+
+		/* Container - image-icon */
+		.image-icon {
+			padding-right: 10px;
+		}
+
+		.image-icon tricomp-accordion-image {
+			--tricomp-accordion-image-height: 30px;
+			--tricomp-accordion-image-width: 30px;
+
+			--tricomp-accordion-image-icon-height: 23px;
+			--tricomp-accordion-image-icon-width: 23px;
+		}
+		/* End Container - image-icon */
+
+
+		/* Container - mli-detail-image */
+		.mli-detail-image {
+			@apply(--layout-vertical);
+			@apply(--layout-center-center);
+			margin-right: 25px;
+		}
+
+		.mli-detail-image tricomp-accordion-image {
+			--tricomp-accordion-image-height: 100px;
+			--tricomp-accordion-image-width: 100px;
+
+			--tricomp-accordion-image-icon-height: 90px;
+			--tricomp-accordion-image-icon-width: 90px;
+		}
+		/* End Container - mli-detail-image */
+
+
+		/* Container - container-collapse-action */
+		.container-collapse-action {
+			position: fixed;
+			right: 0;
+			bottom: 0;
+			left: 0;
+			z-index: 9999;
+		}
+		/* End Container - container-collapse-action */
+
+
+		/* Container - container-loading-mli */
+		.container-loading-mli {
+			@apply(--layout-fit);
+			@apply(--layout-center-center);
+			display: flex;
+			z-index: 10;
+			background: rgba(255,255,255,0.6);
+		}
+		/* End Container - container-loading-mli */
+
+
+		.action {
+			@apply(--layout);
+			@apply(--layout-center-center);
+			padding-left: 20px;
+			min-width: 124px;
+			border-left: 1px solid var(--tri-separator-color);
+		}
+
+		.actionbar-12px{
+			width: 12px;
+		}
+
+		.actionbar-24px{
+			width: 24px;
+		}
+
+		.actionbar-icon{
+			color: var(--tri-header-color);
+			opacity: 0.8;
+			padding-left: 0px;
+			padding-right: 0px;
+		}
+
+		.actionbar-icon:hover{
+			color: var(--tri-header-color);
+			opacity: 1;
+		}
+
+		.actionbar-link {
+			background-color: var(--ibm-cool-gray-50) !important;
+			border-color: var(--ibm-cool-gray-50) !important;
+			color: var(--tri-primary-color-20) !important;
+			font-family: var(--tri-font-family);
+			font-size: 14px;
+			padding-left: 0px;
+			padding-right: 0px;
+		}
+
+		.actionbar-link:hover{
+			text-decoration: underline;
+		}
+
+		.actionbar-pipe{
+			border-width: 1px;
+			border-style: solid;
+			border-color: var(--ibm-gray-40);
+			height: 20px;
+		}
+
+		.actionbar-selected{
+			font-family: var(--tri-font-family);
+			font-size: 14px;
+			color: var(--tri-header-color);
+			opacity: 1;
+			padding-left: 0px;
+			padding-right: 0px;
+		}
+
+		.action-add {
+			color: var(--tri-primary-color);
+			cursor: pointer;
+		}
+
+		.action-button-container {
+			@apply(--layout-horizontal);
+			@apply(--layout-center-center);
+			@apply(--layout-wrap);
+			background-color: var(--tri-footer-background-color);
+			color: var(--tri-header-color);
+			padding: 5px;
+		}
+
+		.action-button-container > * {
+			margin: 5px;
+		}
+
+		.action-delete {
+			cursor: pointer;
+			color: var(--tri-danger-color);
+		}
+
+		.action-reset {
+			cursor: pointer;
+			color: var(--tri-primary-color);
+		}
+
+		.action-delete-hide {
+			width: 24;
+			height: 24;
+			padding-left: 15px;
+			border-left: 1px solid var(--tri-primary-content-accent-color);
+		}
+
+		.action-ready {
+			color: var(--tri-primary-color);
+			cursor: pointer;
+		}
+
+		.assets-background {
+			@apply(--layout-horizontal);
+			@apply(--layout-start-justified);
+			@apply(--layout-wrap);
+			@apply(--layout-top-justified);
+			padding-left: 15px;
+			background-color: var(--tri-body-background-color);
+		}
+
+		.assets-detail {
+			@apply(--layout-flex);
+		}
+
+		.assets-detail-middle-section {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-start-justified);
+			@apply(--layout-wrap);
+			padding: 5px;
+			border-bottom: 1px solid black;
+		}
+
+		.assets-detail-text-horizontal {
+			@apply(--layout-horizontal);
+			@apply(--layout-start-justified);
+			padding: 5px;
+			/* overflow-x: auto; */
+		}
+
+		.assets-detail-text-vertical {
+			@apply(--layout-vertical);
+			padding: 5px 25px;
+			/* overflow-x: auto; */
+		}
+
+		.assets-detail-top-section {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-start-justified);
+			@apply(--layout-wrap);
+			padding: 5px;
+			background-color: var(--tri-body-background-color);
+		}
+
+		.child-ready {
+			color: var(--tri-success-color);
+			padding-right: 5px;
+			padding-left: 5px;
+			cursor: pointer;
+		}
+
+		.child-notReady {
+			color: var(--tri-success-color);
+			padding-right: 5px;
+			padding-left: 5px;
+			cursor: pointer;
+		}
+
+		.details-container {
+			@apply(--layout-flex-5);
+			@apply(--layout);
+			@apply(--layout-vertical);
+			margin: 1px;
+			/*height: 650px;*/
+		}
+
+		.floorcontainer {
+			@apply(--layout-flex);
+			@apply(--layout-relative);
+			@apply(--layout-vertical);
+			margin: 5px;
+			border:  1px solid black;
+			/* height: 450px;
+			width: 750px; */
+			min-height: 0;
+		}
+
+
+		@media (max-width: 900px) {
+			.floorplan-graphic {
+				@apply(--layout-flex);
+				@apply(--layout-vertical);
+			}
+		}
+
+		@media (min-width: 901px) {
+			.floorplan-graphic {
+				@apply(--layout-flex);
+				@apply(--layout-horizontal);
+			}
+		}
+
+		.header-horizontal {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-start);
+			@apply(--layout-start-justified);
+			margin-right: 20px;
+			margin-left: 20px;
+			margin-top: 10px;
+		}
+
+		.header-horizontal > triplat-icon {
+			@apply(--layout-flex);
+			@apply(--layout-end);
+			@apply(--layout-end-justified);
+		}
+
+		.header-text {
+			margin-left: 20px;
+		}
+
+		.header-text-main {
+			@apply(--layout);
+			@apply(--layout-center);
+			flex-wrap: wrap;
+			height: 44px;
+			/* margin-left: 20px; */
+			background-color: var(--tri-body-background-color);
+		}
+
+		.header-text-main > triplat-icon {
+			@apply(--layout-flex);
+			@apply(--layout-end);
+			@apply(--layout-end-justified);
+		}
+
+		.header-text-bold {
+			font-weight: bold;
+		}
+
+		/*.inbox-checkbox::shadow #checkboxContainer {
+			padding-left: 4px;
+		}
+		.inbox-checkbox::shadow #checkboxLabel {
+			padding-left: 0px;
+		}*/
+
+		.inbox-checkbox {
+			padding-left: 4px;
+		}
+
+		.inbox-checkbox-hide {
+			width: 22px;
+			height: 18px;
+		}
+
+		/*
+		iron-pages {
+			@apply(--layout-flex);
+			@apply(--layout-relative);
+			@apply(--layout-vertical);
+			margin: 5px;
+			border: black;
+			height: 500px;
+			min-height: 0;
+		}
+		*/
+
+		iron-selector.tabs-container {
+			/* @apply(--layout-flex); */
+			@apply(--layout-horizontal);
+			color: var(--tri-primary-color);
+		}
+
+		.item-container {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-start);
+			@apply(--layout-center-justified);
+			@apply(--layout-scroll);
+		}
+
+		.item {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			/* border-bottom: 1px solid var(--tri-card-border-color); */
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			padding-left: 10px;
+			padding-right: 10px;
+		}
+
+		.item > .info {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			@apply(--layout-wrap);
+			font-size: 14px;
+			color: var(--tri-footer-background-color);
+			display: block;
+			white-space: normal;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			outline: none;
+		}
+
+		.item > .info > .name {
+			margin-left: 10px;
+		}
+
+		.item > .info span {
+			outline: none;
+		}
+
+		/* @media (max-width: 1559px) and (min-width: 1025px) { */
+
+		@media (min-width: 1559px) {
+			.item > .info  {
+				width: 400px;
+			}
+		}
+
+		 @media (max-width: 1558px) and (min-width: 1225px) {
+			.item > .info  {
+				width: 350px;
+			}
+		}
+
+		@media (max-width: 1224px) and (min-width: 1025px) {
+			.item > .info  {
+				width: 300px;
+			}
+		}
+
+		@media (max-width: 1024px) and (min-width: 769px) {
+			.item > .info  {
+				width: 250px;
+			}
+		}
+
+		@media (max-width: 768px) {
+			.item > .info  {
+				width: 150px;
+			}
+		}
+
+		.info {
+			padding: 5px 5px 5px 0;
+		}
+
+
+		.item > .ready {
+			color: var(--tri-success-color);
+			padding-right: 10px;
+			padding-left: 10px;
+			cursor: pointer;
+		}
+
+		.item > .notReady {
+			color: var(--tri-success-color);
+			padding-right: 10px;
+			padding-left: 10px;
+			cursor: pointer;
+		}
+
+		.item-icon {
+			width: 2px;
+			height: 2px;
+		}
+
+		.item-padding {
+			padding: 20px;
+		}
+
+		.item-table {
+			width: 100%;
+		}
+
+		.line-item-container {
+			@apply(--layout-flex-2);
+			@apply(--layout);
+			@apply(--layout-vertical);
+			flex-basis: 33.33333333%;
+			border-right: 1px solid var(--tri-primary-content-accent-color);
+		}
+		@media (max-width: 991px) {
+			.line-item-container {
+				@apply(--layout-flex-1);
+				flex-basis: 41.66666667%;
+			}
+		}
+		@media (max-width: 767px) {
+			.line-item-container {
+				@apply(--layout-flex-1);
+				flex-basis: 100%;
+			}
+		}
+
+		.line-item-header {
+		 	height: 53px;
+		 	@apply(--layout-center-center);
+		}
+
+		.line-item-header-button {
+			height: auto;
+		}
+			.line-item-header-button > div {
+				display: flex;
+			}
+
+		.line-item-row-inner {
+			@apply(--layout);
+			@apply(--layout-horizontal);
+			margin: 0px 20px;
+			padding: 20px;
+			/* border-bottom: 1px solid var(--tri-card-border-color); */
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+
+		}
+
+		.line-item-row.iron-selected {
+			background-color: var(--tri-primary-light-color);
+		}
+
+		.line-item-row .value {
+			color: var(--tri-footer-background-color);
+		}
+
+		.location {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			/* @apply(--layout-start); */
+			@apply(--layout-start-justified);
+			margin-right: 20px;
+			margin-left: 20px;
+			margin-top: 10px;
+		}
+
+		.location-background {
+			@apply(--layout-horizontal);
+			@apply(--layout-start-justified);
+			@apply(--layout-wrap);
+			@apply(--layout-top-justified);
+			padding-left: 15px;
+			background-color: var(--tri-body-background-color);
+		}
+
+		.location-chargeto {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-start);
+			@apply(--layout-start-justified);
+			@apply(--layout-wrap);
+			margin-right: 20px;
+			margin-left: 5px;
+			margin-top: 10px;
+		}
+
+		.location-chargeto > triplat-icon {
+			@apply(--layout-flex);
+			@apply(--layout-end);
+			@apply(--layout-end-justified);
+		}
+
+		.location-field {
+			padding-right: 10px;
+			/* overflow-x: auto; */
+			border-right: 1px solid var(--tri-separator-color);
+		}
+
+		.location-field-bold {
+			padding-right: 10px;
+			font-weight: bold;
+			border-right: 1px solid var(--tri-separator-color);
+		}
+
+		.location-field-no-border {
+			padding-right: 10px;
+		}
+
+		.location-field-no-border-bold {
+			padding-right: 10px;
+			font-weight: bold;
+		}
+
+		.location-title {
+			padding-left: 10px;
+			/* overflow-x: auto; */
+		}
+
+		.location-title-to-from {
+			padding-left: 10px;
+			font-weight: bold;
+		}
+
+		.field-label-main {
+			font-weight: bold;
+			font-size: 125%;
+		}
+
+		.field-label-secondary {
+			font-weight: bold;
+		}
+
+		.main-container {
+			@apply(--layout-flex);
+			@apply(--layout);
+			@apply(--layout-horizontal);
+			position: relative;
+			background-color: var(--tri-header-color);
+		}
+
+		.mli-cell {
+			display: table-cell;
+			vertical-align: middle;
+			height: 25px;
+			padding: 10px 14px;
+		}
+
+		.mli-cell-action {
+			display: table-cell;
+			vertical-align: middle;
+			height: 25px;
+			padding: 10px 14px;
+			width: 30px;
+		}
+
+		.mli-cell:first-child {
+			padding-left: 0 !important;
+		}
+		.mli-col-collapse {
+			width: 22px;
+		}
+		.mli-col-icon {
+			width: 60px;
+		}
+		.mli-col-remove {
+			color: var(--tri-actionable-color);
+			width: 60px;
+		}
+		.mli-child-icon {
+			padding-left: 20px;
+		}
+
+		.mli-detail-bottom-section {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-around-justified);
+			@apply(--layout-wrap);
+			padding: 5px;
+		}
+
+
+		.mli-detail-image-test {
+			border-radius: 50%;
+		}
+
+		.mli-detail-item {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			margin: 5px;
+			min-width: 250px;
+		}
+
+		.mli-detail-item-bold {
+			font-weight: bold;
+		}
+
+		.mli-detail-date {
+			position: relative;
+		}
+			.date-mask {
+				@apply(--layout-fit);
+				z-index: 1;
+			}
+
+		.mli-detail-middle-section {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			/* @apply(--layout-center); */
+			@apply(--layout-around-justified);
+			@apply(--layout-wrap);
+			padding: 5px;
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+		}
+
+		.mli-detail-stacked {
+			@apply(--layout-vertical);
+			@apply(--layout-center);
+			margin: 10px;
+		}
+
+		.mli-detail-text-vertical {
+			@apply(--layout-vertical);
+			padding: 5px;
+			min-width: 250px;
+			/* overflow-x: auto; */
+		}
+
+		.mli-detail-text-horizontal {
+			@apply(--layout-horizontal);
+			@apply(--layout-center-justified);
+			padding: 5px;
+			/* overflow-x: auto; */
+		}
+
+		.mli-detail-top-section {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-center-justified);
+			@apply(--layout-wrap);
+			padding: 5px;
+			background-color: var(--tri-body-background-color);
+		}
+
+		.mli-header-cell-action {
+			display: table-cell;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			line-height: 30px;
+			padding: 5px 14px 5px 0px;
+			text-align: left;
+			width: 30px;
+		}
+
+		.mli-header-cell {
+			display: table-cell;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			line-height: 30px;
+			padding: 5px 14px 5px 0px;
+			text-align: left;
+		}
+		.mli-header-cell::before {
+			border-left: 1px solid var(--tri-primary-content-accent-color);
+			content: "";
+			font-size: 18px;
+			padding-right: 14px;
+		}
+
+		.mli-header-cell:first-child::before, .mli-header-cell.hide-border::before {
+			border-left: none !important;
+		}
+
+		.mli-row {
+			display: table-row;
+			font-weight: bold;
+            font-size: 14px;
+			font-family: var(--tri-font-family);
+            color: var(--ibm-gray-100);
+            border-bottom: 1px solid var(--tri-primary-content-accent-color);
+		}
+
+		.mli-row[current] {
+			font-weight: normal;
+            color: var(--tri-primary-content-color);
+		}
+
+		.mli-row[remove] {
+			font-weight: normal;
+            color: var(--tri-primary-content-color);
+            background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMCcgaGVpZ2h0PScxMCc+DQogIDxyZWN0IHdpZHRoPScxMCcgaGVpZ2h0PScxMCcgZmlsbC1vcGFjaXR5PScwJy8+DQogIDxwYXRoIGQ9J00tMSwxIGwyLC0yDQogICAgICAgICAgIE0wLDEwIGwxMCwtMTANCiAgICAgICAgICAgTTksMTEgbDIsLTInIHN0cm9rZT0nI0FEMTYyNScgc3Ryb2tlLXdpZHRoPScyJyBzdHJva2Utb3BhY2l0eT0nMC4yJy8+DQo8L3N2Zz4=");
+  			background-repeat: repeat;
+		}
+
+		.mli-table {
+			display: table;
+			border-collapse: collapse;
+			border-spacing: 0;
+			width: 100%;
+			background-color: var(--tri-primary-content-background-color);
+			color: var(--tri-primary-content-color);
+			font-size: 14px;
+		}
+
+		.mli-table-header {
+			display: table-header-group;
+			background-color: var(--tri-primary-content-background-color);
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			color: var(--tri-primary-color);
+		}
+
+		.mli-table-body {
+			display: table-row-group;
+		}
+
+		.mli-ready {
+			color: var(--tri-success-color);
+			margin-right: 15px;
+			margin-left: 15px;
+			--triplat-icon-width: {
+				width: 75px;
+            };
+            --triplat-icon-height: {
+				height: 75px;
+            };
+		}
+
+		.mli-not-ready {
+			color: var(--tri-success-color);
+			margin-right: 15px;
+			margin-left: 15px;
+			--triplat-icon-width: {
+				width: 75px;
+            };
+            --triplat-icon-height: {
+				height: 75px;
+            };
+		}
+
+		#mliHeader {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			padding: 0px 10px 0px 10px;
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			border-top: 1px solid var(--tri-primary-content-accent-color);
+			background-color: var(--tri-body-background-color);
+		}
+
+		#mliHeader .title {
+			@apply(--layout-flex);
+			text-transform: uppercase;
+			font-size: 14px;
+			color: var(--tri-secondary-color );
+			font-weight: normal;
+		}
+
+
+		#mliHeader .count {
+			font-weight: bold;
+			font-size: 14px;
+			color: var(--tri-primary-content-color);
+		}
+
+		/*
+		#mliHeader > triplat-icon {
+			color: var(--tri-primary-color);
+			cursor: pointer;
+			padding-right: 15px;
+			border-right: 1px solid var(--tri-primary-content-accent-color);
+		}
+		*/
+
+		#mliHeader, .item {
+			min-height: 44px;
+		}
+
+		@media (max-width: 900px) {
+			.moveInstructions {
+				width: 300px;
+			}
+		}
+
+		@media (min-width: 901px) {
+			.moveInstructions {
+				width: 300px;
+			}
+		}
+
+		/*
+		.moveInstructions {
+			min-width: 275px;
+		}
+		*/
+
+		.placeholder-msg {
+			padding: 10px;
+			font-style: italic;
+		}
+
+		.notReady-counter {
+			font-weight: bold;
+			font-size: 14px;
+			color: var(--tri-primary-content-color);
+		}
+
+		.paper-checkbox {
+			margin: 7px;
+		 	padding: 7px;
+		}
+
+		/*paper-textarea {
+			margin-top: 10px;
+		 	border: 1px solid black;
+		}*/
+
+		paper-textarea {
+			margin-top: 10px;
+		 	border: 1px solid;
+			color: var(--tri-primary-color) !important;
+			--paper-input-container-underline: {
+     			background: transparent;
+			};
+			--paper-input-container-focus-color: var(--tri-primary-color);
+			--paper-input-container-input:{
+				font-size: 14px;
+				font-family: var(--tri-font-family);
+				padding-left: 5px;
+			};
+			--paper-input-container-label:{
+				padding-left: 5px;
+				font-size: 14px;
+				font-family: var(--tri-font-family);
+			};
+			--paper-input-container-underline-focus: {
+     			background: none;
+			};
+		}
+
+		.placeholder {
+			/* padding: 10px 10px 10px 30px;
+			font-style: italic; */
+			color: var(--tri-primary-content-accent-color);
+		}
+
+		.profile-image-placeholder {
+			border: 1px solid gray;
+			color: var(--tri-primary-content-accent-color);
+			height: 100px;
+			width: 100px;
+		}
+
+		.asset-image-placeholder {
+			border: 1px solid black;
+			height: 100px;
+			width: 100px;
+		}
+
+
+		.progress {
+			@apply(--layout-horizontal);
+			padding-right: 30px;
+		}
+
+		.ready-icon-hide {
+			width: 44px;
+			height: 24px;
+		}
+
+		.ready-icon-spacing {
+			width: 12px;
+			height: 24px;
+		}
+
+
+		.scrollable-area {
+			@apply(--layout-flex);
+			overflow: auto;
+		}
+
+		paper-button{
+			height: 44px;
+		}
+
+		.tab {
+			@apply(--layout-horizontal);
+			@apply(--layout-end);
+			padding-bottom: 0px 24px 7px 20px;
+			height: 37px;
+			cursor: pointer;
+			z-index: 6;
+		}
+
+		#deleteConfirmationDialog{
+			padding-bottom: 15px;
+			padding-right: 16px;
+		}
+
+		@media (max-width: 900px) {
+			.tab {
+				padding-left: 0px;
+			}
+
+			.tab div span {
+				display: none;
+				padding-right: 20px;
+			}
+
+			.tab div iron-icon {
+				padding: 0px 10px;
+			}
+		}
+
+		@media (min-width: 901px) {
+			.tab {
+				padding-left: 10px;
+			}
+		}
+
+		.tab div {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+		}
+
+		.tab div span {
+			padding-left: 5px;
+			padding-right: 20px;
+		}
+
+		.tab-counter {
+			color: var(--tri-primary-color-100);
+		}
+
+		.tab.iron-selected {
+			position: relative;
+			/*border-bottom: 1px solid #E0E0E0;*/
+			color: var (--tri-primary-color);
+			font-weight: 700;
+			cursor: context-menu;
+		}
+
+		.tab.iron-selected:after, .tab.iron-selected:before {
+			top: 100%;
+			left: 50%;
+			border: solid transparent;
+			content: " ";
+			height: 0;
+			width: 0;
+			position: absolute;
+			pointer-events: none;
+		}
+
+		.tab.iron-selected:after {
+			/*border-color: rgba(255, 255, 255, 0);
+			border-top-color: #ffffff;*/
+			border-color: var(--tri-header-color);
+			opacity: 0;
+			border-width: 10px;
+			margin-left: -10px;
+		}
+
+		.tab.iron-selected:before {
+			/*border-color: rgba(224, 224, 224, 0);
+			border-top-color: #E0E0E0;*/
+			border-color: var(--tri-primary-content-accent-color);
+			opacity: 0;
+			border-width: 12px;
+			margin-left: -12px;
+		}
+
+
+		/*
+		.tabs {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+		}
+
+		.tabs paper-tabs {
+			--paper-tabs: {
+				background-color: white;
+			}
+			--paper-tabs-selection-bar-color: var(--tri-primary-dark-color);
+		}
+
+		.tabs paper-tab {
+			--paper-tab-content-unselected: {
+				background-color: white;
+				color: var(--tri-primary-color);
+			};
+		}
+		*/
+
+		iron-pages {
+			@apply(--layout-flex);
+			@apply(--layout-relative);
+			@apply(--layout-vertical);
+			margin: 5px;
+			border: black;
+			height: 600px;
+			/* width: 800px;  */
+			min-height: 0;
+			overflow: auto;
+		}
+
+		.title {
+			font-weight: bold;
+			padding-left: 10px;
+		}
+
+		tricomp-request-drawer {
+			background-color: var(--tri-primary-color);
+		}
+
+		triplat-graphic {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+            /*
+			--triplat-graphic-selected: {
+				fill: green;
+			    fill-opacity: 1;
+            };
+
+			--triplat-graphic-selectable: {
+				fill: rgb(90, 170, 250);
+			    fill-opacity: .8;
+				cursor: pointer;
+			};
+			*/
+
+			--triplat-graphic-non-selectable: {
+				fill: white;
+			    fill-opacity: 1;
+			};
+			--triplat-graphic-interactive-selected: {
+				fill: black;
+			    fill-opacity: .4;
+			};
+
+			--triplat-graphic-highlight-1: {
+				fill: black;
+			    fill-opacity: 1;
+			    /* stroke:red;stroke-width:5; */
+			};
+		}
+
+		triplat-progress-gauge {
+			--triplat-progress-gauge-percent-font-size: 12px;
+			--triplat-progress-gauge-value-font-size: 24px;
+			--triplat-progress-gauge-circle-stroke-color: var(--ibm-gray-20);
+			margin-right: 10px;
+			font-size: 24px;
+			font-weight: bold;
+			width: 66px;
+			height: 66px;
+		}
+
+		tricomp-move-accordion-arrow {
+			align: right;
+			padding-left: 15px;
+		}
+
+		/*=========================================
+		 * Fix for Defect 218666
+		 *-----------------------------
+		 * Details: Assets textarea not filling the rest of the parent container
+		 * Workaround: Change the flex property of the columns and the width of the textare
+		 *=========================================*/
+		.assets-detail-small-column,
+		.assets-detail-large-column {
+			flex: 1;
+			flex-basis: 100%;
+		}
+
+		@media only screen and (min-width : 992px) {
+			.assets-detail-small-column {
+				flex: 1;
+			}
+
+			.assets-detail-large-column {
+				flex: 3;
+			}
+		}
+
+		.assets-detail-large-column .moveInstructions {
+			width: auto;
+		}
+		/*=========================================
+		 * End of the Fix
+		 *=========================================*/
+
+
+		paper-checkbox {
+			--paper-checkbox-label-spacing: 20px;
+			--paper-checkbox-size: 22px;
+			--paper-checkbox-unchecked-background-color: var(--tri-header-color);
+		}
+		.divider-line {
+			border-left: 1px solid var(--tri-primary-content-accent-color);
+			height: 24px;
+		}
+
+		.mli-detail-item triplat-icon{
+			padding-right: 10px;
+			--triplat-icon-fill-color: var(--tri-primary-color-50);
+		}
+
+		triplat-date-picker, triplat-select-input, paper-input {
+			--paper-input-container-input:{
+				font-size:14px;
+			};
+		}
+
+		#peopleCommentsPage{
+			margin-left: 20px;
+		}
+	</style>
+
+	<template>
+
+		<triplat-route
+				id="openRequestRoute"
+				name="openRequest"></triplat-route>
+		<triplat-route
+				on-route-active="_handleRoutePageActive"
+				id="itemRoute"
+				name="itemRouteGroupMove"
+				params="{{openRequestWhatUrlParams}}"></triplat-route>
+
+
+		<triplat-ds name="currentUser" data="{{currentUser}}"></triplat-ds>
+
+
+		<triplat-ds name="myMoveRequests" data="{{openRequest}}" id="moveRequestModel" loading="{{myMoveRequestsLoading}}" on-ds-get-complete="_handleMyMoveRequestsGetComplete">
+			<triplat-ds-instance instance-id="{{openRequestWhatUrlParams.reqId}}"></triplat-ds-instance>
+		</triplat-ds>
+
+		<triplat-ds name="moveLineItems" id="moveLineItems" data="{{moveLineItems}}">
+			<triplat-ds-context name="myMoveRequests" context-id="{{openRequestWhatUrlParams.reqId}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="parentMLIDS" name="moveLineItems" filtered-data="{{parentMLI}}" data="{{parentMLIUnfiltered}}" loading="{{moveLineItemsLoading}}" on-ds-get-complete="_handleMLIGetComplete" on-ds-perform-action-complete="_handleMLIPerformActionComplete" on-ds-update-complete="_handleMLIUpdateComplete">
+			<triplat-ds-context name="myMoveRequests" context-id="{{openRequestWhatUrlParams.reqId}}"></triplat-ds-context>
+			<triplat-query>
+				<triplat-query-filter name="parentItemName" operator="equals" value=null></triplat-query-filter>
+			    <triplat-query-and></triplat-query-and>
+                <triplat-query-filter name="itemName" operator="contains" value="{{_searchValue}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="item" operator="contains" value="{{_searchValue}}" ignore-if-blank></triplat-query-filter>
+			    <triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="moveType" operator="contains" value="{{_searchValue}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="moveAction" operator="contains" value="{{_searchValue}}" ignore-if-blank></triplat-query-filter>
+                <triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="toSpace" operator="contains" value="{{_searchValue}}" ignore-if-blank></triplat-query-filter>
+			    <triplat-query-sort name="{{sortField}}" desc="{{sortDescending}}"></triplat-query-sort>
+			</triplat-query>
+		</triplat-ds>
+
+		<triplat-ds  id="childMLIDS" name="moveLineItems" filtered-data="{{childMLI}}" data="{{_childMLIUnfiltered}}" loading="{{childMLILoading}}" on-ds-get-complete="_handleMLIGetComplete" on-ds-update-complete="_handleChildMLIUpdateComplete">
+			<triplat-ds-context name="myMoveRequests" context-id="{{openRequestWhatUrlParams.reqId}}"></triplat-ds-context>
+			<triplat-query>
+				<triplat-query-sort name="itemName"></triplat-query-sort>
+				<triplat-query-filter name="moveType" operator="equals" value="Asset"></triplat-query-filter>
+				<triplat-query-and></triplat-query-and>
+				<triplat-query-filter name="groupName" operator="contains" value="Person"></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="moveType" operator="equals" value="Equipment"></triplat-query-filter>
+				<triplat-query-and></triplat-query-and>
+				<triplat-query-filter name="groupName" operator="contains" value="Person"></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="moveType" operator="equals" value="Asset"></triplat-query-filter>
+				<triplat-query-and></triplat-query-and>
+				<triplat-query-filter name="groupName" operator="contains" value="Room Function"></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="moveType" operator="equals" value="Equipment"></triplat-query-filter>
+				<triplat-query-and></triplat-query-and>
+				<triplat-query-filter name="groupName" operator="contains" value="Room Function"></triplat-query-filter>
+			    <triplat-query-and></triplat-query-and>
+				<triplat-query-filter name="itemName" operator="contains" value="{{_searchValue}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="item" operator="contains" value="{{_searchValue}}" ignore-if-blank></triplat-query-filter>
+                <triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="moveType" operator="contains" value="{{_searchValue}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="moveAction" operator="contains" value="{{_searchValue}}" ignore-if-blank></triplat-query-filter>
+                <triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="toSpace" operator="contains" value="{{_searchValue}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="parentItemName" operator="equals" value="{{currentItemName}}" ignore-if-blank></triplat-query-filter>
+
+			</triplat-query>
+		</triplat-ds>
+
+		<triplat-ds name="moveRequest" data="{{moveRequest}}" loading="{{moveRequestLoading}}" id="moveRequest" >
+			<triplat-ds-context name="myMoveRequests" context-id="{{openRequestWhatUrlParams.reqId}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds name="moveType" filtered-data="{{moveType}}" loading="{{moveTypeLoading}}">
+			<triplat-query>
+				<triplat-query-filter name="value" operator="equals" value="{{_currentmoveTypeId}}" required></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<triplat-ds name="moveTypeDependent" filtered-data="{{moveTypeDependent}}" loading="{{moveTypeDependentLoading}}">
+			<triplat-query>
+				<triplat-query-filter name="parentValue" operator="equals" value="{{_currentMoveTypeId}}" required></triplat-query-filter>
+				<triplat-query-and></triplat-query-and>
+				<triplat-query-filter name="value" operator="equals" value="{{_currentMoveTypeAssetId}}" required></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<triplat-ds name="moveActionDependent" filtered-data="{{moveActionDependent}}" loading="{{moveActionDependentLoading}}">
+			<triplat-query>
+				<triplat-query-filter name="parentValue" operator="equals" value="{{_currentMoveAssetTypeId}}" required></triplat-query-filter>
+				<triplat-query-and></triplat-query-and>
+				<triplat-query-filter name="value" operator="contains" value="{{moveActionDependentSearchValue}}" ignore-if-blank></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+
+		<triplat-ds name="moveToFloor" data="{{moveToFloor}}" loading="{{moveToFloorLoading}}" id="moveToFloorDS">
+			<triplat-ds-context name="myMoveRequests" context-id="{{openRequestWhatUrlParams.reqId}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds name="moveFromFloor" data="{{moveFromFloor}}" loading="{{moveFromFloorLoading}}" id="moveFromFloorDS">
+			<triplat-ds-context name="myMoveRequests" context-id="{{openRequestWhatUrlParams.reqId}}"></triplat-ds-context>
+		</triplat-ds>
+
+
+		<!-- DS for Spaces: It's necessary to use moveToSpacesAssets because moveToSpaces is associated with a person -->
+		<!-- Assets assure that all spaces will return from DS - Some spaces could not be available for a person -->
+		<triplat-ds name="moveToSpacesAssets" data="{{moveFromSpaces}}" loading="{{moveFromSpacesLoading}}" on-ds-get-complete="_handleMoveToSpacesGetComplete">
+			<triplat-ds-context name="moveToFloor" context-id="{{moveFromFloor._id}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds name="moveToSpacesAssets" data="{{moveToSpaces}}" loading="{{moveToSpacesLoading}}" on-ds-get-complete="_handleMoveToSpacesGetComplete">
+			<triplat-ds-context name="moveToFloor" context-id="{{moveToFloor._id}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="childAssetEquipmentMLIDS" name="moveLineItems" filtered-data="{{childAssetEquipmentMLI}}" data="{{childAssetEquipmentMLIUnfiltered}}" loading="{{childAssetEquipmentMLILoading}}">
+			<triplat-ds-context name="myMoveRequests" context-id="{{openRequestWhatUrlParams.reqId}}"></triplat-ds-context>
+			<triplat-query>
+				<triplat-query-filter name="parentItemName" operator="equals" value="{{currentItemName}}"></triplat-query-filter>
+			    <triplat-query-and></triplat-query-and>
+				<triplat-query-filter name="groupId" operator="equals" value="{{currentGroupId}}"></triplat-query-filter>
+				<triplat-query-sort name="moveType"></triplat-query-sort>
+			</triplat-query>
+		</triplat-ds>
+
+		<triplat-ds id="floorSearch" name="lookupFloor" filtered-data="{{floorSearch}}" data="{{floorSearchUnfiltered}}" loading="{{floorSearchLoading}}" on-ds-get-complete="_handleFloorSearchGetComplete">
+			<triplat-query>
+				<triplat-query-filter name="Building" operator="contains" value="{{buildingFilter}}" ignore-if-blank></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+
+		<triplat-ds name="assetCondition" data="{{assetCondition}}" filtered-data="{{assetConditionFiltered}}" loading="{{assetConditionLoading}}">
+			<triplat-query>
+				<triplat-query-filter name="value" operator="equals" value="{{_currentAssetCondition}}" ignore-if-blank></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<!-- DS Selected Person: Selected person from the MLI list -->
+		<triplat-ds id="selectedPerson" name="selectedPerson" data="{{selectedPerson}}">
+		  <triplat-ds-instance instance-id="{{_selectedLineItem.personRecordId}}"></triplat-ds-instance>
+		</triplat-ds>
+		<!-- DS Assets Associated Person: Assets associated with the selected person -->
+		<triplat-ds
+		    name="assetsAssociatedPerson"
+		    data="{{assetsAssociatedPerson}}"
+		    id="assetsAssociatedPerson"
+				loading="{{assetsAssociatedPersonLoading}}"
+				on-ds-get-complete="_handleAssetsAssociatedPersonGetComplete">
+	    <triplat-ds-context name="selectedPerson" context-id="{{selectedPerson._id}}"></triplat-ds-context>
+		</triplat-ds>
+		<!-- DS Equipment Associated Person: Equipment associated with the selected person -->
+		<triplat-ds
+		    name="equipmentAssociatedPerson"
+		    data="{{equipmentAssociatedPerson}}"
+		    id="equipmentAssociatedPerson"
+				loading="{{equipmentAssociatedPersonLoading}}"
+				on-ds-get-complete="_handleEquipmentAssociatedPersonGetComplete">
+	    <triplat-ds-context name="selectedPerson" context-id="{{selectedPerson._id}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<!-- DS Selected Room: Selected room from the MLI list -->
+		<triplat-ds id="selectedRoom" name="selectedRoom" data="{{selectedRoom}}">
+		  <triplat-ds-instance instance-id="{{_selectedLineItem.roomRecordId}}"></triplat-ds-instance>
+		</triplat-ds>
+		<!-- DS Assets Associated Room: Assets associated with the selected room -->
+		<triplat-ds
+		    name="assetsAssociatedRoom"
+		    data="{{assetsAssociatedRoom}}"
+		    id="assetsAssociatedRoom"
+				loading="{{assetsAssociatedRoomLoading}}"
+				on-ds-get-complete="_handleAssetsAssociatedRoomGetComplete">
+	    <triplat-ds-context name="selectedRoom" context-id="{{selectedRoom._id}}"></triplat-ds-context>
+		</triplat-ds>
+		<!-- DS Equipment Associated Room: Equipment associated with the selected room -->
+		<triplat-ds
+		    name="equipmentAssociatedRoom"
+		    data="{{equipmentAssociatedRoom}}"
+		    id="equipmentAssociatedRoom"
+				loading="{{equipmentAssociatedRoomLoading}}"
+				on-ds-get-complete="_handleEquipmentAssociatedRoomGetComplete">
+	    <triplat-ds-context name="selectedRoom" context-id="{{selectedRoom._id}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<!-- Comparator: Used to add 'selected' attribute to the MLIs object -->
+		<tricomp-array-comparator
+				source="{{parentMLI}}"
+				compare-to="{{_selectedRequests}}"
+				compare-to-match-field="_id"
+				match-flag="selected"
+				result="{{parentMLIFiltered}}">
+		</tricomp-array-comparator>
+		<!-- End Comparator -->
+
+
+		<div class="content">
+			<tricomp-collapse-section id="collapseSection">
+				<div class="tricomp-collapse-section-collapsable">
+					<div class="line-item-container">
+						<div class="line-item-header line-item-header-button">
+							<div>
+								<paper-button class="btn-menu" on-tap="_toggleCloseMLI" noink>
+									<div class="btn-inner">
+										<triplat-icon
+								      class="placeholder"
+								      icon="bulletlist"></triplat-icon>
+									</div><!-- end .btn-inner -->
+									<div id="btn-collapse" class="btn-inner-hover">
+										<triplat-icon
+								      class="placeholder"
+								      icon="bulletlist"></triplat-icon>
+									</div><!-- end .btn-inner-hover -->
+
+									<span>{{_currentCount}}</span>
+								</paper-button>
+
+								<paper-tooltip for="btn-collapse" position="right" animation-delay="0">Click to hide items</paper-tooltip>
+							</div><!-- end div -->
+						</div><!-- end .line-item-header -->
+
+						<div class="scrollable-area">
+							<!-- People -->
+							<div id="mliHeader">
+								<paper-checkbox id="selectAllPeople" class="inbox-checkbox" on-tap="_selectAllPeopleCheckboxes" checked="{{_showAllPeople}}"></paper-checkbox>
+
+								<div class="title"  on-tap="_handleTapPeopleLine">
+									<span>People</span>
+									<span>&nbsp;</span>
+									<span class="count" id="personCount"></span>
+								</div><!-- end .title -->
+
+								<div class="divider-line"></div>
+								<tricomp-move-accordion-arrow
+									id="detailsAccordionArrow1"
+									opened="{{_peopleOpened}}"
+									enabled="{{_enableAccordionToggle(actionsEnabled, personCount)}}"
+									tabindex="0" role="button" on-keypress="_openPeopleArrow" aria-label="People Accordion">
+								</tricomp-move-accordion-arrow>
+							</div><!-- end #mliHeader -->
+
+							<iron-collapse id="collapsiblePeople" opened="{{_peopleOpened}}">
+								<div class="placeholder-msg" hidden$="{{!_showPlaceholderPeople}}">
+									<span>No people assigned</span>
+								</div><!-- end .placeholder-msg -->
+								<iron-selector id="selectorPeopleMLIs" selectable=".line-item-row" selected-item="{{_selectedElement}}">
+									<template
+											id="personTemplate"
+											is="dom-repeat"
+											items="{{_computedFilteredList(_mliPersonDataBuffer, _searchValue, fieldsToFilter, sortField, sortDescending, _refreshFlag)}}"
+											sort="{{_sort(sortField, sortDescending)}}"
+											filter="lineItemType"
+											observe="selected">
+
+										<div class="item ready line-item-row" selected$="{{item.selected}}" element$="{{_selectedElement}}" on-tap="_handleSelectedLineItem">
+											<div class="inbox-checkbox" >
+												<paper-checkbox checked="{{item.selected}}" on-tap="_handleInboxSelect" criterion="[[item]]"></paper-checkbox>
+											</div><!-- end .inbox-checkbox -->
+
+											<div class="ready-icon-spacing"></div>
+
+											<template is="dom-if" if="{{_screenLarge}}">
+											<!-- end .image-icon -->
+
+												<div class="info" tabindex="0" on-keypress = "_handleSelectedLineItemKeyboard">
+													<span>{{item.firstName}}</span>&nbsp;<span>{{item.lastName}}</span>
+												</div>
+											</template>
+
+											<template is="dom-if" if="{{!_screenLarge}}">
+												<div class="info" tabindex="0" on-keypress = "_handleSelectedLineItemKeyboard">
+													<span>{{item.firstName}}</span><br><span>{{item.lastName}}</span>
+												</div>
+											</template>
+
+										</div><!-- end .item -->
+									</template>
+								</iron-selector>
+							</iron-collapse>
+
+							<!-- Assets -->
+							<div id="mliHeader">
+								<paper-checkbox id="selectAllAssets" class="inbox-checkbox" on-tap="_selectAllAssetCheckboxes" checked="{{_showAllAssets}}"></paper-checkbox>
+
+								<div class="title"  on-tap="_handleTapAssetLine">
+									<span>Assets</span>
+									<span>&nbsp;</span>
+									<span class="count" id="assetCount"></span>
+								</div><!-- end .title -->
+
+								<div class="divider-line"></div>
+								<tricomp-move-accordion-arrow
+									id="detailsAccordionArrow2"
+									opened="{{_assetOpened}}"
+									enabled="{{_enableAccordionToggle(actionsEnabled, assetCount)}}"
+									tabindex="0" role="button" on-keypress="_openAssetArrow" aria-label="Asset Accordion">
+								</tricomp-move-accordion-arrow>
+							</div><!-- end #mliHeader -->
+
+							<iron-collapse id="collapsibleAssets" opened="{{_assetOpened}}">
+								<div class="placeholder-msg" hidden$="{{!_showPlaceholderAssets}}">
+									<span>No assets assigned</span>
+								</div><!-- end .placeholder-msg -->
+								<iron-selector id="selectorAssetMLIs" selectable=".line-item-row" selected-item="{{_selectedElement}}">
+									<template
+											id="assetTemplate"
+											is="dom-repeat"
+											items="{{_computedFilteredList(_mliAssetDataBuffer, _searchValue, fieldsToFilter, sortField, sortDescending)}}"
+											filter="lineItemType"
+											sort="{{_sort(assetSortField, sortDescending)}}"
+											observe="selected">
+										<div class="item ready line-item-row" selected$="{{item.selected}}" on-tap="_handleSelectedLineItem">
+											<div class="inbox-checkbox">
+												<paper-checkbox checked="{{item.selected}}" hidden$="{{_isChild(item)}}" on-tap="_handleInboxSelect" criterion="[[item]]"></paper-checkbox>
+											</div><!-- end .inbox-checkbox -->
+
+											<div class="inbox-checkbox-hide" hidden$="{{!_isChild(item)}}">
+											</div>
+											<div class="ready-icon-spacing"></div>
+
+											
+											<div class="info" hidden$="{{_isChild(item)}}">
+												<span tabindex="0" on-keypress = "_handleSelectedLineItemKeyboard">{{item.description}}</span>
+											</div><!-- end .info -->
+
+											<div class="info" hidden$="{{!_isChild(item)}}">
+												<span tabindex="0" on-keypress = "_handleSelectedLineItemKeyboard">{{item.description}}<span>&nbsp;<br>(</span><span>{{item.moveWithParent}}</span><span>)</span></span>
+											</div><!-- end .info -->
+										</div><!-- end .item -->
+									</template>
+								</iron-selector>
+									<!--/div>
+								</div-->
+							</iron-collapse>
+
+							<!-- Equipment -->
+							<div id="mliHeader">
+								<paper-checkbox id="selectAllEquipment" class="inbox-checkbox" on-tap="_selectAllEquipmentCheckboxes" checked="{{_showAllEquipment}}"></paper-checkbox>
+
+								<div class="title"  on-tap="_handleTapEquipLine">
+									<span>Equipment</span>
+									<span>&nbsp;</span>
+									<span class="count" id="equipmentCount"></span>
+								</div><!-- end .title -->
+								<div class="divider-line"></div>
+								<tricomp-move-accordion-arrow
+									id="detailsAccordionArrow3"
+									opened="{{_equipmentOpened}}"
+									enabled="{{_enableAccordionToggle(actionsEnabled, equipmentCount)}}"
+									tabindex="0" role="button" on-keypress="_openEquipmentArrow" aria-label="Equipment Accordion">
+								</tricomp-move-accordion-arrow>
+							</div><!-- end #mliHeader -->
+
+							<iron-collapse id="collapsibleEquipment" opened="{{_equipmentOpened}}">
+								<div class="placeholder-msg" hidden$="{{!_showPlaceholderEquipment}}">
+									<span>No equipment assigned</span>
+								</div><!-- end .placeholder-msg -->
+								<iron-selector id="selectorEquipmentMLIs" selectable=".line-item-row" selected-item="{{_selectedElement}}">
+									<template
+											id="equipmentTemplate"
+											is="dom-repeat"
+											items="{{_computedFilteredList(_mliEquipmentDataBuffer, _searchValue, fieldsToFilter, sortField, sortDescending)}}"
+											filter="lineItemType"
+											sort="{{_sort(sortField, sortDescending)}}"
+											observe="selected">
+										<div class="item ready line-item-row" selected$="{{item.selected}}" on-tap="_handleSelectedLineItem">
+											<div class="inbox-checkbox">
+												<paper-checkbox checked="{{item.selected}}" hidden$="{{_isChild(item)}}" on-tap="_handleInboxSelect" criterion="[[item]]"></paper-checkbox>
+											</div><!-- end .inbox-checkbox -->
+
+											<div class="inbox-checkbox-hide" hidden$="{{!_isChild(item)}}">
+											</div>
+
+											<div class="ready-icon-spacing"></div>
+
+
+											<div class="info" hidden$="{{_isChild(item)}}">
+												<span tabindex="0" on-keypress = "_handleSelectedLineItemKeyboard">{{item.description}}</span>
+											</div><!-- end .info -->
+
+											<div class="info" hidden$="{{!_isChild(item)}}">
+												<span tabindex="0" on-keypress = "_handleSelectedLineItemKeyboard">{{item.description}}<br><span>(</span><span>{{item.moveWithParent}}</span><span>)</span></span>
+											</div><!-- end .info -->
+										</div><!-- end .item -->
+									</template>
+								</iron-selector>
+									<!--/div>
+								</div-->
+							</iron-collapse>
+
+							<!-- Rooms -->
+							<div hidden$="{{!_groupMove}}">
+								<div id="mliHeader">
+									<paper-checkbox id="selectAllRooms" class="inbox-checkbox" on-tap="_selectAllRoomCheckboxes" checked="{{_showAllRooms}}"></paper-checkbox>
+
+									<div class="title" on-tap="_handleTapRoomLine">
+										<span>Rooms</span>
+										<span>&nbsp;</span>
+										<span class="count" id="roomCount"></span>
+									</div><!-- end .title -->
+									<div class="divider-line"></div>
+									<tricomp-move-accordion-arrow
+										id="detailsAccordionArrow4"
+										opened="{{_roomOpened}}"
+										enabled="{{_enableAccordionToggle(actionsEnabled, roomCount)}}"
+										tabindex="0" role="button" on-keypress="_openRoomArrow" aria-label="Room Accordion">
+									</tricomp-move-accordion-arrow>
+								</div><!-- end #mliHeader -->
+
+								<iron-collapse id="collapsibleRooms" opened="{{_roomOpened}}">
+									<div class="placeholder-msg" hidden$="{{!_showPlaceholderRoom}}">
+										<span>No rooms assigned</span>
+									</div><!-- end .placeholder-msg -->
+									<iron-selector id="selectorRoomMLIs" selectable=".line-item-row" selected-item="{{_selectedElement}}">
+										<template
+												id="roomTemplate"
+												is="dom-repeat"
+												items="{{_computedFilteredList(_mliRoomDataBuffer, _searchValue, fieldsToFilter, sortField, sortDescending, _refreshFlag)}}"
+												filter="lineItemType"
+												sort="{{_sort(sortField, sortDescending)}}"
+												observe="selected">
+											<div class="item ready line-item-row" selected$="{{item.selected}}" on-tap="_handleSelectedLineItem">
+												<div class="inbox-checkbox">
+													<paper-checkbox checked="{{item.selected}}" on-tap="_handleInboxSelect" criterion="[[item]]"></paper-checkbox>
+												</div><!-- end .inbox-checkbox -->
+
+												<div class="ready-icon-spacing"></div>
+
+												<template is="dom-if" if="{{_screenLarge}}">
+													<div class="info">
+														<span tabindex="0" on-keypress = "_handleSelectedLineItemKeyboard">{{item.description}}</span>
+													</div><!-- end .info -->
+												</template>
+
+												<template is="dom-if" if="{{!_screenLarge}}">
+													<div class="info">
+														<span tabindex="0" on-keypress = "_handleSelectedLineItemKeyboard">{{item.description}}</span>
+													</div><!-- end .info -->
+												</template>
+											</div><!-- end .item -->
+										</template>
+									</iron-selector>
+										<!--/div>
+									</div-->
+								</iron-collapse>
+							</div><!-- end div -->
+						</div> <!-- scrollable-area-->
+					</div><!-- end .line-item-container -->
+				</div><!-- end .tricomp-collapse-section-collapsable -->
+
+				<div class="tricomp-collapse-section-static">
+					<tricomp-groupmove-detail-header id="header" header-text-label="Details" request$="{{openRequestWhatUrlParams.reqId}}"></tricomp-groupmove-detail-header>
+
+
+					<div class="main-container">
+						<div class="container-loading-mli" hidden$="[[!_computeLoadingChildMLIs(childAssetEquipmentMLILoading, assetsAssociatedPersonLoading, equipmentAssociatedPersonLoading, assetsAssociatedRoomLoading, equipmentAssociatedRoomLoading)]]">
+							<paper-spinner active></paper-spinner>
+						</div><!-- end .container-loading-mli -->
+
+						<!-- People Tabs -->
+						<div class="details-container" hidden$="{{_hidePersonTabs}}">
+							<triblock-tab-nav-layout>
+									<triblock-tabs selected="{{_selectedTab}}" nav>
+										<triblock-tab
+											id="peopleDetailsTab"
+											label="Details"
+											iron-page-id="peopleDetailsPage"></triblock-tab>
+										<triblock-tab
+											id="peopleFromToTab"
+											label="From/To"
+											iron-page-id="peopleFromToPage"></triblock-tab>
+										<triblock-tab
+											id="peopleAssetsTab"
+											label="Assets"
+											badge-number="{{_assetsCount}}"
+											iron-page-id="peopleAssetsPage"></triblock-tab>
+										<triblock-tab
+											id="peopleCommentsTab"
+											label="Comments"
+											badge-number="{{commentCount}}"
+											iron-page-id="peopleCommentsPage"></triblock-tab>
+									</triblock-tabs>
+								<iron-pages attr-for-selected="id" page id="peoplePages">
+									<!-- People Details page -->
+							    	<div id="peopleDetailsPage" hidden$="{{!_lineItemSelected}}">
+										<div class="mli-detail-top-section image">
+											<div class="mli-detail-image">
+												<tricomp-accordion-image
+														icon="ibm:user"
+														picture="{{_selectedLineItem.picture}}"
+														height="100"
+														width="100"></tricomp-accordion-image>
+											</div><!-- end .mli-detail-image -->
+
+											<div class="mli-detail-text-vertical">
+												<div class="mli-detail-item field-label-main">
+													<span>{{_selectedLineItem.lastName}}</span>,&nbsp;<span>{{_selectedLineItem.firstName}}</span>
+												</div>
+												<div class="mli-detail-item">
+													<span>ID: </span><span>{{_selectedLineItem.personID}}</span>
+												</div>
+
+												<div class="mli-detail-item"hidden$="{{_isEmpty(openRequest.customerOrg)}}">
+													<!--triplat-icon icon="home"></triplat-icon-->
+													<div><span>{{openRequest.customerOrg}}</span></div>
+												</div>
+
+												<div class="mli-detail-item"hidden$="{{_isEmpty(_selectedLineItem.title)}}">
+													<!--triplat-icon icon="role"></triplat-icon-->
+													<div><span>{{_selectedLineItem.title}}</span></div>
+												</div>
+											</div>
+
+											<div class="mli-detail-text-vertical">
+												<div class="mli-detail-item field-label-main">
+													<span><p> </p> </span>
+												</div>
+												<div class="mli-detail-item"hidden$="{{_isEmpty(_selectedLineItem.email)}}">
+													<triplat-icon icon="email" aria-label="Email Address Link"></triplat-icon>
+													<div>&nbsp;<a href$="{{_computeEmailAddressLink(_selectedLineItem.email)}}">{{_selectedLineItem.email}}</a></div>
+												</div>
+												<div class="mli-detail-item"hidden$="{{_isEmpty(_selectedLineItem.workPhone)}}">
+													<triplat-icon icon="phone-call" aria-label="Work Phone Link"></triplat-icon>
+													<div>&nbsp;<a href$="{{_computeTelephoneLink(_selectedLineItem.workPhone)}}">{{_selectedLineItem.workPhone}}</a></div>
+												</div>
+												<div class="mli-detail-item"hidden$="{{_isEmpty(_selectedLineItem.mobilePhone)}}">
+													<triplat-icon icon="mobile" aria-label="Mobile Phone Link"></triplat-icon>
+													<div>&nbsp;<a href$="{{_computeTelephoneLink(_selectedLineItem.mobilePhone)}}">{{_selectedLineItem.mobilePhone}}</a></div>
+												</div>
+											</div>
+										</div>
+										<div class="mli-detail-middle-section image">
+											<div class="mli-detail-item mli-detail-date">
+												<div class="date-mask"></div>
+												<triplat-date-picker id="scheduledMoveDatePeople" label="Scheduled Move Date" value="{{_selectedLineItem.moveDate}}" always-float-label on-change="_handleDateValueChanged"  display-format="{{currentUser._DateFormat}}" readonly></triplat-date-picker>
+											</div>
+											<div class="mli-detail-item">
+												<paper-input id="boxesPeopleInput" label="Boxes" type="number" autofocus  min="0" value="{{_selectedLineItem.numberBoxes}}" readonly$="{{!_isDraft(openRequest)}}" on-change="_handleBoxValueChanged" auto-validate allowed-pattern="[0-9]" always-float-label></paper-input>
+											</div>
+										</div>
+										<div class="mli-detail-bottom-section image">
+											<div class="mli-detail-text-vertical">
+												<paper-input label="Functional Role" value="{{_selectedLineItem.functionalRole}}" readonly always-float-label></paper-input>
+												<triplat-select-input
+															id="assignmentType"
+															label="Assignment Type"
+															always-float-label
+															select-src="{{assignmentType}}"
+															value="{{_selectedLineItem.assignmentTypeMLI}}"
+															value-name="name"
+															search-value="{{_currentAssignmentType}}"
+															readonly$="{{!_isDraft(openRequest)}}">
+												</triplat-select-input>
+											</div>
+											<div class="mli-detail-text-vertical">
+												<paper-input label="Space Class" value="{{_selectedLineItem.fromLocationSpaceClass}}" readonly always-float-label></paper-input>
+											</div>
+										</div>
+
+									</div>
+
+									<!-- People From\To page -->
+									<div id="peopleFromToPage" class="floorplan-graphic" hidden$="{{!_lineItemSelected}}">
+										<div class="location">
+											<div class="location-background" hidden$="{{_computeIsEmpty(moveFromFloor._id)}}">
+												<div class="header-text-main">
+												 	<span class="location-field">{{_selectedLineItem.fromBuilding}}</span>
+												</div>
+												<div class="header-text-main">
+													<span class="location-title">Floor:</span>
+													<span class="location-field">{{_selectedLineItem.fromFloor}}</span>
+												</div>
+												<div class="header-text-main">
+													<span class="location-title">Space:</span>
+													<span class="location-field-no-border">{{_selectedLineItem.fromSpace}}</span>
+												</div>
+											</div>
+
+											<div class="header-text" hidden$="{{!_computeIsEmpty(moveFromFloor._id)}}">
+												<span class="location-title">FROM LOCATION: Data not available</span>
+											</div>
+
+											<div class="floorcontainer" hidden$="{{_computeIsEmpty(moveFromFloor._id)}}">
+
+
+											 	<triplat-graphic id="floorplandetail1" record-id="{{moveFromFloor._id}}" svg-loaded="{{svgLoaded}}" drawing-id-loading="{{drawingIdLoading}}" has-graphic="{{hasGraphic}}">
+											 		<triplat-graphic-highlight
+														class-number="1"
+														highlighted="{{moveFromSpace}}">
+													</triplat-graphic-highlight>
+												   	<triplat-graphic-zoomable></triplat-graphic-zoomable>
+												</triplat-graphic>
+
+											</div>
+
+										</div>
+
+										<div class="location">
+											<div class="location-background" hidden$="{{_computeIsEmpty(moveToFloor._id)}}">
+												<div class="header-text-main">
+												 	<span class="location-field">{{_selectedLineItem.toBuilding}}</span>
+												</div>
+												<div class="header-text-main">
+													<span class="location-title">Floor:</span>
+													<span class="location-field">{{_selectedLineItem.toFloor}}</span>
+												</div>
+												<div class="header-text-main">
+													<span class="location-title">Space:</span>
+													<span class="location-field-no-border">{{_selectedLineItem.toSpace}}</span>
+												</div>
+											</div>
+											<div class="header-text" hidden$="{{!_computeIsEmpty(moveToFloor._id)}}">
+												<span class="location-title">TO LOCATION: Data not available</span>
+											</div>
+											<div class="floorcontainer" hidden$="{{_computeIsEmpty(moveToFloor._id)}}">
+
+											 	<triplat-graphic id="floorplandetail1T" record-id="{{moveToFloor._id}}" svg-loaded="{{svgLoaded}}" drawing-id-loading="{{drawingIdLoading}}" has-graphic="{{hasGraphic}}">
+											 		<triplat-graphic-highlight
+														class-number="1"
+														highlighted="{{moveToSpace}}">
+													</triplat-graphic-highlight>
+												   	<triplat-graphic-zoomable></triplat-graphic-zoomable>
+												</triplat-graphic>
+
+											</div>
+										</div>
+
+						    		</div>
+
+
+						    		<!-- People Assets page -->
+							    	<div id="peopleAssetsPage" hidden$="{{!_lineItemSelected}}">
+							    			<div class="header-text-main" hidden$="{{_hideAssetsEquipment(assetTabCount,equipmentTabCount)}}">
+								    			<span>Assets&nbsp;(</span><span>{{assetTabCount}}</span><span>)&nbsp;and&nbsp;Equipment&nbsp;(</span><span>{{equipmentTabCount}}</span></span>)&nbsp;for&nbsp;</span>
+												<span class="header-text-bold">{{_selectedLineItem.lastName}}</span>,<span class="header-text-bold">{{_selectedLineItem.firstName}}</span>
+											</div>
+										<p></p>
+						    			<template
+									        id="childAssetEquipmentTemplate"
+											is="dom-repeat"
+			                                items="{{childAssetEquipmentMLI}}">
+
+											<div class="assets-detail">
+												<div class="assets-detail-top-section image">
+													<div class="mli-detail-text-horizontal">
+														<div hidden$="{{!_isAsset(item.moveType)}}">
+															<div class="mli-detail-image">
+																<tricomp-accordion-image
+																		icon="ibm:assets"
+																		picture="{{item.assetImage}}"
+																		height="100"
+																		width="100"></tricomp-accordion-image>
+															</div><!-- end .mli-detail-image -->
+														</div><!-- end div -->
+
+														<div hidden$="{{_isAsset(item.moveType)}}">
+															<div class="mli-detail-image">
+																<tricomp-accordion-image
+																		icon="ibm:equipment"
+																		picture="{{item.equipmentImage}}"
+																		height="100"
+																		width="100"></tricomp-accordion-image>
+															</div><!-- end .mli-detail-image -->
+														</div><!-- end div -->
+
+														<div>
+															<div class="mli-detail-item mli-detail-item-bold" hidden$="{{!_isAsset(item.moveType)}}"><span>{{item.assetName}}&nbsp;(Asset)</span></div>
+															<div class="mli-detail-item mli-detail-item-bold" hidden$="{{_isAsset(item.moveType)}}"><span>{{item.equipmentName}}&nbsp;(Equipment)</span></div>
+															<div class="assets-detail-text-horizontal">
+																<paper-input label="Asset ID" value="{{item.assetId}}"  hidden$="{{!_isAsset(item.moveType)}}" readonly></paper-input>
+																<paper-input label="Equipment ID" value="{{item.equipmentId}}"  hidden$="{{_isAsset(item.moveType)}}" readonly></paper-input>
+																<p>&nbsp;&nbsp;&nbsp;&nbsp;</p>
+																<paper-input label="Serial Number" value="{{item.serialNumber}}"  hidden$="{{!_isAsset(item.moveType)}}" readonly always-float-label></paper-input>
+															</div>
+														</div>
+													</div>
+												</div>
+												<div class="assets-detail-middle-section">
+													<div class="assets-detail-text-vertical assets-detail-small-column">
+
+														<paper-input label="Quantity" type="number" value="{{item.quantity.value}}"   min="0" hidden$="{{_isAsset(item.moveType)}}" on-change="_handleQuantityValueChanged" auto-validate allowed-pattern="[0-9]"></paper-input>
+
+														<div hidden$="{{_isDraft(openRequest)}}">
+															<triplat-select-input
+																	id="peopleCondition"
+																	hidden$="{{!_isAsset(item.moveType)}}"
+																	label="Condition"
+																	always-float-label
+																	on-select-input-list-open="_computeConditionListValuesTop"
+																	on-select-input-value-change="_handleConditionValueChangedTop"
+																	select-src="{{assetCondition}}"
+																	value="{{item.conditionMLI}}"
+																	value-name="value"
+																	search-value="{{_currentAssetCondition}}"
+																	readonly>
+															</triplat-select-input>
+														</div>
+														<div hidden$="{{!_isDraft(openRequest)}}">
+															<triplat-select-input
+																	id="peopleCondition"
+																	hidden$="{{!_isAsset(item.moveType)}}"
+																	label="Condition"
+																	always-float-label
+																	on-select-input-list-open="_computeConditionListValuesTop"
+																	on-select-input-value-change="_handleConditionValueChangedTop"
+																	select-src="{{assetCondition}}"
+																	value="{{item.conditionMLI}}"
+																	value-name="value"
+																	search-value="{{_currentAssetCondition}}">
+															</triplat-select-input>
+														</div>
+														<div hidden$="{{_isDraft(openRequest)}}">
+															<triplat-select-input
+																	id="peopleMoveAction"
+																	label="Move Option"
+																	always-float-label
+																	on-select-input-list-open="_computeDependentListValuesTop"
+																	on-select-input-value-change="_handleMoveActionValueChangedTop"
+																	value="{{item.moveActionId}}"
+																	value-name="value"
+																	search-value="{{moveActionDependentSearchValue}}"
+																	select-src="[[moveActionDependent]]"
+																	readonly>
+															</triplat-select-input>
+														</div>
+														<div hidden$="{{!_isDraft(openRequest)}}">
+															<triplat-select-input
+																	id="peopleMoveAction"
+																	label="Move Option"
+																	always-float-label
+																	on-select-input-list-open="_computeDependentListValuesTop"
+																	on-select-input-value-change="_handleMoveActionValueChangedTop"
+																	value="{{item.moveActionId}}"
+																	value-name="value"
+																	search-value="{{moveActionDependentSearchValue}}"
+																	select-src="[[moveActionDependent]]">
+															</triplat-select-input>
+														</div>
+													</div>
+													<div class="assets-detail-text-vertical assets-detail-large-column">
+														<paper-textarea class="moveInstructions" label="Instructions" value="{{item.moveInstructions}}" rows="4" max-rows="4" maxlength="700" on-input="moveInstructionChanged" on-focus="moveInstructionFocus" on-blur="moveInstructionBlur" no-label-float readonly$="{{_isItemReadonly(_selectedLineItem)}}"></paper-textarea>
+													</div>
+												</div>
+											</div>
+										</template>
+							    	</div>
+
+							    	<!-- People Comments page -->
+							    	<div id="peopleCommentsPage" hidden$="{{!_lineItemSelected}}">
+								    	<tricomp-comments-new
+								    		id="commentTab"
+								    		open-Request-What-Url-Params="{{openRequestWhatUrlParams}}"
+								    		selected-line-item="{{_selectedLineItem}}"
+								    		current-MLI="{{currentMLI}}"
+								    		is-mli-comment="true">
+								    	</tricomp-comments-new>
+							    	</div>
+
+							 	</iron-pages>
+							</triblock-tab-nav-layout>
+
+						</div>
+
+						<!-- Asset Tabs -->
+						<div class="details-container" hidden$="{{_hideAssetTabs}}">
+							<triblock-tab-nav-layout>
+								<triblock-tabs selected="{{_selectedTab}}" nav>
+									<triblock-tab
+										id="assetsDetailsTab"
+										label="Details"
+										iron-page-id="assetsDetailsPage"></triblock-tab>
+									<triblock-tab
+										id="assetsFromToTab"
+										label="From/To"
+										iron-page-id="assetsFromToPage"></triblock-tab>
+									<triblock-tab
+										id="assetsCommentsTab"
+										label="Comments"
+										badge-number="{{commentCount}}"
+										iron-page-id="assetsCommentsPage"></triblock-tab>
+								</triblock-tabs>
+								<iron-pages attr-for-selected="id" page id="assetsPages">
+
+									<!-- Assets Details page -->
+							    	<div id="assetsDetailsPage" hidden$="{{!_lineItemSelected}}">
+								    	<div class="mli-detail-top-section image">
+												<div class="mli-detail-image">
+													<tricomp-accordion-image
+															icon="ibm:assets"
+															picture="{{_selectedLineItem.assetImage}}"
+															height="100"
+															width="100"></tricomp-accordion-image>
+												</div><!-- end .mli-detail-image -->
+
+											<div class="mli-detail-text-vertical">
+												<div class="mli-detail-item field-label-main">
+													<span>{{_selectedLineItem.assetName}}</span>
+												</div>
+												<div class="mli-detail-item field-label-secondary" hidden$="{{!_selectedLineItem.child}}">
+													<div>Move with: <span>{{_selectedLineItem.moveWithParent}}</span></div>
+												</div>
+												<div class="mli-detail-text-horizontal">
+													<paper-input label="Asset ID" value="{{_selectedLineItem.assetId}}" readonly always-float-label></paper-input>
+													<p>&nbsp;&nbsp;&nbsp;&nbsp;</p>
+													<paper-input label="Serial Number" value="{{_selectedLineItem.serialNumber}}"  readonly always-float-label></paper-input>
+												</div>
+											</div>
+										</div>
+									  	<div class="mli-detail-middle-section image">
+											<div class="mli-detail-item mli-detail-date">
+												<div class="date-mask"></div>
+												<triplat-date-picker id="scheduledMoveDateAssets" label="Scheduled Move Date" value="{{_selectedLineItem.moveDate}}" always-float-label on-change="_handleDateValueChanged" display-format="{{currentUser._DateFormat}}" readonly></triplat-date-picker>
+											</div>
+
+											<div class="mli-detail-item">
+												<paper-input id="boxesAssetInput" label="Boxes" type="number" value="{{_selectedLineItem.numberBoxes}}" min="0" readonly$="{{!_isDraft(openRequest)}}" on-change="_handleBoxValueChanged" always-float-label auto-validate allowed-pattern="[0-9]"></paper-input>
+											</div>
+										</div>
+										<div class="mli-detail-bottom-section image">
+											<div class="mli-detail-text-vertical">
+												<paper-input label="Asset Type" value="{{_selectedLineItem.moveAssetType}}" readonly always-float-label></paper-input>
+												<paper-input label="Spec Class" value="{{_selectedLineItem.specClass}}" readonly always-float-label></paper-input>
+												<paper-input label="Brand" value="{{_selectedLineItem.brand}}" readonly always-float-label></paper-input>
+											</div>
+											<div class="mli-detail-text-vertical">
+
+												<triplat-select-input
+																id="assetsCondition"
+																hidden$="{{!_isAsset(item.moveType)}}"
+																label="Condition"
+																always-float-label
+																on-select-input-list-open="_computeConditionListValuesChild"
+																on-select-input-value-change="_handleConditionValueChangedChild"
+																select-src="{{assetCondition}}"
+																value="{{_selectedLineItem.conditionMLI}}"
+																value-name="value"
+																search-value="{{_currentAssetCondition}}"
+																readonly$="{{!_isDraft(openRequest)}}">
+												</triplat-select-input>
+
+												<triplat-select-input
+																id="assetMoveAction"
+																hidden$="{{!_selectedLineItem.child}}"
+																label="Move Option"
+																always-float-label
+																on-select-input-list-open="_computeDependentListValuesChild"
+																on-select-input-value-change="_handleMoveActionValueChangedChild"
+																value="{{_selectedLineItem.moveActionId}}"
+																value-name="value"
+																search-value="{{moveActionDependentSearchValue}}"
+																select-src="[[moveActionDependent]]"
+																readonly$="{{!_isDraft(openRequest)}}">
+												</triplat-select-input>
+
+												<paper-textarea class="moveInstructions" label="Instructions" value="{{_selectedLineItem.moveInstructions}}" rows="4" max-rows="4" maxlength="700" on-input="moveInstructionChanged" on-focus="moveInstructionFocus" on-blur="moveInstructionBlur" no-label-float
+												readonly$="{{_isItemReadonly(_selectedLineItem)}}"></paper-textarea>
+											</div>
+										</div>
+
+							    	</div>
+
+							    	<!-- Assets From\To page -->
+						    		<div id="assetsFromToPage" class="floorplan-graphic" hidden$="{{!_lineItemSelected}}">
+										<div class="location">
+											<div class="location-background" hidden$="{{_computeIsEmpty(moveFromFloor._id)}}">
+												<div class="header-text-main">
+												 	<span class="location-field">{{_selectedLineItem.fromBuilding}}</span>
+												</div>
+												<div class="header-text-main">
+													<span class="location-title">Floor:</span>
+													<span class="location-field">{{_selectedLineItem.fromFloor}}</span>
+												</div>
+												<div class="header-text-main">
+													<span class="location-title">Space:</span>
+													<span class="location-field-no-border">{{_selectedLineItem.fromSpace}}</span>
+												</div>
+											</div>
+
+											<div class="header-text" hidden$="{{!_computeIsEmpty(moveFromFloor._id)}}">
+												<span class="location-title">FROM LOCATION: Data not available</span>
+											</div>
+
+											<div class="floorcontainer" hidden$="{{_computeIsEmpty(moveFromFloor._id)}}">
+
+
+											 	<triplat-graphic id="floorplandetail2" record-id="{{moveFromFloor._id}}" svg-loaded="{{svgLoaded}}" drawing-id-loading="{{drawingIdLoading}}" has-graphic="{{hasGraphic}}">
+											 		<triplat-graphic-highlight
+														class-number="1"
+														highlighted="{{moveFromSpace}}">
+													</triplat-graphic-highlight>
+												   	<triplat-graphic-zoomable></triplat-graphic-zoomable>
+												</triplat-graphic>
+
+											</div>
+
+										</div>
+
+										<div class="location">
+											<div class="location-background" hidden$="{{_computeIsEmpty(moveToFloor._id)}}">
+												<div class="header-text-main">
+												 	<span class="location-field">{{_selectedLineItem.toBuilding}}</span>
+												</div>
+												<div class="header-text-main">
+													<span class="location-title">Floor:</span>
+													<span class="location-field">{{_selectedLineItem.toFloor}}</span>
+												</div>
+												<div class="header-text-main">
+													<span class="location-title">Space:</span>
+													<span class="location-field-no-border">{{_selectedLineItem.toSpace}}</span>
+												</div>
+											</div>
+											<div class="header-text" hidden$="{{!_computeIsEmpty(moveToFloor._id)}}">
+												<span class="location-title">TO LOCATION: Data not available</span>
+											</div>
+											<div class="floorcontainer" hidden$="{{_computeIsEmpty(moveToFloor._id)}}">
+
+											 	<triplat-graphic id="floorplandetail2T" record-id="{{moveToFloor._id}}" svg-loaded="{{svgLoaded}}" drawing-id-loading="{{drawingIdLoading}}" has-graphic="{{hasGraphic}}">
+											 		<triplat-graphic-highlight
+														class-number="1"
+														highlighted="{{moveToSpace}}">
+													</triplat-graphic-highlight>
+												   	<triplat-graphic-zoomable></triplat-graphic-zoomable>
+												</triplat-graphic>
+
+											</div>
+										</div>
+
+						    		</div>
+
+						    		<!-- Assets Comments page -->
+						    		<div id="assetsCommentsPage" hidden$="{{!_lineItemSelected}}">
+								    	<tricomp-comments-new
+								    		open-Request-What-Url-Params="{{openRequestWhatUrlParams}}"
+								    		selected-line-item="{{_selectedLineItem}}"
+								    		current-MLI="{{currentMLI}}"
+								    		is-mli-comment="true">
+								    	</tricomp-comments-new>
+							    	</div>
+
+							 	</iron-pages>
+							</triblock-tab-nav-layout>
+							<!--/div-->
+						</div>
+
+						<!-- Equipment Tabs -->
+						<div class="details-container" hidden$="{{_hideEquipmentTabs}}">
+						<triblock-tab-nav-layout>
+									<triblock-tabs selected="{{_selectedTab}}" nav>
+										<triblock-tab
+											id="equipmentDetailsTab"
+											label="Details"
+											iron-page-id="equipmentDetailsPage"></triblock-tab>
+										<triblock-tab
+											id="equipmentFromToTab"
+											label="From/To"
+											iron-page-id="equipmentFromToPage"></triblock-tab>
+										<triblock-tab
+											id="equipmentCommentsTab"
+											label="Comments"
+											badge-number="{{commentCount}}"
+											iron-page-id="equipmentCommentsPage"></triblock-tab>
+									</triblock-tabs>
+									<iron-pages id="equipmentPages" attr-for-selected="id" page>
+
+									<!-- Equipment Details page -->
+							    	<div id="equipmentDetailsPage" hidden$="{{!_lineItemSelected}}">
+							    		<div class="mli-detail-top-section image">
+												<div class="mli-detail-image">
+													<tricomp-accordion-image
+															icon="ibm:equipment"
+															picture="{{_selectedLineItem.equipmentImage}}"
+															height="100"
+															width="100"></tricomp-accordion-image>
+												</div><!-- end .mli-detail-image -->
+
+											<div class="mli-detail-text-vertical">
+												<div class="mli-detail-item field-label-main">
+													<span>{{_selectedLineItem.equipmentName}}</span>
+												</div>
+												<div class="mli-detail-item field-label-secondary" hidden$="{{!_selectedLineItem.child}}">
+													<div>Move with: <span>{{_selectedLineItem.moveWithParent}}</span></div>
+												</div>
+
+												<div class="mli-detail-text-horizontal">
+													<paper-input label="Equipment ID" value="{{_selectedLineItem.equipmentId}}" readonly always-float-label></paper-input>
+													<p>&nbsp;&nbsp;&nbsp;&nbsp;</p>
+												</div>
+											</div>
+										</div>
+										<div class="mli-detail-middle-section image">
+											<div class="mli-detail-item mli-detail-date">
+												<div class="date-mask"></div>
+												<triplat-date-picker id="scheduledMoveDateEquipment" label="Scheduled Move Date" value="{{_selectedLineItem.moveDate}}" always-float-label on-change="_handleDateValueChanged" display-format="{{currentUser._DateFormat}}" readonly></triplat-date-picker>
+											</div>
+											<div class="mli-detail-item">
+												<paper-input id="boxesEquipmentInput" label="Boxes" type="number"  autofocus min="0" value="{{_selectedLineItem.numberBoxes}}" readonly$="{{!_isDraft(openRequest)}}" on-change="_handleBoxValueChanged" always-float-label auto-validate allowed-pattern="[0-9]"></paper-input>
+											</div>
+										</div>
+										<div class="mli-detail-bottom-section image">
+											<div class="mli-detail-text-vertical">
+												<paper-input label="Spec Type" value="{{_selectedLineItem.specType}}" readonly always-float-label></paper-input>
+												<paper-input label="Spec Class" value="{{_selectedLineItem.equipmentSpecClass}}" readonly always-float-label></paper-input>
+												<paper-input label="Brand" value="{{_selectedLineItem.specBrand}}" readonly always-float-label></paper-input>
+											</div>
+											<div class="mli-detail-text-vertical">
+												<paper-input label="Quantity" type="number" value="{{_selectedLineItem.quantity.value}}" min="0" on-change="_handleQuantityValueChanged" auto-validate allowed-pattern="[0-9]" readonly$="{{!_isDraft(openRequest)}}"></paper-input>
+												<triplat-select-input
+															id="equipmentMoveAction"
+															hidden$="{{!_selectedLineItem.child}}"
+															label="Move Option"
+															always-float-label
+															on-select-input-list-open="_computeDependentListValuesChild"
+															on-select-input-value-change="_handleMoveActionValueChangedChild"
+															value="{{_selectedLineItem.moveActionId}}"
+															value-name="value"
+															search-value="{{moveActionDependentSearchValue}}"
+															select-src="[[moveActionDependent]]"
+															readonly$="{{!_isDraft(openRequest)}}">
+												</triplat-select-input>
+												<paper-textarea class="moveInstructions" label="Instructions" value="{{_selectedLineItem.moveInstructions}}" rows="4" max-rows="4" maxlength="700" on-input="moveInstructionChanged" on-focus="moveInstructionFocus" on-blur="moveInstructionBlur" no-label-float readonly$="{{!_isDraft(openRequest)}}"></paper-textarea>
+											</div>
+										</div>
+							    	</div>
+
+							    	<!-- Equipment From\To page -->
+									<div id="equipmentFromToPage" class="floorplan-graphic" hidden$="{{!_lineItemSelected}}">
+										<div class="location">
+											<div class="location-background" hidden$="{{_computeIsEmpty(moveFromFloor._id)}}">
+												<div class="header-text-main">
+												 	<span class="location-field">{{_selectedLineItem.fromBuilding}}</span>
+												</div>
+												<div class="header-text-main">
+													<span class="location-title">Floor:</span>
+													<span class="location-field">{{_selectedLineItem.fromFloor}}</span>
+												</div>
+												<div class="header-text-main">
+													<span class="location-title">Space:</span>
+													<span class="location-field-no-border">{{_selectedLineItem.fromSpace}}</span>
+												</div>
+											</div>
+
+											<div class="header-text" hidden$="{{!_computeIsEmpty(moveFromFloor._id)}}">
+												<span class="location-title">FROM LOCATION: Data not available</span>
+											</div>
+
+											<div class="floorcontainer" hidden$="{{_computeIsEmpty(moveFromFloor._id)}}">
+
+
+											 	<triplat-graphic id="floorplandetail3" record-id="{{moveFromFloor._id}}" svg-loaded="{{svgLoaded}}" drawing-id-loading="{{drawingIdLoading}}" has-graphic="{{hasGraphic}}">
+											 		<triplat-graphic-highlight
+														class-number="1"
+														highlighted="{{moveFromSpace}}">
+													</triplat-graphic-highlight>
+												   	<triplat-graphic-zoomable></triplat-graphic-zoomable>
+												</triplat-graphic>
+
+											</div>
+
+										</div>
+
+										<div class="location">
+											<div class="location-background" hidden$="{{_computeIsEmpty(moveToFloor._id)}}">
+												<div class="header-text-main">
+												 	<span class="location-field">{{_selectedLineItem.toBuilding}}</span>
+												</div>
+												<div class="header-text-main">
+													<span class="location-title">Floor:</span>
+													<span class="location-field">{{_selectedLineItem.toFloor}}</span>
+												</div>
+												<div class="header-text-main">
+													<span class="location-title">Space:</span>
+													<span class="location-field-no-border">{{_selectedLineItem.toSpace}}</span>
+												</div>
+											</div>
+											<div class="header-text" hidden$="{{!_computeIsEmpty(moveToFloor._id)}}">
+												<span class="location-title">TO LOCATION: Data not available</span>
+											</div>
+											<div class="floorcontainer" hidden$="{{_computeIsEmpty(moveToFloor._id)}}">
+
+											 	<triplat-graphic id="floorplandetail3T" record-id="{{moveToFloor._id}}" svg-loaded="{{svgLoaded}}" drawing-id-loading="{{drawingIdLoading}}" has-graphic="{{hasGraphic}}">
+											 		<triplat-graphic-highlight
+														class-number="1"
+														highlighted="{{moveToSpace}}">
+													</triplat-graphic-highlight>
+												   	<triplat-graphic-zoomable></triplat-graphic-zoomable>
+												</triplat-graphic>
+
+											</div>
+										</div>
+
+						    		</div>
+
+						    		<!-- Equipment Comments page -->
+						    		<div id="equipmentCommentsPage" hidden$="{{!_lineItemSelected}}">
+								    	<tricomp-comments-new
+								    	open-Request-What-Url-Params="{{openRequestWhatUrlParams}}"
+								    	selected-line-item="{{_selectedLineItem}}"
+								    	current-MLI="{{currentMLI}}"
+								    	is-mli-comment="true">
+								    	</tricomp-comments-new>
+							    	</div>
+
+							 	</iron-pages>
+							</triblock-tab-nav-layout>
+							<!--/div-->
+						</div>
+
+						<!-- Room Tabs -->
+						<div class="details-container" hidden$="{{_hideRoomTabs}}">
+							<triblock-tab-nav-layout>
+								<triblock-tabs selected="{{_selectedTab}}" nav>
+									<triblock-tab
+										id="roomDetailsTab"
+										label="Details"
+										iron-page-id="roomDetailsPage"></triblock-tab>
+									<triblock-tab
+										id="roomFromToTab"
+										label="From/To"
+										iron-page-id="roomFromToPage"></triblock-tab>
+									<triblock-tab
+										id="roomAssetsTab"
+										label="Assets"
+										iron-page-id="roomAssetsPage"
+										badge-number="{{_assetsCount}}"></triblock-tab>
+						 			<triblock-tab
+										id="roomCommentsTab"
+										label="Comments"
+										iron-page-id="roomCommentsPage"
+										badge-number="{{commentCount}}"></triblock-tab>
+								</triblock-tabs>
+								<iron-pages id="roomPages" attr-for-selected="id" page>
+
+
+									<!-- Room Details page -->
+							    	<div id="roomDetailsPage" hidden$="{{!_lineItemSelected}}">
+										<div class="mli-detail-top-section image">
+											<div class="mli-detail-image">
+												<tricomp-accordion-image
+														icon="ibm:room-function"
+														picture="{{_selectedLineItem.roomImage}}"
+														height="100"
+														width="100"></tricomp-accordion-image>
+											</div><!-- end .mli-detail-image -->
+
+											<div class="mli-detail-text-vertical">
+												<div class="mli-detail-item field-label-main">
+													<span>{{_selectedLineItem.fromSpace}}</span>
+												</div>
+												<div class="mli-detail-item">
+													<span>{{_selectedLineItem.fromFloor}}</span>
+												</div>
+												<div class="mli-detail-item">
+													<span>{{_selectedLineItem.fromBuilding}}</span>
+												</div>
+											</div>
+
+											<div class="mli-detail-text-vertical">
+												<div class="mli-detail-item"hidden$="{{_isEmpty(_selectedLineItem.email)}}">
+													<triplat-icon icon="email"></triplat-icon>
+													<div>&nbsp;Email:&nbsp;<a href$="{{_computeEmailAddressLink(_selectedLineItem.email)}}">{{_selectedLineItem.email}}</a></div>
+												</div>
+												<div class="mli-detail-item"hidden$="{{_isEmpty(_selectedLineItem.workPhone)}}">
+													<triplat-icon icon="phone-call"></triplat-icon>
+													<div>&nbsp;Work Phone:&nbsp;<a href$="{{_computeTelephoneLink(_selectedLineItem.workPhone)}}">{{_selectedLineItem.workPhone}}</a></div>
+												</div>
+												<div class="mli-detail-item"hidden$="{{_isEmpty(_selectedLineItem.mobilePhone)}}">
+													<triplat-icon icon="phone-call"></triplat-icon>
+													<div>&nbsp;Mobile Phone:&nbsp;<a href$="{{_computeTelephoneLink(_selectedLineItem.mobilePhone)}}">{{_selectedLineItem.mobilePhone}}</a></div>
+												</div>
+											</div>
+										</div>
+										<div class="mli-detail-middle-section image">
+											<div class="mli-detail-item mli-detail-date">
+												<div class="date-mask"></div>
+												<triplat-date-picker id="scheduledMoveDateRooms" label="Scheduled Move Date" value="{{_selectedLineItem.moveDate}}" always-float-label on-change="_handleDateValueChanged"  display-format="{{currentUser._DateFormat}}" readonly></triplat-date-picker>
+											</div>
+											<div class="mli-detail-item">
+												<paper-input id="boxesRoomInput" label="Boxes" type="number" autofocus  min="0" value="{{_selectedLineItem.numberBoxes}}" readonly$="{{!_isDraft(openRequest)}}" on-change="_handleBoxValueChanged" always-float-label auto-validate allowed-pattern="[0-9]"></paper-input>
+											</div>
+										</div>
+
+										<div class="mli-detail-bottom-section image">
+											<div class="mli-detail-text-vertical">
+												<paper-input label="Space Class" value="{{_selectedLineItem.fromLocationSpaceClass}}" readonly></paper-input>
+											</div>
+											<div class="mli-detail-text-vertical">
+											</div>
+										</div>
+
+									</div>
+
+									<!-- Room From\To page -->
+									<div id="roomFromToPage" class="floorplan-graphic" hidden$="{{!_lineItemSelected}}">
+										<div class="location">
+											<div class="location-background" hidden$="{{_computeIsEmpty(moveFromFloor._id)}}">
+												<div class="header-text-main">
+												 	<span class="location-field">{{_selectedLineItem.fromBuilding}}</span>
+												</div>
+												<div class="header-text-main">
+													<span class="location-title">Floor:</span>
+													<span class="location-field">{{_selectedLineItem.fromFloor}}</span>
+												</div>
+												<div class="header-text-main">
+													<span class="location-title">Space:</span>
+													<span class="location-field-no-border">{{_selectedLineItem.fromSpace}}</span>
+												</div>
+											</div>
+
+											<div class="header-text" hidden$="{{!_computeIsEmpty(moveFromFloor._id)}}">
+												<span class="location-title">FROM LOCATION: Data not available</span>
+											</div>
+
+											<div class="floorcontainer" hidden$="{{_computeIsEmpty(moveFromFloor._id)}}">
+
+
+											 	<triplat-graphic id="floorplandetail4" record-id="{{moveFromFloor._id}}" svg-loaded="{{svgLoaded}}" drawing-id-loading="{{drawingIdLoading}}" has-graphic="{{hasGraphic}}">
+											 		<triplat-graphic-highlight
+														class-number="1"
+														highlighted="{{moveFromSpace}}">
+													</triplat-graphic-highlight>
+												   	<triplat-graphic-zoomable></triplat-graphic-zoomable>
+												</triplat-graphic>
+
+											</div>
+
+										</div>
+
+										<div class="location">
+											<div class="location-background" hidden$="{{_computeIsEmpty(moveToFloor._id)}}">
+												<div class="header-text-main">
+												 	<span class="location-field">{{_selectedLineItem.toBuilding}}</span>
+												</div>
+												<div class="header-text-main">
+													<span class="location-title">Floor:</span>
+													<span class="location-field">{{_selectedLineItem.toFloor}}</span>
+												</div>
+												<div class="header-text-main">
+													<span class="location-title">Space:</span>
+													<span class="location-field-no-border">{{_selectedLineItem.toSpace}}</span>
+												</div>
+											</div>
+											<div class="header-text" hidden$="{{!_computeIsEmpty(moveToFloor._id)}}">
+												<span class="location-title">TO LOCATION: Data not available</span>
+											</div>
+											<div class="floorcontainer" hidden$="{{_computeIsEmpty(moveToFloor._id)}}">
+
+											 	<triplat-graphic id="floorplandetail4T" record-id="{{moveToFloor._id}}" svg-loaded="{{svgLoaded}}" drawing-id-loading="{{drawingIdLoading}}" has-graphic="{{hasGraphic}}">
+											 		<triplat-graphic-highlight
+														class-number="1"
+														highlighted="{{moveToSpace}}">
+													</triplat-graphic-highlight>
+												   	<triplat-graphic-zoomable></triplat-graphic-zoomable>
+												</triplat-graphic>
+
+											</div>
+										</div>
+
+						    		</div>
+
+						    		<!-- Room Assets page -->
+							    	<div id="roomAssetsPage" hidden$="{{!_lineItemSelected}}">
+							    		<div class="header-horizontal" hidden$="{{_hideAssetsEquipment(assetTabCount,equipmentTabCount)}}">
+							    			<span>Assets&nbsp;(</span><span>{{assetTabCount}}</span><span>)&nbsp;and&nbsp;Equipment&nbsp;(</span><span>{{equipmentTabCount}}</span></span>)&nbsp;for&nbsp;room&nbsp;</span>
+											<span class="header-text-bold">{{_selectedLineItem.fromSpace}}</span>
+											<!--triplat-icon id="peopleAssetsAddIcon" class="action-ready" icon="icons:add-circle" on-tap="_handleAddAssetPeopleTap" hidden$="{{_isItemReadonly(_selectedLineItem)}}"></triplat-icon-->
+							    		</div>
+						    			<template
+									        id="roomChildAssetEquipmentTemplate"
+											is="dom-repeat"
+			                                items="{{childAssetEquipmentMLI}}">
+
+											<div class="assets-detail">
+												<div class="assets-detail-top-section image">
+													<div class="assets-detail-text-horizontal">
+														<div hidden$="{{!_isAsset(item.moveType)}}">
+															<div class="mli-detail-image">
+																<tricomp-accordion-image
+																		icon="ibm:assets"
+																		picture="{{item.assetImage}}"
+																		height="100"
+																		width="100"></tricomp-accordion-image>
+															</div><!-- end .mli-detail-image -->
+														</div><!-- end div -->
+
+														<div hidden$="{{_isAsset(item.moveType)}}">
+															<div class="mli-detail-image">
+																<tricomp-accordion-image
+																		icon="ibm:equipment"
+																		picture="{{item.equipmentImage}}"
+																		height="100"
+																		width="100"></tricomp-accordion-image>
+															</div><!-- end .mli-detail-image -->
+														</div><!-- end div -->
+
+														<div>
+															<div class="mli-detail-item mli-detail-item-bold" hidden$="{{!_isAsset(item.moveType)}}"><span>{{item.assetName}}&nbsp;(Asset)</span></div>
+															<div class="mli-detail-item mli-detail-item-bold" hidden$="{{_isAsset(item.moveType)}}"><span>{{item.equipmentName}}&nbsp;(Equipment)</span></div>
+															<div class="assets-detail-text-horizontal">
+																<paper-input label="Asset ID" value="{{item.assetId}}"  hidden$="{{!_isAsset(item.moveType)}}" readonly></paper-input>
+																<paper-input label="Equipment ID" value="{{item.equipmentId}}"  hidden$="{{_isAsset(item.moveType)}}" readonly></paper-input>
+																<p>&nbsp;&nbsp;&nbsp;&nbsp;</p>
+																<paper-input label="Serial Number" value="{{item.serialNumber}}"  hidden$="{{!_isAsset(item.moveType)}}" readonly always-float-label></paper-input>
+															</div>
+														</div>
+													</div>
+												</div>
+												<div class="assets-detail-middle-section">
+													<div class="assets-detail-text-vertical assets-detail-small-column">
+
+														<paper-input label="Quantity" type="number" value="{{item.quantity.value}}"   min="0" hidden$="{{_isAsset(item.moveType)}}" on-change="_handleQuantityValueChanged" auto-validate allowed-pattern="[0-9]" readonly$="{{!_isDraft(openRequest)}}"></paper-input>
+
+														<triplat-select-input
+																	id="roomCondition"
+																	hidden$="{{!_isAsset(item.moveType)}}"
+																	label="Condition"
+																	always-float-label
+																	on-select-input-list-open="_computeConditionListValuesTop"
+																	on-select-input-value-change="_handleConditionValueChangedTop"
+																	select-src="{{assetCondition}}"
+																	value="{{item.conditionMLI}}"
+																	value-name="value"
+																	search-value="{{_currentAssetCondition}}"
+																	readonly$="{{!_isDraft(openRequest)}}">
+														</triplat-select-input>
+
+														<triplat-select-input
+																	id="roomMoveAction"
+																	label="Move Option"
+																	always-float-label
+																	on-select-input-list-open="_computeDependentListValuesTop"
+																	on-select-input-value-change="_handleMoveActionValueChangedTop"
+																	value="{{item.moveActionId}}"
+																	value-name="value"
+																	search-value="{{moveActionDependentSearchValue}}"
+																	select-src="[[moveActionDependent]]"
+																	readonly$="{{!_isDraft(openRequest)}}">
+														</triplat-select-input>
+													</div>
+													<div class="assets-detail-text-vertical assets-detail-large-column">
+														<paper-textarea class="moveInstructions" label="Instructions" value="{{item.moveInstructions}}" rows="4" max-rows="4" maxlength="700" on-input="moveInstructionChanged" on-focus="moveInstructionFocus" on-blur="moveInstructionBlur" no-label-float readonly$="{{!_isDraft(openRequest)}}"></paper-textarea>
+													</div>
+												</div>
+											</div>
+										</template>
+							    	</div>
+
+
+							    	<!-- Room Comments page -->
+
+							    	<div id="roomCommentsPage" hidden$="{{!_lineItemSelected}}">
+								    	<tricomp-comments-new
+								    	open-Request-What-Url-Params="{{openRequestWhatUrlParams}}"
+								    	selected-line-item="{{_selectedLineItem}}"
+								    	current-MLI="{{currentMLI}}"
+								    	is-mli-comment="true">
+								    	</tricomp-comments-new>
+							    	</div>
+
+
+							 	</iron-pages>
+							 	</triblock-tab-nav-layout>
+							<!--/div-->
+
+						</div>
+
+						<paper-dialog id="deleteConfirmationDialog" class="selection" modal>
+							<p>Remove line items?</p>
+							<div class="buttons">
+								<paper-button class="list-button solid-button" dialog-dismiss on-tap="_handleRemoveTap" autofocus noink>Remove</paper-button>
+								<paper-button class="list-button solid-button" secondary dialog-dismiss autofocus noink>Cancel</paper-button>
+							</div>
+			  			</paper-dialog>
+
+
+					</div> <!-- main-container -->
+
+					<iron-collapse id="actionButtonsCollapse" class="container-collapse-action" hidden$="{{!_isDraft(openRequest)}}">
+						<div class="action-button-container">
+							<div class="actionbar-selected"><span>{{_selectedRequests.length}}</span> &nbsp; SELECTED</div>
+							<div class="actionbar-12px"></div>
+							<paper-button footer class="actionbar-button" on-tap="_handleRemoveDialogTap" disabled$="{{!_isDraft(openRequest)}}" noink>Remove Item</paper-button>
+						</div>
+					</iron-collapse>
+				</div> <!-- end .tricomp-collapse-section-static -->
+			</tricomp-collapse-section>
+		</div> <!-- end .content -->
+
+		<tricomp-alert id="addAllToast" type="info" title="Adding items" duration="-1"></tricomp-alert>
+		<tricomp-alert id="addAllCompleteToast" type="success" title="Success" text="Finished adding items" duration="2500"></tricomp-alert>
+		<tricomp-alert id="addAllTimeoutToast" type="info" text="Operation taking a long time. Still running in background" duration="2500"></tricomp-alert>
+
+	</template
+
+</dom-module>
+
+<script>
+	Polymer({
+
+		is: "tripage-groupmove-item-detail",
+
+		behaviors: [TriBlockPageContainerBehavior, TriPlatTableBehavior, Polymer.IronResizableBehavior],
+
+		properties: {
+
+			actionsEnabled : {
+				type : Boolean,
+				value : true
+			},
+			assetCount : {
+				type : Number,
+				value : 0
+			},
+			assetReadyCount : {
+				type : Number,
+				value : 0
+			},
+			assetSortField : {
+				type : String,
+				value : "childString"
+			},
+			assetTabCount : {
+				type : Number,
+				value : 0
+			},
+			_assetOpened : {
+				type : Boolean,
+				value : false
+			},
+			buildingFilter: {
+				type: String,
+				value: ""
+			},
+			childAssetEquipmentMLI: {
+				type: Array,
+				value: []
+			},
+			commentCount: {
+				type: String,
+				value: ""
+			},
+			comments: {
+				type: Array
+			},
+			_completedRequest:{
+				type: Boolean,
+				value: false,
+				computed: "_isCompleteRequest(openRequest.status)"
+			},
+			_componentId: {
+				type: String,
+				value: ""
+			},
+			_currentAssetCondition: {
+				type: String,
+				value: ""
+			},
+			_currentAssignmentType: {
+				type: String,
+				value: ""
+			},
+			_currentCount: {
+				type: Number,
+				value: 0
+			},
+			_currentReadyCount: {
+				type: Number,
+				value: 0
+			},
+			_currentNotReadyCount: {
+				type: Number,
+				value: 0
+			},
+			currentFilter: {
+				type: String,
+				value: ""
+			},
+			currentFromLocation : {
+				type : Number,
+				value : ""
+			},
+			currentGroupId : {
+				type : Number,
+				value : ""
+			},
+			currentItemName : {
+				type : String,
+				value : ""
+			},
+			_currentMoveTypeId: {
+				type: String
+			},
+			_currentMoveAssetTypeId: {
+				type: String
+			},
+			currentMLI : {
+				type : Number,
+				value : ""
+			},
+			_currentMLIId: {
+				type: Object
+			},
+			_currentMoveActionId: {
+				type: String
+			},
+			_currentOrganization: {
+				type: String,
+				value: ""
+			},
+			currentToLocation : {
+				type : Number,
+				value : ""
+			},
+			equipmentCount : {
+				type : Number,
+				value : 0
+			},
+			_equipmentOpened : {
+				type : Boolean,
+				value : false
+			},
+			equipmentReadyCount : {
+				type : Number,
+				value : 0
+			},
+			equipmentTabCount : {
+				type : Number,
+				value : 0
+			},
+			fieldsToFilter: {
+			  type: Array,
+			  value: ["itemName","personId", "assetId", "equipmentId", "moveType", "moveAction", "toSpace" ]
+			},
+			floorSearch: {
+				type: Array,
+				notify: true
+			},
+			_groupMove: {
+				type: Boolean,
+				value: true
+			},
+			_hideAssetTabs: {
+				type: Boolean,
+				value: true
+			},
+			_hidePersonTabs: {
+				type: Boolean,
+				value: false
+			},
+			_hideEquipmentTabs: {
+				type: Boolean,
+				value: true
+			},
+			_hideRoomTabs: {
+				type: Boolean,
+				value: true
+			},
+
+			_isRequestComment: {
+				type: Boolean,
+				value: false
+			},
+
+			_lineItemSelected: {
+				type: Boolean,
+				value: false
+			},
+			_mliFirstPass: {
+				type: Boolean,
+				value: true
+			},
+
+			_mliAssetDataBuffer: {
+				type: Array,
+				value: [],
+				notify: true
+			},
+			_mliEquipmentDataBuffer: {
+				type: Array,
+				value: []
+			},
+			_mliPersonDataBuffer: {
+				type: Array,
+				value: []
+			},
+			_mliRoomDataBuffer: {
+				type: Array,
+				value: []
+			},
+			_mliFromChargeToDataBuffer: {
+				type: Array,
+				value: []
+			},
+			_mliToChargeToDataBuffer: {
+				type: Array,
+				value: []
+			},
+			moveToSpaces: {
+				type: Object
+			},
+			moveToSpace: {
+				type: Object
+			},
+			moveFromFloorId: {
+				type: Number,
+				value: 0
+			},
+			moveToFloorId: {
+				type: Number,
+				value: 0
+			},
+			_moveInstructionChanged : {
+				type : Boolean,
+				value : false
+			},
+			_moveInstructionCounter : {
+				type : Number,
+				value : 0
+			},
+			_numberBoxesFlag: {
+				type: Boolean,
+				value: false
+			},
+			_oldAssignmentType: {
+				type: String
+			},
+			_oldMoveDate: {
+				type: Number
+			},
+			_peopleOpened : {
+				type : Boolean,
+				value : true
+			},
+			personCount : {
+				type : Number,
+				value : 0
+			},
+			personReadyCount : {
+				type : Number,
+				value : 0
+			},
+			progress: {
+				type: Number,
+				value: 0
+			},
+			roomCount : {
+				type : Number,
+				value : 0
+			},
+			roomReadyCount : {
+				type : Number,
+				value : 0
+			},
+			_refreshFlag: {
+				type: Boolean,
+				value: false
+			},
+			_reviseFlag: {
+				type: Boolean,
+				value: false
+			},
+			_roomOpened : {
+				type : Boolean,
+				value : false
+			},
+			_startup : {
+				type : Boolean,
+				value : true
+			},
+			screenLarge : {
+				type : Boolean,
+				value : true
+			},
+			screenWidth : {
+				type : Number,
+				value : 0
+			},
+			_searchValue: {
+				type: String,
+				value: ""
+			},
+			_selectedLineItem: Object,
+			_selectedRequests: {
+				type: Array,
+				value: []
+			},
+			_selectedTab : {
+				type : String,
+				value : null
+			},
+			whoIsValid: {
+				type: Boolean,
+				value: false,
+				computed: "_whoIsValid(openRequest.status)"
+			},
+			whenIsValid: {
+				type: Boolean,
+				value: false,
+				computed: "_whenIsValid(openRequest.moveDate)"
+			},
+			whereIsValid: {
+				type: Boolean,
+				value: true,
+				computed: "_whereIsValid()"
+			},
+			valid: {
+				type: Boolean,
+				value: false,
+				notify: true,
+				computed: "_whatIsValid(personReadyCount, assetReadyCount, equipmentReadyCount, roomReadyCount)"
+			},
+			_handleBackHandler: Object,
+			_completRequestHandler: Object,
+
+			_toastDisplayed : {
+				type : Boolean,
+				value : false
+			},
+
+			_refreshInterval: {
+				type : Number,
+				value : 8000
+			},
+			_maxNumberRefresh: {
+				type : Number,
+				value : 30
+			},
+			_currentNumberRefresh: {
+				type : Number,
+				value : 0
+			},
+
+			//=========================================================
+			// Property _showPlaceholder
+			//------------------------------------------
+			// Objective: Indicate when to show the placeholder msg
+			//=========================================================
+			_showPlaceholderPeople: {
+				type: Boolean,
+				value: false
+			},
+			_showPlaceholderAssets: {
+				type: Boolean,
+				value: false
+			},
+			_showPlaceholderEquipment: {
+				type: Boolean,
+				value: false
+			},
+			_showPlaceholderRoom: {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _selected-Type-Checkbox
+			//------------------------------------------
+			// Objective: Array of MLI's type checkbox selected
+			//=========================================================
+			_selectedPeopleCheckbox: {
+				type: Array,
+				value: [],
+				notify: true
+			},
+			_selectedAssetsCheckbox: {
+				type: Array,
+				value: [],
+				notify: true
+			},
+			_selectedEquipmentCheckbox: {
+				type: Array,
+				value: [],
+				notify: true
+			},
+			_selectedRoomsCheckbox: {
+				type: Array,
+				value: [],
+				notify: true
+			},
+
+			//=========================================================
+			// Property _showAll-Type
+			//------------------------------------------
+			// Objective: Indicate when to check showAll checkbox
+			//=========================================================
+			_showAllPeople: {
+				type: Boolean,
+				value: false
+			},
+			_showAllAssets: {
+				type: Boolean,
+				value: false
+			},
+			_showAllEquipment: {
+				type: Boolean,
+				value: false
+			},
+			_showAllRooms: {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _assetsCount
+			//------------------------------------------
+			// Objective: Hold the number of assets
+			//=========================================================
+			_assetsCount: {
+				type: Number,
+				value: null
+			},
+		},
+
+		observers: [
+			"_handleSelectedRequestsLengthChange(_selectedRequests.length)",
+			"_handleSelectedTab(_selectedTab)",
+			"_handleChildAssetEquipmentMLIGetComplete(childAssetEquipmentMLI)",
+			"_handleDateValueChanged(_selectedLineItem.moveDate)",
+			"_handleAssignmentTypeValueChanged(_selectedLineItem.assignmentTypeMLI)",
+			"_handleSelectedPeopleCheckboxChange(_selectedPeopleCheckbox.*)",
+			"_handleSelectedAssetsCheckboxChange(_selectedAssetsCheckbox.*)",
+			"_handleSelectedEquipmentCheckboxChange(_selectedEquipmentCheckbox.*)",
+			"_handleSelectedRoomsCheckboxChange(_selectedRoomsCheckbox.*)",
+			"_handleParentMLIFilteredChange(parentMLIFiltered)",
+			"_handlePeopleCount(personCount)",
+			"_handleAssetsCount(assetCount)",
+			"_handleEquipmentCount(equipmentCount)",
+			"_handleRoomsCount(roomCount)",
+		],
+
+		listeners: {
+			"commentTab.commentCount": "_updateCommentCount",
+			"iron-resize": "_onIronResize",
+			"header.reset": "_handleReset",
+			"header.toggleCollapse": "_toggleExpandMLI",
+		},
+
+
+		_computeChildItemIdValue: function(moveType, assetId, equipmentId) {
+			if (!moveType || moveType == "") {
+				return "(empty)";
+			}
+			else if (moveType == "Asset") {
+				return assetId;
+			}
+			else if (moveType == "Equipment") {
+				return equipmentId;
+			}
+			else {
+				return "";
+			}
+		},
+
+		_computeChildMLIDebugMessage: function(name) {
+			return name + " data";
+		},
+
+		_computeCollapseIcon: function(openChildren, numChildren) {
+			if (numChildren > 0) return (openChildren) ? "hardware:keyboard-arrow-up" : "hardware:keyboard-arrow-down";
+			return "";
+		},
+
+		_computeDependentListValuesChild: function(e) {
+			this._componentId = e.currentTarget.attributes.id.nodeValue;
+			this.set("_currentMoveTypeId", this._selectedLineItem.moveType);
+			this.set("_currentMoveAssetTypeId", this._selectedLineItem.moveAssetType);
+			this.set("_currentMoveActionId", this._selectedLineItem.moveAction);
+			this.set("_currentMLIId", this._selectedLineItem._id);
+		},
+
+		_computeDependentListValuesTop: function(e) {
+			this._componentId = e.currentTarget.attributes.id.nodeValue;
+			this.set("_currentMoveTypeId", e.model.item.moveType);
+			this.set("_currentMoveAssetTypeId", e.model.item.moveAssetType);
+			this.set("_currentMoveActionId", e.model.item.moveAction);
+			this.set("_currentMLIId", e.model.item._id);
+		},
+
+		_computeConditionListValuesTop: function(e) {
+			this._componentId = e.currentTarget.attributes.id.nodeValue;
+			this.set("_currentMLIId", e.model.item._id);
+		},
+
+		_computeConditionListValuesChild: function(e) {
+			this._componentId = e.currentTarget.attributes.id.nodeValue;
+			this.set("_currentMLIId", this._selectedLineItem._id);
+		},
+
+		_isDraft: function(request){
+			if (request) {
+				return  ((request.status=="Draft")||(request.status=="Revision In Progress")||(request.status==null));
+			}
+		},
+
+		_isPerson: function(moveType) {
+			if (moveType == "Person") {
+				return true;
+			}
+			return false;
+		},
+
+		_isAsset: function(moveType) {
+			if (moveType == "Asset") {
+				return true;
+			}
+			return false;
+		},
+
+		_isEquipment: function(moveType) {
+			if (moveType == "Equipment") {
+				return true;
+			}
+			return false;
+		},
+
+		_isRoom: function(moveType) {
+			if (moveType == "Room Function") {
+				return true;
+			}
+			return false;
+		},
+
+		_getDescription: function (item) {
+			if (item.moveType == "Asset") {
+				return item.assetId + ", " + item.assetName;
+			}
+			else if (item.moveType == "Equipment") {
+				return item.equipmentId +  ", " + item.equipmentName;
+			}
+			else if (item.moveType == "Person") {
+				return item.lastName + ", " + item.firstName;
+			}
+			else if (item.moveType == "Room Function") {
+				return item.fromSpace;
+			}
+
+		},
+
+		_computeItemValue: function(val) {
+			if (!val || val == "") return "";
+			return val;
+		},
+
+		_computeLoading: function(myMoveRequestsLoading, moveLineItemsLoading) {
+			return myMoveRequestsLoading || moveLineItemsLoading;
+		},
+
+		_computeStatusLoading: function(myMoveRequestsLoading, moveLineItemsLoading) {
+			return myMoveRequestsLoading || moveLineItemsLoading;
+		},
+
+		_computeRowId: function(id) {
+			if (id) return "row"+id;
+			return "";
+		},
+
+		_computeId: function(item) {
+			if (item.moveType == 'Person')  {
+				return item.personId;
+			}
+			else if (item.moveType == 'Asset') {
+				return item.assetId;
+			}
+			else if (item.moveType == 'Equipment') {
+				return item.equipmentId;
+			}
+			else {
+				return null;
+			}
+		},
+
+		_computeIdSortField: function(item) {
+			if (item.moveType == 'Person')  {
+				return "personId";
+			}
+			else if (item.moveType == 'Asset') {
+				return "assetId";
+			}
+			else {
+				return "";
+			}
+		},
+
+		_handleAddAssetTap: function() {
+			this._removeAllSelections();
+			this.$.addAssetDialog.open("addAssetDialog");
+		},
+
+		_handleAddAssetPeopleTap: function() {
+
+		},
+
+		_handleAddEquipmentTap: function() {
+			this._removeAllSelections();
+			this.$.addEquipmentDialog.open("addEquipmentDialog");
+		},
+		_handleAddPeopleTap: function() {
+			this._removeAllSelections();
+			this.$.addPeopleDialog.open("addPeopleDialog");
+		},
+
+		_handleAddFromOrganizationTap: function() {
+			//this._removeAllSelections();
+			this.$.addOrganizationDialog.open("addOrganizationDialog", this.currentMLI, this.currentFromLocation, "From");
+		},
+
+		_handleAddToOrganizationTap: function() {
+			//this._removeAllSelections();
+			this.$.addOrganizationDialog.open("addOrganizationDialog", this.currentMLI, this.currentToLocation, "To");
+		},
+
+		_handleAddRoomTap: function() {
+			this._removeAllSelections();
+			this.$.addRoomDialog.open("addRoomDialog");
+		},
+
+		_handleBack: function() {
+			this._onNavigateCleanup();
+		},
+
+		_onNavigateCleanup: function() {
+
+			this._oldMoveAction = null;
+			this.set("_assetOpened", false);
+			this.set("_equipmentOpened", false);
+			this.set("_peopleOpened", true);
+			this.set("_roomOpened", false);
+			this.set("_searchValue", "");
+			this.set("_selectedTab", null);
+			//this.set("_selectedPeopleTab", null);
+			//this.set("_selectedAssetsTab", null);
+			//this.set("_selectedEquipmentTab", null);
+			//this.set("_selectedRoomTab", null);
+			this.set("_lineItemSelected", false);
+			this.set("_selectedLineItem", null);
+			this.set("_startup", true);
+			this.set("_mliFirstPass", true);
+			this.$.selectorAssetMLIs.selected = null;
+			this.$.selectorEquipmentMLIs.selected = null;
+			this.$.selectorPeopleMLIs.selected = null;
+			this.$.selectorRoomMLIs.selected = null;
+			this._removeAllSelections();
+		},
+
+		_handleCancelSelectionsTap: function() {
+			// remove all selections
+			this._removeAllSelections();
+		},
+
+
+		_handleRemove: function(e) {
+			var request = e.model.item;
+			this.$.parentMLIDS.performAction(request._id, TriPlatDs.RefreshType.BOTH, "defaultActions", "delete")
+		},
+
+		//=========================================================
+		// Function _handleInboxSelect
+		//------------------------------------------
+		// Objective: Handle select 1 checkbox
+		//=========================================================
+		_handleInboxSelect: function(e) {
+			e.stopPropagation();
+
+			// update selected requests array
+			var request = e.model.item;
+
+			if (request) {
+				if (request.selected) {
+					this.push("_selectedRequests", request);
+
+					// If Statement: Check the moveType to feed the specific array type
+					if (request.moveType == "Person") {
+						this.push("_selectedPeopleCheckbox", request._id);
+					} else if (request.moveType == "Asset") {
+						this.push("_selectedAssetsCheckbox", request._id);
+					} else if (request.moveType == "Equipment") {
+						this.push("_selectedEquipmentCheckbox", request._id);
+					} else if (request.moveType == "Room Function") {
+						this.push("_selectedRoomsCheckbox", request._id);
+					}// end if
+				} else {
+					this._removeSelectedRequest(request);
+
+					if (this._checkboxListEmpty(request.moveType)) {
+						if (request.moveType == "Person") {
+							this.$.selectAllPeople.active = false;
+						}
+						else if (request.moveType == "Asset") {
+							this.$.selectAllAssets.active = false;
+						}
+						else if (request.moveType == "Equipment") {
+							this.$.selectAllEquipment.active = false;
+						}
+						else if (request.moveType == "Room Function") {
+							this.$.selectAllRooms.active = false;
+						}
+						else {
+							// not found
+						}
+					}
+				}
+			}
+		},
+
+		_checkboxListEmpty: function(type) {
+			var empty = true;
+			var selectedRows = Polymer.dom(this.root).querySelectorAll(".line-item-row[selected]");
+				for (var i=0; i < selectedRows.length; i++) {
+					var model = this._getItemModel(selectedRows[i]);
+					if ((model.item.moveType == type) && (model.item.child == null)) {
+						empty = false;
+						break;
+					}
+				}
+			return empty;
+		},
+
+		_handleMLICollapseTap: function(e) {
+			// toggle child MLIs collapse
+			if (e.model.item.openChildren) {
+				e.model.set("item.openChildren", false);
+			} else {
+				e.model.set("item.openChildren", true);
+			}
+		},
+
+		_handleCommentTap: function(e) {
+
+		},
+
+		_handleMLIGetComplete: function() {
+
+			if (this._mliFirstPass) {
+				this._mliFirstPass=false;
+				return;
+			}
+
+			if (this.parentMLI && this.childMLI) {
+				this.set("personCount", 0);
+				this.set("personReadyCount", 0);
+				this.set("assetCount", 0);
+				this.set("assetReadyCount", 0);
+				this.set("equipmentCount", 0);
+				this.set("equipmentReadyCount", 0);
+				this.set("roomCount", 0);
+				this.set("roomReadyCount", 0);
+
+				this.parentMLI.forEach(function(item) {
+					this._handleUpdateCounts(item);
+
+				}.bind(this));
+
+
+				var countData = [];
+				countData.ready = this._currentReadyCount;
+				countData.total = this._currentCount;
+				this.fire('updateProgressCount', countData);
+
+				// Invoke render, otherwise templates may not contain items during startup processing
+				this._handleStartupProcess();
+			}
+
+			// If Statement: Check if there's MLI
+			if (this.moveLineItems) {
+				// Set MLI Count
+				if(this.moveLineItems.length==0){
+					this._currentCount = 0;
+					this.$.header._isSubmitValid();
+				}
+				this.$.header._setMLICount(this._currentCount);
+			}// end if
+
+		},
+
+		_handleUpdateCounts: function(item) {
+
+			if (item.moveType == "Person") {
+				this.set("personCount", this.personCount+1);
+				if (item.readyToMove == "TRUE") {
+					this.set("personReadyCount", this.personReadyCount+1);
+				}
+			}
+			else if (item.moveType == "Asset") {
+				this.set("assetCount", this.assetCount+1);
+				if (item.readyToMove == "TRUE") {
+					this.set("assetReadyCount", this.assetReadyCount+1);
+				}
+			}
+			else if (item.moveType == "Equipment") {
+				this.set("equipmentCount", this.equipmentCount+1);
+				if (item.readyToMove == "TRUE") {
+					this.set("equipmentReadyCount", this.equipmentReadyCount+1);
+				}
+			}
+			else if (item.moveType == "Room Function") {
+				this.set("roomCount", this.roomCount+1);
+				if (item.readyToMove == "TRUE") {
+					this.set("roomReadyCount", this.roomReadyCount+1);
+				}
+			}
+
+
+			var readyCount = this.personReadyCount + this.assetReadyCount + this.equipmentReadyCount + this.roomReadyCount;
+			var totalCount = this.personCount + this.assetCount + this.equipmentCount + this.roomCount;
+			var notReadyCount = totalCount - readyCount;
+			this.set("_currentReadyCount", readyCount);
+			this.set("_currentCount", totalCount);
+			this.set("_currentNotReadyCount", notReadyCount);
+
+			if(readyCount!=0){
+				var progress =  readyCount / totalCount;
+				this.set("progress", progress);
+			}
+			else{
+				this.set("progress", 0);
+			}
+
+
+			// If Statements: Defines to show a placeholder msg if there's no MLI
+			if (this.personCount == 0) {
+				this.set("_showPlaceholderPeople", true);
+			} else {
+				this.set("_showPlaceholderPeople", false);
+			}// end if
+			if (this.assetCount == 0) {
+				this.set("_showPlaceholderAssets", true);
+			} else {
+				this.set("_showPlaceholderAssets", false);
+			}// end if
+			if (this.equipmentCount == 0) {
+				this.set("_showPlaceholderEquipment", true);
+			} else {
+				this.set("_showPlaceholderEquipment", false);
+			}// end if
+			if (this.roomCount == 0) {
+				this.set("_showPlaceholderRoom", true);
+			} else {
+				this.set("_showPlaceholderRoom", false);
+			}// end if
+		},
+
+		_handleMyMoveRequestsGetComplete: function () {
+			this._handleStartupProcess();
+			this._checkToastMessage();
+			this.$.header._isSubmitValid();
+
+		},
+
+		_handleMLIUpdateComplete: function() {
+			//this.$.peopleDetailsTab.render();
+		},
+
+		_handleChildMLIUpdateComplete: function() {
+			this.set("_currentMLIId", null);
+			this.$.parentMLIDS.refresh();
+			this.$.childMLIDS.refresh();
+		},
+
+		_handleMLIPerformActionComplete: function() {
+			this.$.parentMLIDS.refresh();
+		},
+
+		_handleMoveActionValueChangedChild: function(e) {
+			if (this._selectedLineItem && this._selectedLineItem.child && this._currentMLIId && this._selectedLineItem.moveActionId) {
+				if (this._currentMLIId == this._selectedLineItem._id) {
+					if (this._componentId == e.currentTarget.attributes.id.nodeValue) {
+						var model = this._getModel();
+						model.item.moveAction = this._selectedLineItem.moveActionId.value;
+						this.$.childMLIDS.updateRecord(this._currentMLIId, TriPlatDs.RefreshType.CLIENT);
+					}
+				}
+			}
+		},
+
+		_handleMoveActionValueChangedTop: function(e) {
+			if (e.model && e.model.item && this._currentMLIId && e.model.item.moveActionId) {
+				if (this._currentMLIId == e.model.item._id) {
+					if (this._componentId == e.currentTarget.attributes.id.nodeValue) {
+					 	e.model.item.moveAction = e.model.item.moveActionId.value;
+						this.$.childMLIDS.updateRecord(this._currentMLIId, TriPlatDs.RefreshType.CLIENT);
+					}
+				}
+			}
+		},
+
+		_handleConditionValueChangedTop: function(e) {
+			if (e.model && e.model.item && this._currentMLIId && e.model.item.conditionMLI.id ) {
+				if (this._currentMLIId == e.model.item._id) {
+					if (this._componentId == e.currentTarget.attributes.id.nodeValue) {
+						if (e.model.item.conditionMLI.value == null && e.model.item.condition.value != null) {
+							e.model.item.conditionMLI = e.model.item.condition;
+							this.$.childMLIDS.updateRecord( e.model.item._id, TriPlatDs.RefreshType.CLIENT);
+						}
+						else {
+							this.$.childAssetEquipmentMLIDS.updateRecord(e.model.item._id, TriPlatDs.RefreshType.CLIENT);
+							//this.$.childMLIDS.updateRecord( e.model.item._id, TriPlatDs.RefreshType.CLIENT);
+						}
+					}
+				}
+			}
+		},
+
+		_handleConditionValueChangedChild: function(e) {
+			if (this._selectedLineItem && this._currentMLIId && this._selectedLineItem.conditionMLI.id ) {
+				if (this._currentMLIId == this._selectedLineItem._id) {
+					if (this._componentId == e.currentTarget.attributes.id.nodeValue) {
+						if (this._selectedLineItem.conditionMLI.value == null && this._selectedLineItem.condition.value != null) {
+							this._selectedLineItem.conditionMLI = this._selectedLineItem.condition;
+							this.$.childMLIDS.updateRecord( this._selectedLineItem._id, TriPlatDs.RefreshType.CLIENT);
+
+						}
+						else {
+							var model = this._getModel();
+							model.item.conditionMLI = this._selectedLineItem.conditionMLI;
+							this.$.childAssetEquipmentMLIDS.updateRecord( this._selectedLineItem._id, TriPlatDs.RefreshType.CLIENT);
+						}
+					}
+				}
+			}
+		},
+
+		_handleRemoveDialogTap: function() {
+			this._handleDeleteConfirmationDialog();
+		},
+
+		_handleRemoveTap: function() {
+			// mark selected records as unread
+			var selectedRequests = this._selectedRequests;
+			var selectedRequestItems = [];
+			var moveType = null;
+
+			for (var i=0; i < selectedRequests.length; i++) {
+				var selectedRequest = selectedRequests[i];
+				moveType = selectedRequest.moveType;
+
+				if ((this._selectedLineItem) && (selectedRequest._id == this._selectedLineItem._id)) {
+					this._locateSelectedLineItem(this._selectedLineItem._id, moveType);
+				}// end if
+
+				this._clearSessionData(selectedRequest._id, moveType, this.openRequest._id);
+			}// end for
+
+			this.$.moveRequest.performAction(
+				this.moveRequest._id, TriPlatDs.RefreshType.BOTH,
+				"groupMoveRequest", "deleteMultipleMLIs", {varMLIs: selectedRequests}).then(
+						function() {
+							this.$.parentMLIDS.refresh();
+						}.bind(this)
+			);
+
+			// remove all selections
+			this._removeAllSelections();
+		},
+
+		_clearSessionData: function(selectedId, selectedMoveType, selectedRequestId) {
+
+			var id = sessionStorage.getItem("selectedLineItem");
+			var moveType = sessionStorage.getItem("moveType");
+			var requestId = sessionStorage.getItem("requestId");
+			if ((id == selectedId) && (moveType == selectedMoveType) && (requestId == selectedRequestId)) {
+				sessionStorage.clear();
+			}
+		},
+
+		_handleReadyTap: function() {
+			// mark selected records as unread
+			var selectedRequests = Polymer.dom(this.root).querySelectorAll(".line-item-row[selected]");
+			var selectedRequestItems = [];
+			for (var i=0; i < selectedRequests.length; i++) {
+				var selectedRequest = selectedRequests[i];
+				var selectedRequestModel = this.$.personTemplate.modelForElement(selectedRequest);
+				if (selectedRequestModel == null) {
+					selectedRequestModel = this.$.assetTemplate.modelForElement(selectedRequest);
+				}
+				if (selectedRequestModel == null) {
+					selectedRequestModel = this.$.equipmentTemplate.modelForElement(selectedRequest);
+				}
+				if (selectedRequestModel == null) {
+					selectedRequestModel = this.$.roomTemplate.modelForElement(selectedRequest);
+				}
+
+				if(!this._completedRequest){
+					var request = selectedRequestModel.item;
+					if (request.child) continue;
+					var readyToMove = "TRUE";
+					if (request.readyToMove == "TRUE") {
+						continue;
+
+					}
+					else {
+						request.readyToMove = "TRUE";
+						if (this._selectedLineItem && request._id == this._selectedLineItem._id) {
+							this.set("_selectedLineItem.isReady", true);
+						}
+					}
+
+					for (var j=0; j < request.childMLIDataLength; j++) {
+						request.childMLIData[j].readyToMove = readyToMove;
+						this.$.childMLIDS.updateRecord(request.childMLIData[j]._id, TriPlatDs.RefreshType.CLIENT);
+					}
+
+					this.$.parentMLIDS.updateRecord(request._id, TriPlatDs.RefreshType.CLIENT);
+				}
+			}
+
+			// remove all selections
+			this._removeAllSelections();
+		},
+
+		_handleReviseTap: function() {
+			if (this._reviseFlag)
+				this.set("_reviseFlag", false);
+			else {
+				this.set("_reviseFlag", true);
+			}
+		},
+
+		_handleSelectedRequestsLengthChange: function(numSelected) {
+			if (this.$.actionButtonsCollapse.opened && numSelected == 0) this.$.actionButtonsCollapse.hide();
+			if (!this.$.actionButtonsCollapse.opened && numSelected > 0) this.$.actionButtonsCollapse.show();
+		},
+
+		_isGroupMoveType: function(req) {
+			if (req && req.moveType) return req.moveType == "Group Move";
+			return false;
+		},
+
+		_isMLIRowCollapsible: function(numChildren) {
+			return numChildren > 0;
+		},
+
+		_onNavigateTo: function() {
+			if (this.parentMLI) this.$.parentMLIDS.refresh();
+		},
+
+		_pageAttached: function() {
+			if (this.parentMLI) this.$.parentMLIDS.refresh();
+
+			this.$.itemsContainer.refreshLayout();
+		},
+
+		//=========================================================
+		// Function _removeAllSelections
+		//------------------------------------------
+		// Objective: Remove all checkbox selections
+		//=========================================================
+		_removeAllSelections: function(drawerType) {
+			// Remove all selections
+			if (drawerType == null) {
+				this.set("_selectedRequests", []);
+				this.set("_selectedPeopleCheckbox", []);
+				this.set("_selectedAssetsCheckbox", []);
+				this.set("_selectedEquipmentCheckbox", []);
+				this.set("_selectedRoomsCheckbox", []);
+
+				var selectedRows = Polymer.dom(this.root).querySelectorAll(".line-item-row[selected]");
+
+				for (var i=0; i < selectedRows.length; i++) {
+					selectedRows[i].removeAttribute("selected");
+					var selectedRowCheckbox = Polymer.dom(selectedRows[i]).querySelector(".inbox-checkbox > paper-checkbox");
+					selectedRowCheckbox.checked = false;
+				}// end for
+
+				this.$.selectAllPeople.active = false;
+				this.$.selectAllAssets.active = false;
+				this.$.selectAllEquipment.active = false;
+				this.$.selectAllRooms.active = false;
+			}
+			// Remove selections from drawer
+			else {
+				var selectedRows = Polymer.dom(this.root).querySelectorAll(".line-item-row[selected]");
+
+				for (var i=0; i < selectedRows.length; i++) {
+					var model = this._getItemModel(selectedRows[i]);
+
+					if ((model.item.moveType == drawerType) && (model.item.child == null)) {
+						selectedRows[i].removeAttribute("selected");
+						var selectedRowCheckbox = Polymer.dom(selectedRows[i]).querySelector(".inbox-checkbox > paper-checkbox");
+						selectedRowCheckbox.checked = false;
+						this._removeSelectedRequest(model.item);
+					}// end if
+				}// end for
+			}// end if
+		},
+
+		//=========================================================
+		// Function _removeSelectedRequest
+		//------------------------------------------
+		// Objective: Handle remove 1 checkbox selected
+		//=========================================================
+		_removeSelectedRequest: function(selectedItem) {
+			var selectedItemId = selectedItem._id;
+			var i = 0;
+			var found = false;
+
+			while (!found && i < this._selectedRequests.length) {
+				var curItemId = this._selectedRequests[i]._id;
+
+				if (selectedItemId == curItemId) {
+					found = true;
+					this.splice("_selectedRequests", i, 1);
+				}// end if
+
+				i++;
+			}// end while
+
+			// If Statement: Check the moveType to feed the specific array type
+			if (selectedItem.moveType == "Person") {
+				this.splice("_selectedPeopleCheckbox", this._selectedPeopleCheckbox.indexOf(selectedItemId), 1);
+			} else if (selectedItem.moveType == "Asset") {
+				this.splice("_selectedAssetsCheckbox", this._selectedAssetsCheckbox.indexOf(selectedItemId), 1);
+			} else if (selectedItem.moveType == "Equipment") {
+				this.splice("_selectedEquipmentCheckbox", this._selectedEquipmentCheckbox.indexOf(selectedItemId), 1);
+			} else if (selectedItem.moveType == "Room Function") {
+				this.splice("_selectedRoomsCheckbox", this._selectedRoomsCheckbox.indexOf(selectedItemId), 1);
+			}// end if
+		},
+
+		_selectAllPeopleCheckboxes: function() {
+			if (!this.$.selectAllPeople.active) {
+				this._removeAllSelections("Person");
+			}
+			else
+			{
+				this._selectAllCheckboxes("Person");
+			}
+		},
+
+		_selectAllAssetCheckboxes: function() {
+			if (!this.$.selectAllAssets.active) {
+				this._removeAllSelections("Asset");
+			}
+			else
+			{
+				this._selectAllCheckboxes("Asset");
+			}
+		},
+
+		_selectAllEquipmentCheckboxes: function() {
+			if (!this.$.selectAllEquipment.active) {
+				this._removeAllSelections("Equipment");
+			}
+			else
+			{
+				this._selectAllCheckboxes("Equipment");
+			}
+		},
+
+		_selectAllRoomCheckboxes: function() {
+			if (!this.$.selectAllRooms.active) {
+				this._removeAllSelections("Room Function");
+			}
+			else
+			{
+				this._selectAllCheckboxes("Room Function");
+			}
+		},
+
+		//=========================================================
+		// Function _selectAllCheckboxes
+		//------------------------------------------
+		// Objective: Handle select all checkbox
+		//=========================================================
+		_selectAllCheckboxes: function(drawerType) {
+			var selectedRows = Polymer.dom(this.root).querySelectorAll(".line-item-row");
+
+			for (var i=0; i < selectedRows.length; i++) {
+				var model = this._getItemModel(selectedRows[i]);
+
+				if ((model.item.moveType == drawerType) && (model.item.child == null)) {
+					var selectedRowCheckbox = Polymer.dom(selectedRows[i]).querySelector(".inbox-checkbox > paper-checkbox");
+
+					if (selectedRowCheckbox.checked == false) {
+						selectedRowCheckbox.checked = true;
+						this.push("_selectedRequests", model.item);
+
+						// If Statement: Check the moveType to feed the specific array type
+						if (model.item.moveType == "Person") {
+							this.push("_selectedPeopleCheckbox", model.item._id);
+						} else if (model.item.moveType == "Asset") {
+							this.push("_selectedAssetsCheckbox", model.item._id);
+						} else if (model.item.moveType == "Equipment") {
+							this.push("_selectedEquipmentCheckbox", model.item._id);
+						} else if (model.item.moveType == "Room Function") {
+							this.push("_selectedRoomsCheckbox", model.item._id);
+						}// end if
+					}// end if
+				}// end if
+			}// end for
+		},
+
+		_getItemModel: function(selectedElement) {
+
+			var model = null;
+			model = this.$.personTemplate.modelForElement(selectedElement);
+			if (model == null) {
+    		model = this.$.assetTemplate.modelForElement(selectedElement);
+    		}
+			if (model == null) {
+				model = this.$.equipmentTemplate.modelForElement(selectedElement);
+			}
+			if (model == null) {
+				model = this.$.roomTemplate.modelForElement(selectedElement);
+			}
+        	return model;
+		},
+
+		_whoIsValid: function(status) {
+			return status && status == "Issued";
+		},
+
+		_whenIsValid: function(moveDate) {
+			return !(!moveDate || moveDate.length === 0);
+		},
+
+		_whereIsValid: function() {
+			return true;
+		},
+
+		_whatIsValid: function(person, asset, equipment, room) {
+			return true;
+		},
+
+		_hasImage : function(image) {
+			if ((image) && (image != "-1")) {
+				return true;
+			}
+			return false;
+		},
+
+		// Dynamic Search Function
+	    _computedFilteredList: function(unFilteredData, currentFilter, fieldsToFilter, sortField, sortDescending) {
+		   if (!currentFilter || currentFilter == "" || !fieldsToFilter) {
+			 this.count = unFilteredData.length;
+			 return unFilteredData;
+		   }
+
+		   var filteredData = unFilteredData.filter(function(record) {
+
+			 var lowerFilter = currentFilter.toLowerCase();
+
+			for (var field in fieldsToFilter) {
+			   if (fieldsToFilter[field]
+			       && record[fieldsToFilter[field]]
+				   && record[fieldsToFilter[field]].toLowerCase().indexOf(lowerFilter) != -1) {
+				 return true;
+			   }
+			 }
+
+			return false;
+		   });
+
+			this.count = filteredData.length;
+
+		   	return filteredData;
+	   },
+
+	    _sort: function(sortField, sortDescending) {
+
+			// Sort MLIs
+			if (sortDescending) {
+				return function(mli1, mli2) {
+					if (mli1[sortField] && mli2[sortField]) {
+						if (mli1[sortField] == "") {
+							return 1; // blank strings go at the end of sorted list
+						} else {
+							var compare = mli2[sortField].localeCompare(mli1[sortField]);
+							return compare;
+						}
+					} else {
+						if (( mli1[sortField] === null) && (mli2[sortField] === null)) return 0;
+							else if (( mli1[sortField] === null) && (mli2[sortField] != null)) return 1;
+							else if (( mli1[sortField] != null) && (mli2[sortField] === null)) return -1;
+					}
+				}
+			}
+			else {
+				return function(mli1, mli2) {
+					if (mli1[sortField] && mli2[sortField]) {
+						if (mli1[sortField] == "") {
+							return 1; // blank strings go at the end of sorted list
+						} else {
+							var compare = mli1[sortField].localeCompare(mli2[sortField]);
+							return compare;
+						}
+					} else {
+						if (( mli1[sortField] === null) && (mli2[sortField] === null)) return 0;
+							else if (( mli1[sortField] === null) && (mli2[sortField] != null)) return -1;
+							else if (( mli1[sortField] != null) && (mli2[sortField] === null)) return 1;
+					}
+				}
+
+			}
+	   	},
+
+	   	ready: function() {
+			// set the initial sort column
+			this.set("sortField", "firstName");
+			this.set("sortDescending", false);
+			this._handleBackHandler = this._handleBack.bind(this);
+			this._completeRequestHandler = this._completeRequest.bind(this);
+		},
+
+		_handleListRefresh: function(){
+			var tableTemplate = Polymer.dom(this.root).querySelector("#personTemplate");
+			if (tableTemplate) tableTemplate.render();
+		},
+
+		_enableAccordionToggle : function(actionsEnabled, count) {
+			return actionsEnabled || count > 0;
+		},
+
+		_isZero: function(val) {
+			return val == 0;
+		},
+
+		_isGroupMove: function(val) {
+			return  val == "Group Move";
+		},
+
+		_isReady: function(item) {
+			if (item) {
+				return item.readyToMove == "TRUE";
+			}
+		},
+
+		_isChild: function(item) {
+			return item.child == true;
+		},
+
+		_toggleReady: function(e) {
+
+			var item = 	(e.model != undefined ? e.model.item : this._getModel().item);
+			if(!this._completedRequest && item.status!="Completed"){
+				var status = true;
+
+				var request = (e.model != undefined ? e.model.item : this._getModel().item);
+	
+				if (request.child) return;
+				var readyToMove = "TRUE";
+				if (request.readyToMove == "TRUE") {
+					item.readyToMove = "FALSE"
+					this.set("request.readyToMove", "FALSE");
+					status = false;
+					readyToMove = "FALSE";
+					if (this._selectedLineItem && request._id == this._selectedLineItem._id) {
+						this.set("_selectedLineItem.isReady", false);
+					}
+				}
+				else {
+					item.readyToMove = "TRUE"
+					this.set("request.readyToMove","TRUE");
+					if (this._selectedLineItem && request._id == this._selectedLineItem._id) {
+						this.set("_selectedLineItem.isReady", true);
+					}
+				}
+
+				for (var i=0; i < request.childMLIDataLength; i++) {
+					request.childMLIData[i].readyToMove = readyToMove;
+					this.$.childMLIDS.updateRecord(request.childMLIData[i]._id, TriPlatDs.RefreshType.CLIENT);
+					if (this._selectedLineItem && this._selectedLineItem._id == request.childMLIData[i]._id) {
+						this.set("_selectedLineItem.isReady", status);
+					}
+				}
+
+				this.$.parentMLIDS.updateRecord(item._id, TriPlatDs.RefreshType.CLIENT);
+			}
+		},
+
+		_handleSelectedLineItem: function(e) {
+
+			if (!e.startup) {
+				var nodeName = e.currentTarget.nodeName;
+				if (nodeName && nodeName == 'TRIPLAT-ICON') {
+					this._toggleReady(e);
+					e.stopPropagation();
+					return;
+				}
+			}
+
+			var lastLineItemSelected = this._selectedLineItem;
+
+			this._oldMoveDate = null;
+			this._numberBoxesFlag = false;
+			this._oldAssignmentType = null;
+			this._lineItemSelected = true;
+			this.set("currentMLI", "");
+			this.set("currentFromLocation", "");
+			this.set("currentToLocation", "");
+
+
+			if (!e.startup) {
+				lastLineItemSelected = this._selectedLineItem;
+				this.set("_selectedLineItem", this.$.personTemplate.itemForElement(e.target));
+				if (this._selectedLineItem == null) {
+					this.set("_selectedLineItem", this.$.roomTemplate.itemForElement(e.target));
+				}
+				if (this._selectedLineItem == null) {
+					this.set("_selectedLineItem", this.$.assetTemplate.itemForElement(e.target));
+				}
+				if (this._selectedLineItem == null) {
+					this.set("_selectedLineItem", this.$.equipmentTemplate.itemForElement(e.target));
+				}
+			}
+			else {
+				this.set("_selectedLineItem", e.detail);
+			}
+
+				this.set("currentMLI", this._selectedLineItem._id);
+				this.set("currentGroupId", this._selectedLineItem.groupId);
+				this.set("currentItemName", this._selectedLineItem.itemName);
+				this.set("_hideAssetTabs", true);
+				this.set("_hideEquipmentTabs", true);
+				this.set("_hidePersonTabs", true);
+				this.set("_hideRoomTabs", true);
+				if ((this._selectedLineItem.assignmentTypeMLI.id == null) && (this._selectedLineItem.status!="Completed")) {
+					this.set("_selectedLineItem.assignmentTypeMLI", this._selectedLineItem.assignmentType);
+				}
+
+				this._setBuildingFloor();
+
+				var currentTab = this.get("_selectedTab");
+				var nextTab = null;
+				if (this._selectedLineItem.moveType == "Person") {
+					this.set("_hidePersonTabs", false);
+					nextTab = "peopleDetailsTab";
+				}
+				else if (this._selectedLineItem.moveType == "Asset") {
+					this.set("_hideAssetTabs", false);
+					nextTab = "assetsDetailsTab";
+				}
+				else if (this._selectedLineItem.moveType == "Equipment") {
+					this.set("_hideEquipmentTabs", false);
+					nextTab = "equipmentDetailsTab";
+				}
+				else if (this._selectedLineItem.moveType == "Room Function") {
+					this.set("_hideRoomTabs", false);
+					nextTab = "roomDetailsTab";
+				}
+
+
+				if (lastLineItemSelected) {
+					if (lastLineItemSelected.moveType == "Asset") {
+						this.$.selectorAssetMLIs.selected = null;
+						this.$.assetTemplate.render();
+					}
+					else if (lastLineItemSelected.moveType == "Equipment") {
+						this.$.selectorEquipmentMLIs.selected = null;
+						this.$.equipmentTemplate.render();
+					}
+					else if (lastLineItemSelected.moveType == "Person") {
+						this.$.selectorPeopleMLIs.selected = null;
+						this.$.personTemplate.render();
+
+
+					}
+					else if (lastLineItemSelected.moveType == "Room Function") {
+						this.$.selectorRoomMLIs.selected = null;
+						this.$.roomTemplate.render();
+					}
+				}
+
+				if (lastLineItemSelected == null) {
+					this.set("_selectedTab", null);
+					this.set("_selectedTab", nextTab);
+				}
+				else {
+					if (lastLineItemSelected.moveType != this._selectedLineItem.moveType) {
+						this.set("_selectedTab", null);
+						this.set("_selectedTab", nextTab);
+					}
+					else {
+						this.set("_selectedTab", null);
+						this.set("_selectedTab", currentTab);
+						if(this._selectedLineItem.moveType=="Asset"){
+							this.$.floorplandetail2.refreshViewBox();
+							this.$.floorplandetail2T.refreshViewBox();
+						}
+						else if(this._selectedLineItem.moveType=="Equipment"){
+							this.$.floorplandetail3.refreshViewBox();
+							this.$.floorplandetail3T.refreshViewBox();
+						}
+						else if(this._selectedLineItem.moveType=="Room Function"){
+							this.$.floorplandetail4.refreshViewBox();
+							this.$.floorplandetail4T.refreshViewBox();
+						}
+					}
+				}
+
+				if ((lastLineItemSelected) && (lastLineItemSelected._id == this._selectedLineItem._id)) {
+					if (!e.startup) e.stopPropagation();
+					this.set("_selectedLineItem", null);
+					this.set("_lineItemSelected", false);
+					this.set("_assetsCount", null);
+					this.set("commentCount", null);
+					this.set("currentMLI", "");
+				}
+			//}
+
+			if (this._selectedLineItem) {
+				sessionStorage.setItem("requestId", this.openRequestWhatUrlParams.reqId);
+				sessionStorage.setItem("selectedLineItem", this._selectedLineItem._id);
+				sessionStorage.setItem("moveType", this._selectedLineItem.moveType);
+			}
+			else {
+				sessionStorage.clear();
+			}
+
+		},
+
+		_setBuildingFloor: function() {
+
+			var found = false;
+			var validLocation = false;
+			if ((this._selectedLineItem.fromBuilding != null) &&
+				(this._selectedLineItem.fromFloor != null) &&
+				(this._selectedLineItem.fromSpace != null)) {
+				validLocation = true;
+			}
+
+			if (validLocation) {
+				for (var i = 0; i < this.floorSearch.length; i++) {
+					//TODO Sync model so both have lowercase 1st char for building and floor
+			 		if ((this._selectedLineItem.fromBuilding == this.floorSearch[i].building) &&
+						(this._selectedLineItem.fromFloor == this.floorSearch[i].floor)) {
+							this.set("moveFromFloorId", this.floorSearch[i]._id);
+							found = true;
+						break;
+			 		}
+		 		}
+			}
+
+			if ((!validLocation) || (!found)) {
+		 		this.set("moveFromFloorId", null);
+		 	}
+
+		 	found = false;
+		 	validLocation = false;
+
+			if ((this._selectedLineItem.toBuilding != null) &&
+				(this._selectedLineItem.toFloor != null) &&
+				(this._selectedLineItem.toSpace != null)) {
+				validLocation = true;
+			}
+
+			if (validLocation) {
+				for (var i = 0; i < this.floorSearch.length; i++) {
+			 		if ((this._selectedLineItem.toBuilding == this.floorSearch[i].building) &&
+						(this._selectedLineItem.toFloor == this.floorSearch[i].floor)) {
+							this.set("moveToFloorId", this.floorSearch[i]._id);
+							found = true;
+						break;
+			 		}
+		 		}
+			}
+			if ((!validLocation) || (!found)) {
+		 		this.set("moveToFloorId", null);
+		 	}
+
+			this.set("moveFromFloor._id", this.moveFromFloorId);
+			this.set("moveToFloor._id", this.moveToFloorId);
+		},
+
+		_isEmpty: function(val) {
+			return !val || val == "";
+		},
+
+		_isNegNumber: function(val) {
+			return !val || val == "" || val < 0;
+		},
+
+		_computeEmailAddressLink: function(email) {
+			return "mailto:" + email;
+		},
+
+		_computeTelephoneLink: function(phoneNumber) {
+			return "tel:" + phoneNumber;
+		},
+
+		refreshItemList: function() {
+			if (this.$.readyCheckBox.active) {
+				this.set("_checkboxEnabled", true);
+			}
+			else {
+				this.set("_checkboxEnabled", false);
+			}
+			this.$.selectorPeopleMLIs.selected = null;
+			this.$.selectorAssetMLIs.selected = null;
+			this.$.selectorEquipmentMLIs.selected = null;
+			this.$.selectorRoomMLIs.selected = null;
+			this.$.personTemplate.render();
+			this.$.assetTemplate.render();
+			this.$.equipmentTemplate.render();
+			this.$.roomTemplate.render();
+		},
+
+		lineItemType: function(item) {
+
+			if (this._checkboxEnabled) {
+				if (item.readyToMove == "TRUE")
+				return false;
+			}
+
+	        return true;
+
+		},
+
+		_completeRequest: function(){
+			this.$.peopleAddIcon.hidden = true;
+			this.$.assetsAddIcon.hidden = true;
+			this.$.equipmentAddIcon.hidden = true;
+			this.$.roomsAddIcon.hidden = true;
+			this.$.scheduledMoveDatePeople.readonly = true;
+			this.$.scheduledMoveDateAsset.readonly = true;
+			this.$.scheduledMoveDateRoom.readonly = true;
+			this.$.scheduledMoveDateEquipment.readonly = true;
+			this.$.boxesPeopleInput.readonly = true;
+			this.$.boxesRoomInput.readonly = true;
+			this.$.boxesEquipmentInput.readonly = true;
+			this.$.boxesAssetInput.readonly = true;
+			this.$.peopleAssetsAddIcon.hidden = true;
+			this.$.peopleLocationFromAddIcon.hidden = true;
+			this.$.peopleLocationToAddIcon.hidden = true;
+			this.$.peopleAddCommentIcon.hidden = true;
+			this._completedRequest = true;
+			this.$.moveRequestModel.performAction(this.$.moveRequestModel.reqId, TriPlatDs.RefreshType.BOTH, "defaultActions", "complete");
+			this.$.moveRequestModel.refresh();
+		},
+
+		_isCompleteRequest: function(val) {
+			return  val == "Completed";
+		},
+
+		_computeIsEmpty: function(recordId) {
+
+			if (recordId && recordId != "" && recordId != 0) {
+				return false;
+			}
+			return true;
+		},
+
+		_handleMoveToSpacesGetComplete: function() {
+			this._computeMoveToSpace();
+			this._handleStartupProcess();
+		},
+
+		_computeMoveToSpace: function() {
+			if (this._selectedLineItem != null) {
+				if (this.moveFromSpaces) {
+					for (var i = 0; i < this.moveFromSpaces.length; i++) {
+				 		if ((this._selectedLineItem.fromBuilding == this.moveFromSpaces[i].building) &&
+				 			(this._selectedLineItem.fromFloor == this.moveFromSpaces[i].floor) &&
+							(this._selectedLineItem.fromSpace == this.moveFromSpaces[i].space)) {
+								this.set("moveFromSpace", this.moveFromSpaces[i]);
+							break;
+				 		}
+				 	}
+			 	}
+			 	if (this.moveToSpaces) {
+			 		for (var i = 0; i < this.moveToSpaces.length; i++) {
+				 		if ((this._selectedLineItem.toBuilding == this.moveToSpaces[i].building) &&
+				 			(this._selectedLineItem.toFloor == this.moveToSpaces[i].floor) &&
+				 			(this._selectedLineItem.toSpace == this.moveToSpaces[i].space)) {
+								this.set("moveToSpace", this.moveToSpaces[i]);
+							break;
+				 		}
+				 	}
+				}
+			}
+		},
+
+
+
+		_handleSelectedTab: function (selectedTab) {
+			if ((selectedTab == "peopleFromToTab") ||
+				(selectedTab == "assetsFromToTab") ||
+				(selectedTab == "equipmentFromToTab") ||
+				(selectedTab == "roomFromToTab")) {
+
+				this._computeMoveToSpace();
+				this.set("moveFromFloor._id", null);
+				this.set("moveFromFloor._id", this.moveFromFloorId);
+				this.$.floorplandetail1.refreshViewBox();
+				this.$.floorplandetail2.refreshViewBox();
+				this.$.floorplandetail3.refreshViewBox();
+				this.$.floorplandetail4.refreshViewBox();
+				this.set("moveToFloor._id", null);
+				this.set("moveToFloor._id", this.moveToFloorId);
+				this.$.floorplandetail1T.refreshViewBox();
+				this.$.floorplandetail2T.refreshViewBox();
+				this.$.floorplandetail3T.refreshViewBox();
+				this.$.floorplandetail4T.refreshViewBox();
+			}
+		},
+
+		_handleFloorSearchGetComplete: function() {
+			this._handleStartupProcess();
+		},
+
+		_handleFromChargeToOrgGetComplete: function () {
+			if (this.fromChargeToOrg && this.fromChargeToOrgAdd && this.fromChargeToOrgRemove) {
+				this.set("_mliFromChargeToDataBuffer", []);
+
+				// Added async to force dom-repeat item refresh
+				this.async(function() {
+					this.fromChargeToOrg.forEach(function(item) {
+						var newItem = item;
+						newItem.name = item.name;
+						newItem.type = "current";
+						newItem.addFlag = false;
+						newItem.currentFlag = true;
+						newItem.removeFlag = this._findRemoveOrg(item, this.fromChargeToOrgRemove);
+						if (newItem.removeFlag == true) newItem.currentFlag = false;
+						this.push("_mliFromChargeToDataBuffer", newItem);
+					}.bind(this));
+					this.fromChargeToOrgAdd.forEach(function(item) {
+						var newItem = item;
+						newItem.name = item.name;
+						newItem.type = "add";
+						newItem.addFlag = true;
+						newItem.currentFlag = false;
+						newItem.removeFlag = false;
+						this.push("_mliFromChargeToDataBuffer", newItem);
+					}.bind(this));
+				}.bind(this));
+			}
+		},
+
+		_handleToChargeToOrgGetComplete: function () {
+
+			if (this.toChargeToOrg && this.toChargeToOrgAdd && this.toChargeToOrgRemove) {
+				this.set("_mliToChargeToDataBuffer", []);
+
+				this.async(function() {
+					this.toChargeToOrg.forEach(function(item) {
+						var newItem = item;
+						newItem.name = item.name;
+						newItem.type = "current";
+						newItem.addFlag = false;
+						newItem.currentFlag = true;
+						newItem.removeFlag = this._findRemoveOrg(item, this.toChargeToOrgRemove);
+						if (newItem.removeFlag == true) newItem.currentFlag = false;
+						this.push("_mliToChargeToDataBuffer", newItem);
+					}.bind(this));
+					this.toChargeToOrgAdd.forEach(function(item) {
+						var newItem = item;
+						newItem.name = item.name;
+						newItem.type = "add";
+						newItem.addFlag = true;
+						newItem.currentFlag = false;
+						newItem.removeFlag = false;
+						this.push("_mliToChargeToDataBuffer", newItem);
+					}.bind(this));
+				}.bind(this));
+			}
+		},
+
+		_findRemoveOrg: function (item, removeData) {
+			for (var i=0; i < removeData.length; i++) {
+				if (removeData[i].name == item.name)
+					return true;
+			}
+			return false;
+		},
+
+		_getCounter: function (array) {
+			if((this._selectedLineItem == null)||(this._selectedLineItem == ""))
+				return null;
+			if ((array) && (array.length > 0)) {
+				return array.length;
+			}
+			else {
+				return null;
+			}
+
+		},
+
+		_handleLineItemFromLocationGetComplete: function() {
+			this._mliFromChargeToDataBuffer = [];
+			this.set("currentFromLocation", this.lineItemFromLocation._id);
+		},
+
+		_handleLineItemToLocationGetComplete: function() {
+			this._mliToChargeToDataBuffer = [];
+			this.set("currentToLocation", this.lineItemToLocation._id);
+		},
+
+		_handleClearFromChargebackOrganizationTap: function(e) {
+			var organization = e.model.item;
+			if (organization.type == "add") {
+				this.$.fromChargeToOrgAddDS.removeRecord(organization, TriPlatDs.RefreshType.BOTH);
+			}
+			else {
+				this.$.fromChargeToOrgRemoveDS.removeRecord(organization, TriPlatDs.RefreshType.BOTH);
+			}
+		},
+
+		_handleClearToChargebackOrganizationTap: function(e) {
+			var organization = e.model.item;
+			if (organization.type == "add") {
+				this.$.toChargeToOrgAddDS.removeRecord(organization, TriPlatDs.RefreshType.BOTH);
+			}
+			else {
+				this.$.toChargeToOrgRemoveDS.removeRecord(organization, TriPlatDs.RefreshType.BOTH);
+			}
+		},
+
+		_handleFromChargeToOrgAddComplete: function() {
+			this.$.fromChargeToOrgAddDS.refresh();
+			this.$.fromChargeToOrgRemoveDS.refresh();
+		},
+
+		_handleFromChargeToOrgRemoveComplete: function() {
+			this.$.fromChargeToOrgAddDS.refresh();
+			this.$.fromChargeToOrgRemoveDS.refresh();
+		},
+
+		_handleToChargeToOrgAddComplete: function() {
+			this.$.toChargeToOrgAddDS.refresh();
+			this.$.toChargeToOrgRemoveDS.refresh();
+		},
+
+		_handleToChargeToOrgRemoveComplete: function() {
+			this.$.toChargeToOrgAddDS.refresh();
+			this.$.toChargeToOrgRemoveDS.refresh();
+		},
+
+		_handleRemoveFromChargebackOrganizationTap: function(e) {
+			var organization = e.model.item;
+			this.$.fromChargeToOrgRemoveDS.addRecord(organization, TriPlatDs.RefreshType.BOTH);
+		},
+
+		_handleRemoveToChargebackOrganizationTap: function(e) {
+			var organization = e.model.item;
+			this.$.toChargeToOrgRemoveDS.addRecord(organization, TriPlatDs.RefreshType.BOTH);
+		},
+
+		_handleChildAssetEquipmentMLIGetComplete: function (items) {
+			this.set("assetTabCount", 0);
+			this.set("equipmentTabCount", 0);
+			this.set("_assetsCount", null);
+
+			if (items != null) {
+				this.set("_assetsCount", this.childAssetEquipmentMLI.length);
+
+				this.childAssetEquipmentMLI.forEach(function(item) {
+					if (item.conditionMLI.id == null) {
+						item.conditionMLI = item.condition;
+					}
+					if (item.moveType == "Asset") {
+						this.assetTabCount++;
+					}
+					else
+					{
+						this.equipmentTabCount++;
+					}
+				}.bind(this));
+			}// end if
+		},
+
+		_getModel: function() {
+
+			var model = null;
+				model = this.$.personTemplate.modelForElement(this._selectedElement);
+				if (model == null) {
+        		model = this.$.assetTemplate.modelForElement(this._selectedElement);
+        		}
+    			if (model == null) {
+    				model = this.$.equipmentTemplate.modelForElement(this._selectedElement);
+    			}
+    			if (model == null) {
+    				model = this.$.roomTemplate.modelForElement(this._selectedElement);
+    			}
+        	return model;
+		},
+
+
+		_handleDateValueChanged: function(moveDate) {
+			if (moveDate) {
+				if (this._oldMoveDate != null) {
+					var model = this._getModel();
+					model.item.moveDate = moveDate;
+					this.$.parentMLIDS.updateRecord(this._selectedLineItem._id, TriPlatDs.RefreshType.CLIENT);
+					this._oldMoveDate = moveDate;
+				}
+				else
+				{
+					this._oldMoveDate = moveDate;
+				}
+			}
+        },
+
+
+        _handleAssignmentTypeValueChanged: function(type) {
+        	if (type && type.id) {
+        		if (this._oldAssignmentType != null) {
+	        		var model = null;
+	        		if (this._selectedElement) {
+	        			model = this.$.personTemplate.modelForElement(this._selectedElement);
+	        			model.item.assignmentTypeMLI.id = type.id;
+	        			model.item.assignmentTypeMLI.value = type.value;
+	        			this.$.parentMLIDS.updateRecord(this._selectedLineItem._id, TriPlatDs.RefreshType.CLIENT);
+	        			this._oldAssignmentType = type.value;
+	        		}
+        		}
+        		else {
+					this._oldAssignmentType = type.value;
+        		}
+        	}
+        },
+
+        moveInstructionChanged: function(e) {
+        	this._moveInstructionChanged = true;
+
+        },
+
+        moveInstructionFocus: function(e) {
+        	this._moveInstructionChanged = false;
+        	this._moveInstructionCounter = 0;
+
+        },
+
+        moveInstructionBlur: function(e) {
+        	if(this._moveInstructionCounter == 0) {
+				this._moveInstructionCounter++;
+
+				var item = null;
+				if (e.model) {
+					item = e.model.item;
+				}
+				else  {
+					var model = this._getModel();
+	        		item = model.item;
+	        		item.moveInstructions = this._selectedLineItem.moveInstructions;
+        		}
+
+        		var inst = item.moveInstructions;
+        		this.$.parentMLIDS.updateRecord(item._id, TriPlatDs.RefreshType.CLIENT);
+        		console.log("moveInstructions updated:" + inst);
+
+        	}
+        	else {
+        	}
+        },
+
+         _handleQuantityValueChanged: function(e) {
+			var item = null;
+			if (e.model) {
+				item = e.model.item;
+			}
+			else {
+				var model = this._getModel();
+	        	item = model.item;
+	        	item.quantity = this._selectedLineItem.quantity;
+			}
+
+			this.$.parentMLIDS.updateRecord(item._id, TriPlatDs.RefreshType.CLIENT);
+		},
+
+		_handleBoxValueChanged: function(e) {
+			var item = null;
+			if (e.model) {
+				item = e.model.item;
+			}
+			else {
+				var model = this._getModel();
+	        	item = model.item;
+	        	item.numberBoxes = this._selectedLineItem.numberBoxes;
+			}
+
+			console.log("_handleQuantityValueChanged...update:" + item.numberBoxes);
+			this.$.parentMLIDS.updateRecord(item._id, TriPlatDs.RefreshType.CLIENT);
+
+		},
+
+		_updateCommentCount: function (e) {
+			var count = e.detail;
+			this.set("commentCount", count);
+		},
+
+		_isItemReadonly: function(item) {
+
+		   if (item) {
+               return (this._completedRequest || item.status=="Completed");
+           }
+           else {
+               return  this._completedRequest;
+           }
+       },
+
+       	_handleDeleteConfirmationDialog: function(e) {
+			this.$.deleteConfirmationDialog.open();
+		},
+
+		_getWidth: function() {
+    		screenWidth = null;
+    		if(window.screen != null)
+	      		screenWidth = window.screen.availWidth;
+	    	if(window.innerWidth != null)
+	      		screenWidth = window.innerWidth;
+	    	return screenWidth;
+  		},
+
+  		_onIronResize: function() {
+	        this.screenWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+	        if( this.screenWidth > 769 ) {
+	            this.set("_screenLarge", true);
+	        } else {
+	         	this.set("_screenLarge", false);
+	        }
+    	},
+
+    	_handleStartupProcess: function () {
+				if (this.parentMLI && this.childMLI && this.floorSearch && this.openRequest && (this.openRequest.toFloor == null || this.openRequest.toFloor.id == null || this.moveToSpaces) && this._startup) {
+					this._startup = false;
+					var id = sessionStorage.getItem("selectedLineItem");
+					var moveType = sessionStorage.getItem("moveType");
+					var requestId = sessionStorage.getItem("requestId");
+					if ((id) && (moveType) && (requestId == this.openRequestWhatUrlParams.reqId)) {
+						this._locateSelectedLineItem(id, moveType);
+					}
+					else
+					{
+						this._selectFirstLineItem();
+					}
+				}
+
+				// Open MLI collapsable section
+				this._toggleExpandMLI();
+    	},
+
+    	_locateSelectedLineItem: function(id, moveType) {
+
+			var selector = null;
+			this.set("_peopleOpened", false);
+			this.set("_assetOpened", false);
+			this.set("_equipmentOpened", false);
+			this.set("_roomOpened", false);
+
+    		if (moveType == "Person") {
+				selector = this.$.selectorPeopleMLIs;
+				this.set("_peopleOpened", true);
+			}
+			else if (moveType == "Asset") {
+				selector = this.$.selectorAssetMLIs;
+				this.set("_assetOpened", true);
+			}
+			else if (moveType == "Equipment") {
+				selector = this.$.selectorEquipmentMLIs;
+				this.set("_equipmentOpened", true);
+			}
+			else if (moveType == "Room Function") {
+				selector = this.$.selectorRoomMLIs;
+				this.set("_roomOpened", true);
+			}
+
+			for (var i = 0; i < selector.items.length; i++) {
+				if (selector.items[i]._templateInstance.item._id == id) {
+					selector.selected = i;
+					var newItem = [];
+					newItem.startup = true;
+					newItem.detail = selector.items[i]._templateInstance.item;
+					this._handleSelectedLineItem(newItem);
+					break;
+				}
+			}
+		},
+
+		_selectFirstLineItem: function() {
+
+			var selector = null;
+			this.set("_peopleOpened", false);
+			this.set("_assetOpened", false);
+			this.set("_equipmentOpened", false);
+			this.set("_roomOpened", false);
+
+			var count = this.$.selectorPeopleMLIs.items.length;
+			if (count > 0) {
+				this.set("_peopleOpened", true);
+				selector = this.$.selectorPeopleMLIs;
+			}
+			if (count == 0) {
+				count = this.$.selectorAssetMLIs.items.length;
+				if (count > 0) {
+					this.set("_assetOpened", true);
+					selector = this.$.selectorAssetMLIs;
+				}
+			}
+			if (count == 0) {
+				count = this.$.selectorEquipmentMLIs.items.length;
+				if (count > 0) {
+					this.set("_equipmentOpened", true);
+					selector = this.$.selectorEquipmentMLIs;
+				}
+			}
+			if (count == 0) {
+				count = this.$.selectorRoomMLIs.items.length;
+				if (count > 0) {
+					this.set("_roomOpened", true);
+					selector = this.$.selectorRoomMLIs;
+				}
+			}
+
+			if (selector) {
+				selector.selected = 0;
+				var newItem = [];
+				newItem.startup = true;
+				newItem.detail = selector.items[0]._templateInstance.item;
+				this._handleSelectedLineItem(newItem);
+			}
+		},
+
+		_attachEvents: function() {
+			var myRequests = document.querySelector('tripage-groupmove-myrequests');
+			var header = document.querySelector('tricomp-groupmove-detail-header');
+			header.addEventListener('completeRequest', this._completeRequestHandler);
+			header.addEventListener('handleBack', this._handleBackHandler);
+		},
+
+		_dettachEvents: function() {
+			var header = document.querySelector('tricomp-groupmove-detail-header');
+			header.removeEventListener('completeRequest', this._completeRequestHandler);
+			header.removeEventListener('handleBack', this._handleBackHandler);
+		},
+
+		_handleRoutePageActive: function(e) {
+			if (e.detail.active) {
+				this._attachEvents();
+
+				// Header Component: Update the header's 'isNew' property
+				this.$.header._isNewRequest();
+
+				// Fire: Item page is open
+				this.fire('itemActive');
+			} else {
+				this._onNavigateCleanup();
+				this._dettachEvents();
+			}
+		},
+
+
+		_handleTapPeopleLine: function() {
+
+				if (this.get("_peopleOpened")){
+					this.set("_peopleOpened", false);
+				} else {
+					var count = this.$.selectorPeopleMLIs.items.length;
+					if (count > 0) {
+						this.set("_peopleOpened", true);
+					}
+				}
+		},
+
+		_handleTapAssetLine: function() {
+				if (this.get("_assetOpened")){
+					this.set("_assetOpened", false);
+				} else {
+					var count = this.$.selectorAssetMLIs.items.length;
+					if (count > 0) {
+						this.set("_assetOpened", true);
+					}
+				}
+        },
+
+		_handleTapEquipLine: function() {
+				if (this.get("_equipmentOpened")){
+					this.set("_equipmentOpened", false);
+				} else {
+					var count = this.$.selectorEquipmentMLIs.items.length;
+					if (count > 0) {
+						this.set("_equipmentOpened", true);
+					}
+				}
+		},
+
+		_handleTapRoomLine: function() {
+				if (this.get("_roomOpened")){
+					this.set("_roomOpened", false);
+				} else {
+					var count = this.$.selectorRoomMLIs.items.length;
+					if (count > 0) {
+						this.set("_roomOpened", true);
+					}
+				}
+		},
+
+		_getLabel: function(id) {
+			if(id != null) {
+				return "Item Details: " + id;
+			}
+			else {
+				return "Item Details";
+			}
+
+		},
+
+		_handleReset: function(){
+			this.fire("reset");
+		},
+
+		//=========================================================
+		// Function _toggleMLI
+		//------------------------------------------
+		// Objective: Toggle the MLI container
+		//=========================================================
+		_toggleMLI: function() {
+		  this.$.collapseSection._collapseToggle();
+
+			// If Statement: Check if there's MLI
+			if (this.moveLineItems) {
+				// Show or Hide the collapse button
+				this.$.header._isCollapseExpanded(this._currentCount);
+			}// end if
+		},
+
+		//=========================================================
+		// Function _toggleCloseMLI
+		//------------------------------------------
+		// Objective: Close the MLI container
+		//=========================================================
+		_toggleCloseMLI: function() {
+		  this.$.collapseSection._collapseHide();
+
+			// Show the collapse button
+			this.$.header._isCollapseBtnVisible();
+		},
+
+		//=========================================================
+		// Function _toggleExpandMLI
+		//------------------------------------------
+		// Objective: Expand the MLI container
+		//=========================================================
+		_toggleExpandMLI: function() {
+		  this.$.collapseSection._collapseShow();
+
+			// Hide the collapse button
+			this.$.header._isCollapseBtnHidden();
+		},
+
+		_openPeopleArrow: function(e){
+			if (e.which == 13 || e.keyCode == 13) {
+				this._peopleOpened = !this._peopleOpened;
+				}
+		},
+		_openAssetArrow: function(e){
+			if (e.which == 13 || e.keyCode == 13) {
+				this._assetOpened = !this._assetOpened;
+				}
+		},
+		_openEquipmentArrow: function(e){
+			if (e.which == 13 || e.keyCode == 13) {
+				this._equipmentOpened = !this._equipmentOpened;
+				}
+		},
+		_openRoomArrow: function(e){
+			if (e.which == 13 || e.keyCode == 13) {
+				this._roomOpened = !this._roomOpened;
+			}
+		},
+		_handleSelectedLineItemKeyboard: function(e) {
+			if (e.which == 13 || e.keyCode == 13) {
+				this._handleSelectedLineItem(e);
+			}
+		},
+
+		_hideAssetsEquipment: function(assetCount, equipmentCount) {
+			if ((assetCount + equipmentCount) > 0) {
+				return false;
+			}
+			else {
+				return true;
+			}
+		},
+
+		//=========================================================
+		// Function _handleSelectedCheckboxChange
+		//------------------------------------------
+		// Objective: Called when checkbox change - Use to select and deselect showAll checkbox
+		//=========================================================
+		_handleSelectedPeopleCheckboxChange: function(change) {
+			// If Statement: Check the path
+			if (change.path == "_selectedPeopleCheckbox" || change.path == "_selectedPeopleCheckbox.splices") {
+				this._checkSelected("people");
+			}// end if
+		},
+		_handleSelectedAssetsCheckboxChange: function(change) {
+			// If Statement: Check the path
+			if (change.path == "_selectedAssetsCheckbox" || change.path == "_selectedAssetsCheckbox.splices") {
+				this._checkSelected("assets");
+			}// end if
+		},
+		_handleSelectedEquipmentCheckboxChange: function(change) {
+			// If Statement: Check the path
+			if (change.path == "_selectedEquipmentCheckbox" || change.path == "_selectedEquipmentCheckbox.splices") {
+				this._checkSelected("equipment");
+			}// end if
+		},
+		_handleSelectedRoomsCheckboxChange: function(change) {
+			// If Statement: Check the path
+			if (change.path == "_selectedRoomsCheckbox" || change.path == "_selectedRoomsCheckbox.splices") {
+				this._checkSelected("rooms");
+			}// end if
+		},
+
+		//=========================================================
+		// Function _checkSelected
+		//------------------------------------------
+		// Objective: Check all checkbox selected to determine when to showAll or not
+		//=========================================================
+		_checkSelected: function(type) {
+			// If Statement: Check what move type
+			if (type == "people") {
+				var allCheckboxes = Polymer.dom(this.root).querySelectorAll("#collapsiblePeople paper-checkbox");
+				var showAll = allCheckboxes &&  allCheckboxes.length > 0;
+
+				if (allCheckboxes) {
+					for (var i = 0; i < allCheckboxes.length; i++) {
+						allCheckboxes[i].checked = this._selectedPeopleCheckbox && this._selectedPeopleCheckbox.indexOf(allCheckboxes[i].criterion._id) >= 0;
+						showAll = showAll && allCheckboxes[i].checked;
+					}// end for
+				}// end if
+
+				this._showAllPeople = showAll;
+			} else if (type == "assets") {
+				var allCheckboxes = Polymer.dom(this.root).querySelectorAll("#collapsibleAssets paper-checkbox");
+				var showAll = allCheckboxes &&  allCheckboxes.length > 0;
+
+				if (allCheckboxes) {
+					for (var i = 0; i < allCheckboxes.length; i++) {
+						allCheckboxes[i].checked = this._selectedAssetsCheckbox && this._selectedAssetsCheckbox.indexOf(allCheckboxes[i].criterion._id) >= 0;
+						showAll = showAll && allCheckboxes[i].checked;
+					}// end for
+				}// end if
+
+				this._showAllAssets = showAll;
+			} else if (type == "equipment") {
+				var allCheckboxes = Polymer.dom(this.root).querySelectorAll("#collapsibleEquipment paper-checkbox");
+				var showAll = allCheckboxes &&  allCheckboxes.length > 0;
+
+				if (allCheckboxes) {
+					for (var i = 0; i < allCheckboxes.length; i++) {
+						allCheckboxes[i].checked = this._selectedEquipmentCheckbox && this._selectedEquipmentCheckbox.indexOf(allCheckboxes[i].criterion._id) >= 0;
+						showAll = showAll && allCheckboxes[i].checked;
+					}// end for
+				}// end if
+
+				this._showAllEquipment = showAll;
+			} else if (type == "rooms") {
+				var allCheckboxes = Polymer.dom(this.root).querySelectorAll("#collapsibleRooms paper-checkbox");
+				var showAll = allCheckboxes &&  allCheckboxes.length > 0;
+
+				if (allCheckboxes) {
+					for (var i = 0; i < allCheckboxes.length; i++) {
+						allCheckboxes[i].checked = this._selectedRoomsCheckbox && this._selectedRoomsCheckbox.indexOf(allCheckboxes[i].criterion._id) >= 0;
+						showAll = showAll && allCheckboxes[i].checked;
+					}// end for
+				}// end if
+
+				this._showAllRooms = showAll;
+			}// end if
+		},
+
+		_initToastMessage: function(){
+			this._toastDisplayed = false;
+			this.$.addAllToast.close();
+			this.$.addAllCompleteToast.close();
+			this.$.addAllTimeoutToast.close();
+			this._currentNumberRefresh = 0;
+			this.$.header._isSubmitValid();
+		},
+
+		_checkToastMessage: function(){
+			if(this._currentNumberRefresh>this._maxNumberRefresh){
+				this._currentNumberRefresh = 0;
+				this.$.addAllToast.close();
+				this.$.addAllTimeoutToast.open();
+				this._toastDisplayed = false;
+				return true;
+			}
+			if(this.openRequest.workflowCount>0){
+				if(!this._toastDisplayed){
+					this.$.addAllToast.open();
+					this._toastDisplayed = true;
+				}
+				this._currentNumberRefresh = this._currentNumberRefresh + 1;
+				this.$.moveLineItems.refresh();
+				setTimeout(function() {
+						this.$.moveRequestModel.refresh();
+						}.bind(this), this._refreshInterval);
+			}
+			else if(this._toastDisplayed){
+				this.$.addAllToast.close();
+				this.$.addAllCompleteToast.open();
+				this._toastDisplayed = false;
+				this._currentNumberRefresh = 0;
+				this.$.moveLineItems.refresh();
+			}
+		},
+
+		//=========================================================
+		// Function _computeLoadingChildMLIs
+		//------------------------------------------
+		// Objective: Compute Loading of the child MLIs for the selected MLI (person or room)
+		//=========================================================
+		_computeLoadingChildMLIs: function(childAssetEquipmentMLILoading, assetsAssociatedPersonLoading, equipmentAssociatedPersonLoading, assetsAssociatedRoomLoading, equipmentAssociatedRoomLoading) {
+			return (childAssetEquipmentMLILoading || assetsAssociatedPersonLoading || equipmentAssociatedPersonLoading || assetsAssociatedRoomLoading || equipmentAssociatedRoomLoading);
+		},
+
+		//=========================================================
+		// Function _handleAssetsAssociatedPersonGetComplete
+		//------------------------------------------
+		// Objective: Handle Assets Associated Person Get Complete
+		//=========================================================
+		_handleAssetsAssociatedPersonGetComplete: function() {
+			// Control Variable: Indicate when to compute assets count
+			this._computeAssetsPerson = true;
+
+			// Refresh Equipment DS - to be sure that assets was already loaded
+			this.$.equipmentAssociatedPerson.refresh();
+		},
+
+		//=========================================================
+		// Function _handleEquipmentAssociatedPersonGetComplete
+		//------------------------------------------
+		// Objective: Handle Equipment Associated Person Get Complete
+		//=========================================================
+		_handleEquipmentAssociatedPersonGetComplete: function() {
+			// If Statement: Check if it should compute assets
+			if (this._computeAssetsPerson) {
+				// Control Variable: Set to false
+				this._computeAssetsPerson = false;
+
+				// Call compute method
+				this._computeAssetsPersonCount(this.assetsAssociatedPerson, this.equipmentAssociatedPerson);
+			}// end if
+		},
+
+		//=========================================================
+		// Function _computeAssetsPersonCount
+		//------------------------------------------
+		// Objective: Compute number of assets/equipment associated with a person
+		//=========================================================
+		_computeAssetsPersonCount: function(assets, equipment) {
+			assets = (assets) ? assets : [];
+			equipment = (equipment) ? equipment : [];
+
+			// Total count
+			var assetsCount = assets.length + equipment.length;
+
+			// If Statement: Check if there's a selected MLI
+			if (this._selectedLineItem) {
+				// If Statement: Check if the selected MLI is as Person
+				if (this._selectedLineItem.moveType == "Person") {
+					// Call compare method
+					this._compareAssetsCount(assetsCount, this._assetsCount);
+				}// end if
+			}// end if
+		},
+
+		//=========================================================
+		// Function _handleAssetsAssociatedRoomGetComplete
+		//------------------------------------------
+		// Objective: Handle Assets Associated Room Get Complete
+		//=========================================================
+		_handleAssetsAssociatedRoomGetComplete: function() {
+			// Control Variable: Indicate when to compute assets count
+			this._computeAssetsRoom = true;
+
+			// Refresh Equipment DS - to be sure that assets was already loaded
+			this.$.equipmentAssociatedRoom.refresh();
+		},
+
+		//=========================================================
+		// Function _handleEquipmentAssociatedRoomGetComplete
+		//------------------------------------------
+		// Objective: Handle Equipment Associated Room Get Complete
+		//=========================================================
+		_handleEquipmentAssociatedRoomGetComplete: function() {
+			// If Statement: Check if it should compute assets
+			if (this._computeAssetsRoom) {
+				// Control Variable: Set to false
+				this._computeAssetsRoom = false;
+
+				// Call compute method
+				this._computeAssetsRoomCount(this.assetsAssociatedRoom, this.equipmentAssociatedRoom);
+			}// end if
+		},
+
+		//=========================================================
+		// Function _computeAssetsRoomCount
+		//------------------------------------------
+		// Objective: Compute number of assets/equipment associated with a room
+		//=========================================================
+		_computeAssetsRoomCount: function(assets, equipment) {
+			assets = (assets) ? assets : [];
+			equipment = (equipment) ? equipment : [];
+
+			// Total count
+			var assetsCount = assets.length + equipment.length;
+
+			// If Statement: Check if there's a selected MLI
+			if (this._selectedLineItem) {
+				// If Statement: Check if the selected MLI is as Room
+				if (this._selectedLineItem.moveType == "Room Function") {
+					// Call compare method
+					this._compareAssetsCount(assetsCount, this._assetsCount);
+				}// end if
+			}// end if
+		},
+
+		//=========================================================
+		// Function _compareAssetsCount
+		//------------------------------------------
+		// Objective: Compare assets count - Total assets/equipment associated VS Child MLI
+		//=========================================================
+		_compareAssetsCount: function(assetsTotal, assetsCount) {
+			// If Statement: Check if the count is different - That indicates that some MLIs is still being associated with the request
+			if (assetsTotal != assetsCount) {
+				console.log("There are MLIs being add to the request.");
+			}// end if
+		},
+
+		//=========================================================
+		// Function _handleParentMLIFilteredChange
+		//------------------------------------------
+		// Objective: Compare assets count - Total assets/equipment associated VS Child MLI
+		//=========================================================
+		_handleParentMLIFilteredChange: function(mlis) {
+			// If Statement: Check if there's a Parent MLI data
+			if (this.parentMLI) {
+				this.set("_mliAssetDataBuffer", []);
+				this.set("_mliEquipmentDataBuffer", []);
+				this.set("_mliPersonDataBuffer", []);
+				this.set("_mliRoomDataBuffer", []);
+
+				// Foreach: Iterate through the array of MLIs
+				mlis.forEach(function(item) {
+					var newItem = item;
+					newItem.openChildren = false;
+					newItem.genId = this._computeId(item);
+					newItem.isReady = this._isReady(item);
+					newItem.description = this._getDescription(item);
+					newItem.childString = "false";
+
+					var data = [];
+					newItem.childMLIData = data;
+					newItem.childMLIDataLength = data.length;
+
+					if (item.moveType == "Asset") {
+						this.push("_mliAssetDataBuffer", newItem);
+					}
+					else if (item.moveType == "Equipment") {
+						this.push("_mliEquipmentDataBuffer", newItem);
+					}
+					else if (item.moveType == "Person") {
+						this.push("_mliPersonDataBuffer", newItem);
+					}
+					else if (item.moveType == "Room Function") {
+						this.push("_mliRoomDataBuffer", newItem);
+					}// end if
+				}.bind(this));
+
+				// Invoke render, otherwise templates may not contain items during startup processing
+				this.$.personTemplate.render();
+				this.$.assetTemplate.render();
+				this.$.equipmentTemplate.render();
+				this.$.roomTemplate.render();
+			}// end if
+		},
+
+		//=========================================================
+		// Function _handle-Type-Count
+		//------------------------------------------
+		// Objective: Set the type count content
+		//=========================================================
+		_handlePeopleCount: function(count) {
+			this.$.personCount.textContent = count;
+		},
+		_handleAssetsCount: function(count) {
+			this.$.assetCount.textContent = count;
+		},
+		_handleEquipmentCount: function(count) {
+			this.$.equipmentCount.textContent = count;
+		},
+		_handleRoomsCount: function(count) {
+			this.$.roomCount.textContent = count;
+		},
+	});
+</script>

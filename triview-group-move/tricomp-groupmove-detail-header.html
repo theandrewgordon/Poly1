@@ -1,0 +1,614 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<!-- Polymer Paper Components -->
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-menu-button/paper-menu-button.html">
+<link rel="import" href="../paper-menu/paper-menu.html">
+<link rel="import" href="../paper-dialog/paper-dialog.html">
+<link rel="import" href="../paper-tooltip/paper-tooltip.html">
+
+<!-- Polymer Iron Components -->
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout-classes.html">
+
+<!-- TRIRIGA Platform Components -->
+<link rel="import" href="../triplat-debug/triplat-debug.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+<link rel="import" href="../triplat-date-utilities/triplat-date-utilities.html">
+
+<!-- External Libraries -->
+<script src="../jsTimezoneDetect/jstz.min.js"></script>
+<script src="../moment/moment.js"></script>
+<script src="../moment-timezone/builds/moment-timezone-with-data-2010-2020.js"></script>
+<script src="../moment-jdateformatparser/moment-jdateformatparser.min.js"></script>
+<script src="../moment/min/locales.min.js"></script>
+
+<dom-module id="tricomp-groupmove-detail-header">
+	<style include="iron-flex">
+		/*=========================================
+		 * Table of Contents
+		 *-----------------------------
+		 * Buttons
+		 * Paper Dialog
+		 *=========================================*/
+
+		/* Buttons */
+		.btn-menu {
+			position: relative;
+			flex-direction: row !important;
+			height: auto;
+			margin: 0;
+			min-width: initial;
+			/*padding: 0.5em 0.3em 0.5em 0.8em !important;*/
+			padding-left: 24px !important;
+			padding-top: 9px !important;
+			padding-bottom: 9px !important;
+			align-items: flex-start !important;
+    	justify-content: flex-start !important;
+			background-color: transparent !important;
+			color: var(--tri-disabled-icon-button-color) !important;
+			transition: 0.2s;
+		}
+			.btn-menu:hover {
+				background-color: var(--tri-primary-content-accent-color) !important;
+			}
+			.btn-menu triplat-icon {
+				padding-top: 6px;
+
+				--triplat-icon-width: 30px;
+				--triplat-icon-height: 35px;
+			}
+			.btn-menu .btn-inner {
+				display: inline-block;;
+			}
+				.btn-menu:hover .btn-inner {
+					display: none;
+				}
+			.btn-menu .btn-inner-hover {
+				display: none;
+			}
+				.btn-menu:hover .btn-inner-hover {
+					display: inline-block;
+				}
+			.btn-menu span {
+				font-size: 10px;
+				color: var(--tri-primary-content-color);
+			}
+
+		.btn-inner triplat-icon {
+			--triplat-icon-fill-color: var(--tri-primary-color);
+			--triplat-icon-stroke-color: var(--tri-primary-color);
+		}
+		.btn-inner-hover triplat-icon {
+			--triplat-icon-fill-color: var(--tri-info-color);
+			--triplat-icon-stroke-color: var(--tri-info-color);
+		}
+
+		.dialog-msg-buttons paper-button {
+			height: 44px;
+			font-weight: 400 !important;
+		}
+		/* End Buttons */
+
+
+		/* Paper Dialog */
+				/* Dialog Msg */
+				.dialog-msg {
+					max-width: 370px;
+					border: 0.3em solid var(--ibm-gray-20);
+				}
+					.dialog-msg p {
+						font-size: 14px;
+					}
+
+				.dialog-msg-title {
+					margin-bottom: 1em;
+					font-size: 22px;
+					color: var(--tri-danger-color);
+					font-weight: 500;
+				}
+
+				.dialog-msg-buttons {
+					justify-content: space-around;
+					padding: 24px;
+				}
+					.dialog-msg-buttons paper-button {
+						padding: 5px 24px!important;
+					}
+				/* End Dialog Msg */
+		/* End Paper Dialog */
+
+
+		.search-header {
+			@apply(--layout-horizontal);
+			@apply(--layout-center-center);
+			font-size: 22px;
+			padding-bottom: 8px;
+			padding-top: 8px;
+			background-color: var(--tri-body-background-color);
+		}
+			.search-header > span {
+				@apply(--layout-flex);
+				padding-left: 0.5em;
+				font-weight: 200;
+			}
+
+			.search-header > div > span {
+				@apply(--layout-flex);
+				padding-left: 0.7em;
+				font-weight: bold;
+			}
+
+		.request-header{
+			font-size: 20px;
+			font-weight: 100;
+			padding-left: 0.7em;
+		}
+		.header-button {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-center-center);
+			-webkit-justify-content: flex-end;
+    	justify-content: flex-end;
+			padding-right: 1em;
+			font-size: 14px;
+		}
+
+		.options-menu {
+			@apply(--layout-horizontal);
+		}
+		.options{
+			background-color: var(--tri-primary-color-40);
+			color: var(--tri-header-color);
+
+		}
+
+		.dialog-buttons{
+			@apply(--layout-end);
+		}
+
+		#submitButton[disabled] {
+			background-color: var(--tri-header-color);
+		}
+		#cancelButton[disabled]{
+			background-color: var(--tri-header-color);
+		}
+
+	</style>
+
+	<template>
+		<triplat-route id="inboxRoute" name="inbox"></triplat-route>
+		<triplat-route id="whereRoute" name="whereRouteGroupMove"></triplat-route>
+
+		<triplat-ds id="moveRequest" name="moveRequest" data="{{moveRequest}}" on-ds-get-complete="_handleMoveRequestComplete" on-ds-update-complete="_handleMoveRequestUpdate" on-ds-perform-action-complete="_handleMoveRequestUpdate">
+				<triplat-ds-context name="myMoveRequests" context-id="{{request}}">
+				</triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="moveLineItems" name="moveLineItems" data="{{moveLineItems}}" on-ds-update-complete="_handleMLIUpdate" on-ds-perform-action-complete="_handleMLIUpdate">
+			<triplat-ds-context name="myMoveRequests" context-id="{{request}}">
+			</triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="myMoveRequestsDS" name="myMoveRequests" data="{{_myMoveRequests}}" on-ds-get-complete="_handleMyMoveRequestsGetComplete">
+			<triplat-ds-instance instance-id="{{request}}"></triplat-ds-instance>
+		</triplat-ds>
+
+		<triplat-ds id="currentPerson" name="currentPerson" data="{{currentPerson}}"></triplat-ds>
+
+		<div class="search-header">
+			<paper-button id="btn-collapse" noink class="btn-menu" hidden$="{{_hideCollapseBtn}}" on-tap="_triggerCollapse" aria-label="List collapsed">
+				<div class="btn-inner">
+					<triplat-icon
+						class="placeholder"
+						icon="bulletlist"></triplat-icon>
+				</div><!-- end .btn-inner -->
+				<div class="btn-inner-hover">
+					<triplat-icon
+						class="placeholder"
+						icon="bulletlist"></triplat-icon>
+				</div><!-- end .btn-inner-hover -->
+
+				<span>{{_mliCount}}</span>
+			</paper-button>
+
+			<paper-tooltip for="btn-collapse" position="right" animation-delay="0">Show line items</paper-tooltip>
+
+			<div>
+				<span>{{headerTextLabel}}</span>
+			<div>
+				<span class="request-header" hidden$="{{_isNew}}">Request {{moveRequest.requestID}}</span>
+				<span class="request-header" hidden$="{{!_isNew}}">New Request</span>
+			</div>
+			</div>
+			<div class="header-button">
+				<div class="layout horizontal">
+					<!-- <triplat-icon id="printIcon" icon="print"></triplat-icon>
+					<div class="divider-line"></div> -->
+					<paper-button noink id="cancelButton" secondary on-tap="openCancelDialog"  disabled$="{{_cancelValid}}">Cancel Request</paper-button>
+					<paper-button noink id="submitButton" on-tap="_handleSubmitRequest" hidden$="{{_requestSubmitted}}" disabled$="{{_submitValid}}">Submit</paper-button>
+				</div>
+			</div><!-- end .header-button -->
+		</div><!-- end .search-header -->
+
+		<paper-dialog id="confirmationDialog" modal>
+			<p>Thank you. Your request has been submitted.<br><br>Your ID number is {{moveRequest.requestID}}.</p>
+
+			<div class="buttons dialog-buttons">
+				<paper-button noink class="solid-button" dialog-confirm dialog-dismiss on-tap="closeConfirmationDialog">Close</paper-button>
+			</div><!-- end .buttons -->
+		</paper-dialog>
+
+		<paper-dialog id="invalidCancelDialog" modal>
+			<p>You cannot cancel this request until all line items are added. Try again later.</p>
+
+			<div class="buttons dialog-buttons">
+					<paper-button noink class="solid-button" dialog-dismiss>Close</paper-button>
+			</div>
+		</paper-dialog>
+
+		<paper-dialog id="cancelDialog" modal>
+			<p>Are you sure you want to cancel request {{moveRequest.requestID}} ?</p>
+
+			<div class="buttons dialog-buttons">
+					<paper-button noink class="solid-button" dialog-confirm on-tap="closeCancelDialog">Yes</paper-button>
+					<paper-button noink class="solid-button" secondary dialog-dismiss >No</paper-button>
+			</div>
+		</paper-dialog>
+
+		<paper-dialog id="dialogUnassinedSpaces" class="dialog-msg" modal>
+			<h4 class="dialog-msg-title">Warning</h4>
+			<p>Some move line items have no space assignment. Do you want to continue?</p>
+
+			<div class="dialog-msg-buttons buttons">
+				<paper-button noink dialog-dismiss on-tap="openConfirmationDialog">Continue</paper-button>
+				<paper-button secondary noink dialog-dismiss>Cancel</paper-button>
+			</div><!-- end .buttons -->
+		</paper-dialog>
+
+		<paper-dialog id="dialogInvalidMoveDate" class="dialog-msg" modal>
+			<h4 class="dialog-msg-title">Warning</h4>
+			<p>The move date is no longer valid. Continue to select a new date.</p>
+
+			<div class="dialog-msg-buttons buttons">
+				<paper-button noink dialog-dismiss>Continue</paper-button>
+			</div><!-- end .buttons -->
+		</paper-dialog>
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+
+		is: "tricomp-groupmove-detail-header",
+
+		behaviors: [
+			TriDateUtilities
+		],
+
+		properties: {
+			headerTextLabel:  String,
+			status: String,
+			request: String,
+			_submitValid: {
+				type: Boolean,
+				value: true,
+			},
+			_cancelValid: {
+				type: Boolean,
+				value: true,
+			},
+			_requestSubmitted: {
+				type: Boolean,
+				value: false,
+			},
+			_isNew: {
+					type: Boolean,
+					value: true
+			},
+
+			//=========================================================
+			// Property _hideCollapseBtn
+			//------------------------------------------
+			// Objective: Show or hide the collapse button
+			//=========================================================
+			_hideCollapseBtn: {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _mliCount
+			//------------------------------------------
+			// Objective: Number of MLIs
+			//=========================================================
+			_mliCount: {
+				type: Number,
+				value: 0
+			},
+		},
+
+		_submitRequest: function(){
+
+			this.fire("submit");
+			setTimeout(function() {
+						this.$.inboxRoute.navigate();
+						}.bind(this), 1000);
+
+		},
+
+
+		_cancelRequest: function(){
+			this.fire("cancel");
+			setTimeout(function() {
+						this.$.inboxRoute.navigate();
+						}.bind(this), 1000);
+		},
+
+
+		_handleCancel: function(){
+			this.fire("refresh");
+			this.$.inboxRoute.navigate();
+		},
+		_isSubmitValid: function(){
+			if(this.moveRequest!= null && this.moveRequest.status != null){
+				if(this.moveLineItems!=null && this.moveLineItems.length == 0){
+					this._requestSubmitted = false;
+					this._submitValid = true;
+					this.$.submitButton.disabled = true;
+				}
+				else{
+					this._submitValid=((this.moveRequest.status=="Issued")||(this.moveRequest.status=="Completed")||(this.moveRequest.status=="Review In Progress"));
+					this._requestSubmitted = this._submitValid;
+					if(this._submitValid)
+						this.$.submitButton.disabled = true;
+					else
+						this.$.submitButton.disabled = false;
+
+				}
+
+				if(this.moveRequest.status == "Completed")
+					this._cancelValid = true;
+				else
+					this._cancelValid = false;
+				}
+			else{
+				this._submitValid = true;
+				this._cancelValid = true;
+				this._requestSubmitted = false;
+				this.$.submitButton.disabled = true;
+				this.$.cancelButton.disabled = true;
+				}
+		},
+
+		_isNewRequest: function() {
+			if (this.moveRequest) {
+					this._isNew = (this.moveRequest.status == null);
+			}// end if
+		},
+
+
+		_handleMoveRequestComplete: function(){
+			this._isSubmitValid();
+			this._isNewRequest();
+		},
+		_handleMoveRequestUpdate: function(){
+			if(this._isNew){
+				if(this.moveRequest.status=="Draft"){
+					this.$.submitButton.disabled = false;
+					this.$.cancelButton.disabled = false;
+					this._isNew=false;
+				}
+
+			}
+
+		},
+		openConfirmationDialog: function(){
+			this.$.confirmationDialog.open();
+		},
+
+		openCancelDialog: function(){
+			if(this.moveRequest && (this.moveRequest.workflowCount>0))
+				this.$.invalidCancelDialog.open();
+			else
+				this.$.cancelDialog.open();
+		},
+
+		closeConfirmationDialog: function(){
+			this._submitRequest();
+		},
+
+		closeCancelDialog: function(){
+			this._cancelRequest();
+		},
+
+		_handleMLIUpdate: function(){
+
+			if(this.moveLineItems.length==0){
+				this.$.submitButton.disabled = true;
+				if(this.moveRequest!=null && this.moveRequest.status == null)
+					this._isNew = true;
+			}
+			else{
+				this.$.submitButton.disabled = false;
+			}
+
+		},
+
+
+		//=========================================================
+		// Function _triggerCollapse
+		//------------------------------------------
+		// Objective: Fires an trigger to call the collapse toggle
+		//=========================================================
+		_triggerCollapse: function() {
+			this.fire("toggleCollapse");
+		},
+
+		//=========================================================
+		// Function _isCollapseExpanded
+		//------------------------------------------
+		// Objective: When to show or hide the collapse button
+		//=========================================================
+		_isCollapseExpanded: function( mliCount ) {
+			// Set MLI Count number
+			this.set("_mliCount", mliCount);
+
+			// Determine when to show the collapse button
+			var isCollapseExpanded = document.querySelector("#collapse").getAttribute("aria-expanded");
+			if (isCollapseExpanded == "true") {
+				this.set("_hideCollapseBtn", true);
+			} else {
+				this.set("_hideCollapseBtn", false);
+			}// end if
+		},
+
+		//=========================================================
+		// Function _isCollapseBtnVisible
+		//------------------------------------------
+		// Objective: Show the collapse button
+		//=========================================================
+		_isCollapseBtnVisible: function() {
+			this.set("_hideCollapseBtn", false);
+		},
+
+		//=========================================================
+		// Function _isCollapseBtnHidden
+		//------------------------------------------
+		// Objective: Hide the collapse button
+		//=========================================================
+		_isCollapseBtnHidden: function() {
+			this.set("_hideCollapseBtn", true);
+		},
+
+		//=========================================================
+		// Function _setMLICount
+		//------------------------------------------
+		// Objective: Set MLI Count
+		//=========================================================
+		_setMLICount: function( mliCount ) {
+			// Set MLI Count number
+			this.set("_mliCount", mliCount);
+		},
+
+		//=========================================================
+		// Function _handleSubmitRequest
+		//------------------------------------------
+		// Objective: Handle submit action
+		//=========================================================
+		_handleSubmitRequest: function( ) {
+			// If Statement: Validate if move date is greater than the current date
+			if ( this._validateMoveDate() ) {
+				// If Statement: Validate if there are MLIs without space assignments
+				if ( this._validateSpaceAssignments() ) {
+					this.openConfirmationDialog();
+				} else {
+					this.$.dialogUnassinedSpaces.open();
+				}// end if
+			} else {
+				// Open Dialog
+				this.$.dialogInvalidMoveDate.open();
+			}// end if
+		},
+
+		//=========================================================
+		// Function _validateSpaceAssignments
+		//------------------------------------------
+		// Objective: Validate the space assignments for all MLIs - check if there are MLIs without space assignments
+		//=========================================================
+		_validateSpaceAssignments: function() {
+			var MLIs = this.moveLineItems;
+			var valid = true;
+
+			// If Statement: Check if MLIs is different from null
+			if (MLIs) {
+				// If Statement: Check if MLIs have records inside
+				if (MLIs.length > 0) {
+					// For: Iterate through the array of MLIs
+					for (var i = 0; i < MLIs.length; i++) {
+						// If Statement: Check if the current MLI has a
+						if (!MLIs[i].toLocation) {
+							valid = false;
+
+							break;
+						}// end if
+					}// end for
+				}// end if
+			}// end if
+
+			// If Statement: Check if it's invalid
+			if (valid) {
+				return true;
+			} else {
+				return false;
+			}// end if
+		},
+
+		//=========================================================
+		// Function _handleMyMoveRequestsGetComplete
+		//------------------------------------------
+		// Objective: Handle MyMoveRequests DS get complete
+		//=========================================================
+		_handleMyMoveRequestsGetComplete: function() {
+			var requestSubmitted = ((this._myMoveRequests.status == "Issued") || (this._myMoveRequests.status == "Completed") || (this._myMoveRequests.status == "Review In Progress"));
+
+			// If Statement: Check if the request was not already submitted
+			if ( !requestSubmitted ) {
+				// If Statement: Validate if move date is greater than the current date
+				if ( !this._validateMoveDate() && this._myMoveRequests.status!= null) {
+					// Open Dialog
+					this.$.dialogInvalidMoveDate.open();
+
+					// Fire: Sign to the Where page
+					this.fire("invalid-date");
+				}// end if
+			}// end if
+		},
+
+		//=========================================================
+		// Function _validateMoveDate
+		//------------------------------------------
+		// Objective: Validate the move date - check if the date is valid (greater than the today's date)
+		// Use of moment JS library
+		//=========================================================
+		_validateMoveDate: function() {
+			if(this._myMoveRequests.status==null || this._myMoveRequests.status=="")
+				return true;
+
+			// Move Date
+			var moveDateMoment = moment.tz(this._myMoveRequests.moveDate.slice(0, 10), this.currentPerson._TimeZoneId);
+
+			// Current Date
+			var currentDate = this.getCurrentDatetime(this.currentPerson._TimeZoneId);
+			// var currentDateLondon = currentDate.toUTCString(); // Base time - Greenwich time
+			// var currentDateMoment = moment(currentDateLondon).tz(this.currentPerson._TimeZoneId);
+			var currentDateMoment = moment(currentDate);
+
+			// Valid
+			var valid = true;
+
+			// If Statement: Check if Move Date is 1 day after Current Date
+			if ( moveDateMoment.isAfter(currentDateMoment, 'day') ) {
+				valid = true;
+			} else {
+				valid = false;
+			}// end if
+
+			// If Statement: Check if it's invalid
+			if (valid) {
+				return true;
+			} else {
+				return false;
+			}// end if
+		},
+
+		//=========================================================
+		// Function _handleInvalidMoveDateContinue
+		//------------------------------------------
+		// Objective: Navigate to the Where page
+		//=========================================================
+		_handleInvalidMoveDateContinue: function() {
+			this.$.whereRoute.navigate();
+		},
+	});
+</script>

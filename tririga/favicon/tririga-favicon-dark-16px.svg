@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="16px" height="16px" viewBox="0 0 16 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>tririga-favicon-dark-16px copy</title>
+    <defs>
+        <linearGradient x1="100%" y1="28.8285409%" x2="3.41275568%" y2="28.8285409%" id="linearGradient-1">
+            <stop stop-color="#7EA7FF" offset="0%"></stop>
+            <stop stop-color="#BE95FF" stop-opacity="0" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="50%" y1="0%" x2="24.4897959%" y2="50%" id="linearGradient-2">
+            <stop stop-color="#78A9FF" offset="0%"></stop>
+            <stop stop-color="#BE95FF" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="tririga-favicon-dark-16px-copy" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <path d="M14,6 C14.5522847,6 15,6.44771525 15,7 L15,15 L10,15 L10,7 C10,6.44771525 10.4477153,6 11,6 L14,6 Z M14,7 L11,7 L11,14 L14,14 L14,7 Z" id="Combined-Shape" fill="url(#linearGradient-1)"></path>
+        <g id="Group" transform="translate(1.000000, 1.000000)" fill-rule="nonzero">
+            <rect id="rect2" fill="#FFFFFF" x="3" y="3" width="1" height="2"></rect>
+            <rect id="rect4" fill="#FFFFFF" x="3" y="6" width="1" height="2"></rect>
+            <rect id="rect6" fill="#FFFFFF" x="6" y="3" width="1" height="2"></rect>
+            <rect id="rect8" fill="#FFFFFF" x="6" y="6" width="1" height="2"></rect>
+            <rect id="rect10" fill="#FFFFFF" x="3" y="9" width="1" height="2"></rect>
+            <rect id="rect12" fill="#FFFFFF" x="6" y="9" width="1" height="2"></rect>
+            <path d="M10,5 L10,1 C10,0.44771525 9.55228475,0 9,0 L1,0 C0.44771525,0 0,0.44771525 0,1 L0,14 L10,14 L10,5 Z M1,1 L9,1 L9,13 L1,13 L1,1 Z" id="path14" fill="url(#linearGradient-2)"></path>
+        </g>
+    </g>
+</svg>

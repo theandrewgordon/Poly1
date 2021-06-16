@@ -1,0 +1,288 @@
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-selector/iron-selector.html">
+<link rel="import" href="../tri-loading-indicator/tri-loading-indicator.html">
+<link rel="import" href="../iron-media-query/iron-media-query.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+
+<dom-module id="tricomp-walkthru-list">
+
+	<style>
+
+		:host {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			background-color: var(--tri-body-background-color);
+		}
+		
+		iron-selector {
+			@apply(--layout-vertical);
+			@apply(--layout-flex);
+			@apply(--layout-scroll);
+			min-width: 0;
+			min-height: 0;
+		}
+
+		iron-selector > div:first-of-type {
+			border-top: none;
+		}
+		
+		.space-item {
+			@apply(--layout);
+			@apply(--layout-horizontal);
+			flex-shrink: 0;
+			background-color: white;
+			padding: 20px 40px 20px 40px;
+			border-top: 1px solid var(--tri-primary-content-accent-color);
+			cursor: pointer;
+		}
+
+		.space-item:focus{
+			outline: -webkit-focus-ring-color auto 5px;
+			outline-color: -webkit-focus-ring-color;
+			outline-style: auto;
+			outline-width: 5px;
+			background-color: #f3faff;
+		}
+
+		.space-item .row {
+			@apply(--layout-flex);
+		}
+
+		.space-item .row .fields {
+			@apply(--layout-flex);
+		}
+
+		@media (min-width: 1024px) {
+			.space-item .row .fields {
+				@apply(--layout-horizontal);
+			}
+
+			.space-item .row .fields span {
+				@apply(--layout-flex);
+			}
+		}
+
+		@media (max-width: 1023px) {
+			.space-item .row .fields {
+				@apply(--layout-vertical);
+			}
+		}
+
+		.space-item.iron-selected {
+			background-color: #C0E6FF;
+		}
+
+		.icon-status {
+			@apply(--layout-vertical);
+			@apply(--layout-center-center);
+			border-radius: 50%;
+			width: 40px;
+			height: 40px;
+			background-color: var(--ibm-gray-20);
+			color: white;
+		}
+
+		.icon-status.discrepant {
+			background-color: var(--tri-danger-color);
+		}
+
+		.icon-status.non-discrepant {
+			background-color: var(--tri-success-color);
+		}
+
+	</style>
+
+	<template>
+		
+		<tri-loading-indicator show="[[!loaded]]" hide-background></tri-loading-indicator>
+
+		<iron-media-query query="(min-width: 1400px)" query-matches="{{_largeScreenWidth}}"></iron-media-query>
+		<iron-media-query query="(max-width: 1023px)" query-matches="{{_verticalScreenWidth}}"></iron-media-query>
+
+		<iron-selector id="walkthruListSelector" selected-item="{{_selectedSpaceElement}}" attr-for-selected="tri-record-id">
+
+			<template is="dom-repeat" id="spacesTemplate" items="{{allSpaces}}">
+
+				<div tri-record-id$="{{item._id}}" class="space-item" hidden$="{{!_isFilterResultItem(item, filteredSpaces)}}" tabindex="0" on-keypress="_keyPressHandler">
+					<div class="row"> 
+						<div class="fields">
+							<span><label>ID: </label><span class="value">{{item.id}}</span></span>
+							<span><label>Name: </label><span class="value">{{_handleShowSpaceName(item.space, _largeScreenWidth, _verticalScreenWidth)}}</span></span>
+							<span><label>Type: </label><span class="value">{{item.spaceClass}}</span></span>
+							<span><label>Occupancy: </label><span class="value">{{item.occupancyStatus}}</span></span>
+						</div>
+					</div>
+					<div class="icon-status">
+		    			<triplat-icon></triplat-icon>
+					</div>
+					</div>
+				</div>
+
+			</template>
+		</iron-selector>
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-walkthru-list",
+
+		properties : {
+			selectedSpace : {
+				type : Object,
+				notify : true,
+				observer : '_handleSelectedSpaceChange'
+			},
+			loaded : {
+				type : Boolean,
+				notify : true,
+				value : false
+			},
+			_selectedSpaceElement : {
+				type : Object,
+				observer : '_handleSelectedSpaceElementChange'
+			},
+			searchTerms : String,
+			assessmentId : Number,
+			oldAssessmentId : Number,
+
+			allSpaces : Array,
+			filteredSpaces : Array,
+		},
+
+		observers : [
+			'_handleAssessmentIdChanged(assessmentId)'
+		],
+
+		listeners : {
+			'spacesTemplate.dom-change' : '_handleSpacesTemplateDomChanged'
+		},
+
+		// TODO: This is shared with multi-space-selector-floorplan. Extract please.
+		_isFilterResultItem : function(space, filteredSpaces) {
+			var isFilterResultItem = false;
+
+			if (filteredSpaces) {
+				var spaceInAllSpaces = filteredSpaces.filter(function(spaceInSpaces) {
+	      			return String(spaceInSpaces._id).indexOf(space._id) != -1;
+	      		});
+
+	      		if (spaceInAllSpaces[0]) {
+	      			isFilterResultItem = true;
+	      		}
+			}
+      		
+      		return isFilterResultItem;
+		},
+
+		_handleAssessmentIdChanged : function(assessmentId) {
+			if (assessmentId === this.oldAssessmentId) {
+				this.set('loaded', true);
+			} else {
+				this.set('loaded', false);
+				this.set('oldAssessmentId', assessmentId);
+			}
+		},
+
+		_handleSelectedSpaceElementChange : function(newElement, oldElement) {
+			if (newElement) {
+				if (oldElement) {
+					this._deselect();
+				}
+				this._select(newElement, -1);
+			}
+		},
+
+		_handleSelectedSpaceChange : function(selectedSpace, oldSelectedSpace) {
+			if (selectedSpace) {
+				this._select(null, selectedSpace._id);
+			} else {
+				this._deselect();
+			}
+		},
+
+		_handleSpacesTemplateDomChanged : function(e) {
+			this.set('loaded', true);
+		},
+
+		markDiscrepant : function(discrepantSpace) {
+			this._mark(discrepantSpace, "icons:report-problem", 'discrepant', 'non-discrepant');
+		},
+
+		markNonDiscrepant : function(nonDiscrepantSpace) {
+			this._mark(nonDiscrepantSpace, "icons:check", 'non-discrepant', 'discrepant');
+		},
+
+		unmarkSpace : function(space) {
+			var element = Polymer.dom(this.root).querySelector("[tri-record-id='" + space._id + "'] div.icon-status");
+			var triplatIcon = element.children[0];
+			triplatIcon.setAttribute("icon", "");
+			if (element.classList.contains("discrepant")) {
+				element.classList.remove("discrepant");
+			} else if (element.classList.contains("non-discrepant")) {
+				element.classList.remove("non-discrepant");
+			}
+		},
+
+		_mark : function(space, icon, newStyle, oldStyle) {
+			var element = Polymer.dom(this.root).querySelector("[tri-record-id='" + space._id + "'] div.icon-status");
+			var triplatIcon = element.children[0];
+			triplatIcon.setAttribute("icon", icon);
+			if (element.classList.contains(oldStyle)) {
+				element.classList.remove(oldStyle);
+			}
+			element.classList.add(newStyle);
+		},
+
+		_select : function(element, recordId) {
+			if (element) {
+				var selectedSpace = this.$.spacesTemplate.itemForElement(element);
+				this.set('selectedSpace', selectedSpace);
+			} else if (recordId > 0) {
+				this.$.walkthruListSelector.select(recordId.toString());
+			}
+		},
+
+		_deselect : function() {
+			this.$.walkthruListSelector.selected = -1;
+				this.set('selectedSpace', null);
+		},
+
+		render : function() {
+			this.$.spacesTemplate.render();
+		},
+
+		reset : function() {
+			this.set('loaded', false);
+		},
+
+		_handleShowSpaceName: function(space, largeScreenWidth, verticalScreenWidth) {
+			if (space) {
+				if (largeScreenWidth) {
+					if (space.length > 25) {
+						space = space.substring(0, 25) + '...';
+					}
+				} else {
+					if (verticalScreenWidth) {
+						if (space.length > 25) {
+							space = space.substring(0, 25) + '...';
+						}
+					} else {
+						if (space.length > 12) {
+							space = space.substring(0, 12) + '...';
+						}
+					}
+				}
+			}
+
+			return space;
+		},
+
+		_keyPressHandler: function(e) {
+			var code = e.keyCode;
+			if (code == 13) {
+				this.set("_selectedSpaceElement", e.target);
+			}
+		}
+    });
+</script>

@@ -1,0 +1,74 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017-2018 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../iron-a11y-keys/iron-a11y-keys.html">
+
+<link rel="import" href="../triblock-responsive-layout/triblock-view-responsive-behavior.html">
+
+<dom-module id="tricomp-task-list-header">
+	<template>
+		<style>
+			:host {
+				background-color: white;
+			}
+
+			.container {
+				@apply --layout-horizontal;
+				@apply --layout-center;
+			}
+
+			:host(:not([small-screen-width])) .container {
+				padding: 20px 20px 10px 20px;
+			}
+
+			.label {
+				@apply --paper-font-common-nowrap;
+				@apply --layout-flex;
+				margin-right: 10px;
+				font-weight: 700;
+			}
+
+			:host([small-screen-width]) .action-bar {
+				@apply --layout;
+				background-color: var(--tri-footer-background-color);
+				color: var(--tri-footer-color);
+				padding: 5px;
+				@apply --layout-center-center;
+				@apply --layout-fixed-bottom;
+				z-index: 2;
+			}
+		</style>
+
+		<div class="container">
+			<span class="label tri-h2" hidden$="[[smallScreenWidth]]">My Work Tasks</span>
+			<div class="action-bar" hidden$="[[_computeHideNewButton(showNewTaskButton, auth)]]" >
+				<paper-button footer$="[[smallScreenWidth]]" on-tap="_handleNewButtonTapped" noink>New Task</paper-button>
+			</div>
+		</div>	
+	</template>
+
+	<script>
+		Polymer({
+			is: "tricomp-task-list-header",
+
+			behaviors: [
+				TriBlockViewResponsiveBehavior
+			],
+			
+			properties: {
+				auth: Object,
+				showNewTaskButton: {
+					type: Boolean,
+					value: false
+				}
+			},
+
+			_handleNewButtonTapped: function(){
+				this.fire("new-task-button-tapped");
+			},
+
+			_computeHideNewButton: function(showNewTaskButton, auth) {
+				return !showNewTaskButton || !auth.canCreate
+			}
+		});
+	</script>
+</dom-module>

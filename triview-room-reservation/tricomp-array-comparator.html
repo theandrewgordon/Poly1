@@ -1,0 +1,445 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<script>
+	Polymer({
+
+		is: "tricomp-array-comparator",
+
+		properties: {
+			/**
+			 * Array or Object used for matching elements in `source`.
+			 */
+			compareTo: {
+				type: Object
+			},
+
+			/**
+			 * Name of field for identifying records in `compareTo`.
+			 */
+			compareToMatchField: {
+				type: String,
+				value: "_id"
+			},
+
+			_debug: {
+				type: Boolean,
+				value: false
+			},
+
+			/**
+			 * Name of property that will be applied to elements if that element is found in both `source` and `compareTo`.
+			 */
+			matchFlag: {
+				type: String,
+				value: "matches"
+			},
+
+			/**
+			 * Array/object copied from `source` (shallow copy of each object within `source`), where the element(s) will be flagged with a property (named via `matchFlag`) if that element is also found in `compareTo` array/object. Matching is determined by the `sourceMatchField` and `compareToMatchField` property values that should be present and uniquely-valued on all elements in `source` and `compareTo`. Only created when `updateSource` is false.
+			 */
+			result: {
+				type: Array,
+				notify: true,
+				readOnly: true
+			},
+
+			/**
+			 * Array or Object to be flagged.
+			 */
+			source: {
+				type: Object
+			},
+
+			/**
+			 * Name of field for identifying records in `source`.
+			 */
+			sourceMatchField: {
+				type: String,
+				value: "_id"
+			},
+
+			/**
+			 * When true, `source` itself will be updated with match-flag, instead of creating a new `result` array/object.
+			 */
+			updateSource: {
+				type: Boolean,
+				value: false
+			}
+		},
+
+		observers: [
+			"_handleSourceChange(source.*)",
+			"_handleCompareToChange(compareTo.*)"
+		],
+
+		_handleCompareToChange: function(compareToChange) {
+			if (this.updateSource) {
+				if (compareToChange.path == "compareTo") {
+					// new compareTo array
+					if (this._debug) console.log("compareTo change", compareToChange);
+					this._updateSourceFlags();
+				} else if (compareToChange.path == "compareTo.splices") {
+					// array splice
+					if (this._debug) console.log("compareTo splice", compareToChange);
+					var indexSplices = compareToChange.value.indexSplices;
+					if (indexSplices) indexSplices.forEach(function(indexSplice) {
+						if (indexSplice.addedCount > 0) {
+							// handle new elements added to `compareTo` array
+							var start = indexSplice.index;
+							var end = indexSplice.index + indexSplice.addedCount;
+							for (var i=start; i<end; i++) {
+								var curComparison = indexSplice.object[i];
+								var curComparisonId = this._valueAtObjectPath(curComparison, this.compareToMatchField);
+								if (curComparisonId) this._updateSourceFlagsForNewMatchFieldValue(curComparisonId);
+							}
+						}
+						if (indexSplice.removed.length > 0) {
+							// handle elements removed from `compareTo` array
+							indexSplice.removed.forEach(function(removedObj) {
+								var removedObjId = this._valueAtObjectPath(removedObj, this.compareToMatchField);
+								if (removedObjId) this._updateSourceFlagsForRemovedMatchFieldValue(removedObjId);
+							}, this);
+						}
+					}, this);
+				} else if (compareToChange.path == "compareTo.length") {
+					// array length change (not sure how this happens when we have array splice handler, but it does)
+					if (this._debug) console.log("compareTo length change", compareToChange);
+					this._updateSourceFlags();
+				} else {
+					// deep path change
+					if (this._debug) console.log("compareTo path change", compareToChange);
+					this._updateSourceFlags();
+				}
+			} else {
+				this._updateResult();
+			}
+		},
+
+		_handleSourceChange: function(sourceChange) {
+			if (this.updateSource) {
+				if (sourceChange.path == "source") {
+					// new source array
+					if (this._debug) console.log("source change", sourceChange);
+					this._updateSourceFlags();
+				} else if (sourceChange.path == "source.splices") {
+					// array splice
+					if (this._debug) console.log("source splice", sourceChange);
+					var indexSplices = sourceChange.value.indexSplices;
+					if (indexSplices) indexSplices.forEach(function(indexSplice) {
+						if (indexSplice.addedCount > 0) {
+							// handle new elements added to `source` array
+							var start = indexSplice.index;
+							var end = indexSplice.index + indexSplice.addedCount;
+							var compareToCopy = this.compareTo.slice(0);
+							for (var i=start; i<end; i++) {
+								var compareToMatchedIndex = this._updateSourceArrayFlagAtIndex(i, compareToCopy);
+								if (compareToMatchedIndex >= 0) {
+									// remove matched element from compareToCopy array so it is not used in future comparisons (for improved performance)
+									compareToCopy.splice(compareToMatchedIndex, 1);
+								}
+							}
+						}
+					}, this);
+				} else if (sourceChange.path == "source.length") {
+					// array length change (not sure how this happens when we have array splice handler, but it does)
+					if (this._debug) console.log("source length change", sourceChange);
+					this._updateSourceFlags();
+				} else {
+					// deep path change
+					if (this._debug) console.log("source path change", sourceChange);
+					if (this.source) {
+						if (this.source.constructor === Array) {
+							var sourceChangePath = sourceChange.path.slice(sourceChange.path.indexOf(".")+1);
+							var sourceChangeProperty = sourceChangePath.slice(sourceChangePath.indexOf(".")+1);
+							if (sourceChangeProperty == this.sourceMatchField) {
+								var sourceChangeKey = sourceChangePath.slice(0, sourceChangePath.indexOf("."));
+								var collection = Polymer.Collection.get(sourceChange.base);
+								var index = sourceChange.base.indexOf(collection.getItem(sourceChangeKey));
+								this._updateSourceArrayFlagAtIndex(index, this.compareTo);
+							}
+						} else {
+							// assuming `source` is a JSON Object
+							var sourceChangeProperty = sourceChange.path.slice(sourceChange.path.indexOf(".")+1);
+							if (sourceChangeProperty == this.sourceMatchField) {
+								if (this.compareTo.constructor === Array) this._updateSourceObjectFlagForCompareToArray(this.compareTo);
+								else this._updateSourceObjectFlagForCompareToObject(this.compareTo);
+							}
+						}
+					}
+				}
+			} else {
+				this._updateResult();
+			}
+		},
+
+		/**
+		 * Set `matchFlag` value for each item in `source` based on `compareTo`
+		 */
+		_updateSourceFlags: function() {
+			if (this.source && this.compareTo) {
+				if (this.source.constructor === Array) {
+					if (this.compareTo.constructor === Array) {
+						// `source` and `compareTo` both Arrays
+						var compareToCopy = this.compareTo.slice(0);
+						for (var i=0; i < this.source.length; i++) {
+							var compareToMatchedIndex = this._updateSourceArrayFlagAtIndex(i, compareToCopy);
+							if (compareToMatchedIndex >= 0) {
+								// remove matched element from compareToCopy array so it is not used in future comparisons (for improved performance)
+								compareToCopy.splice(compareToMatchedIndex, 1);
+							}
+						}
+					} else {
+						// assuming `compareTo` is a JSON Object
+						for (var i=0; i < this.source.length; i++) {
+							var comparisonId = this._valueAtObjectPath(this.compareTo, this.compareToMatchField);
+							this._updateSourceFlagsForMatchFieldValue(comparisonId);
+						}
+					}
+				} else {
+					if (this.compareTo.constructor === Array) {
+						// assuming `source` is a JSON Object
+						this._updateSourceObjectFlagForCompareToArray(this.compareTo);
+					} else {
+						// assuming `source` and `compareTo` both Objects
+						this._updateSourceObjectFlagForCompareToObject(this.compareTo);
+					}
+				}
+			}
+		},
+
+		/**
+		 * Update all `matchFlag` values for each item in `source` based on if `sourceMatchField` value == `matchFieldValue`.
+		 */
+		_updateSourceFlagsForMatchFieldValue: function(matchFieldValue) {
+			if (this.source) {
+				if (this.source.constructor === Array) {
+					this.source.forEach(function(item, index) {
+						var matched = Boolean(this._valueAtObjectPath(item, this.sourceMatchField) == matchFieldValue);
+						if (item[this.matchFlag] !== matched) this.set("source."+index+"."+this.matchFlag, matched);
+					}, this);
+				} else {
+					// assuming `source` is a JSON Object
+					var matched = Boolean(this._valueAtObjectPath(this.source, this.sourceMatchField) == matchFieldValue);
+					if (this.source[this.matchFlag] !== matched) this.set("source."+this.matchFlag, matched);
+				}
+			}
+		},
+
+		/**
+		 * Set `matchFlag` value to true for each item in `source` that has `sourceMatchField` value == `newValue`.
+		 */
+		_updateSourceFlagsForNewMatchFieldValue: function(newValue) {
+			if (this.source) {
+				if (this.source.constructor === Array) {
+					this.source.forEach(function(item, index) {
+						if (this._valueAtObjectPath(item, this.sourceMatchField) == newValue) {
+							if (item[this.matchFlag] !== true) this.set("source."+index+"."+this.matchFlag, true);
+						}
+					}, this);
+				} else {
+					// assuming `source` is a JSON Object
+					if (this._valueAtObjectPath(this.source, this.sourceMatchField) == newValue) {
+						if (this.source[this.matchFlag] !== true) this.set("source."+this.matchFlag, true);
+					}
+				}
+			}
+		},
+
+		/**
+		 * Set `matchFlag` value to false for each item in `source` that has `sourceMatchField` value == `removedValue`.
+		 */
+		_updateSourceFlagsForRemovedMatchFieldValue: function(removedValue) {
+			if (this.source) {
+				if (this.source.constructor === Array) {
+					this.source.forEach(function(item, index) {
+						if (this._valueAtObjectPath(item, this.sourceMatchField) == removedValue) {
+							if (item[this.matchFlag] !== false) this.set("source."+index+"."+this.matchFlag, false);
+						}
+					}, this);
+				} else {
+					// assuming `source` is a JSON Object
+					if (this._valueAtObjectPath(this.source, this.sourceMatchField) == removedValue) {
+						if (this.source[this.matchFlag] !== false) this.set("source."+this.matchFlag, false);
+					}
+				}
+			}
+		},
+
+		/**
+		 * Set `matchFlag` value at `source[index]` (assumes `source` is an Array) based on given `compareToArray`.
+		 * Returns index of matched element in given `compareToArray` (-1 if not matched).
+		 */
+		_updateSourceArrayFlagAtIndex: function(index, compareToArray) {
+			var sourceElement = this.source[index];
+			var sourceElementId = this._valueAtObjectPath(sourceElement, this.sourceMatchField);
+			var matched = false;
+			var j = 0;
+			
+			// determine if element at this.source[index] is found in compareToArray
+			while (!matched && j < compareToArray.length) {
+				var curComparison = compareToArray[j];
+				var curComparisonId = this._valueAtObjectPath(curComparison, this.compareToMatchField);
+				if (sourceElementId && curComparisonId && sourceElementId == curComparisonId) {
+					matched = true;
+				} else {
+					j++;
+				}
+			}
+
+			// update the source element with `matched` value
+			if (this.source[index][this.matchFlag] !== matched) this.set("source."+index+"."+this.matchFlag, matched);
+
+			return (matched) ? j : -1;
+		},
+
+		/**
+		 * Set `matchFlag` value for `source` (assumes `source` is an Object and not an Array) based on given `compareToArray`.
+		 * Returns index of matched element in given `compareToArray` (-1 if not matched).
+		 */
+		_updateSourceObjectFlagForCompareToArray: function(compareToArray) {
+			var sourceElementId = this._valueAtObjectPath(this.source, this.sourceMatchField);
+			var matched = false;
+			var j = 0;
+			
+			// determine if this.source is found in compareToArray
+			while (!matched && j < compareToArray.length) {
+				var curComparison = compareToArray[j];
+				var curComparisonId = this._valueAtObjectPath(curComparison, this.compareToMatchField);
+				if (sourceElementId && curComparisonId && sourceElementId == curComparisonId) {
+					matched = true;
+				} else {
+					j++;
+				}
+			}
+
+			// update the source element with `matched` value
+			if (this.source[this.matchFlag] !== matched) this.set("source."+this.matchFlag, matched);
+
+			return (matched) ? j : -1;
+		},
+
+		/**
+		 * Set `matchFlag` value for `source` (assumes `source` is an Object and not an Array) based on given `compareToObject`.
+		 */
+		_updateSourceObjectFlagForCompareToObject: function(compareToObject) {
+			// determine if this.source is equivalent to compareToObject
+			var matched = Boolean(this._valueAtObjectPath(this.source, this.sourceMatchField) == this._valueAtObjectPath(compareToObject, this.compareToMatchField));
+
+			// update the source element with `matched` value
+			if (this.source[this.matchFlag] !== matched) this.set("source."+this.matchFlag, matched);
+		},
+
+		/**
+		 * Create and set `result` (without modifying `source`).
+		 */
+		_updateResult: function() {
+			this.debounce("updateArrayComparatorResult", function() {
+				var source = this.source;
+				var compareTo = this.compareTo;
+				if (source && compareTo) {
+					if (source.constructor === Array) {
+						if (compareTo.constructor === Array) {
+							// `source` and `compareTo` both Arrays
+
+							var result = [];
+							var compareToCopy = compareTo.slice(0);
+
+							// copy source into result
+							for (var i=0; i < source.length; i++) {
+								var curElement = Object.assign({}, source[i]);
+								var curElementId = this._valueAtObjectPath(curElement, this.sourceMatchField);
+								var matched = false;
+								var j = 0;
+
+								curElement[this.matchFlag] = false;
+								
+								// set flag to true if element is found in compareTo
+								while (!matched && j < compareToCopy.length) {
+									var curComparison = compareToCopy[j];
+									var curComparisonId = this._valueAtObjectPath(curComparison, this.compareToMatchField);
+									if (curElementId && curComparisonId && curElementId == curComparisonId) {
+										// match found - set flag to true and remove matched element from compareToCopy array so it is not used in future comparisons (for improved performance)
+										matched = true;
+										compareToCopy.splice(j, 1);
+										curElement[this.matchFlag] = true;
+									}
+									j++;
+								}
+								
+								result.push(curElement);
+							}
+
+							this._setResult(result);
+						} else {
+							// assuming `compareTo` is a JSON Object
+
+							var result = [];
+
+							// copy source into result
+							for (var i=0; i < source.length; i++) {
+								var curElement = Object.assign({}, source[i]);
+								var curElementId = this._valueAtObjectPath(curElement, this.sourceMatchField);
+								
+								// set flag to true if element matches compareTo
+								curElement[this.matchFlag] = curElementId == this._valueAtObjectPath(compareTo, this.compareToMatchField);
+								
+								result.push(curElement);
+							}
+
+							this._setResult(result);
+						}
+					} else {
+						if (compareTo.constructor === Array) {
+							// assuming `source` is a JSON Object
+
+							var sourceCopy = Object.assign({}, source);
+							var compareToCopy = compareTo.slice(0);
+							var sourceCopyId = this._valueAtObjectPath(sourceCopy, this.sourceMatchField);
+
+							var matched = false;
+							var j = 0;
+
+							sourceCopy[this.matchFlag] = false;
+							
+							// set flag to true if element is found in compareTo
+							while (!matched && j < compareToCopy.length) {
+								var curComparison = compareToCopy[j];
+								var curComparisonId = this._valueAtObjectPath(curComparison, this.compareToMatchField);
+								if (sourceCopyId && curComparisonId && sourceCopyId == curComparisonId) {
+									// match found - set flag to true and remove matched element from compareToCopy array so it is not used in future comparisons (for improved performance)
+									matched = true;
+									compareToCopy.splice(j, 1);
+									sourceCopy[this.matchFlag] = true;
+								}
+								j++;
+							}
+
+							this._setResult(sourceCopy);
+						} else {
+							// `source` and `compareTo` both JSON Objects
+
+							var sourceCopy = Object.assign({}, source);
+							var sourceCopyId = this._valueAtObjectPath(sourceCopy, this.sourceMatchField);
+
+							// set flag to true if source matches compareTo
+							sourceCopy[this.matchFlag] = sourceCopyId == this._valueAtObjectPath(compareTo, this.compareToMatchField);
+
+							this._setResult(sourceCopy);
+						}
+					}
+				}
+			});
+		},
+
+		/**
+		 * Returns value in `obj` for the given `path`
+		 */
+		_valueAtObjectPath: function(obj, path) {
+			for (var i=0, path=path.split('.'), len=path.length; i<len; i++) {
+				obj = obj[path[i]];
+			}
+			return obj;
+		}
+
+	});
+</script>

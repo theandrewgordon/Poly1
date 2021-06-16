@@ -1,0 +1,158 @@
+<!--
+@license
+IBM Confidential - OCO Source Materials - (C) COPYRIGHT IBM CORP. 2015-2017 - The source code for this program is not 
+    published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+-->
+<link rel="import" href="../triplat-view-behavior/triplat-view-behavior.html">
+
+<link rel="import" href="../iron-pages/iron-pages.html">
+
+<link rel="import" href="../paper-tabs/paper-tabs.html"> 
+<link rel="import" href="../paper-tabs/paper-tab.html"> 
+
+<link rel="import" href="../triplat-bim/triplat-bim-thumbnail.html">
+<link rel="import" href="../triplat-bim/triplat-bim-viewer-popup.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+
+<link rel="import" href="bim-test-buildings.html">
+<link rel="import" href="bim-test-building-link.html">
+<link rel="import" href="bim-test-views.html">
+
+
+<dom-module id="tribim-viewer">
+	<style>
+	    html, body {
+			margin           : 0;
+			padding          : 0;
+			height           : 100%;
+			width            : 100%;
+			font-family      : arial; 
+	    }
+		paper-tabs {
+			background-color : #003E68;
+			font-family      : arial; 
+	      	color            : #fff;
+		}
+		.page {
+			height : calc(100% - 64px);
+			width  : 100%;
+		}
+
+		.fullPage {
+			height           : 100%;
+			width            : 100%;
+		}
+	</style>
+	<template> 
+		
+		<iron-pages selected="{{feature}}" class="fullPage" >
+			<div class="fullPage">
+				<h2>Query Parameters</h2>
+				<table>
+					<tr>
+						<td>buildingid</td>
+						<td>ID of builidng</td>
+						<td>Required or buildingspec</td>
+					</tr>
+                    <tr>
+                        <td>buildingspec</td>
+                        <td>ID of builidng</td>
+                        <td>Required or buildingid</td>
+                    </tr>
+					<tr>
+						<td>spaceid</td>
+						<td>ID of space to select</td>
+						<td>Optional</td>
+					</tr>
+					<tr>
+						<td>GUID</td>
+						<td>Model GUID to select</td>
+						<td>Optional</td>
+					</tr>
+				</table>
+			</div>
+			<div class="fullPage">
+		    	<triplat-bim-viewer buildingid="[[buildingid]]" 
+                                    buildingspec="[[buildingspec]]"
+		    	                    spaceid="[[spaceid]]" 
+		    	                    value="{{GUID}}" 
+                                    features ="[[viewerfeatures]]"
+                                    recordkey="[[recordkey]]"
+		    	                    class="fullPage"></triplat-bim-viewer>
+			</div>
+			<div class="fullPage">
+                <!--
+				<paper-tabs scrollable selected="{{selector}}" style="width:100%">
+					<paper-tab>Buildings</paper-tab>
+					<paper-tab>Model Link</paper-tab>
+					<paper-tab>Forge Views</paper-tab>
+				</paper-tabs>
+				<iron-pages selected="{{selector}}" class="page" >
+					<div class="fullPage">
+					    <bim-test-buildings  class="fullPage"></bim-test-buildings>
+					</div>
+					<div class="fullPage">
+						<bim-test-building-link class="fullPage"></bim-test-building-link>
+					</div>
+					<div class="fullPage"> 
+						<bim-test-views class="fullPage"></bim-test-views>
+					</div>
+				</iron-pages>
+                -->
+			</div>
+		</iron-pages>
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tribim-viewer",
+
+		behaviors: [TriPlatViewBehavior],
+
+	    ready: function()
+	    {
+	    	this.buildingid = "";
+	    	this.buildingspec = "";
+	    	this.recordkey = "";
+	    	this.feature = 0;
+	    	this.viewerfeatures = { views : true };
+	    	this.selector   = 0;
+	    	var search = location.search; 
+	    	if( search.startsWith( "?") )
+	    	{
+	    		search = search.substring( 1 );
+	    	}
+	    	var vars = search.split('&');
+	    	for( i in vars )
+	    	{
+    			var values = vars[i].split( "=" );
+    			switch( values[0] )
+    			{
+    			    case "buildingspec":
+    			        this.feature = 1;
+    			        this.buildingspec = values[1];
+    			        break;
+    			    case "buildingid":
+    					this.feature = 1;
+		    			this.buildingid = values[1];
+    					break;
+    			    case "recordkey":
+    			        this.feature = 1;
+    			        this.recordkey = values[1];
+    			        this.viewerfeatures = { views: true, markup: true };
+    			        break;
+    			    case "spaceid":
+    					this.spaceid = values[1];
+    					break;
+    				case "GUID":
+    					this.GUID = values[1];
+    					break;
+    				case "test":
+    					this.feature = 2;
+    					break;
+    			} 
+	    	}
+	    },
+	});
+</script>

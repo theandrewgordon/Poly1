@@ -1,0 +1,243 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017-2018 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<!-- This is a lazy-loaded component, DO NOT add imports here, add them to its corresponding -imports.html file. -->
+<dom-module id="tripage-edit-request">
+	<template>
+		<style include="shared-page-styles">
+			:host {
+				@apply --layout-vertical;
+			}
+
+			.updating-request {
+				padding: 6px;
+			}
+
+			tricomp-request-details {
+				padding-bottom: 30px;
+			}
+		</style>
+
+		<triplat-route id="editRequestRoute" name="editRequest"	params="{{requestDetailParams}}" on-route-active="_onEditRequestRouteActive"></triplat-route>
+
+		<tricomp-request-page-container request="[[request]]">
+			<div class="header-action-bar">
+				<div class="action-bar">
+					<paper-spinner class="updating-request" active="[[_updatingRequest]]" hidden="[[!_updatingRequest]]"></paper-spinner>
+
+					<paper-button id="submitButton" disabled="[[_disableSubmitButton]]" footer$="[[smallScreenWidth]]" on-tap="_onSubmit">Submit</paper-button>
+				</div>
+			</div>
+
+			<div class="request-page-left-panel">
+				<tricomp-request-who 
+					request="{{request}}" 
+					on-request-for-someone-else="_onRequestForSomeoneElse" 
+					on-request-for-revert-to-self="_onRequestForRevertToSelf"
+					on-switching-from-me-to-someone-else="_onSwitchingFromMeToSomeoneElse"></tricomp-request-who>
+				<tricomp-request-where request="{{request}}" override-building="[[overrideBuilding]]" refresh="[[_refresh]]"></tricomp-request-where>
+			</div>
+			<div class="request-page-right-panel">
+				<tricomp-request-details request="{{request}}"></tricomp-request-details>
+				<tricomp-request-comments class="comments" request="{{request}}" 
+						current-user="[[currentUser]]">
+				</tricomp-request-comments>
+			</div>
+
+			<triblock-popup id="confirmationDialog" modal small-screen-max-width="0px">
+				<p>Your request has been submitted.<br><br>Your ID number is {{request.requestID}}.</p>
+				<div class="action-bar closeButton">
+					<paper-button dialog-confirm on-tap="_closeConfirmationDialog">Close</paper-button>
+				</div>
+			</triblock-popup>
+
+			<triblock-confirmation-popup id="unsavedPopup" 
+				on-confirm-tapped="_updateRequest">
+				<p class="text">Your comment was not posted. Do you still want to submit?</p>
+			</triblock-confirmation-popup>
+		</tricomp-request-page-container>
+	</template>
+	<script>
+		Polymer({
+
+			is: "tripage-edit-request",
+
+			behaviors: [
+				TriBlockViewResponsiveBehavior,
+				TriValidationBehavior,
+				TriRequestUnsavedChangesBehavior
+			],
+
+			properties: {
+				request: {
+					type: Object
+				},
+
+				currentUser: Object,
+
+				overrideBuilding: {
+					type: Boolean,
+					value: false
+				},
+
+				_isDescriptionRequired: {
+					type: Boolean,
+					value: false
+				},
+
+				_categoryHasAvailableServices: {
+					type: Boolean,
+					value: false
+				},
+
+				_isRequestValid: {
+					type: Boolean,
+					value: false
+				},
+
+				_updatingRequest: {
+					type: Boolean,
+					value: false
+				},
+
+				_disableSubmitButton: {
+					type: Boolean,
+					computed: "_computeDisableSubmitButton(_updatingRequest, _isRequestValid)"
+				},
+
+				_refresh: Boolean,
+
+				_originalLocationValues: Object
+
+			},
+
+			observers: [
+				'_computeIsRequestValid(request.requestedFor, request.building, request.requestCategory, _categoryHasAvailableServices, request.requestService, _isDescriptionRequired, request.desc)',
+				'_observeUrlParam(requestDetailParams)'
+			],
+
+			listeners: {
+				'request-description-required': '_onRequestDescriptionRequired',
+				'category-has-available-services': '_onCategoryHasAvailableServices'
+			},
+
+			attached: function() {
+				Polymer.RenderStatus.afterNextRender(this, function(){
+				});
+			},
+
+			openConfirmationPopup: function() {
+				this._updatingRequest = false;
+				this.$.confirmationDialog.openPopup();
+			},
+
+			_observeUrlParam: function(param) {
+				this.fire("url-param", {item: param});
+			},
+
+			_computeIsRequestValid: function(requestedFor, building, category, categoryHasAvailableServices, service, isDescriptionRequired, description) {
+				this.set('_isRequestValid', this._isValidSelectInputOption(requestedFor)
+											&& this._isValidSelectInputOption(building)
+											&& this._isValidSelectInputOption(category)
+											&& this._hasValidServiceForCategory(categoryHasAvailableServices, service)
+											&& this._isDescriptionValid(isDescriptionRequired, description));
+			},
+
+			_onRequestDescriptionRequired: function(e) {
+				var isDescriptionRequired = e.detail;
+				if (isDescriptionRequired) {
+					this.set('_isDescriptionRequired', true);
+				} else {
+					this.set('_isDescriptionRequired', false);
+				}
+			},
+
+			_onCategoryHasAvailableServices: function(e) {
+				var categoryHasAvailableServices = e.detail;
+				if (categoryHasAvailableServices) {
+					this.set('_categoryHasAvailableServices', true);
+				} else {
+					this.set('_categoryHasAvailableServices', false);
+				}
+			},
+
+			_hasValidServiceForCategory: function(categoryHasAvailableServices, service) {
+				var hasValidServiceForCategory = false;
+				if (categoryHasAvailableServices) {
+					hasValidServiceForCategory = this._isValidSelectInputOption(service);
+				} else {
+					hasValidServiceForCategory = true;
+				}
+				return hasValidServiceForCategory;
+			},
+
+			_isDescriptionValid: function(isDescriptionRequired, description) {
+				var isDescriptionValid = false;
+				if (isDescriptionRequired) {
+					return this._isValidString(description);
+				} else {
+					isDescriptionValid = true;
+				}
+				return isDescriptionValid;
+			},
+
+			_onSubmit: function() {
+				if (this.unsavedComments()) {
+					this.$.unsavedPopup.openPopup();
+				} else {
+					this._updateRequest();
+				}
+			},
+
+			_updateRequest: function() {
+				this._updatingRequest = true;
+				this.fire("update-request", {item: this.request});
+			},
+
+			_closeConfirmationDialog: function(){
+				this.fire("request-submitted", {"item": this.request});
+			},
+
+			_computeDisableSubmitButton: function(updatingRequest, isRequestValid) {
+				return updatingRequest || !isRequestValid;
+			},
+
+			_onEditRequestRouteActive: function(e) {
+				if (e.detail.active) {
+					this.set("_refresh",true);
+				} else {
+					this.set("_refresh", false);
+				}
+			},
+
+			_onRequestForSomeoneElse: function(e) {
+				if (e.detail.person) {
+					this.set("request.building", e.detail.person.building);
+					this.set('request.floor', {id: e.detail.person.floorID, value: e.detail.person.floor});
+					this.set('request.room', {id: e.detail.person.spaceID, value: e.detail.person.space});
+					this.set("overrideBuilding", false);
+					this.set("overrideBuilding", true);
+				}
+			},
+
+			_onRequestForRevertToSelf: function() {
+				if (this._originalLocationValues) {
+					this.set("request.building", this._originalLocationValues.building);					
+					this.set("request.floor", this._originalLocationValues.floor);
+					this.set("request.room", this._originalLocationValues.room);
+					this.set("overrideBuilding", false);
+					this.set("overrideBuilding", true);
+				}
+			},
+
+			_onSwitchingFromMeToSomeoneElse: function() {
+				//capture original location values
+				this._originalLocationValues = {
+					building: this.request.building,
+					floor: this.request.floor,
+					room: this.request.room
+				};
+			}
+
+		});
+	</script>
+</dom-module>

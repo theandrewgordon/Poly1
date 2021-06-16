@@ -1,0 +1,60 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="tricomp-reservation-room.html">
+<link rel="import" href="tricomp-reservation-room-location.html">
+
+<dom-module id="tricomp-reservation-room-details">
+    <template>
+        <style>
+            :host {
+                height: 100%;
+                width: 100%;
+            }
+            tricomp-reservation-room {
+                margin: 15px 0px 0px 15px;
+                --room-name-font-size: 22px;
+                --room-name-font-weight: bold;
+                --room-building-font-size: 18px;
+                --room-floor-font-size: 18px;
+            }
+
+            tricomp-reservation-room-location {
+                width: 100%;
+                height: 90%;
+            }
+        </style>
+        <tricomp-reservation-room 
+            event-item="[[eventItem]]" 
+            application-settings="[[applicationSettings]]" 
+            no-icon></tricomp-reservation-room>
+        <tricomp-reservation-room-location
+            action-label="[[actionLabel]]"
+            id="reserveRoomLocation"
+            room-id="[[eventItem.roomId]]"
+            spec-id="[[eventItem._id]]">
+        </tricomp-reservation-room-location>
+    </template>
+    <script>
+
+        Polymer({
+
+            is: "tricomp-reservation-room-details",
+
+            listeners: {
+                "reserveRoomLocation.reservation-room-location-done": "_handleRoomLocationClose",
+            },
+
+            properties: {
+                eventItem: Object,
+                applicationSettings: Object,
+                actionLabel: String,
+            },
+
+            _handleRoomLocationClose: function(){
+                this.fire("reservation-room-location-close");
+            },
+
+        });
+
+    </script>
+</dom-module>

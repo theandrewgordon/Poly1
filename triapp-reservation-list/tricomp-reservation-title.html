@@ -1,0 +1,56 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="tricomp-multiline-overflow-text.html">
+
+<dom-module id="tricomp-reservation-title">
+	<template>
+		<style>
+			:host {
+				@apply(--layout-self-start);
+			}
+			
+			.subject {
+				position: relative;
+				max-height: 2.4em;
+				margin-top: 4px;
+				line-height: 1.2em;
+				font-size: 18px;
+				color: var(--ibm-blue-50);
+				overflow: hidden;
+			}
+			
+			 :host[is-card] .subject {
+				margin-top: 10px;
+			}
+		</style>
+
+		<div id="subject" class="subject" hidden$="[[!eventItem.subject]]">
+			<tricomp-multiline-overflow-text
+				text="[[eventItem.subject]]"
+				parentElement="[[subjectEl]]">
+			</tricomp-multiline-overflow-text>
+		</div>
+	</template>
+	<script>
+		
+		Polymer({
+
+			is: "tricomp-reservation-title",
+
+			properties: {
+				eventItem: Object,
+				isCard: {
+					type: Boolean,
+					value: false,
+					reflectToAttribute: true
+				}
+			},
+
+			attached: function() {
+				this.set("subjectEl", this.$.subject);
+			}
+
+		});
+
+	</script>
+</dom-module>

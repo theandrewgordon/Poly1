@@ -1,0 +1,1568 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../tricore-url/tricore-url.html">
+<link rel="import" href="../triblock-page-container-behavior/triblock-page-container-behavior.html">
+<link rel="import" href="../triplat-debug/triplat-debug.html">
+<link rel="import" href="../triplat-routing/triplat-routing.html">
+<link rel="import" href="../triplat-image/triplat-image.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-query/triplat-query.html">
+<link rel="import" href="../triplat-select-input/triplat-select-input.html">
+<!-- <link rel="import" href="../triplat-search-input/triplat-search-input.html"> -->
+<link rel="import" href="../triplat-ds-search-input/triplat-ds-search-input.html">
+<link rel="import" href="../triplat-graphic/triplat-graphic.html">
+<link rel="import" href="../triplat-graphic/triplat-graphic-pin.html">
+<link rel="import" href="../triplat-graphic-legend/triplat-graphic-legend.html">
+<link rel="import" href="../triblock-tabs/triblock-tabs.html">
+
+<link rel="import" href="../iron-pages/iron-pages.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icons/communication-icons.html">
+<link rel="import" href="../iron-icons/hardware-icons.html">
+<link rel="import" href="../iron-icons/av-icons.html">
+<link rel="import" href="../iron-icons/device-icons.html">
+<link rel="import" href="../iron-input/iron-input.html">
+<link rel="import" href="../iron-image/iron-image.html">
+<link rel="import" href="../iron-list/iron-list.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-material/paper-material.html">
+<link rel="import" href="../paper-input/paper-input.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-header-panel/paper-header-panel.html">
+<link rel="import" href="../paper-fab/paper-fab.html">
+<link rel="import" href="../paper-tabs/paper-tabs.html">
+<link rel="import" href="../paper-tooltip/paper-tooltip.html">
+<link rel="import" href="../iron-selector/iron-selector.html">
+<link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
+
+<link rel="import" href="../triplat-loading-indicator/triplat-loading-indicator.html">
+
+<link rel="import" href="move-request-behavior.html">
+<link rel="import" href="move-request-page-behavior.html">
+
+<link rel="import" href="tricomp-page-header.html">
+<link rel="import" href="tricomp-move-results-item.html">
+<link rel="import" href="tricomp-move-results-item-card.html">
+<link rel="import" href="tricomp-array-comparator.html">
+
+<dom-module id="tripage-move-results">
+
+	<link rel="import" type="css" href="shared.css">
+
+	<style>
+
+		:host {
+			@apply(--layout-vertical);
+		}
+
+		.action-button {
+			width: 50%;
+			font-weight: 500;
+			font-size: 16px;
+		}
+
+		.button-container {
+			padding: 2px 10px 20px 10px;
+			background-color: var(--ibm-neutral-2);
+		}
+
+		.button-container-large {
+			@apply(--layout-flex);
+			min-width: 0;
+			@apply(--layout-vertical);
+			@apply(--layout-self-center);
+			font-size: 14px;
+			line-height: 17px;
+			padding: 0 10px;
+		}
+
+		.empty-data-message {
+			@apply(--layout-center-center);
+			text-align: center;
+			padding: 20px;
+		}
+
+		.floorcontainer {
+			@apply(--layout-flex-3);
+			@apply(--layout-relative);
+			@apply(--layout-horizontal);
+			margin: 5px;
+			min-height: 0;
+		}
+
+		.floorcontainer-graphic {
+			@apply(--layout-flex-9);
+			@apply(--layout-vertical);
+		}
+
+		.floor-selection-container {
+			@apply(--layout-flex-1);
+			@apply(--layout-relative);
+			@apply(--layout-vertical);
+			min-height: 0;
+		}
+
+		.floor-selection-container-large {
+			@apply(--layout-flex-1);
+			@apply(--layout-relative);
+			@apply(--layout-vertical);
+			@apply(--layout-center);
+			padding-bottom: 10px
+			min-height: 0;
+			border-top: 1px solid var(--tri-primary-content-accent-color);
+			min-height: 125px;
+		}
+
+		.info-container {
+			@apply(--layout-horizontal);
+			padding-bottom: 8px;
+			background-color: var(--ibm-neutral-2);
+		}
+
+		.info-container-selection {
+			@apply(--layout-horizontal);
+			padding-top: 8px;
+			padding-bottom: 8px;
+			background-color: var(--ibm-neutral-2);
+		}
+
+
+		.info-container-large {
+			@apply(--layout-horizontal);
+			padding-bottom: 8px;
+			padding-left: 20px;
+			background-color: var(--tri-header-color);
+			border-top: 1px solid var(--tri-primary-content-accent-color);
+			height: 600px;
+		}
+
+		iron-pages {
+			@apply(--layout-flex);
+			@apply(--layout-relative);
+			@apply(--layout-vertical);
+			border: black;
+			height: 600px;
+			min-height: 0;
+			overflow: auto;
+		}
+
+		.iron-pages-large {
+			background-color: var(--ibm-neutral-2);
+		}
+
+		.list {
+			@apply(--layout-flex);
+		}
+
+		.list-item[index=even] {
+			background-color: white;
+			border-bottom: 1px solid var(--ibm-gray-10);
+		}
+		.list-item[index=odd] {
+			background-color: var(--ibm-neutral-2);
+			border-bottom: 1px solid var(--ibm-gray-10);
+		}
+
+		.resultscontainer {
+			@apply(--layout-flex);
+			@apply(--layout-relative);
+			@apply(--layout-vertical);
+			min-height: 0;
+		}
+
+		.no-requests-placeholder {
+			@apply(--layout-flex);
+			@apply(--layout-center-center);
+			@apply(--layout-vertical);
+			padding: 10px;
+		}
+		.no-requests-placeholder > * {
+			text-align: center;
+			margin: 10px 0;
+		}
+		.no-requests-placeholder-icon {
+			height: 32px;
+			width: 32px;
+		}
+
+		.search-row-container {
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			padding: 10px;
+		}
+
+		.search-row-container-large {
+			padding: 10px;
+		}
+
+		.search-input {
+			padding-top: 3px;
+			--triplat-ds-search-input: {
+				border-bottom: 2px solid var(--tri-primary-color);
+			};
+			--triplat-ds-search-input-input: {
+				font-size: 16px;
+			};
+		}
+
+		.sub-page {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+		}
+
+		.tooltip-legend {
+			z-index: 3;
+		}
+
+		triplat-graphic {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+
+			--triplat-graphic-non-selectable: {
+				fill: white;
+			    fill-opacity: 1;
+			};
+
+			--triplat-graphic-pin-tooltip-container: {
+				z-index: 102;
+			}
+
+			--triplat-graphic-interactive-selected: {
+			   	stroke:blue;
+			   	stroke-width:10;
+			};
+
+			--triplat-graphic-highlight-1: {
+				stroke: red;
+				stroke-width: 10;
+			};
+
+			--triplat-graphic-pin-tooltip-1: {
+				font-size: 14px;
+    			font-weight: 600;
+				};
+
+			--triplat-graphic-pin-color-3: #562f72;
+	        --triplat-graphic-pin-tooltip: #e4c0fe;
+	        --triplat-graphic-pin-tooltip: black;
+	        --triplat-graphic-pin-tooltip: #562f72;
+		}
+
+		.space-details-container {
+			@apply(--layout-flex);
+			min-width: 0;
+			@apply(--layout-vertical);
+			font-size: 14px;
+			line-height: 17px;
+			padding: 0 10px;
+		}
+
+		.space-details-location {
+			@apply(--layout-flex);
+			min-width: 0;
+			@apply(--layout-horizontal);
+			font-size: 14px;
+			line-height: 17px;
+			padding: 0px 0px 0px 10px;
+		}
+
+		.space-details-location-info {
+			@apply(--layout-vertical);
+			padding-right: 30px;
+			border-right: 1px solid var(--tri-primary-content-accent-color);
+		}
+
+
+		.space-details-icon-container {
+			@apply(--layout-vertical);
+			@apply(--layout-center-center);
+		}
+
+		.space-detail-item {
+
+		}
+
+		.space-detail-item-bold {
+			font-weight: bold;
+		}
+
+		.space-image-container {
+			@apply(--layout-vertical);
+			@apply(--layout-start);
+			@apply(--layout-relative);
+		}
+		.space-image {
+			width: 64px;
+			height: 64px;
+		}
+
+		.space-image-placeholder-icon {
+			--triplat-icon-height: 64px;
+			--triplat-icon-width: 64px;
+			--triplat-icon-fill-color: var(--tri-primary-content-accent-color);
+		}
+
+		.space-name-container {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			@apply(--layout-start-justified);
+		}
+		.space-name {
+			padding-top: 5px;
+			padding-right: 10px;
+			font-size: 20px;
+			font-weight: 500;
+			line-height: 19px;
+		}
+
+		.space-actions-container {
+			@apply(--layout-horizontal);
+			@apply(--layout-center-center);
+		}
+
+		@media (min-width: 1560px) {
+			.inbox-card {
+				width: calc(25% - 5px);
+			}
+		}
+
+		@media (max-width: 1559px) and (min-width: 1160px) {
+			.inbox-card {
+				width: calc(33.3333% - 7px);
+			}
+		}
+
+		@media (max-width: 1159px) and (min-width: 650px) {
+			.inbox-card {
+				width: calc(50% - 10px);
+			}
+		}
+
+		@media (max-width: 649px) {
+			.inbox-card {
+				width: calc(100% - 20px);
+			}
+		}
+
+		.space-selection-container-large {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			font-size: 14px;
+			line-height: 17px;
+			padding: 0 10px;
+			min-width: 250px;
+		}
+
+		.inbox-card-container {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-wrap);
+			align-content: flex-start;
+            min-width: 0;
+		}
+
+		.drill-container {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			@apply(--layout-center-center);
+			@apply(--layout-end);
+			max-width: 150px;
+			cursor: pointer;
+		}
+
+		.change-link {
+			@apply(--layout-flex);
+			padding-right: 5px;
+		}
+
+		.link {
+			color: var(--tri-primary-color);
+			cursor: pointer;
+		}
+
+        .criterion {
+            @apply(--layout-horizontal);
+            @apply(--layout-center);
+        }
+
+        .criterion-list {
+            @apply(--layout-horizontal);
+            @apply(--layout-center);
+            padding-left: 30px;
+        }
+
+		.criterionColorBox {
+			margin-left: 1px;
+            height: var(--legend-color-box-size, 22px);
+            width: var(--legend-color-box-size, 22px);
+            min-width: var(--legend-color-box-size, 22px);
+        }
+
+        .criterionLegend {
+            @apply(--layout-horizontal);
+            @apply(--layout-center);
+            @apply(--layout-flex);
+            padding: 5px 0px;
+        }
+
+        .criterionLegend-vertical {
+            @apply(--layout-vertical);
+            @apply(--layout-start);
+            padding: 5px 0px;
+        }
+
+        .criterionText {
+            padding-left: 10px;
+        }
+
+        .scrollable-area {
+			@apply(--layout-flex);
+			overflow: auto;
+		}
+
+		.item {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			padding-right: 2px;
+		}
+
+		.item > .info {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			@apply(--layout-wrap);
+			font-size: 14px;
+			color: var(--ibm-gray-100);
+			display: block;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			padding-bottom: 10px;
+			padding-top: 10px;
+		}
+
+		.item > .info > .name {
+			font-weight: bold;
+		}
+
+		.line-item-row.iron-selected {
+			background-color: var(--tri-primary-light-color);
+		}
+
+		.line-item-row .value {
+			color: var(--tri-secondary-color);
+		}
+
+		.banner {
+			@apply(--layout-vertical);
+			@apply(--layout-start);
+			@apply(--layout-relative);
+		}
+
+		.banner-left {
+            height: var(--legend-color-box-size, 70px);
+            width: var(--legend-color-box-size, 10px);
+		}
+
+		.info-container-space {
+			@apply(--layout-horizontal);
+			padding-bottom: 0px;
+			padding-right: 10px;
+		}
+
+		iron-list {
+			flex: 1 1 auto;
+			@apply(--layout-flex);
+			@apply(--layout-wrap);
+			align-content: flex-start;
+		}
+
+		triblock-tabs{
+			padding-left: 20px;
+		}
+
+	</style>
+
+	<template>
+
+		<triplat-route id="moveResultsRoute" name="moveResultsRouteMoveRequest"></triplat-route>
+
+		<tricore-url raw-url="/getCompanyFile.jsp?fileLoc=" bind-url="{{imgUrl}}"></tricore-url>
+
+		<triplat-ds id="currentUser" name="currentUser" data="{{currentUser}}"></triplat-ds>
+
+		<triplat-ds name="applicationSettings" data="{{applicationSettings}}" on-ds-get-complete="_handleApplicationSettingsGetComplete"></triplat-ds>
+
+		<triplat-ds id="moveRequest" name="moveRequest" data="{{moveRequest}}" loading="{{moveRequestLoading}}" on-ds-get-complete="_handleMoveRequestGetComplete">
+			<triplat-ds-context name="myMoveRequests" context-id="[[specId]]">
+			</triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds
+				name="moveToBuilding" data="{{moveToBuilding}}" loading="{{moveToBuildingLoading}}" id="moveToBuildingDS"
+				on-ds-get-complete="_handleMoveToBuildingGetComplete">
+			<triplat-ds-context name="myMoveRequests" context-id="[[specId]]"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds name="moveToFloor" data="{{moveToFloor}}" loading="{{moveToFloorLoading}}" id="moveToFloorDS">
+			<triplat-ds-context name="myMoveRequests" context-id="[[specId]]"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds name="moveToSpacesEntitlements" data="{{moveToSpaces}}" unfiltered-data="{{_unfilteredSpaces}}" filtered-data="{{_filteredSpaces}}" loading="{{moveToSpacesEntitlementsLoading}}" id="moveToSpacesEntitlements" on-ds-get-complete="_handleMoveToSpacesGetComplete" disable="{{!_restrictEntitlements}}">
+			<triplat-ds-context name="moveToFloor" context-id="{{moveToFloor._id}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds name="moveToSpaces" data="{{moveToSpaces}}" unfiltered-data="{{_unfilteredSpaces}}" filtered-data="{{_filteredSpaces}}" loading="{{moveToSpacesLoading}}" id="moveToSpaces" on-ds-get-complete="_handleMoveToSpacesGetComplete" disable="{{_restrictEntitlements}}">
+			<triplat-ds-context name="moveToFloor" context-id="{{moveToFloor._id}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-query data="[[moveToSpacesNew]]" filtered-data-out="{{filteredOrgSpaces}}">
+			<triplat-query-sort name="space"></triplat-query-sort>
+		</triplat-query>
+
+		<triplat-query data="[[moveToSpacesNew]]" filtered-data-out="{{filteredSpacesAvailable}}" on-triplat-query-changed="_handleFilteredSpacesAvailable" append-filters="{{_spaceFilters}}">
+			<triplat-query-filter name="adjustedRemainingVacant" operator="greater than or equals" value="1" ignore-if-blank></triplat-query-filter>
+			<triplat-query-and></triplat-query-and>
+			<!--triplat-query-open-paren/-->
+			<triplat-query-filter name="earliestAvailableDate" operator="less than or equals" value="{{moveRequest.proposedMoveDate}}" ignore-if-blank></triplat-query-filter>
+			<!--triplat-query-or/>
+			<triplat-query-filter name="earliestAvailableDate" operator="equals" value="null"></triplat-query-filter>
+			<triplat-query-close-paren/-->
+			<triplat-query-sort name="space"></triplat-query-sort>
+		</triplat-query>
+
+		<triplat-ds id="spaceLabelStyleDs" name="spaceLabelStyle" data="{{spaceLabelStyle}}"></triplat-ds>
+
+
+		<tricomp-array-comparator
+				source="{{filteredSpacesAvailableList}}"
+				compare-to="{{_legendSpaces}}"
+				source-match-field="_id"
+				compare-to-match-field="id"
+				match-flag="legendSelected"
+				result="{{filteredSpacesAvailableListOut}}">
+		</tricomp-array-comparator>
+
+		<triplat-loading-indicator show="[[_isBusy(isBusy, requestRequestLoading, moveToFloorLoading, movetoSpacesLoading)]]"></triplat-loading-indicator>
+
+		<template is="dom-if" if="[[!screenLarge]]">
+
+		<div class="page-main" hidden$="[[!_allRoomsUnfiltered.length]]">
+
+			<triblock-tabs selected="{{_selectedTab}}" hide-scroll-buttons>
+				<triblock-tab id="0" label="Floor Plan"></triblock-tab>
+				<triblock-tab id="1" label="List"></triblock-tab>
+			</triblock-tabs>
+
+			<triplat-ds-search-input id="searchInput"
+					aliases="[[_spaceSearchAliases]]"
+					append-filters="{{_spaceFilters}}"
+					class="search-input"
+					max-header-children="4"
+					placeholder="Search"
+					search-icon-precede>
+					<triplat-ds-search-context datasource="moveToFloor"
+					                           context-id="{{moveToFloor._id}}">
+					</triplat-ds-search-context>
+
+					<triplat-query-filter name="adjustedRemainingVacant" operator="greater than or equals" value="1" ignore-if-blank></triplat-query-filter>
+					<triplat-query-and>
+					</triplat-query-and>
+					<triplat-query-filter name="earliestAvailableDate" operator="less than or equals" value="{{moveRequest.proposedMoveDate}}" ignore-if-blank></triplat-query-filter>
+
+			</triplat-ds-search-input>
+
+			<iron-pages id="spacesIronPages" class="main" selected="{{_selectedTab}}">
+				<div class="resultscontainer">
+
+					<div class="search-row-container">
+
+					</div>
+
+						<div class="info-container">
+							<div class="space-details-container">
+								<div class="space-detail-item"><span>AVAILABLE ROOMS &nbsp;&nbsp;{{filteredSpacesAvailableList.length}}</span></div>
+								<div class="space-detail-item-bold">[[moveRequest.toBuilding.value]]</div>
+								<div class="space-detail-item">[[moveRequest.toFloor.value]]</div>
+							</div>
+
+							<div class="drill-container" tabindex="0" on-tap="_handleSummaryPage" on-keypress="_handleSummaryPage">
+								<span class="link change-link">Skip Room Search</span>
+							</div>
+						</div>
+
+
+					<div class="header-text" hidden$="{{_isFloorPlanAvailable(hasGraphic)}}">
+						<div class="no-requests-placeholder">
+							<iron-icon class="no-requests-placeholder-icon" icon="ibm:status-info" info></iron-icon>
+							<div>There is no floor plan available.</div>
+						</div>
+					</div>
+
+					<div class="floorcontainer" hidden$="{{!_isFloorPlanAvailable(hasGraphic)}}">
+						<div class="floorcontainer-graphic">
+					 		<triplat-graphic id="floorplandetail" record-id="{{moveRequest.toFloor.id}}" svg-loaded="{{svgLoaded}}" drawing-id-loading="{{drawingIdLoading}}" has-graphic="{{hasGraphic}}">
+						  		<triplat-graphic-selectable
+									selectable="{{filteredSpacesAvailable}}"
+									selected="{{moveToSpace}}"
+									enabled="{{!_completedRequest}}">
+								</triplat-graphic-selectable>
+								<triplat-graphic-label id="graphicLabel" label-id="{{spaceLabelStyleId}}"></triplat-graphic-label>
+								<triplat-graphic-pin
+								    pins="[[pinSpace]]"
+								    label-attr-name="personName"
+								    record-id-attr-name="_id"
+								    icon="ibm:pin-person"
+								    selected="[[pinSpace]]"
+								    class-number="1">
+								</triplat-graphic-pin>
+								<triplat-graphic-highlight-group
+								   	legend-spaces="{{_legendSpaces}}"
+								   	mask-opacity="1"
+								   	highlight-layer="ATTACHED">
+							    </triplat-graphic-highlight-group>
+								<triplat-graphic-zoomable cached></triplat-graphic-zoomable>
+							</triplat-graphic>
+						</div>
+
+						<div class="layout vertical tooltip-legend">
+							<triplat-graphic-legend
+								id="legend"
+								spaces="[[filteredOrgSpaces]]"
+								available-spaces="[[filteredSpacesAvailable]]"
+								legend-spaces="{{_legendSpaces}}"
+								show-by-selected="[[_legendLabels.organization]]"
+								on-opened-changed="_handleSizeChanged"
+								zfilter-by-selected="Space Class">
+								<triplat-graphic-legend-show-by attribute="chargedToOrgNew"
+							        	color-by="orgColorNew"
+								    	label="[[_legendLabels.organization]]"
+								    	selected-criterions="{{_selectedShowByOrgs}}"
+										show-empty-criterion
+										empty-criterion-text="No Org"
+										mask-unavailable-spaces
+										show-all-checked="true">
+								</triplat-graphic-legend-show-by>
+							</triplat-graphic-legend>
+						</div>
+					</div>
+
+					<div class="floor-selection-container">
+						<div hidden$="{{!_spaceSelected(moveToSpace)}}">
+							<div>&nbsp;</div>
+							<div>&nbsp;</div>
+							<div>&nbsp;</div>
+							<div>&nbsp;</div>
+							<div>&nbsp;</div>
+							<div>&nbsp;</div>
+						</div>
+						<div class="info-container" hidden$="{{_spaceSelected(moveToSpace)}}">
+							<div class="space-image-container" hidden$="{{!displayImages}}">
+								<iron-image id="roomImage" alt="Room" class="space-image" src="{{_computeImageUrl(moveToSpace.spaceImage, imgUrl)}}" sizing="cover" hidden$="[[!roomImageLoaded]]" loaded="{{roomImageLoaded}}"></iron-image>
+								<triplat-icon class="space-image-placeholder-icon" icon="picturefile" hidden$="[[roomImageLoaded]]"></triplat-icon>
+							</div>
+							<div class="space-details-container">
+								<div class="space-name-container">
+									<span class="space-name space-detail-item">{{moveToSpace.space}}</span>
+								</div>
+								<div class="space-detail-item">[[moveToSpace.building]]</div>
+								<div class="space-detail-item">[[moveToSpace.floor]]</div>
+								<div class="space-detail-item-bold">[[moveToSpace.spaceClass]]</div>
+						    	<div class="space-detail-item">[[_roundArea(moveToSpace.area.value)]]&nbsp;[[moveToSpace.area.uom]]</div>
+							</div>
+						</div>
+						<div class="button-container" hidden$="{{_spaceSelected(moveToSpace)}}">
+							<div class="space-actions-container" hidden$="{{_spaceSelected(moveToSpace)}}">
+								<paper-button on-tap="_handleSelectSpace" class="action-button" noink>Select</paper-button>
+							</div>
+						</div>
+					</div>
+
+				</div>
+
+				<!-- List tab -->
+				<div class="sub-page">
+
+					<div class="search-row-container">
+
+					</div>
+						<div class="info-container">
+							<div class="space-details-container">
+								<div class="space-detail-item"><span>AVAILABLE ROOMS &nbsp;&nbsp;{{filteredSpacesAvailableList.length}}</span></div>
+								<div class="space-detail-item-bold">[[moveRequest.toBuilding.value]]</div>
+								<div class="space-detail-item">[[moveRequest.toFloor.value]]</div>
+								<div class="criterionLegend-vertical">
+									<div class="criterion">
+										<div class="criterionColorBox" style="background-color: #5AA700;opacity: 0.95;"></div>
+										<span class="criterionText">&nbsp;{{cardOrganization}} (Available)&nbsp;</span>
+									</div>
+									<div class="criterion" hidden$="{{displaySpecifiedOrganization}}">
+										<div class="criterionColorBox" style="background-color: #BE9B00;opacity: 0.95;"></div>
+										<span class="criterionText">&nbsp;Other (Available)</span>
+									</div>
+								</div>
+							</div>
+							<div class="drill-container" tabindex="0" on-tap="_handleSummaryPage" on-keypress="_handleSummaryPage">
+								<span class="link change-link">Skip Room Search</span>
+							</div>
+						</div>
+
+
+					<div class="header-text" hidden$="{{spacesAvailable}}">
+						<div class="no-requests-placeholder">
+							<iron-icon class="no-requests-placeholder-icon" icon="ibm:status-info" info></iron-icon>
+							<div>No rooms are available for the given search criteria.</div>
+						</div>
+					</div>
+
+					<iron-list class="list" items="{{filteredSpacesAvailableList}}" hidden$="{{!spacesAvailable)}}">
+						<template>
+							<tricomp-move-results-item class="list-item" item="{{item}}" index$="[[_computeEvenOdd(index)]]" display-images$="{{displayImages}}"></tricomp-move-results-item>
+						</template>
+					</iron-list>
+				</div>
+
+			</iron-pages>
+
+		</div>
+
+		<template is="dom-if" if="[[!_allRoomsUnfiltered.length]]">
+			<div class="page-main empty-data-message">
+				<span>No spaces are available for the given search criteria.</span>
+			</div>
+		</template>
+
+		</template>
+
+		<template is="dom-if" if="[[screenLarge]]">
+
+
+		<div class="page-main-large" hidden$="[[!_allRoomsUnfiltered.length]]">
+
+			<triblock-tabs selected="{{_selectedTab}}" hide-scroll-buttons>
+				<triblock-tab id="0" label="Floor Plan"></triblock-tab>
+				<triblock-tab id="1" label="List"></triblock-tab>
+			</triblock-tabs>
+
+			<triplat-ds-search-input id="searchInput"
+					aliases="[[_spaceSearchAliases]]"
+					append-filters="{{_spaceFilters}}"
+					class="search-input"
+					data="[[filteredSpacesAvailable]]"
+					max-header-children="4"
+					placeholder="Search"
+					search-icon-precede>
+					<triplat-ds-search-context datasource="moveToFloor"
+					                           context-id="{{moveToFloor._id}}">
+					</triplat-ds-search-context>
+
+					<triplat-query-filter name="adjustedRemainingVacant" operator="greater than or equals" value="1" ignore-if-blank></triplat-query-filter>
+					<triplat-query-and>
+					</triplat-query-and>
+					<triplat-query-filter name="earliestAvailableDate" operator="less than or equals" value="{{moveRequest.proposedMoveDate}}" ignore-if-blank></triplat-query-filter>
+
+			</triplat-ds-search-input>
+
+			<iron-pages id="spacesIronPages" class="main iron-pages-large" selected="{{_selectedTab}}">
+				<div class="resultscontainer">
+
+					<div class="search-row-container-large">
+
+						<div class="info-container">
+							<div class="space-details-container">
+								<div class="space-detail-item"><span>AVAILABLE ROOMS &nbsp;&nbsp;{{filteredSpacesAvailableList.length}}</span></div>
+								<div class="space-detail-item-bold">[[moveRequest.toBuilding.value]]</div>
+								<div class="space-detail-item">[[moveRequest.toFloor.value]]</div>
+							</div>
+
+							<div class="drill-container" tabindex="0" on-tap="_handleSummaryPage" on-keypress="_handleSummaryPage">
+								<span class="link change-link">Skip Room Search</span>
+							</div>
+						</div>
+
+					</div>
+
+					<div class="header-text" hidden$="{{_isFloorPlanAvailable(hasGraphic)}}">
+						<div class="no-requests-placeholder">
+							<iron-icon class="no-requests-placeholder-icon" icon="ibm:status-info" info></iron-icon>
+							<div>There is no floor plan available.</div>
+						</div>
+					</div>
+
+					<div class="info-container-large" hidden$="{{!_isFloorPlanAvailable(hasGraphic)}}">
+						<div class="scrollable-area">
+
+							<iron-selector id="selectorSpaces" selectable=".line-item-row" selected-item="{{_selectedElement}}">
+								<template
+										id="spaceTemplate"
+										is="dom-repeat"
+										items="{{filteredSpacesAvailableListOut}}"
+										sort="{{_sort(sortField, sortDescending)}}"
+										filter="legendFilter"
+										observe="selected">
+
+									<div class="item line-item-row" selected$="{{item.selected}}" element$="{{_selectedElement}}" on-tap="_handleSelectedSpace">
+
+										<div class="info-container-space">
+
+											<div class="banner" hidden$="{{!_matchesOrgSpecified(item)}}">
+												<div class="banner-left" style="background-color: #5AA700;opacity: 0.95;"></div>
+											</div>
+
+											<div class="banner" hidden$="{{!_matchesOrgOther(item)}}">
+												<div class="banner-left" style="background-color: #BE9B00;opacity: 0.95;"></div>
+											</div>
+
+										</div>
+
+										<div class="info">
+											<div class="name">{{item.space}}</div>
+											<div>{{item.spaceClass}}</div>
+											<div>[[_roundArea(item.area.value)]]&nbsp;[[item.area.uom]]</div>
+										</div>
+
+										<div class="space-actions-container" hidden$="{{!item.selected}}">
+											<paper-button on-tap="_handleSelectSpace" class="action-button" noink>Select</paper-button>
+										</div>
+
+									</div>
+								</template>
+							</iron-selector>
+						</div>
+
+						<div class="floorcontainer" hidden$="{{!_isFloorPlanAvailable(hasGraphic)}}">
+							<div class="floorcontainer-graphic">
+						 		<triplat-graphic id="floorplandetail" record-id="{{moveRequest.toFloor.id}}" svg-loaded="{{svgLoaded}}" drawing-id-loading="{{drawingIdLoading}}" has-graphic="{{hasGraphic}}">
+							  		<triplat-graphic-selectable
+										selectable="{{filteredSpacesAvailable}}"
+										selected="{{moveToSpace}}"
+										enabled="{{!_completedRequest}}">
+									</triplat-graphic-selectable>
+									<triplat-graphic-label id="graphicLabel" label-id="{{spaceLabelStyleId}}"></triplat-graphic-label>
+									<triplat-graphic-pin
+									    pins="[[pinSpace]]"
+									    label-attr-name="personName"
+									    record-id-attr-name="_id"
+									    icon="ibm:pin-person"
+									    selected="[[pinSpace]]"
+									    class-number="1">
+									</triplat-graphic-pin>
+									<triplat-graphic-highlight-group
+									   	legend-spaces="{{_legendSpaces}}"
+									   	mask-opacity="1"
+									   	highlight-layer="ATTACHED">
+								    </triplat-graphic-highlight-group>
+									<triplat-graphic-zoomable cached></triplat-graphic-zoomable>
+								</triplat-graphic>
+							</div>
+
+							<div class="layout vertical">
+								<triplat-graphic-legend
+								    id="legend"
+									spaces="[[filteredOrgSpaces]]"
+									available-spaces="[[filteredSpacesAvailable]]"
+									legend-spaces="{{_legendSpaces}}"
+									opened
+									show-by-selected="[[_legendLabels.organization]]"
+									on-opened-changed="_handleSizeChanged"
+									zfilter-by-selected="Space Class">
+									<triplat-graphic-legend-show-by attribute="chargedToOrgNew"
+								        	color-by="orgColorNew"
+									    	label="[[_legendLabels.organization]]"
+									    	selected-criterions="{{_selectedShowByOrgs}}"
+											show-empty-criterion
+											empty-criterion-text="No Org"
+											mask-unavailable-spaces
+											show-all-checked="true">
+									</triplat-graphic-legend-show-by>
+								</triplat-graphic-legend>
+							</div>
+						</div>
+					</div>
+
+					<div class="floor-selection-container-large">
+						<div hidden$="{{!_spaceSelected(moveToSpace)}}">
+							<div>&nbsp;</div>
+							<div>&nbsp;</div>
+							<div>&nbsp;</div>
+							<div>&nbsp;</div>
+							<div>&nbsp;</div>
+							<div>&nbsp;</div>
+						</div>
+
+						<div class="info-container-selection" hidden$="{{_spaceSelected(moveToSpace)}}">
+							<div class="space-image-container" hidden$="{{!displayImages}}">
+								<iron-image id="roomImage" alt="Room"  class="space-image" src="{{_computeImageUrl(moveToSpace.spaceImage, imgUrl)}}" sizing="cover" hidden$="[[!roomImageLoaded]]" loaded="{{roomImageLoaded}}"></iron-image>
+								<triplat-icon class="space-image-placeholder-icon" icon="picturefile" hidden$="[[roomImageLoaded]]"></triplat-icon>
+							</div>
+							<div class="space-selection-container-large">
+								<div class="space-name-container">
+									<span class="space-name space-detail-item">{{moveToSpace.space}}</span>
+								</div>
+								<div class="space-detail-item">[[moveToSpace.building]]</div>
+								<div class="space-detail-item">[[moveToSpace.floor]]</div>
+								<div class="space-detail-item-bold">[[moveToSpace.spaceClass]]</div>
+								<div class="space-detail-item">[[_roundArea(moveToSpace.area.value)]]&nbsp;[[moveToSpace.area.uom]]</div>
+							</div>
+							<div class="button-container-large" hidden$="{{_spaceSelected(moveToSpace)}}">
+								<div class="space-actions-container" hidden$="{{_spaceSelected(moveToSpace)}}">
+									<paper-button on-tap="_handleSelectSpace" class="action-button" noink>Select</paper-button>
+								</div>
+							</div>
+						</div>
+					</div>
+
+				</div>
+
+				<div class="sub-page">
+
+					<div class="search-row-container-large">
+
+						<div class="info-container">
+							<div class="space-details-location">
+								<div class="space-details-location-info">
+								<div class="space-detail-item"><span>AVAILABLE ROOMS &nbsp;&nbsp;{{filteredSpacesAvailableList.length}}</span></div>
+								<div class="space-detail-item-bold">[[moveRequest.toBuilding.value]]</div>
+								<div class="space-detail-item">[[moveRequest.toFloor.value]]</div></div>
+								<div class="criterionLegend">
+									<div class="criterion-list">
+										<div class="criterionColorBox" style="background-color: #5AA700;opacity: 0.95;"></div>
+										<span class="criterionText">{{cardOrganization}} (Available)&nbsp;</span>
+									</div>
+									<div class="criterion-list" hidden$="{{displaySpecifiedOrganization}}">
+										<div class="criterionColorBox" style="background-color: #BE9B00;opacity: 0.95;"></div>
+										<span class="criterionText">Other (Available)</span>
+									</div>
+								</div>
+							</div>
+
+							<div class="drill-container" tabindex="0" on-tap="_handleSummaryPage" on-keypress="_handleSummaryPage">
+								<span class="link change-link">Skip Room Search</span>
+							</div>
+						</div>
+
+					</div>
+
+					<div class="no-requests-placeholder" hidden$="{{spacesAvailable}}">
+						<iron-icon class="no-requests-placeholder-icon" icon="ibm:status-info" info></iron-icon>
+						<div>No rooms are available for the given search criteria.</div>
+					</div>
+
+
+					<iron-list items="{{filteredSpacesAvailableList}}" grid>
+						<template>
+							<div style="width: 475px; height: 225px;">
+								<tricomp-move-results-item-card
+									hidden$="{{!screenLarge}}"
+									class="inbox-card"
+									id$="{{_computeCardId(item._id)}}"
+									requested-move-date="{{item.moveDate}}"
+									scheduled-move-date="{{item.moveDate}}"
+									request-id="{{item.requestID}}"
+									delete-action="{{item.delete}}"
+									id="{{item._id}}"
+									item="{{item}}"
+									organization="{{organization}}"
+									display-images$="{{displayImages}}"
+									selected="{{item.selected}}"
+									on-select="_handleInboxSelect"
+									status="{{item.status}}">
+								</tricomp-move-results-item-card>
+							</div>
+						</template>
+
+					</iron-list>
+
+				</div>
+
+			</iron-pages>
+
+		</div>
+
+		<template is="dom-if" if="[[!_allRoomsUnfiltered.length]]">
+			<div class="page-main-large empty-data-message">
+				<span>No spaces are available for the given search criteria.</span>
+			</div>
+		</template>
+		</template>
+
+		<tricomp-page-toolbar>
+
+		</tricomp-page-toolbar>
+
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tripage-move-results",
+		behaviors: [MoveRequestBehavior, MoveRequestPageBehavior, Polymer.IronResizableBehavior],
+
+		properties: {
+
+			preCreateComplete: {
+				type: Boolean,
+				value: false
+			},
+
+			requestManager: Object,
+
+ 			_spaceSearchAliases: {
+				type: Object,
+				value: function() {
+					var __dictionary__space = "Space";
+					var __dictionary__spaceClass = "Space Class";
+					var __dictionary__adjustedRemainingVacant = "Adjusted Remaining Vacant";
+					var __dictionary__earliestAvailableDate = "Earliest Available Date";
+					var aliases = {};
+					aliases["space"] = {alias: __dictionary__space, datasource: "moveToSpacesOnFloorLookupQuery"};
+					aliases["spaceClass"] = {alias: __dictionary__spaceClass, datasource: "moveToSpacesOnFloorLookupQuery"};
+					return aliases;
+				}
+			},
+
+			_spaceSearchAliasesOLD: {
+				type: Object,
+				value: function() {
+					var __dictionary__spaceClass = "Space Class";
+					var __dictionary__city = "Space";
+					var aliases = {};
+					aliases["spaceClass"] = __dictionary__spaceClass;
+					aliases["space"] = __dictionary__city;
+
+					return aliases;
+				}
+			},
+
+
+			 moveToFloorId: {
+				type: Number,
+				value: 12280332
+			},
+
+			spaceLabelStyleId : Number,
+
+			_selectedTab: {
+				type: Number,
+				value: 0
+			},
+
+			moveFromSpace: {
+				type: Object
+			},
+
+			moveToSpace: {
+				type: Object,
+				observer: '_handleSelectedSpaceChange',
+			},
+			spacesAvailable: {
+				type: Boolean,
+				value: false
+			},
+
+			displayImages: {
+				type: Boolean,
+				value: true
+			},
+			displaySpecifiedOrganization: {
+				type: Boolean,
+				value: false
+			},
+
+			pinSpace: Object,
+
+			organization: String,
+			cardOrganization: String,
+
+			primaryOrganization: {
+				type: String,
+				value: ""
+			},
+
+			moveToSpacesNew: Object,
+
+			spacesLoaded: {
+				type: Boolean,
+				value: false
+			},
+
+			appendFiltersSpace: {
+                type: Array,
+                value: []
+            },
+
+            filteredSpacesAvailableList: {
+            	type: Array,
+            	value: []
+            },
+
+            _lastTarget: Object,
+            _selectedSpaceId: Number,
+            screenLarge: String,
+            _applicationSettingsLoaded: {
+				type: Boolean
+			},
+			_restrictEntitlements: {
+				type: Boolean
+			},
+
+			_legendLabels: {
+				type: Object,
+				value: function() {
+				var __dictionary__organization = "Organization";
+				var _labels = {};
+				_labels["organization"] = __dictionary__organization;
+				return _labels;
+				}
+			},
+      	},
+
+		listeners: {
+			"moveResultsRoute.route-active": "_handleRouteActive",
+			"spaceLabelStyleDs.ds-get-complete" : "_handlespaceLabelStyle",
+		},
+
+		observers: [
+			"_handleSelectedTab(_selectedTab)",
+			'_handleSelectedSpaceFloorPlan(selectedSpaces.splices)',
+			"_handleApplicationSettings(applicationSettings)",
+			'_setGraphicTab(hasGraphic)',
+			'_handleSpacesAvailable(filteredSpacesAvailable)',
+			'_handleNewOrganization(organization)',
+			'_handleLegendSpacesChanged(_legendSpaces)',
+		],
+
+
+	   	ready: function() {
+	   		window.addEventListener('orientationchange', function () {
+	   			if (Math.abs(window.orientation) === 90) {
+        		console.log("Landscape...");
+    			} else {
+    				console.log("Portrait...");
+    			}
+	   		}.bind(this));
+
+	   		window.addEventListener ('popstate', function(event) {
+	   			event.stopPropagation();
+				this._popStateFired(event);
+			}.bind(this));
+
+	   	},
+
+		_popStateFired: function(event) {
+			if (this._isPageActive) {
+				var page = sessionStorage.getItem("page");
+				var processed = sessionStorage.getItem("processed");
+				if (!processed) {
+					var next = document.location.hash;
+					if (next.indexOf("search") != -1)  {
+						this._handleCriteriaBack();
+					}
+					if (next.indexOf("summary") != -1)  {
+						this._handleSummaryPage();
+					}
+					else {
+						//
+					}
+				}
+			}
+		},
+
+		_computeEvenOdd: function(index) {
+			return (index % 2 == 0) ? "even" : "odd";
+		},
+
+		_handleCriteriaBack: function(e) {
+			sessionStorage.setItem("processed", "true");
+			var selector = this.$$("#selectorSpaces");
+			if (selector)
+				selector.selected = null;
+			this._lastTarget == null;
+			this._selectedSpaceId = null;
+			this._clearBusy();
+			this.fire("navigate-move-criteria-back");
+		},
+
+		_isBusy: function(isBusy, requestRequestLoading, moveToFloorLoading, movetoSpacesLoading) {
+			return isBusy || requestRequestLoading || moveToFloorLoading || movetoSpacesLoading;
+		},
+
+		_pageAttached : function() {
+
+			sessionStorage.clear();
+
+			this.set("moveToSpace", null);
+			this._setGraphicTab();
+
+			if (!this.screenLarge) {
+				var legend = this.$$("#legend");
+				if (legend)
+					legend.opened=false;
+			}
+			if (this.specId) {
+
+				var detail = this.$$("#floorplandetail");
+				if (detail)
+					detail.refreshViewBox();
+
+				if (this.moveToFloor._id != this.moveRequest.toFloor.id) {
+					this.$.moveToFloorDS.refresh();
+					this.$.moveToSpaces.refresh()
+				}
+			} else {
+				// trigger the main application initialization
+				if (!this.isDialog) {
+					this.fire("init");
+				}
+			}
+		},
+
+		_pageDetached : function() {
+			// console.log("tripage-room-results._pageDetached");
+			this.$$("#searchInput").clearSearch();
+			sessionStorage.clear();
+		},
+
+		_handleNewOrganization: function (organization) {
+			this._getOrgColors();
+		},
+
+		_getOrgColors: function() {
+			if ((this.spacesLoaded) && (this.organization != null)) {
+				this.set("cardOrganization", this.organization);
+				this._selectedShowByOrgs = null;
+				var legend = this.$$("#legend");
+				legend.showBySelected=this._legendLabels.organization;
+
+				for (var i = 0; i < this.moveToSpaces.length; i++) {
+				    if (this.moveToSpaces[i].chargedToOrg == this.organization) {
+				    	this.moveToSpaces[i].orgColorNew = "#5AA700";
+				    	this.moveToSpaces[i].chargedToOrgNew = this.organization;
+				    	this.moveToSpaces[i].other = false;
+
+				    }
+				    else {
+				    	this.moveToSpaces[i].orgColorNew = "#BE9B00";
+				    	var __dictionary__otherLabel = "Other";
+				    	this.moveToSpaces[i].chargedToOrgNew = __dictionary__otherLabel;
+				    	this.moveToSpaces[i].other = true;
+
+				    }
+				    this.moveToSpaces[i].selected = false;
+			    }
+			    // Remove other organizations
+			    if (this.displaySpecifiedOrganization) {
+			    	this.set("primaryOrganization", this.organization);
+			    }
+			    this.set("moveToSpacesNew", this.moveToSpaces);
+			    this.set("spacesLoaded", false);
+			    this.organization = null;
+			}
+		},
+
+		_computeIsEmpty: function(recordId) {
+			if (recordId && recordId != "" && recordId != 0) {
+				return false;
+			}
+			return true;
+		},
+
+		_handleSelection: function(e) {
+			this.fire("navigate-move-selection", e);
+		},
+
+		_isHidden: function() {
+			return false;
+		},
+
+		_handleSelectedTab: function (selectedTab) {
+			var detail = this.$$("#floorplandetail");
+			if (detail)
+				detail.refreshViewBox();
+		},
+
+		_handleApplicationSettings: function (appSettings) {
+			if (appSettings.moveDisableImages) {
+				this.set("displayImages", false);
+			}
+			else {
+				this.set("displayImages", true);
+			}
+			if (appSettings.displaySpecifiedOrganization) {
+				this.set("displaySpecifiedOrganization", true);
+			}
+			else {
+				this.set("displaySpecifiedOrganization", false);
+			}
+		},
+
+		_handleMoveRequestGetComplete: function() {
+
+		},
+
+		_handleMoveToSpacesGetComplete: function() {
+			//console.log("_handleMoveToSpacesGetComplete...");
+			this.set("spacesLoaded", true);
+			this._getOrgColors();
+		},
+
+		_handleSelectSpace: function(e) {
+			//console.log("_handleSelectSpace...");
+			sessionStorage.setItem("processed", "true");
+			var spaceId = this.moveToSpace._id;
+
+			this.fire("action-select-space", { 'spaceId' : spaceId });
+		},
+
+		_spaceSelected: function(moveToSpace) {
+			if (moveToSpace != null)
+				return false;
+			else
+				return true;
+		},
+
+		_handlespaceLabelStyle : function() {
+			if (this.spaceLabelStyle) {
+				var labelStyleId = parseInt(this.spaceLabelStyle[0]._id);
+				this.set("spaceLabelStyleId", labelStyleId);
+			} else {
+				this.set("spaceLabelStyleId", null);
+			}
+		},
+
+		_roundArea: function(area) {
+			return Math.round(area);
+		},
+
+		_computeCardId: function(id) {
+			if (id) return "card"+id;
+			return "";
+		},
+
+		_setGraphicTab: function() {
+			if (this.hasGraphic == true) {
+				this.set("_selectedTab", 0);
+			}
+			else {
+				this.set("_selectedTab", 1);
+			}
+		},
+
+		_isFloorPlanAvailable: function(hasGraphic) {
+			if (hasGraphic) {
+				return true;
+			}
+			return false;
+		},
+
+		_handleMoveToSpacesEntitlementsGetComplete: function() {
+
+		},
+
+		_handleFilteredSpacesAvailable: function() {
+			//console.log("_handleFilteredSpacesAvailable...");
+		},
+
+		_handleSpacesAvailable: function(filteredSpaces) {
+			//console.log("_handleSpacesAvailable...");
+
+			this.set("spacesAvailable", false);
+			if (this.specId) {
+				if (this.filteredSpacesAvailable.length > 0) {
+					this.set("spacesAvailable", true);
+					this._removeDuplicates(this.filteredSpacesAvailable);
+					var detail = this.$$("#floorplandetail");
+					if (detail)
+						detail.refreshViewBox();
+				}
+				else {
+					this.set("spacesAvailable", false);
+					this.set("filteredSpacesAvailableList", []);
+				}
+			}
+		},
+
+		_removeDuplicates: function(spaces) {
+			var spaceArray = spaces.slice(0);
+			//console.log("Before Length: " + spaceArray.length);
+
+			// delete all duplicates from the array
+			var arr = [];
+			for( var i=0; i<spaceArray.length-1; i++ ) {
+				spaceArray[i].multiple=false;
+  				if (spaceArray[i]._id == spaceArray[i+1]._id ) {
+
+  					// Check for different orgs
+  					for (var j=i+1; j<spaceArray.length; j++) {
+  						if (spaceArray[i]._id == spaceArray[j]._id ) {
+  							if (spaceArray[i].chargedToOrgNew != spaceArray[j].chargedToOrgNew)
+  							{
+  						  		spaceArray[i].multiple=true;
+  						  		break;
+  							}
+  						}
+  						else
+  						{
+  							break;
+  						}
+  					}
+
+    				arr.push(i+1);
+  				}
+			}
+			for( var i=arr.length; i>=1; i-- ) {
+				var row = parseInt(arr[i-1])
+				spaceArray.splice(row, 1);
+			}
+			//console.log("After Length: " + spaceArray.length);
+			this.set("filteredSpacesAvailableList", spaceArray);
+		},
+
+		_handleSummaryPage: function(e) {
+			sessionStorage.setItem("processed", "true");
+			this._clearBusy();
+			this.set("moveToSpace", null);
+			this.fire("navigate-summary-page");
+		},
+
+		 _handleSelectedSpaceChange : function(moveToSpace) {
+		 	if (moveToSpace) {
+				var selector = this.$$("#selectorSpaces");
+				// Remove selected from previous item
+				if (this._lastTarget) {
+					var temp = this.$$("#spaceTemplate");
+					temp.modelForElement(this._lastTarget).set('item.selected', false);
+					this._lastTarget = null;
+				}
+				if (this._selectedSpaceId)	{
+					for (var i = 0; i < selector.items.length; i++) {
+						if (selector.items[i]._templateInstance.item._id == this._selectedSpaceId) {
+							selector.items[i]._templateInstance.set("item.selected", false);
+							break;
+						}
+					}
+				}
+
+				if (selector) {
+				 	for (var i = 0; i < selector.items.length; i++) {
+						if (selector.items[i]._templateInstance.item._id == moveToSpace._id) {
+							selector.selected = i;
+							selector.items[i]._templateInstance.set("item.selected", false);
+							selector.items[i]._templateInstance.set("item.selected", true);
+							this._selectedSpaceId = selector.items[i]._templateInstance.item._id;
+							break;
+						}
+					}
+				}
+			 }
+			 else
+			 {
+			 	if (this._selectedSpaceId)	{
+			 		var selector = this.$$("#selectorSpaces");
+					for (var i = 0; i < selector.items.length; i++) {
+						if (selector.items[i]._templateInstance.item._id == this._selectedSpaceId) {
+							selector.selected = null;
+							selector.items[i]._templateInstance.set("item.selected", false);
+							break;
+						}
+					}
+				}
+
+			 }
+		 },
+
+		_handleSelectedSpace: function(e) {
+			//console.log("_handleSelectedSpace...");
+			var sel = this.$$("#selectorSpaces");
+			var temp = this.$$("#spaceTemplate");
+			if (this._lastTarget) {
+				temp.modelForElement(this._lastTarget).set('item.selected', false);
+			}
+			temp.modelForElement(e.target).set('item.selected', true);
+			var space = e.model.item;
+			if (this.moveToSpace) {
+				if (this.moveToSpace._id == space._id) {
+					//this.set("moveToSpace", null);
+					this.set("e.model.item.selected", false);
+				}
+				else {
+					this.set("moveToSpace", space);
+					this.set("e.model.item.selected", true);
+				}
+			}
+			else {
+				this.set("moveToSpace", space);
+				this.set("e.model.item.selected", true);
+			}
+			this._lastTarget = e.target;
+			this._selectedSpaceId = space._id;
+		},
+
+		_handleSizeChanged: function() {
+			this.async(this.notifyResize, 350);
+		},
+
+		_checkDeviceOrientation: function() {
+    		if (Math.abs(window.orientation) === 90) {
+        		console.log("Landscape...");
+        		var detail = this.$$("#floorplandetail");
+				if (detail)
+					detail.refreshViewBox();
+    		} else {
+    			console.log("Portrait...");
+    		}
+
+		},
+
+
+		_handleLegendSpacesChanged: function(legendSpaces) {
+			// Update List
+			//console.log("filteredSpacesAvailableOut...");
+			if (legendSpaces.length > 0) {
+				override = legendSpaces[0].color.values[0];
+			}
+			// Added this code to address legend render issue on Win 10
+			this.async(
+				function() {
+					this.toggleAttribute("hidden", true, this.$.legend);
+					this.toggleAttribute("hidden", false, this.$.legend);
+			}); 
+
+		},
+
+		legendFilter: function(item) {
+
+			if (item.legendSelected) {
+				return true;
+			}
+	        return false;
+
+		},
+
+		_handleApplicationSettingsGetComplete: function() {
+			// Control when the settings are loaded
+			this.set("_applicationSettingsLoaded", true);
+		},
+
+		_handleMoveToBuildingGetComplete: function() {
+			// If Statement: Check if the Application Settings are loaded
+			if (this._applicationSettingsLoaded) {
+				// If Statement: Check if the Restrict Entitlementof the Application  is active
+				if (this.applicationSettings.restrictEntitlements) {
+					this.set("_restrictEntitlements", true);
+				} else {
+					// If Statement: Check if the Restrict Entitlement of the Building is active
+					if (this.moveToBuilding.restrictEntitlements) {
+						this.set("_restrictEntitlements", true);
+					} else {
+						this.set("_restrictEntitlements", false);
+					}// end if
+				}//end if
+			} else {
+				// Refresh moveToBuilding DS if the Application Settings are not loaded
+				this.$.moveToBuildingDS.refresh();
+			}// end if
+		},
+
+	});
+</script>

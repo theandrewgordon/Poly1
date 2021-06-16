@@ -1,0 +1,78 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-routing/triplat-routing.html">
+
+<link rel="import" href="tristyles-room-reservation-app.html">
+
+<dom-module id="tripage-loading">
+
+	<style include="shared-page-styles">
+		:host {
+			@apply(--layout-vertical);
+			@apply(--layout-center);
+			padding: 10px;
+			z-index: 10000;
+			background-color: var(--tri-primary-content-background-color);
+		}
+
+		.instructions-container {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			@apply(--layout-center-center);
+		}
+
+		.instructions {
+			font-size: 1.5em;
+			text-align: center;
+		}
+
+		.spinner-message {
+			font-size: 2.0em;
+			text-align: center;
+		}
+
+		.spinner-container {
+			@apply(--layout-vertical);
+			@apply(--layout-center);
+		}
+
+		paper-spinner {
+			@apply(--tri-loading-spinner);
+		}
+	</style>
+	<template>
+		<triplat-route id="loadingRoute" name="loading" params="{{pageParams}}" on-route-active="_handleRouteActive"></triplat-route>
+
+		<div class="instructions-container">
+
+			<div class="instructions">
+				<p>Loading...</p>
+			</div>
+
+			<div class="spinner-container">
+				<div>
+					<paper-spinner id="spinner" active></paper-spinner>
+				</div>
+			</div>
+
+		</div>
+	</template>
+	<script>
+		Polymer({
+
+			is: "tripage-loading",
+
+			_handleRouteActive: function (e) {
+				if (e.detail.active) {
+					// if isPreCreating is not set, this means that the user refreshed this route/page
+					// let's revert to creating a new reservation - since we've lost the context at this point
+					if (!this.isPreCreating) {
+						this.async(function () {
+							this.fire("reservation-new", this.pageParams);
+						});
+					}
+				}
+			}
+		});
+	</script>
+</dom-module>

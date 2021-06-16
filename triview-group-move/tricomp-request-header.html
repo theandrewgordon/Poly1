@@ -1,0 +1,342 @@
+<!-- Polymer Paper Components -->
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-toolbar/paper-toolbar.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-dialog/paper-dialog.html">
+
+<!-- Polymer Iron Components -->
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-icons/hardware-icons.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+
+<!-- TRIRIGA Platform Components -->
+<link rel="import" href="../triplat-debug/triplat-debug.html">
+<link rel="import" href="../triplat-progress-gauge/triplat-progress-gauge.html">
+
+<!-- Local Components -->
+<link rel="import" href="tricomp-toolbar.html">
+
+
+<dom-module id="tricomp-request-header">
+
+	<style>
+
+
+		/* What is the responsive width? */
+		@media (max-width: 400px);
+		
+		.left-section {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+		}
+		
+		.action {
+			@apply(--layout);
+			@apply(--layout-center-center);
+			padding-left: 20px;
+			min-width: 124px;
+			border-left: 1px solid var(--tri-separator-color);
+		}
+
+		.back {
+			color: var(--tri-primary-color);
+			@apply(--layout-self-start);
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			padding-top: 10px;
+			padding-bottom: 5px;
+			cursor: pointer;
+		}
+
+		.button {
+			@apply(--layout-horizontal);
+			@apply(--layout-center-center);
+		}
+		.header-icon{
+			height: 40px;
+			width: 40px;
+			color: var(--tri-primary-color-100);
+			padding-top: 0px;
+			padding-bottom: 16px;
+			padding-left:12px;
+			padding-right: 0px;
+			min-width: 40px;
+		}
+		
+		.heading-title {
+			text-align: left;
+			margin: 2px;
+			padding-left: 20px;
+		}
+
+		.header-section {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-justified);
+			border-bottom: 1px solid black;
+			/* padding-bottom: 10px; */
+			overflow: 
+		}
+		
+		.inline-block-section{
+			display:inline-block;
+		}
+		
+		.progress {
+			@apply(--layout-vertical);
+			padding-right: 10px;
+			width: 75px;
+		}
+		.progress-text {
+			text-align:center;
+			padding-right:10px;
+		}
+		
+		.right-section {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+		}
+		
+		.status {
+			@apply(--layout-vertical);
+			@apply(--layout-self-center);
+			font-size: 14px;
+			color: var(--tri-primary-content-label-color);
+		}
+
+		triplat-progress-gauge {
+			--triplat-progress-gauge-percent-font-size: 12px;
+			--triplat-progress-gauge-value-font-size: 24px;
+			--triplat-progress-gauge-circle-stroke-color: var(--ibm-gray-20);
+			margin-right: 10px;
+			font-size: 24px;
+			font-weight: bold;
+			width: 66px;
+			height: 66px;
+		}
+		
+		paper-button{
+			height: 44px;
+		}
+
+		.dialog-buttons{
+			@apply(--layout-center-center);
+		}
+	</style>
+
+	<template>
+		<tricomp-toolbar></tricomp-toolbar>
+		<div class="header-section" id="content">
+			<div class="left-section">
+				<div class="back" on-tap="goBack">
+					<iron-icon icon="hardware:keyboard-arrow-left" aria-labelledby="{{backLabel}}" on-keypress="_keyPressHandler" tabindex="0"></iron-icon>
+					<span>{{backLabel}}</span>
+				</div>
+				<div>
+				<div hidden$="{{individualMove}}" class="inline-block-section">
+					<triplat-icon id="groupMoveIcon" class="header-icon" icon="collaborate-group" ></triplat-icon>						
+				</div>
+				<div  hidden$="{{groupMove}}" class="inline-block-section" >
+					<triplat-icon id="individualMoveIcon" class="header-icon" icon="user" ></triplat-icon>						
+				</div>		
+				<div class="inline-block-section" >
+					<h2 class="heading-title" hidden$="{{groupMove}}"><span>Individual Move Request: </span><span>{{request.requestID}}</span></h2>
+					<h2 class="heading-title" hidden$="{{individualMove}}"><span>Group Move Request: </span><span>{{request.requestID}}</span></h2>
+					<span class="heading-title"> <span>{{request.requestedBy}}</span> - <span>{{request.customerOrg}}</span></span>
+				</div>
+				</div> 
+			</div>
+			<div class="right-section">
+				<div class="progress">
+				<div>
+					<triplat-progress-gauge id="progressGauge" progress="{{calculateProgress(currentProgress,totalProgress)}}"></triplat-progress-gauge>
+				</div>				
+					<div class="status">
+						<div class="progress-text">
+							<span><span>{{currentProgress}}</span><span> of </span><span>{{totalProgress}}</span></span>
+						</div>
+					</div>
+				</div>
+				<div class="action">
+					<paper-button id="completeButton" on-tap="openConfirmationDialog" class="button" disabled$="{{isCompleted}}" noink>Complete</paper-button>
+				</div>
+			</div>
+		</div>
+		
+		<paper-dialog id="confirmationDialog" modal >
+			<p>Complete the move request? <br>This action cannot be undone</p>
+			<div class="buttons dialog-buttons">
+				<paper-button class="solid-button" dialog-confirm autofocus  on-tap="completeRequest" noink>Confirm</paper-button>
+				<paper-button class="solid-button" secondary dialog-dismiss on-tap="closeConfirmationDialog" noink>Cancel</paper-button>
+			</div>
+		
+		</paper-dialog>
+	</template>
+
+</dom-module>
+
+<script>
+	Polymer({
+
+		is: "tricomp-request-header",
+
+		properties: {  
+
+			
+			/**
+			 * Label for the back button. Will be hidden when screen is less than certain
+			 * width (see comments in <style>).
+			 */
+			backLabel:  String,
+
+			/**
+			 * Identifies the current page. Used for determining which `tricomp-nav-link`
+			 * to highlight.
+			 */
+			currentPage: String,
+
+			/**
+			 * Completed number of tasks for the progress icon
+			 */
+			currentProgress: Number,
+			
+			/**
+			 * Check if the task is completed or not
+			 */
+			isCompleted: {
+				type: Boolean,
+				value: false
+			},
+			
+			/**
+			 * Check if this is a group or individual move
+			 */
+			isGroupMove: {
+				type: Boolean,
+				value: false
+			},   
+			
+			
+			groupMove: {
+				type: Boolean,
+				value: true,
+				computed: "_isGroupMove(request.moveType)"
+			},   
+ 
+			individualMove: {
+				type: Boolean,
+				value: true,
+				computed: "_isIndividualMove(request.moveType)"
+			}, 
+ 
+ 			/**
+			 * Current request object
+			 */
+			request: Object,
+
+			/**
+			 * Total number of tasks for the progress icon
+			 */			
+			totalProgress: Number,
+			
+			
+			/**
+			 * Check if it is the what tab(used for the progress icon)
+			 */			
+			isWhat:{
+				type: Boolean,
+				value: false,
+				computed: "_isWhat(currentPage)"
+			},
+			
+			/**
+			 * Check if will use the progress value calculated on tririga
+			 */
+			useCalculatedValues:{
+				type: Boolean,
+				value: false,
+				computed: "_useCalculatedValues(currentPage)"
+			}
+			
+			
+			
+		},
+
+		goBack: function() {
+			// this.fire("handleBack");
+			this.fire("handleBack", {currentPage:this.currentPage});
+
+			//if(this.currentPage=="Summary"){
+				//this.individualMove = true;
+				//this.groupMove= true;
+			//}
+		},
+		
+		completeRequest: function() {
+			// this.fire("completeRequest");
+			this.fire("completeRequest", {currentPage:this.currentPage});
+			this.$.completeButton.disabled = true;
+		},
+		
+		calculateProgress: function(currentValue,totalValue){
+			
+			if(totalValue==0)
+				return  0;
+			else	
+				return  currentValue/totalValue;
+		},
+		
+		calculateTotal: function(currentReq){	
+			if(currentReq)
+				return  currentReq.mliRoomCount + currentReq.mliAssetsCount + currentReq.mliEquipmentCount + currentReq.mliPersonCount;
+			else
+				return 0;
+		},
+		
+		showProgress: function(percentage){
+			if (percentage) return percentage / 100;
+			else return 0;
+		},
+		
+		_useCalculatedValues: function(page){
+			if(page=="Move Items")
+				return true;
+			else
+				return false;
+		},
+		
+		_isGroupMove: function(val) {
+			if(val)
+				return  val == "Group Move";
+			else 
+				return true;
+		},
+		
+		_isIndividualMove: function(val) {
+			if(val)
+				return  val == "Individual Move";
+			else 
+				return true;
+		},
+		
+		
+		_isWhat: function(page){
+			if(page=="Move Items")
+				return false;
+			else
+				return true;
+		},
+		
+		openConfirmationDialog: function(){
+			this.$.confirmationDialog.open();
+		},
+		
+		closeConfirmationDialog: function(){
+			this.$.confirmationDialog.close();
+		}
+
+	});
+
+
+</script>

@@ -1,0 +1,219 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../tricore-url/tricore-url.html">
+<link rel="import" href="../tricore-lazy-loading-behavior/tricore-lazy-loading-behavior.html">
+<link rel="import" href="../tricore-home-app-behavior/tricore-home-app-behavior.html">
+<link rel="import" href="../triplat-view-behavior/triplat-view-behavior.html">
+<link rel="import" href="../triblock-app-layout/triblock-app-layout.html">
+<link rel="import" href="../triblock-app-layout/triblock-app-layout-banner-popup-behavior.html">
+<link rel="import" href="../triblock-app-layout/triblock-app-layout-banner-routing-behavior.html">
+<link rel="import" href="../triblock-app-layout/triblock-app-layout-banner-iron-pages-behavior.html">
+<link rel="import" href="../triblock-app-layout/triblock-app-layout-banner-responsive-layout-behavior.html">
+
+<link rel="import" href="../iron-pages/iron-pages.html">
+
+<link rel="import" href="trilazy-imports.html">
+
+<dom-module id="triview-room-reservation">
+	<template>
+		<style>
+			triblock-app-layout {
+				--triblock-app-layout-body-background-color: white;
+				--triblock-app-layout-mobile-drawer-z-index: 104;
+			}
+
+			trimain-room-reservation {
+				@apply(--layout-flex);
+				@apply(--layout-vertical);
+			}
+		</style>
+
+		<tricore-url id="triurl" hidden></tricore-url>
+
+		<triblock-app-layout 
+			id="appLayout"
+			home-app="[[homeApp]]"
+			app-label="[[homeAppLabel]]"
+			mobile-page-label="[[mobilePageLabel]]"
+			show-mobile-back-button="[[showMobileBackButton]]"
+			hide-signout-button>
+
+			<triblock-banner-button tap-handler="_handleBannerNavigateHome" home></triblock-banner-button>
+			<triblock-banner-button back tap-handler="_handleBackButtonTap"></triblock-banner-button>
+
+			<triblock-banner-button icon="ibm:sign-out" 
+				label="Sign Out"  
+				tap-handler="_handleSignout"></triblock-banner-button>
+
+			<trimain-room-reservation id="appMain" home-app="[[homeApp]]" content></trimain-room-reservation>
+
+		</triblock-app-layout>
+	</template>
+	<script>
+		Polymer({
+
+			is: "triview-room-reservation",
+			
+			behaviors: [
+				TriPlatViewBehavior, 
+				TriLazyLoadingBehavior,
+				TriHomeAppBehavior,
+
+				TriBlockAppLayoutBannerRoutingBehavior,
+				TriBlockAppLayoutBannerPopupBehavior,
+				TriBlockAppLayoutBannerIronPagesBehavior,
+				TriBlockAppLayoutBannerResponsiveLayoutBehavior,
+			],
+
+			properties: {
+				_popupElement: Object,
+				_ironPages: Object,
+				_responsiveLayoutView: Object,
+			},
+
+			listeners: {
+				'navigate-home': '_navigateHome',
+
+				'reservation-list-route-active': '_manageAppLayoutBannerRoute',
+				'reservation-new-route-active': '_manageAppLayoutBannerRoute',
+				'reservation-open-route-active': '_manageAppLayoutBannerRoute',
+				'find-room-route-active': '_manageAppLayoutBannerRoute',
+				'reservation-summary-route-active': '_manageAppLayoutBannerRoute',
+
+				'popup-page-opened': '_managePopupPages',
+				'responsive-layout-switch-view-display':'_manageResponsiveLayoutSwitchView',
+
+				'route-active': '_closeOpenedPopups',
+				'signout': '_signout'
+			},
+
+			_isBlank: function(val) {
+				return !val || val == "";
+			},
+
+			ready: function() {
+				document.querySelector("body").style.height = "auto";
+				this._convertUrlSearchToRoute();
+				Polymer.RenderStatus.afterNextRender(this, function(){
+					this._loadAppMain();
+				});
+			},
+
+			_convertUrlSearchToRoute: function() {
+				/*
+				 * The open route can be activated when loading the app if some search paramaters are passed.
+				 * Ex: The url /p/web/roomReservation?route=open&id=123456&start=555555&end=6666666
+				 * will activate the route open route.
+				 * This is used by Outlook room search add-in because of a limitation on Windows Outlook about
+				 * about passing hash parameters when opening a page from the add-in.
+				 */
+				var urlSearch = window.location.search;
+				urlSearch = urlSearch != null ? urlSearch : "";
+				var searchParametersMatchOpenRoute = urlSearch.match(/route=open&id=(\d+)&start=([\d,-]+)&end=([\d,-]+)/);
+				if (searchParametersMatchOpenRoute != null && searchParametersMatchOpenRoute.length == 4) {
+					window.location.hash =  "#!/open/" + searchParametersMatchOpenRoute[1] + "/" + searchParametersMatchOpenRoute[2] + "/" + searchParametersMatchOpenRoute[3];
+				}
+			},
+
+			_handleBannerNavigateHome: function(e) {
+				if (this.$.appMain.$.reservationSummaryRoute.active 
+					|| this.$.appMain.$.reservationSummaryPage.addAnotherRoomActive && this.$.appMain.$.reservationFindRoomRoute.active) {
+					// if user navigates to "Summary" page, DO NOT skip reservationManager.isDirty check
+					// if user navigates to "Find Room" page via "Add another room" button on "Summary" page, DO NOT skip reservationManager.isDirty check
+					this._navigateHome( { detail: { validated: false } });
+				} else {
+					// for other pages, skip reservationManager.isDirty check
+					this._navigateHome( { detail: { validated: true } } );
+				}
+			},
+
+			_navigateHome: function(e) {
+				if (e && e.detail && e.detail.validated) {
+					if (this.homeUrl) {
+						location.assign(this.homeUrl);
+					} else {
+						this.fire('navigate-app-home', {}, {node: this.$.appMain});
+					}
+				} else {
+					this.fire('navigate-app-home-validate', {}, {node: this.$.appMain});
+				}
+			},
+
+			_loadAppMain: function() {
+				this.loadResource(this.$.appMain, "trimain-room-reservation.html");
+			},
+
+			_getDefaultAppLabel: function() {
+				var __dictionary__appLabel =  "Room Reservation";
+				return __dictionary__appLabel;
+			},
+
+			_manageAppLayoutBannerRoute: function(e){
+				this.manageBannerOnRouteChange(e.detail);
+			},	
+
+			_managePopupPages: function(e){
+				this._ironPages = e.detail.ironPages;
+				this._popupElement = e.detail.popup;
+				this.manageBannerOnIronPagesChange(this._ironPages);
+			},
+
+			_manageResponsiveLayoutSwitchView: function(e){
+				var responsiveLayoutView = e.detail.currentView;
+				this._responsiveLayoutView = e.detail.currentView;
+				this.manageBannerOnResponsiveLayoutChange(this._responsiveLayoutView);
+			},
+
+			_handleBackButtonTap: function() {
+				var isPopupOpened = this.isPopupOpened();
+				if(isPopupOpened){
+					this.managePopupBackBehavior();
+					//Iron pages use inside popup
+					if(this._ironPages){
+						this.navigateToPreviousIronPages(this._ironPages);
+					}
+				}
+				else if(this._responsiveLayoutView){
+					this.navigateToPreviousView(this._responsiveLayoutView);
+				}
+				else{
+					this.navigateToPreviousRoutedPage();
+				}
+			},
+
+			_handleNoPreviousPage: function(){
+				if(this._popupElement){
+					this._popupElement.closePopup();
+				}
+			},
+
+			_handleNoPreviousView: function(){
+				window.history.back();
+			},
+
+			_closeOpenedPopups: function(e) {
+				if (!e.detail.active && this._openedPopupElement && !this.smallScreenWidth) {
+					this._openedPopupElement.closePopup();
+				}
+			},
+
+			_handleSignout: function() {
+				if (this.$.appMain.$.reservationSummaryRoute.active) {
+					// if user taps on signout button while on "Summary" page, DO NOT skip reservationManager.isDirty check
+					this.fire('navigate-app-home-validate', { intention: "signout" }, {node: this.$.appMain});
+				} else if (this.$.appMain.$.reservationSummaryPage.addAnotherRoomActive && this.$.appMain.$.reservationFindRoomRoute.active) {
+					// if user taps on signout button while on "Find Room" page via "Add another room" button, DO NOT skip reservationManager.isDirty check
+					this.fire('navigate-app-home-validate', { intention: "signout" }, {node: this.$.appMain});
+				} else {
+					// for other pages, on signout button tap, skip reservationManager.isDirty check
+					this._signout();
+				}
+			},
+
+			_signout: function() {
+				this.$.appLayout._signout();
+			},
+
+		});
+	</script>
+</dom-module>

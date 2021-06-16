@@ -1,0 +1,366 @@
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-selector/iron-selector.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-query/triplat-query.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+
+<link rel="import" href="tricomp-multi-space-selector-floor-plan.html">
+<link rel="import" href="tricomp-multi-space-selector-list.html">
+
+<dom-module id="tricomp-multi-space-selector">
+
+	<style>
+
+		:host {
+			@apply(--layout-vertical);
+		}
+
+		.header {
+			@apply(--layout-horizontal);
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			min-height: 0;
+			min-width: 0;
+		}
+
+		.tabs-container {
+			@apply(--layout-horizontal);
+			color: var(--tri-primary-color);
+		}
+		
+		@media (max-width: 900px) {
+			.tab {
+				padding-left: 0px;
+			}
+			
+			.tab div span {
+				display: none;
+				padding-right: 20px;
+			}
+
+			.tab div iron-icon {
+				padding: 0px 10px;
+			}
+		}
+
+		@media (min-width: 901px) {
+			.tab {
+				padding-left: 10px;
+			}
+		}
+
+		.tab {
+			@apply(--layout-horizontal);
+			@apply(--layout-end);
+			padding-bottom: 7px;
+			height: 37px;
+			cursor: pointer;
+			z-index: 11;
+		}
+
+		.tab div {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+		}
+
+		.tab div span {
+			padding-left: 5px;
+			padding-right: 20px;
+		}
+
+		.tab.iron-selected {
+			position: relative;
+			color: #003E68;
+			font-weight: 700;
+			cursor: context-menu;
+		}
+
+		.tab.iron-selected:after, .tab.iron-selected:before {
+			top: 100%;
+			left: 50%;
+			border: solid transparent;
+			content: " ";
+			height: 0;
+			width: 0;
+			position: absolute;
+		}
+
+		.tab.iron-selected:after {
+			border-color: rgba(255, 255, 255, 0);
+			border-top-color: #ffffff;
+			border-width: 10px;
+			margin-left: -10px;
+		}
+		
+		.tab.iron-selected:before {
+			border-color: rgba(224, 224, 224, 0);
+			border-top-color: #E0E0E0;
+			border-width: 12px;
+			margin-left: -12px;
+		}
+		
+		.search-bar {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-end-justified);
+			@apply(--layout-self-center);
+			@apply(--layout-center);
+			margin-right: 10px;
+		}
+
+		tricomp-search-input {
+			max-width: 400px;
+			height: 28px;
+			margin-left: 10px;
+		}
+
+		paper-button {
+			background-color: var(--tri-primary-color);
+			color: white;
+			font-size: 10pt;
+			text-transform: none;
+			white-space: nowrap;
+		}
+
+		paper-button {
+			@apply(--tri-button);
+			padding: 5px;
+		}
+
+		paper-button#select-all {
+			margin-left: 20px;
+		}
+
+		paper-button#deselect-all {
+			margin-left: 10px;
+			min-width: 79px; /* quick fix to prevent this button from expanding to 2 rows */
+		}
+
+		iron-pages {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+		}
+
+		.accessibility {
+            display: none;
+        }
+
+        tri-loading-indicator {
+        	z-index: 999;
+        }
+
+	</style>
+
+	<template>
+		<triplat-ds id="allSpacesDs" name="allSpaces" data="{{_allSpaces}}" filtered-data="{{_filteredSpaces}}">
+			<triplat-ds-context name="allBuildings" context-id="{{buildingId}}"></triplat-ds-context>
+			<triplat-ds-context name="allFloors" context-id="{{floorId}}"></triplat-ds-context>
+			<triplat-query delay="500">
+				<triplat-query-filter name="space" operator="contains" value="{{_searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="spaceClass" operator="contains" value="{{_searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="occupancyStatus" operator="contains" value="{{_searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="id" operator="contains" value="{{_searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="occupancyOrgsString" operator="contains" value="{{_searchTerms}}" ignore-if-blank></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+		
+		<triplat-ds id="occupancyOrgsForSpacesForFloorDs" name="occupancyOrgsForSpacesForFloor" data="{{_occupancyOrgsForSpacesForFloor}}">
+			<triplat-ds-context name="allBuildings" context-id="{{buildingId}}"></triplat-ds-context>
+			<triplat-ds-context name="allFloors" context-id="{{floorId}}"></triplat-ds-context>
+		</triplat-ds>
+		
+		<div class="header">
+			<iron-selector class="tabs-container" selected="{{_selectedTab}}">
+		    	<div class="tab">
+		    		<div id="floorPlanTab" tabindex="0" on-keypress="_keyPressHandler" aria-labelledby="floorPlanView">
+			    		<iron-icon icon="icons:dashboard"></iron-icon>
+						<span>Floor Plan</span>
+		    		</div>
+				</div>
+				<div class="tab">
+					<div id="listTab" tabindex="0" on-keypress="_keyPressHandler" aria-labelledby="listView">
+			    		<iron-icon icon="icons:view-list"></iron-icon>
+						<span>List</span>
+					</div>
+				</div>
+			</iron-selector>
+			<div class="search-bar">
+				<paper-button id="select-all" on-tap="_selectAll">Select All</paper-button>
+				<paper-button id="deselect-all" on-tap="_deselectAll">Deselect All</paper-button>
+				<tricomp-search-input 
+					id="search"
+					aria-labelledby="searchInput"
+					value="{{_searchTerms}}">
+				</tricomp-search-input>
+			</div>
+		</div>
+        <iron-pages selected="{{_selectedTab}}">
+			<tricomp-multi-space-selector-floor-plan
+				id="floorplan"
+				floor-id="{{floorId}}"
+				spaces="{{_filteredSpaces}}"
+				selected-spaces="{{selectedSpaces}}"
+				loaded = "{{_graphicLoaded}}"
+				has-graphic = "{{_hasGraphic}}"
+				search-terms="{{_searchTerms}}">
+			</tricomp-multi-space-selector-floor-plan>
+			<tricomp-multi-space-selector-list
+				id="list"
+				all-spaces="{{_allSpaces}}"
+				filtered-spaces="{{_filteredSpaces}}"
+				selected-spaces="{{selectedSpaces}}"
+				loaded = "{{_listLoaded}}"
+				ignore-floor-plan
+				search-terms="{{_searchTerms}}">
+			</tricomp-multi-space-selector-list>
+        </iron-pages>
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-multi-space-selector",
+
+		properties : {
+
+			buildingId : Number,
+			floorId : Number,
+			_selectedTab : {
+				type : Number,
+				value : 1
+			},
+			selectedSpaces : {
+				type : Array,
+				notify : true
+			},
+			_spaces : Array,
+			_graphicLoaded : Boolean,
+			_listLoaded : Boolean,
+
+			_occupancyOrgNamesAssigned : Boolean,
+			_occupancyOrgsForSpacesForFloor : Array,
+			_hasGraphic : Boolean,
+
+			_initialized : {
+				type : Boolean,
+				value : false
+			}
+		},
+
+		observers : [
+			'_initialize(_filteredSpaces, _graphicLoaded, _hasGraphic, _listLoaded, _occupancyOrgNamesAssigned)',
+			'_handleSpacesAndOccupancyOrgsLoaded(_filteredSpaces, _occupancyOrgsForSpacesForFloor)',
+			'_handleSelectedTabChanged(_selectedTab)',
+			'_handleHasGraphic(_hasGraphic)',
+		],
+
+		_handleSelectedTabChanged : function(selectedTab) {
+			if (selectedTab === 0) {
+				this.$.floorplan.$.graphic.refreshViewBox();
+			}
+		},
+
+		_handleHasGraphic : function(hasGraphic) {
+			if (hasGraphic) {
+				this.showFloorPlan();
+			} else {
+				this.showList();
+			}
+		},
+
+		_handleSpacesAndOccupancyOrgsLoaded : function(spaces, occupancyOrgs) {
+			if (spaces && occupancyOrgs) {
+				for (var i = 0; i < spaces.length; i++) {
+					var space = spaces[i];
+					var occupancyOrgsForSpaceString = this._getOccupancyOrgNamesFor(space);
+					space.occupancyOrgsString = occupancyOrgsForSpaceString;
+				}
+			}
+			this.set('_occupancyOrgNamesAssigned', true);
+		},
+
+		_getOccupancyOrgNamesFor : function(space) {
+			if (space) {
+				var occupancyOrgs = this._occupancyOrgsForSpacesForFloor;
+	      		var orgNamesForSpace = [];
+	      		for (var i = 0; i < occupancyOrgs.length; i++) {
+	      			var org = occupancyOrgs[i];
+	      			if (String(org.spaceRecordId).indexOf(space._id) != -1) {
+	      				orgNamesForSpace.push(org.orgName);
+	      			}
+	      		}
+
+	      		if (orgNamesForSpace) {
+	      			return orgNamesForSpace.join(', ');
+	      		} else {
+	      			return null;
+	      		}
+			}
+		},	
+		
+		_initialize : function(spaces, graphicLoaded, hasGraphic, listLoaded, occupancyOrgNamesAssigned) {
+			if (!this._initialized && spaces && listLoaded && occupancyOrgNamesAssigned) {
+				if ((hasGraphic && graphicLoaded) || (!hasGraphic && listLoaded)) {
+					var clonedSpacesArray = this._allSpaces.slice();
+					this.set('selectedSpaces', clonedSpacesArray);
+					this.set('_occupancyOrgNamesAssigned', false);
+					this.set('_initialized', true);
+				}
+			}
+		},
+		
+		showFloorPlan : function() {
+			this.set('_selectedTab', 0);
+			this.$.floorplan.$.graphic.refreshViewBox();
+		},
+
+		showList : function() {
+			this.set('_selectedTab', 1);
+		},
+
+		updateView : function() {
+			this._handleHasGraphic(this._hasGraphic);
+		},
+		
+		reset : function() {
+			this.$.search.reset();
+			this.$.floorplan.reset();
+			this.$.list.reset();
+			this.set('_occupancyOrgNamesAssigned', false);
+			this.set('_initialized', false);
+			this.set('selectedSpaces', null);
+		},
+
+		_selectAll : function() {
+			if (this._selectedTab == 0) {
+				this.$.floorplan.selectAll();
+			} else if (this._selectedTab == 1) {
+				this.$.list.selectAll();
+			}
+		},
+
+		_deselectAll : function() {
+			if (this._selectedTab == 0) {
+				this.$.floorplan.deselectAll();
+			} else if (this._selectedTab == 1) {
+				this.$.list.deselectAll();
+			}
+		},
+
+		_keyPressHandler: function(e) {
+			var code = e.keyCode;
+			if (code == 13){
+				if (e.target.id == "floorPlanTab") {
+					this.showFloorPlan();
+				} else if (e.target.id == "listTab") {
+					this.showList();
+				}
+			}
+		}
+		
+    });
+</script>

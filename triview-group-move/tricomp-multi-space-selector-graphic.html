@@ -1,0 +1,755 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout-classes.html">
+
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-tooltip/paper-tooltip.html">
+
+<link rel="import" href="../triplat-icon/ibm-icons.html">
+<link rel="import" href="../triplat-graphic/triplat-graphic.html">
+<link rel="import" href="../triplat-graphic/triplat-graphic-selectable.html">
+<link rel="import" href="../triplat-graphic/triplat-graphic-bounding-selection.html">
+<link rel="import" href="../triplat-graphic/triplat-graphic-zoomable.html">
+<link rel="import" href="../triplat-graphic/triplat-graphic-pin.html">
+<link rel="import" href="../triplat-graphic/triplat-graphic-highlight-group.html">
+<link rel="import" href="../triplat-graphic-legend/triplat-graphic-legend.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+
+<dom-module id="tricomp-multi-space-selector-graphic">
+	<template>
+		<style include="iron-flex">
+			/* Host */
+		    :host {
+		    	@apply(--layout-flex);
+				@apply(--layout-horizontal);
+		    }
+		    /* End Host */
+
+		    /* Container - floorcontainer */
+
+			.floorcontainer-graphic {
+				@apply(--layout-flex);
+				@apply(--layout-horizontal);
+				@apply(--layout-relative);
+			}
+
+			.graphic-actions-container {
+				@apply(--layout-vertical);
+				position: absolute;
+				top: 20px;
+			}
+
+			:host-context([dir="ltr"]) .graphic-actions-container {
+				right: 20px;
+			}
+
+			:host-context([dir="rtl"]) .graphic-actions-container {
+				left: 20px;
+			}
+
+			.graphic-actions {
+				--paper-icon-button-ink-color: var(--tri-header-color);
+				background-color: var(--tri-primary-icon-button-color);
+				color: white;
+				margin-bottom: 10px;
+				-moz-border-radius: 50px;
+				-webkit-border-radius: 50px;
+				border-radius: 50px;
+				z-index: 103;
+			}
+
+			.graphic-actions:hover {
+				background-color: var(--tri-primary-icon-button-hover-color);
+			}
+
+			.graphic-actions[checked] {
+				background-color: var(--tri-primary-icon-button-press-color);
+			}
+
+			.keyboard-focus.graphic-actions[focused] {
+				outline: var(--tri-primary-icon-button-color) solid 2px;
+			}
+
+			/* End Container - floorcontainer */
+
+			/* Triplat Graphic */
+			triplat-graphic {
+				@apply(--layout-flex);
+				@apply(--layout-vertical);
+				height: inherit;
+				user-select: none;
+				cursor: default;
+
+				--triplat-graphic-interactive-selectable: {
+					cursor: pointer;
+				}
+
+				--triplat-graphic-selectable: {
+					fill: white;
+				    fill-opacity: 1;
+				}
+
+				--triplat-graphic-non-selectable: {
+					fill: white;
+				    fill-opacity: 1;
+				}
+
+				--triplat-graphic-pin-tooltip-container: {
+					z-index: 102;
+				}
+
+				--triplat-graphic-interactive-selected: {
+					cursor: pointer;
+				}
+
+				--triplat-graphic-selected: {
+					fill: var(--tri-primary-color) !important;
+				    fill-opacity: 1 !important;
+	            };
+			}
+
+			triplat-graphic-legend {
+				--triplat-graphic-legend-min-width: 235px;
+
+				--triplat-graphic-legend-bar: {
+					background-color: var(--ibm-gray-10);
+				}
+			}
+
+			@media(min-width: 768px) {
+				triplat-graphic-legend {
+					--triplat-graphic-legend-min-width: 265px;
+				}
+			}
+
+			@media(min-width: 992px) {
+				triplat-graphic-legend {
+					--triplat-graphic-legend-min-width: 300px;
+				}
+			}
+
+			triplat-graphic-legend-pin {
+				--triplat-graphic-legend-criterion-text: {
+					width: 90px;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					white-space: nowrap;
+				}
+			}
+			/* End Triplat Graphic */
+		</style>
+
+		<triplat-ds id="lookupPeople" name="lookupPeople"
+				filtered-data="{{_allPeopleInFloor}}" force-server-filtering
+				loading="{{_loadingPeoplePins}}" manual>
+	        <triplat-query>
+	            <triplat-query-filter name="floorID" operator="equals" value="[[_pinsFloorID]]">
+	            </triplat-query-filter>
+	        </triplat-query>
+	    </triplat-ds>
+
+	    <triplat-ds id="lookupAsset" name="lookupAsset"
+	    		filtered-data="{{_allAssetsInFloor}}" force-server-filtering
+	    		loading="{{_loadingAssetPins}}" manual>
+	        <triplat-query>
+	            <triplat-query-filter name="floorID" operator="equals" value="[[_pinsFloorID]]">
+	            </triplat-query-filter>
+	        </triplat-query>
+	    </triplat-ds>
+
+	    <triplat-ds id="lookupEquipment" name="lookupEquipment"
+	    		filtered-data="{{_allEquipmentsInFloor}}" force-server-filtering
+	    		loading="{{_loadingEquipmentPins}}" manual>
+	        <triplat-query>
+	            <triplat-query-filter name="floorID" operator="equals" value="[[_pinsFloorID]]">
+	            </triplat-query-filter>
+	        </triplat-query>
+	    </triplat-ds>
+
+	    <triplat-ds id="allSpaceLabelStyle" name="allSpaceLabelStyle" data="{{_spaceLabelStyles}}"
+	    	force-server-filtering>
+	    	<triplat-query>
+	            <triplat-query-filter name="ID" operator="equals" value="triSpace002">
+	            </triplat-query-filter>
+	        </triplat-query>
+	    </triplat-ds>
+
+		<div class="floorcontainer-graphic">
+			<div class="graphic-actions-container" hidden$="[[!hasGraphic]]">
+				<paper-icon-button id="panZoomButton" class="graphic-actions tri-disable-theme" icon="ibm:pan-zoom"
+						checked$="{{_panZoomEnabled}}" on-tap="_handlePanZoomTap" on-focused-changed="_handleFocusedChanged">
+				</paper-icon-button>
+				<paper-icon-button id="boundingSelectionButton" class="graphic-actions tri-disable-theme" icon="ibm:select-area"
+						checked$="{{_boundingSelectionEnabled}}" 
+						on-tap="_handleSelectionToolTap" on-focused-changed="_handleFocusedChanged">
+				</paper-icon-button>
+				<paper-tooltip for="panZoomButton" position="bottom" animation-delay="0" offset="5">
+					[[_computePanZoomTitle(_translatedMessages, _panZoomEnabled)]]
+				</paper-tooltip>
+				<paper-tooltip for="boundingSelectionButton" position="bottom" animation-delay="0" offset="5">
+					[[_computeBoundingSelectionTitle(_translatedMessages, _boundingSelectionEnabled)]]
+				</paper-tooltip>
+			</div>
+
+			<triplat-graphic
+					id="floorplandetail"
+					record-id="[[_floorID]]"
+					has-graphic="{{hasGraphic}}"
+					svg-loaded="{{_svgLoaded}}"
+					drawing-id-loading="{{_drawingIdLoading}}">
+
+				<triplat-graphic-zoomable enabled="[[_panZoomEnabled]]" cached></triplat-graphic-zoomable>
+
+				<triplat-graphic-selectable
+		       			selectable="[[selectableSpaces]]"
+		       			selected="{{selectedSpaces}}"
+		       			multi>
+				</triplat-graphic-selectable>
+
+				<triplat-graphic-bounding-selection
+						selectable="[[selectableSpaces]]"
+						selected="{{selectedSpaces}}"
+						enabled="[[_boundingSelectionEnabled]]">
+				</triplat-graphic-bounding-selection>
+
+				<triplat-graphic-highlight-group
+						legend-spaces="[[_groupedLegendSpaces]]"
+						mask-opacity="1"
+						highlight-layer="ATTACHED">
+				</triplat-graphic-highlight-group>
+
+				<triplat-graphic-pin pins="[[_allPeopleInFloor]]" icon="pin-person" enabled="[[_peoplePinsEnabled]]"
+				        record-id-attr-name="spaceID" label-attr-name="name" space-attr-name="space">
+				</triplat-graphic-pin>
+
+				<triplat-graphic-pin pins="[[_allAssetsInFloor]]" icon="pin-asset" enabled="[[_assetPinsEnabled]]"
+				        record-id-attr-name="spaceID" label-attr-name="name" space-attr-name="space">
+				</triplat-graphic-pin>
+
+				<triplat-graphic-pin pins="[[_allEquipmentsInFloor]]" icon="pin-equipment"
+						enabled="[[_equipmentPinsEnabled]]" record-id-attr-name="spaceID" label-attr-name="name"
+						space-attr-name="space">
+				</triplat-graphic-pin>
+
+				<triplat-graphic-label id="graphicLabel" label-id="[[_spaceLabelStyles.0._id]]"></triplat-graphic-label>
+			</triplat-graphic>
+		</div><!-- end .floorcontainer-graphic -->
+
+		<div class="layout vertical">
+			<triplat-graphic-legend id="graphicLegend"
+					spaces="[[legendSpaces]]"
+					legend-spaces="{{_groupedLegendSpaces}}"
+					show-by-selected="[[_legendLabels.organization]]"
+					filter-by-selected="[[_legendLabels.spaceClass]]"
+					on-opened-changed="_handleSizeChanged">
+
+				<triplat-graphic-legend-pin label="People" icon="pin-person"
+				        checked="{{_peoplePinsEnabled}}">
+				</triplat-graphic-legend-pin>
+
+				<triplat-graphic-legend-pin label="Asset" icon="pin-asset"
+				        checked="{{_assetPinsEnabled}}">
+				</triplat-graphic-legend-pin>
+
+				<triplat-graphic-legend-pin label="Equipment" icon="pin-equipment"
+				        checked="{{_equipmentPinsEnabled}}">
+				</triplat-graphic-legend-pin>
+
+				<triplat-graphic-legend-show-by id="showByOrg"
+						attribute="chargedToOrg"
+						color-by="chargedToOrgColor"
+			    		label="[[_legendLabels.organization]]"
+						show-empty-criterion
+						empty-criterion-text="[[_legendLabels.noOrg]]"
+						show-all-checked>
+				</triplat-graphic-legend-show-by>
+
+				<triplat-graphic-legend-filter-by id="filterBySpaceClass"
+						attribute="spaceClass"
+				    	label="[[_legendLabels.spaceClass]]"
+						show-empty-criterion
+						empty-criterion-text="[[_legendLabels.noSpaceClass]]"
+						filter-all-checked>
+				</triplat-graphic-legend-filter-by>
+			</triplat-graphic-legend>
+		</div>
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+
+		is: "tricomp-multi-space-selector-graphic",
+
+		behaviors: [
+			Polymer.IronResizableBehavior
+		],
+
+		properties: {
+			//=========================================================
+			// Property hasGraphic
+			//------------------------------------------
+			// Objective: A flag that will indicate whether or not a
+			// graphic has been found for the related floor.
+			//=========================================================
+      		hasGraphic : {
+				type: Boolean,
+				notify: true,
+				observer: "_handleHasGraphicChanged"
+			},
+
+			//=========================================================
+			// Property selectedSpaces
+			//------------------------------------------
+			// Objective: Contains the selected spaces on the
+			// graphic.
+			//=========================================================
+			selectedSpaces: {
+				type: Array,
+				notify: true
+			},
+
+			//=========================================================
+			// Property floor
+			//------------------------------------------
+			// Objective: The floor to show the floor plan.
+			//=========================================================
+			floor: {
+				type: Object,
+				observer: "_handleFloorChanged"
+			},
+
+			//=========================================================
+			// Property legendSpaces
+			//------------------------------------------
+			// Objective: An array that contains all the rooms in a
+			// floor available for move request. It contains the fields
+			// for building the legend and it may contain
+			// duplicated spaces if any space has more than one charge
+			// to organization.
+			//=========================================================
+			legendSpaces:  {
+				type: Array
+			},
+
+			//=========================================================
+			// Property selectableSpaces
+			//------------------------------------------
+			// Objective: An array that contains the selectable spaces
+			// in a floor. It does not contains duplicated spaces.
+			//=========================================================
+			selectableSpaces:  {
+				type: Array
+			},
+
+			//=========================================================
+			// Property loading
+			//------------------------------------------
+			// Objective: A flag that indicates if the graphic is
+			// loading.
+			//=========================================================
+			loading: {
+				type: Boolean,
+				notify: true,
+				readOnly: true,
+				value: false
+			},
+
+			//=========================================================
+			// Property _floorID
+			//------------------------------------------
+			// Objective: The id of the floor to show the floor plan.
+			//=========================================================
+			_floorID: {
+				type: String,
+				readOnly: true
+			},
+
+			//=========================================================
+			// Property _pinsFloorID
+			//------------------------------------------
+			// Objective: The id of the floor to query the pins.
+			//=========================================================
+			_pinsFloorID: {
+				type: String,
+				readOnly: true
+			},
+
+			//=========================================================
+			// Property _boundingSelectionEnabled
+			//------------------------------------------
+			// Objective: Indicate if the selection tool is enabled or not.
+			// If true, the pan and zoom function for the graphics
+			// will be disabled.
+			//=========================================================
+			_boundingSelectionEnabled: {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _panZoomEnabled
+			//------------------------------------------
+			// Objective: Indicate if the pan and zoom tool is enabled
+			// or not. If true, the selection tool for the graphics
+			// will be disabled.
+			//=========================================================
+			_panZoomEnabled: {
+				type: Boolean,
+				value: true
+			},
+
+			//=========================================================
+			// Property _groupedLegendSpaces
+			//------------------------------------------
+			// Objective: An array that contains the spaces grouped and
+			// filtered by the graphic legend.
+			//=========================================================
+			_groupedLegendSpaces: {
+				type: Array
+			},
+
+			//=========================================================
+			// Property _allPeopleInFloor
+			//------------------------------------------
+			// Objective: An array that contains all the people in a floor.
+			//=========================================================
+			_allPeopleInFloor:  {
+				type: Array
+			},
+
+			//=========================================================
+			// Property _peoplePinsEnabled
+			//------------------------------------------
+			// Objective: Indicate if the people pins are enabled or not.
+			//=========================================================
+			_peoplePinsEnabled: {
+				type: Boolean,
+				value: true
+			},
+
+			//=========================================================
+			// Property _allAssetsInFloor
+			//------------------------------------------
+			// Objective: An array that contains all the assets in a floor.
+			//=========================================================
+			_allAssetsInFloor:  {
+				type: Array
+			},
+
+			//=========================================================
+			// Property _assetPinsEnabled
+			//------------------------------------------
+			// Objective: Indicate if the asset pins are enabled or not.
+			//=========================================================
+			_assetPinsEnabled: {
+				type: Boolean,
+				value: true
+			},
+
+			//=========================================================
+			// Property _allEquipmentsInFloor
+			//------------------------------------------
+			// Objective: An array that contains all the equipments in a floor.
+			//=========================================================
+			_allEquipmentsInFloor:  {
+				type: Array
+			},
+
+			//=========================================================
+			// Property _equipmentPinsEnabled
+			//------------------------------------------
+			// Objective: Indicate if the equipment pins are enabled or not.
+			//=========================================================
+			_equipmentPinsEnabled: {
+				type: Boolean,
+				value: true
+			},
+
+			//=========================================================
+			// Property _drawingIdLoading
+			//------------------------------------------
+			// Objective: Indicate if graphic is making a request to
+			// the server in order to get the drawing id.
+			//=========================================================
+			_drawingIdLoading: {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _loadingPeoplePins
+			//------------------------------------------
+			// Objective: Indicates if the lookupPeople DS is loading.
+			//=========================================================
+			_loadingPeoplePins: {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _loadingAssetPins
+			//------------------------------------------
+			// Objective: Indicates if the lookupAsset DS is loading.
+			//=========================================================
+			_loadingAssetPins: {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _loadingEquipmentPins
+			//------------------------------------------
+			// Objective: Indicates if the lookupEquipment DS is loading.
+			//=========================================================
+			_loadingEquipmentPins: {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _svgLoaded
+			//------------------------------------------
+			// Objective: A flag that will indicate if the graphic is loaded.
+			//=========================================================
+			_svgLoaded: {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _translatedMessages
+			//------------------------------------------
+			// Objective: Map of translated messages.
+			//=========================================================
+			_translatedMessages: {
+				type: Object,
+				value: function() {
+					var __dictionary__enablePanZoom = "Enable pan and zoom";
+					var __dictionary__disablePanZoom = "Disable pan and zoom";
+                    var __dictionary__enableSelectionTool = "Enable selection tool";
+                    var __dictionary__disableSelectionTool = "Disable selection tool";
+
+					var _messages = {};
+					_messages["enablePanZoom"] = __dictionary__enablePanZoom;
+                    _messages["disablePanZoom"] = __dictionary__disablePanZoom;
+                    _messages["enableSelectionTool"] = __dictionary__enableSelectionTool;
+                    _messages["disableSelectionTool"] = __dictionary__disableSelectionTool;
+
+					return _messages;
+				}
+			},
+
+			//=========================================================
+			// Property _legendLabels
+			//------------------------------------------
+			// Objective: Map of translated labels for the graphic legend.
+			//=========================================================
+			_legendLabels: {
+				type: Object,
+				value: function() {
+					var __dictionary__organization = "Organization";
+					var __dictionary__spaceClass = "Space Class";
+					var __dictionary__noOrg = "No Org";
+					var __dictionary__noSpaceClass = "No Space Class";
+
+					var _labels = {};
+					_labels["organization"] = __dictionary__organization;
+                    _labels["spaceClass"] = __dictionary__spaceClass;
+                    _labels["noOrg"] = __dictionary__noOrg;
+                    _labels["noSpaceClass"] = __dictionary__noSpaceClass;
+
+					return _labels;
+				}
+			}
+		},
+
+		observers: [
+			"_computeLoading(_drawingIdLoading, _loadingPeoplePins, _loadingAssetPins, _loadingEquipmentPins, hasGraphic, _svgLoaded)"
+		],
+
+		//=========================================================
+		// Function refresh
+		//------------------------------------------
+		// Objective: Refreshes the graphic.
+		//=========================================================
+		refresh: function() {
+			this.$.floorplandetail.refreshViewBox();
+		},
+
+		//=========================================================
+		// Function resetLegendAndButtons
+		//------------------------------------------
+		// Objective: Reset the graphic legend and buttonto its
+		// initial state.
+		//=========================================================
+		resetLegendAndButtons: function() {
+			this.$.showByOrg.selectedCriterions = null;
+			this.$.filterBySpaceClass.selectedCriterions = null;
+			this.$.graphicLegend.showBySelected = this._legendLabels.organization;
+			this.$.graphicLegend.filterBySelected = this._legendLabels.spaceClass;
+			this._boundingSelectionEnabled = false;
+			this._panZoomEnabled = true;
+			this._enableAllPins();
+		},
+
+		//=========================================================
+		// Function _handleSizeChanged
+		//------------------------------------------
+		// Objective: When the component size is changed, notify
+		// descendants a resize change.
+		// This way the graphic pins can resize themselves.
+		// The iron-collapse takes 300 ms to close or open, because of the
+		// animation transition, so this method will notify the resize only
+		// after the animation is done.
+		//=========================================================
+		_handleSizeChanged: function() {
+			this.async(this.notifyResize, 350);
+		},
+
+		//=========================================================
+		// Function _handleFloorChanged
+		//------------------------------------------
+		// Objective: When the floor change, it
+		// sets the floorID and initialize graphic variables.
+		//=========================================================
+		_handleFloorChanged: function(newValue, oldValue) {
+			this._clearAllPins();
+			this._set_floorID(null);
+			this._preserveLegend();
+			if (newValue) {
+				this.$.floorplandetail._graphic._setHasGraphic(null);
+				this._set_floorID(newValue._id);
+			}
+		},
+
+		//=========================================================
+		// Function _enableAllPins
+		//------------------------------------------
+		// Objective: Enables all graphic pins.
+		//=========================================================
+		_enableAllPins: function() {
+			this._peoplePinsEnabled = true;
+			this._assetPinsEnabled = true;
+			this._equipmentPinsEnabled = true;
+		},
+
+		//=========================================================
+		// Function _clearAllPins
+		//------------------------------------------
+		// Objective: Clear all graphic pins.
+		//=========================================================
+		_clearAllPins: function() {
+			this._allPeopleInFloor = null;
+			this._allAssetsInFloor = null;
+			this._allEquipmentsInFloor = null;
+		},
+
+		//=========================================================
+		// Function _handlePanZoomTap
+		//------------------------------------------
+		// Objective: Enable the pan and zoom tool.
+		//=========================================================
+		_handlePanZoomTap: function(e) {
+			if (this._panZoomEnabled) {
+				this._panZoomEnabled = false;
+			} else {
+				this._panZoomEnabled = true;
+				this._boundingSelectionEnabled = false;
+			}
+			
+		},
+
+		//=========================================================
+		// Function _handleSelectionToolTap
+		//------------------------------------------
+		// Objective: Enable the selection tool.
+		//=========================================================
+		_handleSelectionToolTap: function(e) {
+			if (this._boundingSelectionEnabled) {
+				this._boundingSelectionEnabled = false;
+			} else {
+				this._panZoomEnabled = false;
+				this._boundingSelectionEnabled = true;
+			}
+		},
+
+		//=========================================================
+		// Function _computeLoading
+		//------------------------------------------
+		// Objective: Computes the loading property.
+		//=========================================================
+		_computeLoading: function(_drawingIdLoading, _loadingPeoplePins,
+			_loadingAssetPins, _loadingEquipmentPins, hasGraphic, _svgLoaded) {
+			var loading =  _drawingIdLoading || _loadingPeoplePins || _loadingAssetPins ||
+				_loadingEquipmentPins || (hasGraphic && !_svgLoaded);
+			this._setLoading(loading);
+		},
+
+		//=========================================================
+		// Function _preserveLegend
+		//------------------------------------------
+		// Objective: Preserve the legend configuration between
+		// floors.
+		//=========================================================
+		_preserveLegend: function() {
+			if (this.$.showByOrg.checked && this.$.showByOrg._showAll) {
+				this.$.showByOrg.selectedCriterions = null;
+			}
+			if (this.$.filterBySpaceClass.checked && this.$.filterBySpaceClass._showAll) {
+				this.$.filterBySpaceClass.selectedCriterions = null;
+			}
+		},
+
+		//=========================================================
+		// Function _handleHasGraphicChanged
+		//------------------------------------------
+		// Objective: If the floor has a graphic, it loads the pins.
+		//=========================================================
+		_handleHasGraphicChanged: function(newValue, oldValue) {
+			if (!oldValue && newValue) {
+				this._set_pinsFloorID(null);
+				this._set_pinsFloorID(this._floorID);
+			}
+		},
+
+		//=========================================================
+		// Function _computePanZoomTitle
+		//------------------------------------------
+		// Objective: Compute the translated title for the 
+		// panAndZoom button based on tis checked state.
+		//=========================================================
+		_computePanZoomTitle: function(_translatedMessages, _panZoomEnabled) {
+			return _panZoomEnabled ? _translatedMessages.disablePanZoom : _translatedMessages.enablePanZoom;
+		},
+
+		//=========================================================
+		// Function _computeBoundingSelectionTitle
+		//------------------------------------------
+		// Objective: Compute the translated title for the 
+		// boudingSelection button based on tis checked state.
+		//=========================================================
+		_computeBoundingSelectionTitle: function(_translatedMessages, _boundingSelectionEnabled) {
+			return _boundingSelectionEnabled ? _translatedMessages.disableSelectionTool : _translatedMessages.enableSelectionTool;
+		},
+
+		//=========================================================
+		// Function _handleFocusedChanged
+		//------------------------------------------
+		// Objective: Set the keyboard-focus class to the button
+		// if the focus was received from the keyboard.
+		//=========================================================
+		_handleFocusedChanged: function(focusedEvent) {
+			var target = focusedEvent.currentTarget;
+			var focused = focusedEvent.detail.value;
+			this.async(
+				function() {
+					this.toggleClass(
+						"keyboard-focus",
+						focused && target.receivedFocusFromKeyboard, 
+						target)
+				}				
+			);
+		}
+	});
+</script>

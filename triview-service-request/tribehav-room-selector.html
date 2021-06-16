@@ -1,0 +1,47 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<script>
+	TriRoomSelectorBehavior = {
+
+		_isSameRoom: function(roomA, roomB) {
+			return roomA && roomB && roomA._id == roomB._id;
+		},
+
+		_normalizeRoom: function(excludeRoom, result, room) {
+			if (this._isSameRoom(excludeRoom, room)) {
+				return result;
+			}
+			var normalizedRoom = result.normalizedRoomsById[room._id];
+			if (normalizedRoom) {
+				if (room.people) {
+					normalizedRoom.peopleList.push(room.people);
+				}
+			} else {
+				room.peopleList = room.people ? [room.people] : [];
+				result.normalizedRoomsById[room._id] = room;
+				result.normalizedRooms.push(room);
+			}
+			return result;
+		},
+
+		/**
+		 *	The rooms that are the primary location for more than one person will
+		 *  appear multiple times in the roomList.
+		 *  Ex: A room without a person or that has only one person will appear once in the list.
+		 *      A room with 3 persons will appear three times in the list.
+		 *	This method returns an array of unique rooms.
+		 *  The room that appears multiples times will be condensed in just one room.
+		 * If excludeRoom is specified, that room will not be included in the returned array.
+		 */
+		_normalizeRoomList: function (roomList, excludeRoom) {
+			var result = {
+				normalizedRoomsById: {},
+				normalizedRooms: []
+			};
+			if (roomList) {
+				roomList.reduce(this._normalizeRoom.bind(this, excludeRoom), result);
+			}
+			return result.normalizedRooms.length > 0 ? result.normalizedRooms : null;
+		}
+	}
+</script>

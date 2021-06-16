@@ -1,0 +1,4803 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../iron-collapse/iron-collapse.html">
+
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-menu-button/paper-menu-button.html">
+<link rel="import" href="../paper-menu/paper-menu.html">
+<link rel="import" href="../paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../paper-radio-button/paper-radio-button.html">
+<link rel="import" href="../paper-dialog/paper-dialog.html">
+<link rel="import" href="../paper-toast/paper-toast.html">
+
+<link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../paper-tooltip/paper-tooltip.html">
+
+<link rel="import" href="../triplat-debug/triplat-debug.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+
+<link rel="import" href="../triplat-ds-search-input/triplat-ds-search-input.html">
+<link rel="import" href="../triplat-query/triplat-query.html">
+<link rel="import" href="../triplat-table-behavior/triplat-table-behavior.html">
+
+<link rel="import" href="../triblock-page-container-behavior/triblock-page-container-behavior.html">
+
+
+<link rel="import" href="tricomp-move-accordion-arrow.html">
+<link rel="import" href="tricomp-move-accordion-arrow-horizontal.html">
+<link rel="import" href="tricomp-groupmove-detail-header.html">
+<link rel="import" href="tricomp-array-comparator.html">
+<link rel="import" href="tricomp-accordion-image.html">
+<link rel="import" href="tricomp-collapse-section.html">
+<link rel="import" href="tribehav-groupmove-search-detail.html">
+<link rel="import" href="tricomp-multi-space-selector.html">
+<link rel="import" href="tricomp-alert.html">
+
+<dom-module id="tripage-groupmove-search-detail">
+
+	<style>
+		/*=========================================
+		 * Table of Contents
+		 *-----------------------------
+		 * Host
+		 * Buttons
+		 * Container - General
+		 * Container - tricomp-collapse-section
+		 * Container - line-item-container
+     * Container - container-search-building
+     * Container - container-table
+		 * Container - container-collapse-action
+		 * Container - container-results
+		 * Paper Checkbox
+		 *=========================================*/
+
+		/* Host */
+		:host {
+			@apply(--layout-fit);
+			background-color: var(--tri-primary-content-background-color);
+
+			/*=========================================
+ 			 * Tricomp Collapse Section
+ 			 *=========================================*/
+ 			--tricomp-collapse-section-collapsable-flex: 2;
+ 			--tricomp-collapse-section-static-flex: 1;
+		}
+		@media(min-width: 768px) {
+ 			:host {
+ 				/*=========================================
+ 				 * Tricomp Collapse Section
+ 				 *=========================================*/
+ 				--tricomp-collapse-section-collapsable-flex: 1;
+ 				--tricomp-collapse-section-static-flex: 2;
+ 			}
+ 		}
+		/* End Host */
+
+
+		/* Buttons */
+		.btn-menu {
+ 			position: relative;
+			flex: 1;
+			flex-direction: row !important;
+			height: auto;
+ 			min-width: initial;
+			margin: 0;
+			/*padding: 1em !important;*/
+			padding-top: 17px !important;
+    		padding-left: 24px !important;
+			align-items: flex-start !important;
+    	justify-content: flex-start !important;
+ 			background-color: transparent !important;
+ 			color: var( --tri-disabled-icon-button-color) !important;
+			transition: 0.2s;
+ 		}
+			.btn-menu:hover {
+				background-color: var(--tri-primary-content-accent-color) !important;
+			}
+ 			.btn-menu triplat-icon {
+				padding-top: 6px;
+
+ 				--triplat-icon-width: 30px;
+ 				--triplat-icon-height: 35px;
+ 			}
+			.btn-menu .btn-inner {
+				display: inline-block;;
+			}
+				.btn-menu:hover .btn-inner {
+					display: none;
+				}
+			.btn-menu .btn-inner-hover {
+				display: none;
+			}
+				.btn-menu:hover .btn-inner-hover {
+					display: inline-block;
+				}
+ 			.btn-menu span {
+ 				font-size: 10px;
+				color: var(--tri-primary-content-color);
+ 			}
+
+		.btn-inner triplat-icon {
+			--triplat-icon-fill-color: var(--tri-primary-color);
+			--triplat-icon-stroke-color: var(--tri-primary-color);
+		}
+		.btn-inner-hover triplat-icon {
+			--triplat-icon-fill-color: var(--tri-info-color);
+			--triplat-icon-stroke-color: var(--tri-info-color);
+		}
+
+		/* End Buttons */
+
+
+		/* Container - General */
+		.content {
+			margin-left: 0px;
+			margin-right: 0px;
+			margin-bottom: 0px;
+		}
+		/* End Container - General */
+
+
+		/* Container - tricomp-collapse-section */
+		.tricomp-collapse-section-collapsable,
+		.tricomp-collapse-section-static {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+		}
+
+		.tricomp-collapse-section-static {
+			/*
+			 * Hide the overflow to prevent flickering on Firefox/win10.
+			 */
+			overflow-x: hidden;
+
+		}
+
+		.tricomp-collapse-section-collapsable {
+			max-width: 100%;
+		}
+		/* End Container - tricomp-collapse-section */
+
+
+		/* Container - line-item-container */
+		.line-item-container {
+			@apply(--layout-flex-2);
+			@apply(--layout);
+			@apply(--layout-vertical);
+			flex-basis: 33.33333333%;
+			/*margin: 1px;*/
+			border-right: 1px solid var(--tri-primary-content-accent-color);
+		}
+		@media (max-width: 991px) {
+			.line-item-container {
+				@apply(--layout-flex-1);
+				flex-basis: 41.66666667%;
+			}
+		}
+		@media (max-width: 767px) {
+			.line-item-container {
+				@apply(--layout-flex-1);
+				flex-basis: 100%;
+			}
+		}
+
+		.line-item-header {
+		 	@apply(--layout-center-center);
+		}
+
+		.line-item-header-button > div {
+			display: flex;
+		}
+
+		.inbox-checkbox {
+			padding-left: 4px;
+		}
+		.ready-icon-spacing {
+			width: 12px;
+			height: 24px;
+		}
+		/* End Container - line-item-container */
+
+
+    /* Container - container-search-building */
+    .container-search-building {
+      @apply(--layout-flex);
+			@apply(--layout-vertical);
+    }
+    /* End Container - container-search-building */
+
+    /* Container - container-table */
+		.container-table {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-center-justified);
+			overflow-y: auto;
+		}
+			.container-table * {
+				font-weight: 300!important;
+			}
+			.container-table div[tri-thead] div[tri-th] {
+				font-size: 1.2em;
+			}
+			.container-table div[tri-thead] div[tri-th]::before {
+				border-left: 0px !important;
+			}
+			.container-table div[tri-tbody] {
+				flex: none !important;
+			}
+
+		.table-floor {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-scroll);
+			min-height: 0;
+			min-width: 0;
+			background-color: var(--tri-primary-content-background-color);
+		}
+			.table-floor div[tri-tbody] div[tri-td] {
+				min-height: 20px;
+				height: auto !important;
+				justify-content: center;
+				font-size: 1.1em;
+			}
+
+		.inbox-table-inner {
+			@apply(--layout-flex);
+			box-sizing: border-box;
+			width: 100%;
+			min-width: 1021px; /* 100px/col * 10 cols + 21px scrollbar = 1021px... had to set this for scrolling to work properly */
+      border-bottom-color: var(--tri-secondary-icon-button-hover-color);
+  		border-bottom-width: 1px;
+    }
+
+		.table-header {
+			min-height: 40px !important;
+			border-bottom-color: var(--tri-secondary-icon-button-hover-color) !important;
+			border-bottom-width: 1px !important;
+			border-left-color: var(--ibm-gray-20) !important;
+			border-left-width: 1px !important;
+		}
+
+
+		.col-floor-checkbox {
+			width: 100px;
+			flex-shrink: 1;
+		}
+			.col-floor-checkbox paper-checkbox {
+				--paper-checkbox-size: 20px;
+			}
+
+		.table-row {
+			font-weight: bold;
+      font-size: 14px;
+			font-family: var(--tri-font-family);
+      color: var(--ibm-gray-100);
+		}
+
+		.table-row-collapsed {
+			@apply(--layout-horizontal);
+			@apply(--layout-flex);
+
+			-ms-flex-align: center;
+			-webkit-align-items: center;
+			align-items: center;
+		}
+			.table-row-collapsed div[tri-td] {
+				min-height: 45px;
+				height: 100% !important;
+				word-break: initial;
+				word-wrap: break-word;
+			}
+		iron-collapse .table-row-collapsed {
+			align-items: flex-start !important;
+		}
+
+		.table-row-collapse {
+			/*padding: 1em 0;*/
+		}
+			.table-row-collapse p {
+				margin: 0;
+			}
+			.table-row-collapse div[tri-td] {
+				align-items: flex-start !important;
+			}
+
+		.box-floor-text p {
+			font-size: 0.9em;
+    		font-weight: 400 !important;
+		}
+
+		.box-floor-list paper-checkbox {
+			--paper-checkbox-size: 20px;
+		}
+		/* End Container - container-table */
+
+
+		/* Container - container-collapse-action */
+		.container-collapse-action {
+			position: fixed;
+			right: 0;
+			bottom: 0;
+			left: 0;
+			z-index: 9999;
+		}
+
+		.container-action-button {
+			@apply(--layout-horizontal);
+			@apply(--layout-center-center);
+			@apply(--layout-wrap);
+			background-color: var(--tri-footer-background-color);
+			color: var(--tri-header-color);
+			padding: 5px;
+		}
+
+		.container-action-button > * {
+			margin: 5px;
+		}
+
+		.actionbar-selected {
+			font-family: var(--tri-font-family);
+			font-size: 14px;
+			color: var(--tri-header-color);
+			opacity: 1;
+			padding-left: 0px;
+			padding-right: 0px;
+		}
+
+		.actionbar-12px {
+			width: 12px;
+		}
+		/* End Container - container-collapse-action */
+
+
+		/* Container - container-results */
+		.container-results {
+			display: flex;
+			flex-direction: column;
+			flex: 1;
+		}
+		/* End Container - container-results */
+
+
+		/* Paper Checkbox */
+		paper-checkbox {
+			--paper-checkbox-label-spacing: 20px;
+			--paper-checkbox-size: 22px;
+		}
+		/* End Paper Checkbox */
+
+
+		.search-container {
+			@apply(--layout);
+			@apply(--layout-vertical);
+			flex: 2;
+			margin: 1px;
+			padding-left: 20px;
+			padding-right: 20px;
+		}
+
+		.arrow-container {
+			@apply(--layout-center-center);
+			padding-top:320px;
+			padding-bottom:320px;
+			background-color: var(--tri-body-background-color);
+		}
+
+		.accordion-container {
+			@apply(--layout-flex-2);
+			@apply(--layout);
+			@apply(--layout-vertical);
+			margin: 1px;
+			width: 100%;
+			overflow: auto;
+			height: 650px;
+		}
+
+
+		.search-input {
+			@apply(--layout-flex);
+		}
+
+		.search-line {
+			@apply(--layout);
+			@apply(--layout-horizontal);
+			min-height: 46px;
+		}
+
+		.search-header {
+			font-size: 22px;
+			margin-bottom:4px;
+			margin-top:4px;
+			margin-left: 4px;
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+		}
+
+		.button-container {
+			padding-right: 50px;
+			padding-left: 150px;
+		}
+
+		.table-header {
+      border-bottom-color: var(--tri-secondary-icon-button-hover-color) !important;
+	    border-bottom-width: 1px !important;
+      border-left-color: var(--ibm-gray-20) !important;
+      border-left-width: 1px !important;
+
+    }
+
+		.main-table-container {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-scroll);
+			background-color: var(--tri-primary-content-background-color);
+			min-height: 0;
+
+		}
+
+		.main-table {
+			box-sizing: border-box;
+			/*height:500px;*/
+			/*/min-width: 621px; /* 100px/col * 10 cols + 21px scrollbar = 1021px... had to set this for scrolling to work properly */
+			border-bottom-color: var(--tri-secondary-icon-button-hover-color);
+			border-bottom-width: 1px;
+			/*font-weight: normal;*/
+			@apply(--layout-flex);
+		}
+
+		.sort-column-header {
+			cursor: pointer;
+
+		}
+
+		.small-column-people{
+			width: 6%;
+		}
+
+		.big-column-people{
+			width: 12%;
+		}
+
+		.small-column-asset{
+			width: 6%;
+		}
+
+		.big-column-asset{
+			width: 14%;
+		}
+
+		.small-column-equipment{
+			width: 6%;
+		}
+
+		.big-column-equipment{
+			width: 13%;
+		}
+
+		.small-column-room{
+			width: 6%;
+		}
+
+		.big-column-room{
+			width: 17%;
+		}
+
+		.table-row {
+			font-weight: normal;
+            color: var(--tri-primary-content-color);
+            font-size: 14px;
+			font-family: var(--tri-font-family);
+
+
+		}
+
+		.td-content-text {
+			display: inline-block;
+			width: 100%;
+		}
+
+		.placeholder {
+			color: var(--tri-primary-content-accent-color);
+		}
+
+		.header-button{
+			@apply(--layout-center-center);
+			font-size: 14px;
+			margin-left: 600px;
+
+		}
+
+
+		.header-link {
+			background-color: var(--tri-primary-content-background-color) !important;
+			border-color: var(--tri-primary-content-background-color) !important;
+			color: var(--tri-primary-color-50) !important;
+			font-family: var(--tri-font-family);
+			font-size: 14px;
+			padding-left: 0px;
+			padding-right: 0px;
+
+		}
+
+		.table-link {
+			background-color: transparent !important;
+			border-color: var(--tri-primary-content-background-color) !important;
+			color: var(--tri-primary-color-50) !important;
+			font-family: var(--tri-font-family);
+			font-size: 14px;
+			padding-left: 0px;
+			padding-right: 0px;
+		}
+
+		 .search-count{
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+				background-color: var(--tri-primary-content-background-color);
+
+		 }
+
+		 paper-dropdown-menu {
+          width: 40px;
+		}
+
+		tricomp-move-accordion-arrow {
+			align: right;
+			padding-left: 15px;
+		}
+
+		#mliHeader {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			padding: 0px 10px 0px 10px;
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			border-top: 1px solid var(--tri-primary-content-accent-color);
+			background-color: var(--tri-body-background-color);
+		}
+
+		#mliHeader .title {
+			@apply(--layout-flex);
+			text-transform: uppercase;
+			font-size: 14px;
+			color: var(--tri-secondary-color);
+			font-weight: normal;
+			padding-left: 10px;
+		}
+
+
+		#mliHeader .count {
+			font-weight: bold;
+			font-size: 14px;
+			color: var(--tri-primary-content-color);
+		}
+
+		#mliHeader, .item {
+			min-height: 44px;
+		}
+
+		.item {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			/* border-bottom: 1px solid var(--tri-card-border-color); */
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			padding-left: 10px;
+			padding-right: 10px;
+		}
+
+		.line-item-row.iron-selected {
+			background-color: var(--tri-primary-light-color);
+		}
+
+		.line-item-row .value {
+			color: var(--tri-footer-background-color);
+		}
+
+		.line-item-row-inner {
+			@apply(--layout);
+			@apply(--layout-horizontal);
+			margin: 0px 20px;
+			padding: 20px;
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+
+		}
+
+	  .info {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			@apply(--layout-wrap);
+			font-size: 14px;
+			color: var(--tri-footer-background-color);
+			display: block;
+			white-space: normal;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			padding: 5px 5px 5px 0;
+		}
+
+
+		.blue-background{
+			background-color: var(--tri-primary-color);
+			color: var(--tri-primary-content-background-color);
+		}
+
+		paper-button{
+			height: 44px;
+		}
+
+
+		.dialog-buttons{
+			@apply(--layout-center-center);
+		}
+
+		 .sortColumnLabel {
+            font-weight: normal;
+		    font-size: 14px;
+            font-family: var(--tri-font-family);
+            line-height: 18px;
+            cursor: pointer;
+			outline: none;
+
+        }
+
+		tricomp-accordion-image {
+			--tricomp-accordion-image-height: 30px;
+			--tricomp-accordion-image-width: 30px;
+
+			--tricomp-accordion-image-icon-height: 23px;
+			--tricomp-accordion-image-icon-width: 23px;
+		}
+
+		paper-menu-button {
+			--paper-menu-button-dropdown:{
+				margin-top: 45px;
+				width: 350px;
+			};
+		}
+
+		.searchDetail {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			flex-shrink: 0;
+			margin: 0 0 0 10px;
+			padding: 5px 5px 5px 0;
+		}
+
+		paper-checkbox {
+			--paper-checkbox-label-spacing: 20px;
+			--paper-checkbox-size: 22px;
+		--paper-checkbox-unchecked-background-color: var(--tri-header-color);
+		}
+
+		.divider-line {
+			border-left: 1px solid var(--tri-primary-content-accent-color);
+			height: 24px;
+		}
+
+		.box-floor-list paper-checkbox {
+			--paper-checkbox-label-spacing: 0px;
+			--paper-checkbox-unchecked-background-color: var(--tri-header-color);
+		}
+
+		.space-selector {
+			padding-top: 2px;
+		}
+
+		.locationColumn{
+			width: 200px;
+		}
+
+		.collapsedRow-border{
+			border-bottom: 1px solid var(--tri-header-color);
+		}
+
+		.collapsable-floor-td{
+			padding-top: 0px;
+			padding-bottom: 0px;
+		}
+
+		.box-floor-list {
+			width:100% !important;
+			display:flex;
+			flex-direction: column;
+		}
+
+		.collapsable-floor-content{
+			width:100%;
+			border-top: 1px solid var(--tri-header-color);
+			padding-bottom:5px;
+			padding-top:5px;
+		}
+		.collapsable-floor-content span {
+			margin-left: 5px;
+		}
+		.collapsable-floor-content:nth-child(0n+1) {
+			border-top: none;
+		}
+
+		.collapsable-checkbox{
+			width: 100px;
+		}
+		.floor-tds {
+			width:calc(100% - 300px);
+		}
+
+		.search-header-message{
+			font-family: var(--tri-font-family);
+			font-size: 14px;
+			display: block;
+		    -webkit-margin-before: 1em;
+		    -webkit-margin-after: 1em;
+		    -webkit-margin-start: 0px;
+		    -webkit-margin-end: 0px;
+		}
+
+		.sort-icon[icon="sort"] {
+			color: var(--tri-primary-content-accent-color);
+		}
+
+		triplat-ds-search-input{
+			--triplat-ds-search-input-dropdown-header:{
+				font-size:14px;
+			};
+		}
+
+	</style>
+
+	<template>
+
+	<triplat-route
+			on-route-active="_handleRoutePageActive"
+			id="searchRoute"
+			name="searchRouteGroupMove"
+			params="{{openRequestUrlParams}}">
+	</triplat-route>
+
+    <triplat-ds id="lookupPeople" name="lookupPeople" data="{{lookupPeople}}"
+        loading="{{lookupPeopleLoading}}" on-ds-get-complete="_getTotalSize">
+        <triplat-query append-filters="{{appendFiltersPeople}}">
+            <triplat-query-scroll-page scroller="[[peopleScroller]]" size="50" accept-modern-search>
+            </triplat-query-scroll-page>
+            <triplat-query-sort name="{{sortFieldPeople}}" desc="{{sortDescendingPeople}}">
+            </triplat-query-sort>
+			<!-- <triplat-query-filter name="name" operator="contains" value="" ignore-if-blank></triplat-query-filter> -->
+        </triplat-query>
+    </triplat-ds>
+
+	<triplat-ds id="lookupAsset" name="lookupAsset" data="{{lookupAsset}}"
+        loading="{{lookupAssetLoading}}" on-ds-get-complete="_getTotalSizeAsset">
+        <triplat-query append-filters="{{appendFiltersAsset}}">
+            <triplat-query-scroll-page scroller="[[assetScroller]]" size="50" accept-modern-search>
+            </triplat-query-scroll-page>
+            <triplat-query-sort name="{{sortFieldAsset}}" desc="{{sortDescendingAsset}}">
+            </triplat-query-sort>
+        </triplat-query>
+    </triplat-ds>
+
+	 <triplat-ds id="lookupEquipment" name="lookupEquipment" data="{{lookupEquipment}}"
+        loading="{{lookupEquipmentLoading}}" on-ds-get-complete="_getTotalSizeEquipment">
+        <triplat-query append-filters="{{appendFiltersEquipment}}">
+            <triplat-query-scroll-page scroller="[[equipmentScroller]]" size="50" accept-modern-search>
+            </triplat-query-scroll-page>
+            <triplat-query-sort name="{{sortFieldEquipment}}" desc="{{sortDescendingEquipment}}">
+            </triplat-query-sort>
+        </triplat-query>
+    </triplat-ds>
+
+	<triplat-ds id="lookupRoom" name="lookupRoom" data="{{lookupRoom}}"
+        loading="{{lookupRoomLoading}}" on-ds-get-complete="_getTotalSizeRoom">
+        <triplat-query  append-filters="{{appendFiltersRoom}}">
+            <triplat-query-scroll-page scroller="[[roomScroller]]" size="50" accept-modern-search>
+            </triplat-query-scroll-page>
+            <triplat-query-sort name="{{sortFieldRoom}}" desc="{{sortDescendingRoom}}">
+            </triplat-query-sort>
+        </triplat-query>
+    </triplat-ds>
+
+    <triplat-ds id="lookupLocation" name="lookupBuildingLocation" data="{{lookupLocation}}"
+				loading="{{lookupLocationLoading}}" on-ds-get-complete="_getTotalSizeLocation">
+			<triplat-query append-filters="{{appendFiltersLocation}}">
+				<triplat-query-scroll-page scroller="[[locationScroller]]" size="50">
+				</triplat-query-scroll-page>
+				<triplat-query-sort name="{{sortFieldLocation}}" desc="{{sortDescendingLocation}}">
+				</triplat-query-sort>
+			</triplat-query>
+		</triplat-ds>
+
+		<triplat-ds id="buildingFloors" name="buildingFloors" data="{{buildingFloors}}" loading="{{buildingFloorsLoading}}">
+			<triplat-ds-context name="lookupBuildingLocation" context-id="{{_selectedBuilding._id}}"></triplat-ds-context>
+		</triplat-ds>
+
+
+	<triplat-ds id="myMoveRequests" name="myMoveRequests" data="{{myMoveRequests}}"></triplat-ds>
+
+	<triplat-ds id="moveRequest" name="moveRequest" data="{{moveRequest}}" on-ds-get-complete="loadPage" on-ds-update-complete="_handleMLIUpdateComplete" on-ds-perform-action-complete="_handleMLIUpdateComplete">
+			<triplat-ds-context name="myMoveRequests" context-id="{{openRequestUrlParams.reqId}}">
+			</triplat-ds-context>
+		</triplat-ds>
+
+	<triplat-ds id="moveLineItems" name="moveLineItems" filtered-data="{{parentMLI}}" data="{{moveLineItems}}" on-ds-get-complete="_handleMoveLineItemsComplete" >
+			<triplat-ds-context name="myMoveRequests" context-id="{{openRequestUrlParams.reqId}}">
+			</triplat-ds-context>
+			<triplat-query>
+				<triplat-query-filter name="parentItemName" operator="equals" value=null></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+
+		<triplat-ds id="peopleSelected" name="peopleSelected" data="{{peopleSelected}}" loading="{{selectedPeopleLoading}}">
+			<triplat-ds-context name="myMoveRequests" context-id="{{openRequestUrlParams.reqId}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="assetSelected" name="assetSelected" data="{{assetSelected}}" loading="{{selectedAssetLoading}}">
+			<triplat-ds-context name="myMoveRequests" context-id="{{openRequestUrlParams.reqId}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="equipmentSelected" name="equipmentSelected" data="{{equipmentSelected}}" loading="{{selectedEquipmentLoading}}">
+			<triplat-ds-context name="myMoveRequests" context-id="{{openRequestUrlParams.reqId}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="roomSelected" name="roomSelected" data="{{roomSelected}}" loading="{{selectedRoomLoading}}">
+			<triplat-ds-context name="myMoveRequests" context-id="{{openRequestUrlParams.reqId}}"></triplat-ds-context>
+		</triplat-ds>
+
+	   <triplat-query data="{{parentMLI}}" filtered-data-out="{{moveLineItemsPeople}}">
+			<triplat-query-filter name="moveType" operator="equals" value="Person"></triplat-query-filter>
+	   </triplat-query>
+
+		<triplat-query data="{{parentMLI}}" filtered-data-out="{{moveLineItemsAsset}}">
+			<triplat-query-filter name="moveType" operator="equals" value="Asset"></triplat-query-filter>
+	   </triplat-query>
+
+	  <triplat-query data="{{parentMLI}}" filtered-data-out="{{moveLineItemsEquipment}}">
+			<triplat-query-filter name="moveType" operator="equals" value="Equipment"></triplat-query-filter>
+	   </triplat-query>
+
+	   <triplat-query data="{{parentMLI}}" filtered-data-out="{{moveLineItemsRoom}}">
+			<triplat-query-filter name="moveType" operator="equals" value="Room Function"></triplat-query-filter>
+	   </triplat-query>
+
+	  <tricomp-array-comparator
+				source="{{lookupPeople}}"
+				compare-to="{{parentMLI}}"
+				compare-to-match-field="personRecordId"
+				match-flag="added"
+				result="{{lookupPeopleFiltered}}"></tricomp-array-comparator>
+
+		<tricomp-array-comparator
+				source="{{lookupAsset}}"
+				compare-to="{{parentMLI}}"
+				compare-to-match-field="assetRecordId"
+				match-flag="added"
+				result="{{lookupAssetFiltered}}"></tricomp-array-comparator>
+		<tricomp-array-comparator
+				source="{{lookupEquipment}}"
+				compare-to="{{parentMLI}}"
+				compare-to-match-field="specificationBomId"
+				match-flag="added"
+				result="{{lookupEquipmentFiltered}}"></tricomp-array-comparator>
+
+		<tricomp-array-comparator
+				source="{{lookupRoom}}"
+				compare-to="{{parentMLI}}"
+				compare-to-match-field="roomRecordId"
+				match-flag="added"
+				result="{{lookupRoomFiltered}}"></tricomp-array-comparator>
+
+		<!-- Comparator: Used to add 'selected' attribute to the MLIs object -->
+		<tricomp-array-comparator
+				source="{{moveLineItemsPeople}}"
+				compare-to="{{_selectedRequests}}"
+				compare-to-match-field="_id"
+				match-flag="selected"
+				result="{{moveLineItemsPeopleFiltered}}">
+		</tricomp-array-comparator>
+
+		<tricomp-array-comparator
+				source="{{moveLineItemsAsset}}"
+				compare-to="{{_selectedRequests}}"
+				compare-to-match-field="_id"
+				match-flag="selected"
+				result="{{moveLineItemsAssetFiltered}}">
+		</tricomp-array-comparator>
+
+		<tricomp-array-comparator
+				source="{{moveLineItemsEquipment}}"
+				compare-to="{{_selectedRequests}}"
+				compare-to-match-field="_id"
+				match-flag="selected"
+				result="{{moveLineItemsEquipmentFiltered}}">
+		</tricomp-array-comparator>
+
+		<tricomp-array-comparator
+				source="{{moveLineItemsRoom}}"
+				compare-to="{{_selectedRequests}}"
+				compare-to-match-field="_id"
+				match-flag="selected"
+				result="{{moveLineItemsRoomFiltered}}">
+		</tricomp-array-comparator>
+		<!-- End Comparator -->
+
+    <!-- Workaround: The comparator is used to add the field 'selected' to the floors object -->
+		<tricomp-array-comparator
+		 source="{{buildingFloors}}"
+		 compare-to="{{_selectedFloors}}"
+		 match-flag="selected"
+		 result="{{buildingFloorSearchSelected}}">
+		</tricomp-array-comparator>
+
+		<!-- Workaround: The comparator is used to add the fields 'isExpanded' and 'selected' to the buildings object -->
+		<tricomp-array-comparator
+		 source="{{_selectedBuildings}}"
+		 compare-to="{{_selectedFloors}}"
+		 match-flag="isExpanded"
+		 result="{{buildingSearchExpanded}}">
+		</tricomp-array-comparator>
+
+		<tricomp-array-comparator
+		 source="{{buildingSearchExpanded}}"
+		 compare-to="{{_selectedFloors}}"
+		 match-flag="selected"
+		 result="{{buildingSearchSelected}}">
+		</tricomp-array-comparator>
+		<!-- End Workaround -->
+
+		<div class="content">
+			<tricomp-collapse-section id="collapseSection" on-opened-changed="_handleSizeChanged">
+				<div class="tricomp-collapse-section-collapsable">
+					<div class="line-item-container">
+						<div class="line-item-header line-item-header-button">
+							<div>
+								<paper-button class="btn-menu" on-tap="_toggleCloseMLI" noink>
+									<div class="btn-inner">
+										<triplat-icon
+								      class="placeholder"
+								      icon="bulletlist"></triplat-icon>
+									</div><!-- end .btn-inner -->
+									<div id="btn-collapse" class="btn-inner-hover">
+										<triplat-icon
+								      class="placeholder"
+								      icon="bulletlist"></triplat-icon>
+									</div><!-- end .btn-inner-hover -->
+
+									<span>{{parentMLI.length}}</span>
+								</paper-button>
+
+								<paper-tooltip for="btn-collapse" position="right" animation-delay="0">Click to hide items</paper-tooltip>
+							</div><!-- end div -->
+						</div><!-- end .line-item-header -->
+
+						<div class="scrollable-area">
+							<div id="mliHeader">
+								<paper-checkbox id="selectAllPeople" class="inbox-checkbox" on-tap="_selectAllPeopleCheckboxes" checked="{{_showAllPeople}}"></paper-checkbox>
+
+								<div class="title">
+									<span>People</span>
+									<span>&nbsp;</span>
+									<span class="count" id="personCount"></span>
+								</div>
+								<div class="divider-line"></div>
+								<tricomp-move-accordion-arrow
+										id="detailsAccordionArrow1"
+										opened="{{_peopleOpened}}"
+										enabled tabindex="0" role="button" aria-label="People Accordion" on-keypress = "_openPeopleArrow">
+								</tricomp-move-accordion-arrow>
+							</div><!-- end #mliHeader -->
+
+							<iron-collapse id="collapsiblePeople"  opened="{{_peopleOpened}}">
+								<template
+						        id="personTemplate"
+										is="dom-repeat"
+                                        items="{{moveLineItemsPeopleFiltered}}"
+										sort="{{_sort(sortField, sortDescending)}}">
+									<div class="item line-item-row" selected$="{{item.selected}}">
+										<div class="inbox-checkbox" >
+											<paper-checkbox checked="{{item.selected}}" on-tap="_handleInboxSelect" criterion="[[item]]"></paper-checkbox>
+										</div><!-- end .inbox-checkbox -->
+
+										<div class="ready-icon-spacing"></div>
+
+										<template is="dom-if" if="{{_screenLarge}}">
+											<div class="image-icon" >
+												
+											</div> <!-- end .image-icon -->
+
+											<span class="info">
+												<span>{{item.firstName}}</span>&nbsp;<span>{{item.lastName}}</span>
+											</span><!-- end .info -->
+										</template>
+
+										<template is="dom-if" if="{{!_screenLarge}}">
+											<span class="info">
+												<span>{{item.lastName}}</span><br><span>{{item.firstName}}</span>
+											</span>
+										</template><!-- end .info -->
+									</div><!-- end .item -->
+								</template>
+							</iron-collapse>
+							<!-- END ACCORDION-->
+
+							<div id="mliHeader">
+								<paper-checkbox id="selectAllAssets" class="inbox-checkbox" on-tap="_selectAllAssetCheckboxes" checked="{{_showAllAssets}}"></paper-checkbox>
+
+								<div class="title">
+									<span>Assets</span>
+									<span>&nbsp;</span>
+									<span class="count" id="assetCount"></span>
+								</div><!-- end .title -->
+								<div class="divider-line"></div>
+								<tricomp-move-accordion-arrow
+										id="detailsAccordionArrow2"
+										opened="{{_assetOpened}}"
+										enabled tabindex="0" role="button" aria-label="Asset Accordion" on-keypress="_openAssetArrow">
+								</tricomp-move-accordion-arrow>
+							</div><!-- end #mliHeader -->
+
+							<iron-collapse id="collapsibleAsset" opened="{{_assetOpened}}">
+								<template
+						        id="assetTemplate"
+										is="dom-repeat"
+                                       items="{{moveLineItemsAssetFiltered}}">
+									<div class="item line-item-row" selected$="{{item.selected}}">
+										<div class="inbox-checkbox">
+											<paper-checkbox checked="{{item.selected}}" hidden$="{{_isChild(item)}}" on-tap="_handleInboxSelect" criterion="[[item]]"></paper-checkbox>
+										</div><!-- end .inbox-checkbox -->
+
+										<div class="ready-icon-spacing"></div>
+
+										<template is="dom-if" if="{{_screenLarge}}">
+											<div class="image-icon" >
+												
+											</div><!-- end .image-icon -->
+
+											<span class="info">
+												<span>{{item.assetName}}</span>
+											</span><!-- end .info -->
+										</template>
+
+										<template is="dom-if" if="{{!_screenLarge}}">
+											<span class="info">
+												<span>{{item.assetName}}</span>
+											</span><!-- end .info -->
+										</template>
+									</div><!-- end .item -->
+								</template>
+							</iron-collapse>
+
+							<div id="mliHeader">
+								<paper-checkbox id="selectAllEquipment" class="inbox-checkbox" on-tap="_selectAllEquipmentCheckboxes" checked="{{_showAllEquipment}}"></paper-checkbox>
+
+								<div class="title">
+									<span>Equipment</span>
+									<span>&nbsp;</span>
+									<span class="count" id="equipmentCount"></span>
+								</div><!-- end .title -->
+								<div class="divider-line"></div>
+								<tricomp-move-accordion-arrow
+										id="detailsAccordionArrow3"
+										opened="{{_equipmentOpened}}"
+										enabled tabindex="0" role="button" aria-label="Equipment Accordion" on-keypress = "_openEquipmentArrow">
+								</tricomp-move-accordion-arrow>
+							</div><!-- end #mliHeader -->
+
+							<iron-collapse id="collapsibleEquipment" opened="{{_equipmentOpened}}">
+								<template
+						        id="equipmentTemplate"
+										is="dom-repeat"
+                                        items="{{moveLineItemsEquipmentFiltered}}">
+									<div class="item line-item-row" selected$="{{item.selected}}">
+										<div class="inbox-checkbox">
+											<paper-checkbox checked="{{item.selected}}" hidden$="{{_isChild(item)}}" on-tap="_handleInboxSelect" criterion="[[item]]"></paper-checkbox>
+										</div><!-- end .inbox-checkbox -->
+
+										<div class="ready-icon-spacing"></div>
+
+										<template is="dom-if" if="{{_screenLarge}}">
+											<div class="image-icon" >
+												
+											</div><!-- end .image-icon -->
+
+											<span class="info">
+												<span>{{item.equipmentName}}</span>
+											</span><!-- end .info -->
+										</template>
+
+										<template is="dom-if" if="{{!_screenLarge}}">
+											<span class="info">
+												<span>{{item.equipmentName}}</span>
+											</span>
+										</template>
+									</div><!-- end .item -->
+								</template>
+							</iron-collapse>
+
+							<div id="mliHeader">
+								<paper-checkbox id="selectAllRooms" class="inbox-checkbox" on-tap="_selectAllRoomCheckboxes" checked="{{_showAllRooms}}"></paper-checkbox>
+
+								<div class="title">
+									<span>Rooms</span>
+									<span>&nbsp;</span>
+									<span class="count" id="roomCount"></span>
+								</div><!-- end .title -->
+								<div class="divider-line"></div>
+								<tricomp-move-accordion-arrow
+										id="detailsAccordionArrow4"
+										opened="{{_roomOpened}}"
+										enabled tabindex="0" role="button" aria-label="Room Accordion" on-keypress = "_openRoomArrow">
+								</tricomp-move-accordion-arrow>
+							</div><!-- end #mliHeader -->
+
+							<iron-collapse id="collapsibleRoom" opened="{{_roomOpened}}">
+								<template
+						        id="roomTemplate"
+										is="dom-repeat"
+                              items="{{moveLineItemsRoomFiltered}}">
+									<div class="item line-item-row" selected$="{{item.selected}}">
+										<div class="inbox-checkbox">
+											<paper-checkbox checked="{{item.selected}}" on-tap="_handleInboxSelect" criterion="[[item]]"></paper-checkbox>
+										</div><!-- end .inbox-checkbox -->
+
+										<div class="ready-icon-spacing"></div>
+
+										<template is="dom-if" if="{{_screenLarge}}">
+											<div class="image-icon" >
+												
+											</div><!-- end .image-icon -->
+
+											<span class="info">
+												<span>{{item.fromSpace}}</span>
+											</span>
+										</template>
+
+										<template is="dom-if" if="{{!_screenLarge}}">
+											<span class="info">
+												<span>{{item.fromSpace}}</span>
+											</span>
+										</template>
+					 				</div><!-- end .item -->
+								</template>
+							</iron-collapse>
+						</div><!-- end .scrollable-area -->
+					</div><!-- end .line-item-container -->
+				</div><!-- end .tricomp-collapse-section-collapsable -->
+
+				<div class="tricomp-collapse-section-static">
+					<tricomp-groupmove-detail-header id="header" header-text-label="Search"
+						request$="{{openRequestUrlParams.reqId}}"></tricomp-groupmove-detail-header>
+
+					<div class="search-container">
+						<span class="search-header-message">{{_searchHeaderMessage}}</span>
+						<div class="search-line">
+							<paper-menu-button id="paperMenuButton" class="blue-background">
+								<triplat-icon icon="{{selectedDropdownIcon}}" class="dropdown-trigger" aria-label="Search Dropdown" tabindex="0" on-keypress="_openDropdown"></triplat-icon>
+								<iron-icon icon="hardware:keyboard-arrow-down" class="dropdown-trigger"></iron-icon>
+
+								<paper-menu class="dropdown-content blue-background" selected="{{kind}}" attr-for-selected="name">
+									<paper-item on-tap="_selectPeopleIcon" name="user" ><iron-icon icon="{{_isSelectedIcon(kind, 'user')}}"></iron-icon><triplat-icon icon="user" aria-label="People"></triplat-icon><span>&nbsp People</span></paper-item>
+									<paper-item on-tap="_selectAssetIcon" name="assets" role="menuitem"><iron-icon icon="{{_isSelectedIcon(kind, 'assets')}}"></iron-icon><triplat-icon icon="assets" aria-label="Assets"></triplat-icon><span>&nbsp Assets</span></paper-item>
+									<paper-item on-tap="_selectEquipmentIcon" name="equipment" role="menuitem"><iron-icon icon="{{_isSelectedIcon(kind, 'equipment')}}"></iron-icon><triplat-icon icon="equipment" aria-label="Equipments"></triplat-icon><span>&nbsp Equipment</span></paper-item>
+									<paper-item on-tap="_selectRoomIcon" name="room" role="menuitem"><iron-icon icon="{{_isSelectedIcon(kind, 'room')}}"></iron-icon><triplat-icon icon="room-function" aria-label="Rooms"></triplat-icon><span>&nbsp Room</span></paper-item>
+                                    <paper-item on-tap="_selectLocationIcon" name="location" role="menuitem"><iron-icon icon="{{_isSelectedIcon(kind, 'location')}}"></iron-icon><triplat-icon icon="location" aria-label="Location"></triplat-icon><span>&nbsp Location</span></paper-item>
+								</paper-menu>
+							</paper-menu-button>
+
+
+								<triplat-ds-search-input id="searchField"
+										class="search-input"
+										placeholder="{{_searchInputMessage}}"
+										value="{{_searchValue}}"
+										aliases="{{aliases}}"
+										max-header-children="4"
+										append-filters="{{appendFilters}}">
+								</triplat-ds-search-input>
+
+						</div><!-- end .search-line -->
+
+						<div class="container-results" hidden$="{{!_peopleDropdownSelected}}">
+							<div hidden$="{{!showSearchResults}}" class="search-count"><span>Displaying {{_peopleFilteredSize}} of {{_peopleTotalSize}} people found</span> <paper-button noink class="header-link" on-tap="openConfirmationDialog" disabled$="{{_addAllDisabled}}" aria-label="Add All People">Add All</paper-button></div>
+
+							<div table-container class="main-table-container" hidden$="{{!showSearchResults}}">
+								<div tri-fixed-table class="main-table">
+									<div tri-thead class="table-header">
+										<div tri-tr>
+											<div class="small-column-people"><div tri-th></div></div>
+
+											<div class="big-column-people"><div tri-th class="sort-column-header" on-tap="_handleSortFirstName" data-column="firstName"><span tri-th-label class="sortColumnLabel" tabindex="0" on-keypress="_handleSortFirstName">First Name</span>&nbsp;<triplat-icon id="firstNameIcon" class="sort-icon" icon="sort-descending"></triplat-icon></div> </div>
+											<div class="big-column-people"><div tri-th class="sort-column-header" on-tap="_handleSortLastName" data-column="lastName"><span tri-th-label class="sortColumnLabel" tabindex="0" on-keypress="_handleSortLastName">Last Name</span>&nbsp;<triplat-icon id="lastNameIcon" class="sort-icon" icon="sort"></triplat-icon></div></div>
+											<div class="big-column-people"><div tri-th class="sort-column-header" on-tap="_handleSortCity" data-column="city"><span tri-th-label class="sortColumnLabel" tabindex="0" on-keypress="_handleSortCity">City</span>&nbsp;<triplat-icon class="sort-icon" id="cityIcon" icon="sort"></triplat-icon></div></div>
+											<div class="big-column-people"><div tri-th class="sort-column-header" on-tap="_handleSortBuilding" data-column="building"><span tri-th-label class="sortColumnLabel" tabindex="0" on-keypress="_handleSortBuilding">Building</span>&nbsp;<triplat-icon id="buildingIcon" class="sort-icon" icon="sort"></triplat-icon></div></div>
+											<div class="big-column-people"><div tri-th class="sort-column-header" on-tap="_handleSortFloor" data-column="floor"><span tri-th-label class="sortColumnLabel" tabindex="0" on-keypress="_handleSortFloor">Floor</span>&nbsp;<triplat-icon class="sort-icon" id="floorIcon" icon="sort"></triplat-icon></div></div>
+											<div class="big-column-people"><div tri-th class="sort-column-header" on-tap="_handleSortSpace" data-column="space"><span tri-th-label class="sortColumnLabel" tabindex="0" on-keypress="_handleSortSpace">Room No.</span>&nbsp;<triplat-icon class="sort-icon" id="spaceIcon" icon="sort"></triplat-icon></div></div>
+											<div class="big-column-people"><div tri-th class="sort-column-header" on-tap="_handleSortOrganization" data-column="organization"><span tri-th-label class="sortColumnLabel" tabindex="0" on-keypress="_handleSortOrganization">Organization</span>&nbsp;<triplat-icon id="organizationIcon" class="sort-icon" icon="sort"></triplat-icon></div></div>
+										</div>
+									</div>
+
+									<div id="listContainer" tri-tbody >
+										<template is="dom-repeat" id="peopleList" items="{{lookupPeople}}">
+											<div tri-tr class="table-row people-table-row" selected$="{{item.selected}}">
+												<div class="small-column-people"><div tri-td>
+													<paper-button noink class="table-link" on-tap="_handleAddItem" disabled$="{{!_isDraft(moveRequest)}}" hidden$="{{item.added}}" aria-label$="{{_getAddPeopleString(item.firstName,item.lastName)}}">Add</paper-button>
+													<paper-button noink class="table-link" on-tap="_handleRemoveItem" disabled$="{{_isDraftRemove(item._id)}}" hidden$="{{!item.added}}" aria-label$="{{_getRemovePeopleString(item.firstName,item.lastName)}}">Remove</paper-button>
+												</div></div>
+
+												<div class="big-column-people"><div tri-td><div class="td-content-text">{{item.firstName}}</div></div></div>
+												<div class="big-column-people"><div tri-td><div class="td-content-text">{{item.lastName}}</div></div></div>
+												<div class="big-column-people"><div tri-td><div class="td-content-text">{{item.city}}</div></div></div>
+												<div class="big-column-people"><div tri-td><div class="td-content-text">{{item.building}}</div></div></div>
+												<div class="big-column-people"><div tri-td><div class="td-content-text">{{item.floor}}</div></div></div>
+												<div class="big-column-people"><div tri-td><div class="td-content-text">{{item.space}}</div></div></div>
+												<div class="big-column-people"><div tri-td><div class="td-content-text">{{item.organization}}</div></div></div>
+											</div>
+										</template>
+									</div>
+								</div>
+							</div>
+
+						</div><!-- end .container-results -->
+
+						<!--Asset-->
+						<div class="container-results" hidden$="{{!_assetDropdownSelected}}">
+							<div hidden$="{{!showSearchResults}}" class="search-count"><span>Displaying {{_assetFilteredSize}} of {{_assetTotalSize}} asset found</span> <paper-button noink class="header-link" on-tap="openConfirmationDialogAsset" disabled$="{{_addAllDisabled}}" aria-label="Add All Asset">Add All</paper-button></div>
+
+							<div table-container class="main-table-container" hidden$="{{!showSearchResults}}">
+								<div tri-fixed-table class="main-table">
+									<div tri-thead  class="table-header">
+										<div tri-tr>
+											<div class="small-column-asset"><div tri-th ></div></div>
+											<div class="small-column-asset"><div tri-th></div></div>
+											<div class="big-column-asset"><div tri-th class="sort-column-header" on-tap="_handleSortIdAsset" data-column="id"><span tri-th-label class="sortColumnLabel" tabindex="0" on-keypress="_handleSortIdAsset">ID</span>&nbsp;<triplat-icon id="idAssetIcon" class="sort-icon" icon="sort-descending"></triplat-icon></div></div>
+											<div class="big-column-asset"><div tri-th class="sort-column-header" on-tap="_handleSortNameAsset" data-column="name"><span tri-th-label class="sortColumnLabel" tabindex="0" on-keypress="_handleSortNameAsset">Asset Name</span>&nbsp;<triplat-icon id="nameAssetIcon" class="sort-icon" icon="sort"></triplat-icon></div></div>
+											<div class="big-column-asset"><div tri-th class="sort-column-header" on-tap="_handleSortBuildingAsset" data-column="building"><span tri-th-label class="sortColumnLabel" tabindex="0" on-keypress="_handleSortBuildingAsset">Building</span>&nbsp;<triplat-icon id="buildingAssetIcon" class="sort-icon" icon="sort"></triplat-icon></div></div>
+											<div class="big-column-asset"><div tri-th class="sort-column-header" on-tap="_handleSortFloorAsset" data-column="floor"><span tri-th-label class="sortColumnLabel" tabindex="0" on-keypress="_handleSortFloorAsset">Floor</span>&nbsp;<triplat-icon id="floorAssetIcon" class="sort-icon" icon="sort"></triplat-icon></div></div>
+											<div class="big-column-asset"><div tri-th class="sort-column-header" on-tap="_handleSortSpaceAsset" data-column="space"><span tri-th-label class="sortColumnLabel" tabindex="0" on-keypress="_handleSortSpaceAsset">Space</span>&nbsp;<triplat-icon id="spaceAssetIcon" class="sort-icon" icon="sort"></triplat-icon></div></div>
+											<div class="big-column-asset"><div tri-th class="sort-column-header" on-tap="_handleSortTypeAsset" data-column="type"><span tri-th-label class="sortColumnLabel" tabindex="0" on-keypress="_handleSortTypeAsset">Spec Class</span>&nbsp;<triplat-icon id="typeAssetIcon" class="sort-icon" icon="sort"></triplat-icon></div></div>
+										</div>
+									</div>
+
+									<div id="listContainerAsset" tri-tbody >
+										<template is="dom-repeat" id="assetList" items="{{lookupAsset}}">
+											<div tri-tr class="table-row asset-table-row" selected$="{{item.selected}}">
+												<div class="small-column-asset"><div tri-td>
+													<paper-button noink class="table-link" on-tap="_handleAddAsset" disabled$="{{!_isDraft(moveRequest)}}" hidden$="{{item.added}}" aria-label$="{{_getAddAssetString(item.id,item.name)}}">Add</paper-button>
+													<paper-button noink class="table-link" on-tap="_handleRemoveAsset" disabled$="{{_isDraftRemove(item._id)}}" hidden$="{{!item.added}}" aria-label$="{{_getRemoveAssetString(item.id,item.name)}}">Remove</paper-button>
+												</div></div>
+
+												<div class="small-column-asset"><div tri-td>
+
+												</div></div>
+
+												<div class="big-column-asset"><div tri-td><div class="td-content-text">{{item.id}}</div></div></div>
+												<div class="big-column-asset"><div tri-td><div class="td-content-text">{{item.name}}</div></div></div>
+												<div class="big-column-asset"><div tri-td><div class="td-content-text">{{item.building}}</div></div></div>
+												<div class="big-column-asset"><div tri-td><div class="td-content-text">{{item.floor}}</div></div></div>
+												<div class="big-column-asset"><div tri-td><div class="td-content-text">{{item.space}}</div></div></div>
+												<div class="big-column-asset"><div tri-td><div class="td-content-text">{{item.type}}</div></div></div>
+											</div>
+										</template>
+									</div>
+								</div>
+							</div>
+						</div><!-- end .container-results -->
+
+						<!--End Asset-->
+
+
+						<!--Equipment-->
+						<div class="container-results" hidden$="{{!_equipmentDropdownSelected}}">
+							<div hidden$="{{!showSearchResults}}" class="search-count"><span>Displaying {{_equipmentFilteredSize}} of {{_equipmentTotalSize}} equipment found</span> <paper-button noink class="header-link" on-tap="openConfirmationDialogEquipment" disabled$="{{_addAllDisabled}}" aria-label="Add All Equipment">Add All</paper-button></div>
+
+							<div table-container class="main-table-container" hidden$="{{!showSearchResults}}">
+								<div tri-fixed-table class="main-table">
+									<div tri-thead  class="table-header">
+										<div tri-tr>
+											<div class="small-column-equipment"><div tri-th></div></div>
+											<div class="small-column-equipment"><div tri-th></div></div>
+											<div class="big-column-equipment"><div tri-th class="sort-column-header" on-tap="_handleSortIdEquipment" data-column="id"><span tri-th-label class="sortColumnLabel" tabindex="0" on-keypress="_handleSortIdEquipment">ID</span>&nbsp;<triplat-icon id="idEquipmentIcon" class="sort-icon" icon="sort-descending"></triplat-icon></div></div>
+											<div class="big-column-equipment"><div tri-th class="sort-column-header" on-tap="_handleSortNameEquipment" data-column="name"><span tri-th-label class="sortColumnLabel" tabindex="0" on-keypress="_handleSortNameEquipment">Equipment Name</span>&nbsp;<triplat-icon id="nameEquipmentIcon" class="sort-icon" icon="sort"></triplat-icon></div></div>
+											<div class="big-column-equipment"><div tri-th class="sort-column-header" on-tap="_handleSortBuildingEquipment" data-column="building"><span tri-th-label class="sortColumnLabel" tabindex="0" on-keypress="_handleSortBuildingEquipment">Building</span>&nbsp;<triplat-icon id="buildingEquipmentIcon" class="sort-icon" icon="sort"></triplat-icon></div></div>
+											<div class="big-column-equipment"><div tri-th class="sort-column-header" on-tap="_handleSortFloorEquipment" data-column="floor"><span tri-th-label class="sortColumnLabel" tabindex="0" on-keypress="_handleSortFloorEquipment">Floor</span>&nbsp;<triplat-icon id="floorEquipmentIcon" class="sort-icon" icon="sort"></triplat-icon></div></div>
+											<div class="big-column-equipment"><div tri-th class="sort-column-header" on-tap="_handleSortSpaceEquipment" data-column="space"><span tri-th-label class="sortColumnLabel" tabindex="0" on-keypress="_handleSortSpaceEquipment">Space</span>&nbsp;<triplat-icon id="spaceEquipmentIcon" class="sort-icon" icon="sort"></triplat-icon></div></div>
+											<div class="big-column-equipment"><div tri-th class="sort-column-header" on-tap="_handleSortSpecEquipment" data-column="spec"><span tri-th-label class="sortColumnLabel" tabindex="0" on-keypress="_handleSortSpecEquipment">Spec Class</span>&nbsp;<triplat-icon id="specEquipmentIcon" class="sort-icon" icon="sort"></triplat-icon></div></div>
+											<div class="small-column-equipment"><div tri-th  data-column="quantity"><span tri-th-label class="sortColumnLabel">Quantity</span></div></div>
+										</div>
+									</div>
+
+									<div id="listContainerEquipment" tri-tbody >
+										<template is="dom-repeat" id="equipmentList" items="{{lookupEquipment}}">
+											<div tri-tr class="table-row equipment-table-row" selected$="{{item.selected}}">
+												<div class="small-column-equipment"><div tri-td>
+													<paper-button noink class="table-link" on-tap="_handleAddEquipment" disabled$="{{!_isDraft(moveRequest)}}" hidden$="{{item.added}}" aria-label$="{{_getAddEquipmentString(item.id,item.name)}}">Add</paper-button>
+													<paper-button noink class="table-link" on-tap="_handleRemoveEquipment" disabled$="{{_isDraftRemove(item._id)}}" hidden$="{{!item.added}}" aria-label$="{{_getRemoveEquipmentString(item.id,item.name)}}">Remove</paper-button>
+												</div></div>
+
+												<div class="small-column-equipment"><div tri-td>
+
+												</div></div>
+
+												<div class="big-column-equipment"><div tri-td><div class="td-content-text">{{item.id}}</div></div></div>
+												<div class="big-column-equipment"><div tri-td><div class="td-content-text">{{item.name}}</div></div></div>
+												<div class="big-column-equipment"><div tri-td><div class="td-content-text">{{item.building}}</div></div></div>
+												<div class="big-column-equipment"><div tri-td><div class="td-content-text">{{item.floor}}</div></div></div>
+												<div class="big-column-equipment"><div tri-td><div class="td-content-text">{{item.space}}</div></div></div>
+												<div class="big-column-equipment"><div tri-td><div class="td-content-text">{{item.spec}}</div></div></div>
+												<div class="small-column-equipment"><div tri-td><div class="td-content-text">{{item.quantity}}</div></div></div>
+
+											</div>
+										</template>
+									</div>
+								</div>
+							</div>
+						</div><!-- end .container-results -->
+
+						<!--End Equipment-->
+
+						<!--Room-->
+						<div class="container-results" hidden$="{{!_roomDropdownSelected}}">
+							<div hidden$="{{!showSearchResults}}" class="search-count"><span>Displaying {{_roomFilteredSize}} of {{_roomTotalSize}} room found</span> <paper-button noink class="header-link" on-tap="openConfirmationDialogRoom" disabled$="{{_addAllDisabled}}" aria-label="Add All Room">Add All</paper-button></div>
+
+							<div table-container class="main-table-container" hidden$="{{!showSearchResults}}">
+								<div tri-fixed-table class="main-table">
+									<div tri-thead  class="table-header">
+										<div tri-tr>
+											<div class="small-column-room"><div tri-th></div> </div>
+											<div class="small-column-room"><div tri-th></div></div>
+											<div class="big-column-room"><div tri-th class="sort-column-header" on-tap="_handleSortIdRoom" data-column="id"><span tri-th-label class="sortColumnLabel" tabindex="0" on-keypress="_handleSortIdRoom">ID</span>&nbsp;<triplat-icon id="idRoomIcon" class="sort-icon" icon="sort-descending"></triplat-icon></div></div>
+											<div class="big-column-room"><div tri-th class="sort-column-header" on-tap="_handleSortNameRoom" data-column="name"><span tri-th-label class="sortColumnLabel" tabindex="0" on-keypress="_handleSortNameRoom">Room Name</span>&nbsp;<triplat-icon id="nameRoomIcon" class="sort-icon" icon="sort"></triplat-icon></div></div>
+											<div class="big-column-room"><div tri-th class="sort-column-header" on-tap="_handleSortBuildingRoom" data-column="building"><span tri-th-label class="sortColumnLabel" tabindex="0" on-keypress="_handleSortBuildingRoom">Building</span>&nbsp;<triplat-icon id="buildingRoomIcon" class="sort-icon" icon="sort"></triplat-icon></div></div>
+											<div class="big-column-room"><div tri-th class="sort-column-header" on-tap="_handleSortFloorRoom" data-column="floor"><span tri-th-label class="sortColumnLabel" tabindex="0" on-keypress="_handleSortFloorRoom">Floor</span>&nbsp;<triplat-icon id="floorRoomIcon" class="sort-icon" icon="sort"></triplat-icon></div></div>
+											<div class="big-column-room"><div tri-th class="sort-column-header" on-tap="_handleSortSpaceRoom" data-column="spaceclass"><span tri-th-label class="sortColumnLabel" tabindex="0" on-keypress="_handleSortSpaceRoom">Space Class</span>&nbsp;<triplat-icon id="spaceRoomIcon" class="sort-icon" icon="sort"></triplat-icon></div></div>
+										</div>
+									</div>
+
+									<div id="listContainerRoom" tri-tbody >
+										<template is="dom-repeat" id="roomList" items="{{lookupRoom}}">
+											<div tri-tr class="table-row room-table-row" selected$="{{item.selected}}">
+												<div class="small-column-room" hidden$="{{item.workpoint}}"><div tri-td>
+													<paper-button noink class="table-link" on-tap="_handleAddRoom" disabled$="{{!_isDraft(moveRequest)}}" hidden$="{{item.added}}" aria-label$="{{_getAddRoomString(item.id,item.name)}}">Add</paper-button>
+													<paper-button noink class="table-link" on-tap="_handleRemoveRoom" disabled$="{{_isDraftRemove(item._id)}}" hidden$="{{!item.added}}" aria-label$="{{_getRemoveRoomString(item.id,item.name)}}">Remove</paper-button>
+												</div></div>
+												<div class="small-column-room" hidden$="{{!item.workpoint}}"><div tri-td>
+													<paper-button noink class="table-link" on-tap="_handleAddRoom" disabled$="{{!_isDraft(moveRequest)}}" aria-label$="{{_getAddRoomString(item.id,item.name)}}">Add</paper-button>
+												</div></div>
+
+												<div class="small-column-room"><div tri-td>
+
+												</div></div>
+
+												<div class="big-column-room"><div tri-td><div class="td-content-text">{{item.id}}</div></div></div>
+												<div class="big-column-room"><div tri-td><div class="td-content-text">{{item.name}}</div></div></div>
+												<div class="big-column-room"><div tri-td><div class="td-content-text">{{item.building}}</div></div></div>
+												<div class="big-column-room"><div tri-td><div class="td-content-text">{{item.floor}}</div></div></div>
+												<div class="big-column-room"><div tri-td><div class="td-content-text">{{item.spaceclass}}</div></div></div>
+											</div>
+										</template>
+									</div>
+								</div>
+							</div>
+						</div><!-- end .container-results -->
+
+						<!--End Room-->
+
+            <!-- Location -->
+						<div class="container-search-building" hidden$="{{!_locationDropdownSelected}}">
+							<div hidden$="{{_hideSearchLocationTable}}">
+								<div hidden$="{{!showSearchResults}}" class="search-count">
+									<span>{{_locationTotalSize}} buildings found</span>
+								</div><!-- end div -->
+
+								<div hidden$="{{!showSearchResults}}" class="container-table">
+									<div table-container class="table-floor" hidden$="{{!showSearchResults}}">
+										<div tri-fixed-table clickable-rows class="inbox-table-inner main-table">
+											<div tri-thead class="table-header">
+												<div tri-tr>
+													<div class="col-floor-checkbox">
+														<div tri-th></div>
+													</div><!-- end .col-floor-checkbox -->
+
+													<div>
+														<div tri-th on-tap="_handleSortBuildingLocation" data-column="building">
+															<span tri-th-label  class="sortColumnLabel" tabindex="0" on-keypress="_handleSortBuildingLocation">Building Name</span>&nbsp;<triplat-icon id="buildingLocationIcon" class="sort-icon" icon="sort-ascending"></triplat-icon>
+														</div><!-- end tri-th -->
+													</div><!-- end div -->
+												</div><!-- end tri-tr -->
+											</div><!-- end tri-thead -->
+
+											<div id="listContainerLocation" tri-tbody>
+												<template is="dom-repeat" id="locationList" items="{{buildingSearchSelected}}">
+													<div tri-tr class="table-row" selected$="{{item.selected}}">
+														<div class="inbox-table-inner">
+															<div class="table-row-collapsed">
+																<div class="col-floor-checkbox" id="colIcons">
+		                              <div tri-td>
+		                                <paper-radio-button name="buidingList" class="inbox-checkbox" checked="{{item.selected}}" on-tap="_handleRadioBuildingSelect" aria-label$="{{item.building}}"></paper-radio-button>
+																	</div><!-- end tri-td -->
+																</div><!-- end .col-floor-checkbox -->
+
+																<div class="locationColumn">
+																	<div tri-td >
+																		<div class="td-content-text">{{item.building}}</div>
+																	</div><!-- end tri-td -->
+																</div><!-- end div -->
+
+																<div>
+																	<div tri-td>
+																		<div class="td-content-floor"></div>
+																	</div><!-- end tri-td -->
+																</div><!-- end div -->
+		                         	</div><!-- end .table-row-collapsed -->
+
+															<iron-collapse class="table-row-collapse" id="inboxcollapse" opened="{{item.isExpanded}}" hidden$="{{!item.isExpanded}}">
+																<div class="table-row-collapsed collapsedRow-border">
+																	<div class="col-floor-checkbox collapsable-checkbox" id="colIcons">
+			                              								<div tri-td>
+																		</div><!-- end tri-td -->
+																	</div><!-- end .col-floor-checkbox -->
+
+																	<div class="locationColumn">
+																		<div tri-td></div>
+																	</div>
+
+																	<div>
+																		<div tri-td class="floor-td-text">
+																			<div class="td-content-text box-floor-text"><p>Select floor(s)</p></div>
+																		</div><!-- end tri-td -->
+																	</div><!-- end div -->
+			                         	</div><!-- end .table-row-collapsed -->
+
+			                         							<div class="table-row-collapsed">
+																	<div class="col-floor-checkbox collapsable-checkbox" id="colIcons">
+			                              <div tri-td>
+																		</div><!-- end tri-td -->
+																	</div><!-- end .col-floor-checkbox -->
+																	<div class="locationColumn">
+																		<div tri-td></div>
+																	</div>
+
+																	<div class="floor-tds">
+																		<div tri-td class="collapsable-floor-td">
+																			<div class="td-content-floor box-floor-list">
+
+																				<template
+																						is="dom-repeat"
+																						items="{{buildingFloorSearchSelected}}"
+																						observe="selected"
+																						hidden$="{{_loadingFloors}}">
+																					<div class="collapsable-floor-content">
+																						<p class="computedRow" selected$="{{item.selected}}">
+																							<paper-checkbox checked="{{item.selected}}" on-tap="_handleCheckboxFloorSelect"></paper-checkbox>
+																							<span>{{item.floor}}</span>
+																						</p>
+																					</div>
+																				</template>
+
+																				<div class="floor-td-text" hidden$="{{_loadingFloors}}">
+																					<p hidden$="{{_hasFloors(buildingFloorSearchSelected)}}">No floors found.</p>
+																				</div>
+
+
+
+																				<paper-spinner active hidden$="{{!_loadingFloors}}"></paper-spinner>
+																			</div>
+																		</div><!-- end tri-td -->
+																	</div><!-- end div -->
+			                         	</div><!-- end .table-row-collapsed -->
+															</iron-collapse>
+														</div><!-- end .inbox-table-inner -->
+													</div><!-- end tri-tr -->
+												</template>
+											</div><!-- end tri-tbody -->
+										</div><!-- end tri-fixed-table -->
+									</div><!-- end table-container -->
+								</div><!-- end div -->
+							</div><!-- end div -->
+							<tricomp-multi-space-selector id="locationSearchSpaceSelector"
+									class="space-selector"
+									building="[[_finalBuilding]]"
+									floors="[[_finalFloors]]" hidden$="[[!_hideSearchLocationTable]]"
+									move-request="[[moveRequest]]"
+									on-change-location="_changeLocation"
+									on-update-added-or-removed-spaces="_handleUpdateAddedOrRemovedSpaces">
+							</tricomp-multi-space-selector>
+						</div><!-- end div -->
+						<!-- End Location -->
+
+					</div><!-- end .search-container -->
+				</div><!-- end .tricomp-collapse-section-static -->
+			</tricomp-collapse-section>
+			<tricomp-alert id="addWorkpointToast" type="info" text="You are adding a Workpoint Room. So, no Room Line Item will be created" duration="1000"></tricomp-alert>
+			<tricomp-alert id="addAllToast" type="info" title="Adding items" duration="-1"></tricomp-alert>
+			<tricomp-alert id="addAllCompleteToast" type="success" title="Success" text="Finished adding items" duration="2500"></tricomp-alert>
+			<tricomp-alert id="addAllCompleteBlankToast" type="info" text="No items were added. Only a non-workpoint item can be added." duration="2500"></tricomp-alert>
+			<tricomp-alert id="addAllTimeoutToast" type="info" text="Operation taking a long time. Still running in background" duration="2500"></tricomp-alert>
+		</div><!-- end .content -->
+
+		<iron-collapse id="actionButtonsCollapse" class="container-collapse-action" hidden$="{{!_isDraft(moveRequest)}}">
+			<div class="container-action-button">
+				<div class="actionbar-selected"><span>{{_selectedRequests.length}}</span> &nbsp; SELECTED</div>
+				<div class="actionbar-12px"></div>
+				<paper-button footer on-tap="_handleRemoveDialogTap" disabled$="{{!_isDraft(moveRequest)}}" noink>Remove Item</paper-button>
+			</div><!-- end .container-action-button -->
+		</iron-collapse>
+
+    <iron-collapse id="searchBuildingCollapse" class="container-collapse-action" hidden$="{{_hideSearchLocationTable}}">
+			<div class="container-action-button">
+				<paper-button noink on-tap="_validateChangingSpaceSelectorBuildingAndFloor"
+						disabled$="{{_actionBtnDisabled}}" footer>Done</paper-button>
+				<paper-button noink on-tap="_changeLocationCancel" hidden$="{{!_finalBuilding.building}}" footer>Cancel</paper-button>
+			</div><!-- end .container-action-button -->
+		</iron-collapse>
+
+		<paper-dialog id="confirmationDialog" modal with-backdrop >
+			<p>Add {{lookupPeople.length}} items to the request?</p>
+			<div class="buttons dialog-buttons">
+					<paper-button noink class="solid-button" dialog-confirm   on-tap="_addAllItems">Confirm</paper-button>
+					<paper-button noink class="solid-button" secondary dialog-dismiss >Cancel</paper-button>
+			</div>
+		</paper-dialog>
+
+		<paper-dialog id="confirmationDialogAsset" modal with-backdrop>
+			<p>Add {{lookupAsset.length}} items to the request?</p>
+			<div class="buttons dialog-buttons">
+					<paper-button noink class="solid-button" dialog-confirm  on-tap="_addAllItemsAsset">Confirm</paper-button>
+					<paper-button noink class="solid-button" secondary dialog-dismiss >Cancel</paper-button>
+			</div>
+		</paper-dialog>
+
+		<paper-dialog id="confirmationDialogEquipment" modal with-backdrop>
+			<p>Add {{lookupEquipment.length}} items to the request?</p>
+			<div class="buttons dialog-buttons">
+					<paper-button noink class="solid-button" dialog-confirm  on-tap="_addAllItemsEquipment">Confirm</paper-button>
+					<paper-button noink class="solid-button" secondary dialog-dismiss >Cancel</paper-button>
+			</div>
+		</paper-dialog>
+
+
+		<paper-dialog id="confirmationDialogRoom" modal with-backdrop>
+			<p>Add {{lookupRoom.length}} items to the request?</p>
+			<div class="buttons dialog-buttons">
+					<paper-button noink class="solid-button" dialog-confirm on-tap="_addAllItemsRoom">Confirm</paper-button>
+					<paper-button noink class="solid-button" secondary dialog-dismiss >Cancel</paper-button>
+			</div>
+		</paper-dialog>
+
+		<paper-dialog id="confirmationDialogLocationSearch" modal >
+			<p>You have selected items within your current floor plan that have not been updated to your request.
+			   Continue to update your selections and add them to your request.
+			</p>
+			<div class="buttons dialog-buttons">
+				<paper-button noink class="solid-button" dialog-confirm  on-tap="_changeSpaceSelectorBuildingAndFloor">
+				Continue</paper-button>
+				<paper-button noink class="solid-button" secondary dialog-dismiss >Cancel</paper-button>
+			</div>
+		</paper-dialog>
+
+		<paper-dialog id="deleteConfirmationDialog" class="selection" modal with-backdrop>
+			<p>Remove line items?</p>
+			<div class="buttons">
+				<paper-button class="list-button solid-button" dialog-dismiss on-tap="_handleRemoveTap" noink>Remove</paper-button>
+				<paper-button class="list-button solid-button" secondary dialog-dismiss noink>Cancel</paper-button>
+			</div>
+		</paper-dialog>
+
+		<paper-dialog id="removeItemsDialog" modal>
+			<p>Wait until all line items are added before you remove a line item.</p>
+
+			<div class="buttons dialog-buttons">
+				<paper-button noink class="solid-button" dialog-confirm dialog-dismiss>Close</paper-button>
+			</div>
+		</paper-dialog>
+
+	</template>
+
+</dom-module>
+
+<script>
+	Polymer({
+
+		is: "tripage-groupmove-search-detail",
+
+		behaviors: [
+			TriBlockPageContainerBehavior,
+		    Polymer.TriAppSearchDetailBehavior,
+		    Polymer.IronResizableBehavior
+		],
+
+		properties: {
+
+			isCreated: {
+				type: Boolean,
+				value: false
+			},
+			status:String,
+			_completRequestHandler: Object,
+			
+			preCreateComplete: {
+				type: Boolean,
+				value: false
+			},
+
+			showSearchResults : {
+				type : Boolean,
+				value : false
+			},
+			populateArray : {
+				type : Boolean,
+				value : true
+			},
+			populateArrayId : String,
+
+			_selectedRequests: {
+				type: Array,
+				value: []
+			},
+
+			selectedPeopleList: {
+				type: Array,
+				value: []
+			},
+
+			selectedAsset: {
+				type: Array,
+				value: []
+			},
+
+			selectedEquipment: {
+				type: Array,
+				value: []
+			},
+
+			selectedRoom: {
+				type: Array,
+				value: []
+			},
+
+			requestId: String,
+
+			_searchHeaderMessage: {
+				type: String,
+				value: function(){
+					var __dictionary__headerMessage = " Select items from your search to add to your request";
+					return __dictionary__headerMessage;
+				}
+			},
+
+			_searchInputMessage: {
+				type: String,
+				value: function(){
+					var __dictionary__peopleInputMessage = "Search people by name, location or organization";
+					return __dictionary__peopleInputMessage;
+				}
+			},
+
+			_accordionOpened : {
+				type : Boolean,
+				value : true
+			},
+			_peopleOpened : {
+				type : Boolean,
+				value : false
+			},
+
+			_assetOpened : {
+				type : Boolean,
+				value : false
+			},
+
+			_equipmentOpened : {
+				type : Boolean,
+				value : false
+			},
+
+			_roomOpened : {
+				type : Boolean,
+				value : false
+			},
+			_screenLarge : {
+				type : Boolean,
+				value : true
+			},
+			actionsEnabled : {
+				type : Boolean,
+				value : true
+			},
+			selectedDropdownIcon : {
+				type : String,
+				value : 'user'
+			},
+			sortField: {
+				type : String,
+				value : 'firstName'
+			},
+			sortDescending: {
+				type : Boolean,
+				value : false
+			},
+			sortFieldPeople: {
+				type : String,
+				value : 'firstName'
+			},
+			sortDescendingPeople: {
+				type : Boolean,
+				value : false
+			},
+			sortFieldAsset: {
+				type : String,
+				value : 'name'
+			},
+			sortDescendingAsset: {
+				type : Boolean,
+				value : false
+			},
+			sortFieldEquipment: {
+				type : String,
+				value : 'name'
+			},
+			sortDescendingEquipment: {
+				type : Boolean,
+				value : false
+			},
+			sortFieldRoom: {
+				type : String,
+				value : 'name'
+			},
+			sortDescendingRoom: {
+				type : Boolean,
+				value : false
+			},
+            sortFieldLocation: {
+				type : String,
+				value : 'building'
+			},
+            sortDescendingLocation: {
+				type : Boolean,
+				value : false
+			},
+			_peopleTotalSize: {
+				type : Number,
+				value : 0
+			},
+			_peopleFilteredSize: {
+				type : Number,
+				value : 0
+			},
+			_assetTotalSize: {
+				type : Number,
+				value : 0
+			},
+			_assetFilteredSize: {
+				type : Number,
+				value : 0
+			},
+			_equipmentTotalSize: {
+				type : Number,
+				value : 0
+			},
+			_equipmentFilteredSize: {
+				type : Number,
+				value : 0
+			},
+			_roomTotalSize: {
+				type : Number,
+				value : 0
+			},
+			_roomFilteredSize: {
+				type : Number,
+				value : 0
+			},
+      _locationTotalSize: {
+				type : Number,
+				value : 0
+			},
+      _locationFilteredSize: {
+				type : Number,
+				value : 0
+			},
+			refreshMoveRequest: {
+				type : Boolean,
+				value : false
+			},
+			pageLoaded: {
+				type : Boolean,
+				value : false
+			},
+			lastRequest: {
+				type : String,
+				value : ''
+			},
+			_peopleDropdownSelected : {
+				type : Boolean,
+				value : true
+			},
+
+			_assetDropdownSelected : {
+				type : Boolean,
+				value : false
+			},
+
+			_equipmentDropdownSelected : {
+				type : Boolean,
+				value : false
+			},
+
+			_roomDropdownSelected : {
+				type : Boolean,
+				value : false
+			},
+
+      _locationDropdownSelected: {
+				type: Boolean,
+				value: false
+			},
+
+			_addAllDisabled : {
+				type : Boolean,
+				value : false
+			},
+			_toastDisplayed : {
+				type : Boolean,
+				value : false
+			},
+
+			refreshInterval: {
+				type : Number,
+				value : 8000
+			},
+			maxNumberRefresh: {
+				type : Number,
+				value : 30
+			},
+			currentNumberRefresh: {
+				type : Number,
+				value : 0
+			},
+			
+
+      //=========================================================
+			// Property _loadingFloors
+			//------------------------------------------
+			// Objective: Determine when to show a loading when search for floors
+			//=========================================================
+			_loadingFloors: {
+				type: Boolean,
+				value: false
+			},
+
+      //=========================================================
+			// Property _hideSearchLocationTable
+			//------------------------------------------
+			// Objective: Determine when to show the search location table
+			//=========================================================
+      _hideSearchLocationTable: {
+        type: Boolean,
+        value: false
+      },
+
+			//=========================================================
+			// Property _actionBtnDisabled
+			//------------------------------------------
+			// Objective: Determine the status of the action button - should be disabled until a checkbox is clicked
+			//=========================================================
+			_actionBtnDisabled: {
+				type: Boolean,
+				value: false
+			},
+
+      //=========================================================
+			// Property _selectedBuildings
+			//------------------------------------------
+			// Objective: Array of the selected buildings
+			//=========================================================
+			_selectedBuildings : {
+				type: Array,
+				value: []
+			},
+
+			//=========================================================
+			// Property _selectedBuilding
+			//------------------------------------------
+			// Objective: Object of the selected building
+			//=========================================================
+			_selectedBuilding: {
+				type: Object,
+				value: function() { return {}; }
+			},
+
+			//=========================================================
+			// Property _selectedFloors
+			//------------------------------------------
+			// Objective: Contain the array of floors selected
+			//=========================================================
+			_selectedFloors: {
+				type: Array,
+				value: []
+			},
+
+			//=========================================================
+			// Property _finalBuilding
+			//------------------------------------------
+			// Objective: Building that is about to be added to the request
+			// Necessary because _selectedBuilding is clean after the button click
+			//=========================================================
+			_finalBuilding : {
+				type: Object,
+				value: function() { return {}; }
+			},
+
+			//=========================================================
+			// Property _finalFloors
+			//------------------------------------------
+			// Objective: Floors that are about to be added to the request
+			// Necessary because _selectedFloors is clean after the button click
+			//=========================================================
+			_finalFloors : {
+				type: Array,
+				value: []
+			},
+
+			//=========================================================
+			// Property _statusChangeLocation
+			//------------------------------------------
+			// Objective: Status control when change location
+			//=========================================================
+			_statusChangeLocation: {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _selectedRequests
+			//------------------------------------------
+			// Objective: Array of MLI checkbox selected
+			//=========================================================
+			_selectedRequests: {
+				type: Array,
+				value: []
+			},
+
+			//=========================================================
+			// Property _selected-Type-Checkbox
+			//------------------------------------------
+			// Objective: Array of MLI's type checkbox selected
+			//=========================================================
+			_selectedPeopleCheckbox: {
+				type: Array,
+				value: [],
+				notify: true
+			},
+			_selectedAssetsCheckbox: {
+				type: Array,
+				value: [],
+				notify: true
+			},
+			_selectedEquipmentCheckbox: {
+				type: Array,
+				value: [],
+				notify: true
+			},
+			_selectedRoomsCheckbox: {
+				type: Array,
+				value: [],
+				notify: true
+			},
+
+			//=========================================================
+			// Property _showAll-Type
+			//------------------------------------------
+			// Objective: Indicate when to check showAll checkbox
+			//=========================================================
+			_showAllPeople: {
+				type: Boolean,
+				value: false
+			},
+			_showAllAssets: {
+				type: Boolean,
+				value: false
+			},
+			_showAllEquipment: {
+				type: Boolean,
+				value: false
+			},
+			_showAllRooms: {
+				type: Boolean,
+				value: false
+			},
+
+
+			_searchValue: {
+				type: String,
+				value: ""
+			},
+			_createdByRoom: {
+				type: Boolean,
+				value: false
+			},
+			_lastLineItemCount: {
+				type : Number,
+				value : 0
+			},
+		},
+
+		observers: [
+			//"_checkFlag(moveRequest.messageFlag)",
+			//"_appendFiltersChanged(appendFilters.*)",
+      '_handleFloorsResults(buildingFloorSearchSelected)',
+      		"_handleAppendFiltersLocationChanged(appendFiltersLocation.*)",
+			"_handleSelectedRequestsLengthChange(_selectedRequests.length)",
+			"_handleSelectedPeopleCheckboxChange(_selectedPeopleCheckbox.*)",
+			"_handleSelectedAssetsCheckboxChange(_selectedAssetsCheckbox.*)",
+			"_handleSelectedEquipmentCheckboxChange(_selectedEquipmentCheckbox.*)",
+			"_handleSelectedRoomsCheckboxChange(_selectedRoomsCheckbox.*)",
+			"_handlePeopleCount(moveLineItemsPeople.length)",
+			"_handleAssetsCount(moveLineItemsAsset.length)",
+			"_handleEquipmentCount(moveLineItemsEquipment.length)",
+			"_handleRoomsCount(moveLineItemsRoom.length)",
+		],
+
+		listeners: {
+			"searchRoute.route-active": "_handleRouteActive",
+			"header.submit": "submitRequest",
+			"iron-resize": "_onIronResize",
+			"header.reset": "_handleReset",
+			"header.toggleCollapse": "_toggleExpandMLI",
+			"paper-dropdown-open" : "_searchCriteriaDropDownOpen",
+		},
+
+
+        ready: function(){
+
+        },
+
+
+		//observer to check if system is adding people
+		_checkFlag: function(message){
+			if(message !=null){
+				if(message =="!"){
+					this.refreshMoveRequest = true;
+					this.pageLoaded = true;
+					this.currentNumberRefresh = this.currentNumberRefresh + 1;
+					if((this.currentNumberRefresh > this.maxNumberRefresh)&& this._toastDisplayed){
+						this.refreshMoveRequest = false;
+						this._createdByRoom = false;
+						this.$.addAllToast.close();
+						this.$.addAllTimeoutToast.open();
+						this._toastDisplayed = false;
+						this.$.moveLineItems.refresh();
+					}
+					else{
+					this.$.moveLineItems.refresh();
+					setTimeout(function() {
+						this.$.moveRequest.refresh();
+						}.bind(this), this.refreshInterval);
+					}
+				}
+			}
+			else if(this.refreshMoveRequest){
+				this.refreshMoveRequest = false;
+
+				this.$.addAllToast.close();
+				var currentSize;
+				if(this.moveLineItems)
+					currentSize = this.moveLineItems.length;
+				else
+					currentSize = 0;
+				if(this._createdByRoom && this._lastLineItemCount == currentSize)
+					this.$.addAllCompleteBlankToast.open();
+				else
+					this.$.addAllCompleteToast.open();
+				this._createdByRoom = false;
+
+				this._toastDisplayed = false;
+				this.$.moveLineItems.refresh();
+
+			}
+			else if(this._toastDisplayed && this.moveLineItems!= null && this.moveLineItems.length<1 ){
+				setTimeout(function() {
+						this.$.moveRequest.refresh();
+						}.bind(this), this.refreshInterval);
+
+			}
+
+
+		},
+
+		loadPage : function(){
+		//initial load of the page
+			//if((!this.pageLoaded && !this.refreshMoveRequest) ||(this.lastRequest!= this.moveRequest._id)){
+			if((this.lastRequest!= this.moveRequest._id)){
+				this.$.searchField.clearSearch();
+				this.showSearchResults = false;
+				//if((this.moveRequest.status=="Draft")&&(this.moveRequest.messageFlag == "!" || this.moveRequest.workflowCount>0)){
+				if((this.moveRequest.status=="Draft")&&(this.moveRequest.workflowCount>0)){
+					this.$.addAllToast.open();
+					this._toastDisplayed = true;
+					}
+				else
+					this._toastDisplayed = false;
+				this.currentNumberRefresh = 0;
+				var __dictionary__headerMessage = " Select items from your search to add to your request";
+				this.set("_searchHeaderMessage",__dictionary__headerMessage);
+				this.lookupPeople = [];
+				this.lookupAsset = [];
+				this.lookupEquipment = [];
+				this.lookupRoom = [];
+				this.lookupLocation = [];
+				this.$.lookupPeople.disable = false;
+				this.$.lookupAsset.disable = false;
+				this.$.lookupEquipment.disable = false;
+				this.$.lookupRoom.disable = false;
+				this.$.lookupLocation.disable = false;
+				this.set('peopleScroller', this.$.listContainer);
+				this.set('assetScroller', this.$.listContainerAsset);
+				this.set('equipmentScroller', this.$.listContainerEquipment);
+				this.set('roomScroller', this.$.listContainerRoom);
+				this.set('locationScroller', this.$.listContainerLocation);
+				if(this.moveRequest.status=="Draft"){
+					this._accordionOpened = true;
+					this._peopleOpened = false;
+
+					// Open MLI collapsable section
+					this._toggleExpandMLI();
+				}
+				else{
+					this._peopleOpened = false;
+					this._accordionOpened = false;
+
+					// Close MLI collapsable section
+					this._toggleCloseMLI();
+				}
+				this.lastRequest = this.moveRequest._id;
+				//}
+			}
+
+			this._checkToastMessage();
+		},
+
+		_hasImage : function(image) {
+			if ((image) && (image != "-1")) {
+				return true;
+			}
+			return false;
+		},
+
+		_checkAddAllDisabled: function(){
+			if(!this.moveRequest || this.moveRequest.status == null || this.moveRequest.status =='Draft'){
+				if(this._peopleDropdownSelected){
+					if (this._peopleTotalSize == 0){
+						this._addAllDisabled = true;
+					}
+					else{
+						this._addAllDisabled = false;
+					}
+				}
+				else if(this._assetDropdownSelected){
+					if (this._assetTotalSize == 0){
+						this._addAllDisabled = true;
+					}
+					else{
+						this._addAllDisabled = false;
+					}
+				}
+				else if(this._equipmentDropdownSelected){
+					if (this._equipmentTotalSize == 0){
+						this._addAllDisabled = true;
+					}
+					else{
+						this._addAllDisabled = false;
+					}
+				}
+				else if(this._roomDropdownSelected){
+					if (this._roomTotalSize == 0){
+						this._addAllDisabled = true;
+					}
+					else{
+						this._addAllDisabled = false;
+					}
+				}
+			}
+			else{
+				this._addAllDisabled = true;
+			}
+		},
+
+		/*_showSearchResults: function() {
+			this.showSearchResults = true;
+        },*/
+        _showSearchResults: function() {
+
+            // Fix to show data in the list only if there's a search filter
+			if( this.appendFilters.length > 0 ){
+				if(this.searchStarted){
+				this.showSearchResults = true;
+				}
+			} else {
+				this.showSearchResults = false;
+			}
+        },
+
+
+
+		_addAllItems: function() {
+			var selectedRows = Polymer.dom(this.root).querySelectorAll(".people-table-row");
+			var addedPeople = [];
+			for (var i=0; i < selectedRows.length; i++) {
+					if(this.$.peopleList.modelForElement(selectedRows[i]).get('item.added')!= true ){
+						addedPeople.push(this.$.peopleList.modelForElement(selectedRows[i]).item);
+						this.$.peopleList.modelForElement(selectedRows[i]).set('item.added', true);
+					}
+			}
+			this.$.addAllToast.open();
+			if(this.moveRequest.status==null){
+				this.isCreated = true;
+				this._accordionOpened = true;
+
+				// Open MLI collapsable section
+				//this._toggleExpandMLI();
+
+				this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "create").then(function() {
+				this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "addPeopleMLI", {VARPeople: addedPeople});
+				//this.$.myMoveRequests.refresh();
+				}.bind(this));
+				this.fire("createdDraft");
+			}
+			else{
+				this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "addPeopleMLI", {VARPeople: addedPeople});
+				}
+			this._toastDisplayed = true;
+			this.pageLoaded = true;
+			this.currentNumberRefresh = 0;
+			if(addedPeople.length>1  && this.moveRequest && this.moveRequest.workflowCount==0){
+				setTimeout(function() {
+						this.$.moveRequest.refresh();
+						}.bind(this), 1000);
+						}
+		},
+
+		_addAllItemsAsset: function() {
+			var selectedRows = Polymer.dom(this.root).querySelectorAll(".asset-table-row");
+			var addedAsset = [];
+			for (var i=0; i < selectedRows.length; i++) {
+
+					if(this.$.assetList.modelForElement(selectedRows[i]).get('item.added')!= true ){
+						addedAsset.push(this.$.assetList.modelForElement(selectedRows[i]).item);
+						this.$.assetList.modelForElement(selectedRows[i]).set('item.added', true);
+					}
+			}
+			this.$.addAllToast.open();
+			if(this.moveRequest.status==null){
+				this.isCreated = true;
+				this._accordionOpened = true;
+
+				this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "create").then(function() {
+				this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "addAssetMLI", {VARAsset: addedAsset});
+				}.bind(this));
+
+				this.fire("createdDraft");
+			}
+			else{
+				this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "addAssetMLI", {VARAsset: addedAsset});
+				}
+			this._toastDisplayed = true;
+			this.pageLoaded = true;
+			this.currentNumberRefresh = 0;
+			if(addedAsset.length>1 && this.moveRequest && this.moveRequest.workflowCount==0){
+				setTimeout(function() {
+						this.$.moveRequest.refresh();
+						}.bind(this), 1000);
+						}
+
+		},
+
+		_addAllItemsEquipment: function() {
+			var selectedRows = Polymer.dom(this.root).querySelectorAll(".equipment-table-row");
+			var addedEquipment = [];
+			for (var i=0; i < selectedRows.length; i++) {
+					if(this.$.equipmentList.modelForElement(selectedRows[i]).get('item.added')!= true ){
+						addedEquipment.push(this.$.equipmentList.modelForElement(selectedRows[i]).item);
+						this.$.equipmentList.modelForElement(selectedRows[i]).set('item.added', true);
+					}
+			}
+			this.$.addAllToast.open();
+
+			if(this.moveRequest.status==null){
+				this.isCreated = true;
+				this._accordionOpened = true;
+
+				// Open MLI collapsable section
+				//this._toggleExpandMLI();
+				this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "create").then(function() {
+				this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "addEquipmentMLI", {VAREquipment: addedEquipment});
+				//this.$.myMoveRequests.refresh();
+				}.bind(this));
+				this.fire("createdDraft");
+			}
+			else{
+				this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "addEquipmentMLI", {VAREquipment: addedEquipment});
+				}
+
+			this._toastDisplayed = true;
+			this.pageLoaded = true;
+			this.currentNumberRefresh = 0;
+			if(addedEquipment.length>1  && this.moveRequest && this.moveRequest.workflowCount==0){
+				setTimeout(function() {
+						this.$.moveRequest.refresh();
+						}.bind(this), 1000);
+						}
+		},
+
+		_addAllItemsRoom: function() {
+			var selectedRows = Polymer.dom(this.root).querySelectorAll(".room-table-row");
+			var addedRoom = [];
+			for (var i=0; i < selectedRows.length; i++) {
+					if(this.$.roomList.modelForElement(selectedRows[i]).get('item.added')!= true ){
+						addedRoom.push(this.$.roomList.modelForElement(selectedRows[i]).item);
+						this.$.roomList.modelForElement(selectedRows[i]).set('item.added', true);
+						}
+			}
+			this.$.addAllToast.open();
+			this._createdByRoom = true;
+
+			if(this.moveRequest.status==null){
+				this.isCreated = true;
+				this._accordionOpened = true;
+
+
+				// Open MLI collapsable section
+				//this._toggleExpandMLI();
+				this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "create").then(function() {
+				this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "addRoomMLI", {VARRoom: addedRoom});
+				//this.$.myMoveRequests.refresh();
+				}.bind(this));
+				this.fire("createdDraft");
+			}
+			else{
+				this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "addRoomMLI", {VARRoom: addedRoom});
+				}
+
+			this._toastDisplayed = true;
+			this.pageLoaded = true;
+			this.currentNumberRefresh = 0;
+			if(addedRoom.length>1  && this.moveRequest &&  this.moveRequest.workflowCount==0){
+				if(this.moveLineItems)
+					this._lastLineItemCount = this.moveLineItems.length;
+				else
+					this._lastLineItemCount = 0;
+				setTimeout(function() {
+						this.$.moveRequest.refresh();
+						}.bind(this), 1000);
+						}
+		},
+
+		submitRequest: function(){
+			this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "submit");
+			this.$.moveLineItems.refresh();
+			this.fire("refresh");
+			//this.fire("submit");
+			//this.$.myMoveRequests.refresh();
+		},
+
+		_computeModelLoading: function(preCreateComplete) {
+			return !preCreateComplete;
+		},
+
+		_handleRouteActive: function(e) {
+			var active = e.detail.active;
+			if (active !== true) {
+				return;
+			}
+			this.fire("init");
+			this._resetSearch();
+		},
+
+		_enableAccordionPerson : function() {
+			return this.actionsEnabled || this.selectedPeopleList.length > 0;
+		},
+
+		_enableAccordionAsset : function() {
+			return this.actionsEnabled || this.selectedAsset.length > 0;
+		},
+
+		_enableAccordionEquipment : function() {
+			return this.actionsEnabled || this.selectedEquipment.length > 0;
+		},
+
+		_enableAccordionRoom : function() {
+			return this.actionsEnabled || this.selectedRoom.length > 0;
+		},
+
+		_onIronResize: function() {
+	        this.screenWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+	        if( this.screenWidth > 769 ) {
+	            this.set("_screenLarge", true);
+	        } else {
+	         	this.set("_screenLarge", false);
+	        }
+    	},
+
+		_selectAssetIcon: function(){
+			if(!this._assetDropdownSelected){
+				this.$.searchField.clearSearch();
+				this.showSearchResults = false;
+			}
+			this.set("selectedDropdownIcon","assets");
+			var __dictionary__assetInputMessage = "Search asset by name, ID, location or spec class";
+			this.set("_searchInputMessage",__dictionary__assetInputMessage);
+			this._peopleDropdownSelected = false;
+			this._assetDropdownSelected = true;
+			this._equipmentDropdownSelected = false;
+			this._roomDropdownSelected = false;
+      this._locationDropdownSelected = false;
+			this._checkAddAllDisabled();
+			/* new search */
+			this.aliases = this.aliasesForAsset;
+
+		},
+
+		_selectPeopleIcon: function(){
+			if(!this._peopleDropdownSelected){
+				this.$.searchField.clearSearch();
+				this.showSearchResults = false;
+			}
+			this.set("selectedDropdownIcon","user");
+			var __dictionary__peopleInputMessage = "Search people by name, location or organization";
+			this.set("_searchInputMessage",__dictionary__peopleInputMessage);
+			this._peopleDropdownSelected = true;
+			this._assetDropdownSelected = false;
+			this._equipmentDropdownSelected = false;
+			this._roomDropdownSelected = false;
+            this._locationDropdownSelected = false;
+			this._checkAddAllDisabled();
+			/* new search */
+			this.aliases = this.aliasesForPeople;
+
+		},
+
+		_selectRoomIcon: function(){
+			if(!this._roomDropdownSelected){
+				this.$.searchField.clearSearch();
+				this.showSearchResults = false;
+			}
+			this.set("selectedDropdownIcon","room-function");
+			var __dictionary__roomInputMessage = "Search room by name, ID or location";
+			this.set("_searchInputMessage",__dictionary__roomInputMessage);
+			this._peopleDropdownSelected = false;
+			this._assetDropdownSelected = false;
+			this._equipmentDropdownSelected = false;
+			this._roomDropdownSelected = true;
+      this._locationDropdownSelected = false;
+			this._checkAddAllDisabled();
+			/* new search */
+			this.aliases = this.aliasesForRoom;
+
+		},
+
+		_selectEquipmentIcon: function(){
+			if(!this._equipmentDropdownSelected){
+				this.$.searchField.clearSearch();
+				this.showSearchResults = false;
+			}
+			this.set("selectedDropdownIcon","equipment");
+			var __dictionary__equipmentInputMessage = "Search equipment by name, ID, department or location";
+			this.set("_searchInputMessage",__dictionary__equipmentInputMessage);
+			this._peopleDropdownSelected = false;
+			this._assetDropdownSelected = false;
+			this._equipmentDropdownSelected = true;
+			this._roomDropdownSelected = false;
+      this._locationDropdownSelected = false;
+			this._checkAddAllDisabled();
+			/* new search */
+			this.aliases = this.aliasesForEquipment;
+
+		},
+
+    	_selectLocationIcon: function(){
+			if(!this._locationDropdownSelected) {
+				this.$.searchField.clearSearch();
+				this.showSearchResults = false;
+			}// end if
+
+			this.set("selectedDropdownIcon","location");
+			var __dictionary__locationInputMessage = "Search locations by building name, city, or address.";
+			this.set("_searchInputMessage",__dictionary__locationInputMessage);
+			this._peopleDropdownSelected = false;
+			this._assetDropdownSelected = false;
+			this._equipmentDropdownSelected = false;
+			this._roomDropdownSelected = false;
+			this._locationDropdownSelected = true;
+      		this._checkAddAllDisabled();
+			/* new search */
+			this.aliases = this.aliasesForLocation;
+
+
+			this.set("_hideSearchLocationTable", false);
+
+			// Search Collapse display
+			this.$.searchBuildingCollapse.hide();
+
+			// Clear temporary selected floor and building
+      		this.set("_selectedBuilding", {});
+			this.set("_selectedFloors", []);
+
+			this._locationTotalSize = 0;
+		},
+
+		_handlePeopleSelection: function(e) {
+			e.stopPropagation();
+			var people = e.model.item;
+			//var unselectable = e.model.item.unselectable;
+			//if (people && !unselectable) {
+				if (people.selected) {
+					// de-select
+					//this.$.peopleSelected.removeRecord(people, TriPlatDs.RefreshType.CLIENT);
+					e.model.set('item.selected', false);
+				} else {
+					// select
+					//this.$.peopleSelected.addRecord(people, TriPlatDs.RefreshType.CLIENT);
+					e.model.set('item.selected', true);
+				}
+			//}
+		},
+		_handleAddItem: function(e){
+			//this._handleAddItemTap();
+			var people = e.model.item;
+			var addedPeople = [];
+			e.model.set('item.added', true);
+			//this.$.peopleSelected.addRecord(people, TriPlatDs.RefreshType.CLIENT);
+			addedPeople.push(people);
+			//this.push("selectedPeopleList", people);
+			var __dictionary__headerMessageDone = " When you're done adding items, confirm the details of each item";
+			this.set("_searchHeaderMessage",__dictionary__headerMessageDone);
+			if(this.moveRequest.status==null){
+				this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "create").then(function() {
+				this.isCreated = true;
+				this._accordionOpened = true;
+
+				// Open MLI collapsable section
+				//this._toggleExpandMLI();
+
+				this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "addPeopleMLI", {VARPeople: addedPeople});
+				}.bind(this));
+				this.fire("createdDraft");
+			}
+			else{
+				this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "addPeopleMLI", {VARPeople: addedPeople});
+				}
+			this.$.addAllToast.open();
+			this._toastDisplayed = true;
+			this.currentNumberRefresh = 0;
+
+			this.pageLoaded = true;
+		},
+
+		_handleAddAsset: function(e){
+			var asset = e.model.item;
+			var addedAsset = [];
+			e.model.set('item.added', true);
+			//this.$.assetSelected.addRecord(asset, TriPlatDs.RefreshType.CLIENT);
+			addedAsset.push(asset);
+			//this.push("selectedAssetList", asset);
+			var __dictionary__headerMessageDone = " When you're done adding items, confirm the details of each item";
+			this.set("_searchHeaderMessage",__dictionary__headerMessageDone);
+			if(this.moveRequest.status==null){
+				this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "create").then(function() {
+				this.isCreated = true;
+				this._accordionOpened = true;
+
+				// Open MLI collapsable section
+				//this._toggleExpandMLI();
+
+				this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "addAssetMLI", {VARAsset: addedAsset});
+				}.bind(this));
+				this.fire("createdDraft");
+			}
+			else{
+				this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "addAssetMLI", {VARAsset: addedAsset});
+				}
+
+			this.$.addAllToast.open();
+			this._toastDisplayed = true;
+			this.currentNumberRefresh = 0;
+			this.pageLoaded = true;
+		},
+
+		_handleAddEquipment: function(e){
+			var equipment = e.model.item;
+			var addedEquipment = [];
+			e.model.set('item.added', true);
+			//this.$.equipmentSelected.addRecord(equipment, TriPlatDs.RefreshType.CLIENT);
+			addedEquipment.push(equipment);
+			var __dictionary__headerMessageDone = " When you're done adding items, confirm the details of each item";
+			this.set("_searchHeaderMessage",__dictionary__headerMessageDone);
+			if(this.moveRequest.status==null){
+				this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "create").then(function() {
+				this.isCreated = true;
+				this._accordionOpened = true;
+
+				// Open MLI collapsable section
+				//this._toggleExpandMLI();
+
+				this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "addEquipmentMLI", {VAREquipment: addedEquipment});
+				}.bind(this));
+				this.fire("createdDraft");
+			}
+			else{
+				this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "addEquipmentMLI", {VAREquipment: addedEquipment});
+				}
+			this.$.addAllToast.open();
+			this._toastDisplayed = true;
+			this.currentNumberRefresh = 0;
+			this.pageLoaded = true;
+		},
+
+		_handleAddRoom: function(e){
+			var room = e.model.item;
+			var addedRoom = [];
+			e.model.set('item.added', true);
+			//this.$.roomSelected.addRecord(room, TriPlatDs.RefreshType.CLIENT);
+			addedRoom.push(room);
+			var __dictionary__headerMessageDone = " When you're done adding items, confirm the details of each item";
+			this.set("_searchHeaderMessage",__dictionary__headerMessageDone);
+			this._createdByRoom = true;
+			if(this.moveRequest.status==null){
+				this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "create").then(function() {
+				this.isCreated = true;
+				this._accordionOpened = true;
+
+
+				// Open MLI collapsable section
+				//this._toggleExpandMLI();
+
+				this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "addRoomMLI", {VARRoom: addedRoom});
+				}.bind(this));
+				this.fire("createdDraft");
+			}
+			else{
+				this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "addRoomMLI", {VARRoom: addedRoom});
+				}
+
+			//if(room.workpoint=="TRUE")
+				//this.$.addWorkpointToast.open();
+			this.$.addAllToast.open();
+			this._toastDisplayed = true;
+			this.currentNumberRefresh = 0;
+			this.pageLoaded = true;
+			if(this.moveLineItems)
+					this._lastLineItemCount = this.moveLineItems.length;
+			else
+				this._lastLineItemCount = 0;
+		},
+
+
+		_handleRemoveItem: function(e){
+			if(this._toastDisplayed){
+				this.$.removeItemsDialog.open();
+				return true;
+			}
+
+			var people = e.model.item;
+			e.model.set('item.added', false);
+			this.$.peopleSelected.removeRecord(people, TriPlatDs.RefreshType.CLIENT);
+			for(var j=0;j<this.moveLineItems.length;j++){
+				if(this.moveLineItems[j].personRecordId==people._id){
+					this.$.moveLineItems.performAction(this.moveLineItems[j]._id, TriPlatDs.RefreshType.BOTH, "defaultActions", "delete");
+				}
+			}
+
+
+		},
+
+		_handleRemoveAsset: function(e){
+			if(this._toastDisplayed){
+				this.$.removeItemsDialog.open();
+				return true;
+			}
+			var asset = e.model.item;
+			e.model.set('item.added', false);
+			this.$.assetSelected.removeRecord(asset, TriPlatDs.RefreshType.CLIENT);
+			for(var j=0;j<this.moveLineItems.length;j++){
+				if(this.moveLineItems[j].assetRecordId==asset._id){
+					this.$.moveLineItems.performAction(this.moveLineItems[j]._id, TriPlatDs.RefreshType.BOTH, "defaultActions", "delete");
+				}
+			}
+
+		},
+
+		_handleRemoveEquipment: function(e){
+			if(this._toastDisplayed){
+				this.$.removeItemsDialog.open();
+				return true;
+			}
+			var equipment = e.model.item;
+			e.model.set('item.added', false);
+			this.$.equipmentSelected.removeRecord(equipment, TriPlatDs.RefreshType.CLIENT);
+			for(var j=0;j<this.moveLineItems.length;j++){
+				if(this.moveLineItems[j].specificationBomId==equipment._id){
+					this.$.moveLineItems.performAction(this.moveLineItems[j]._id, TriPlatDs.RefreshType.BOTH, "defaultActions", "delete");
+				}
+			}
+
+		},
+
+		_handleRemoveRoom: function(e){
+			if(this._toastDisplayed){
+				this.$.removeItemsDialog.open();
+				return true;
+			}
+			var room = e.model.item;
+			var removedRoom = [];
+			e.model.set('item.added', false);
+			removedRoom.push(room);
+			this.$.roomSelected.removeRecord(room, TriPlatDs.RefreshType.CLIENT);
+			for(var j=0;j<this.moveLineItems.length;j++){
+				if(this.moveLineItems[j].roomRecordId==room._id){
+					this.$.moveLineItems.performAction(this.moveLineItems[j]._id, TriPlatDs.RefreshType.BOTH, "defaultActions", "delete");
+				}
+			}
+			this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest", "deleteWorkpointMLI", {VARRoom: removedRoom});
+
+		},
+
+
+		_handleMoveLineItemsComplete: function(){
+			if(this.moveRequest != null){
+
+			if(this.$.addAllToast.opened && ( this.moveRequest.workflowCount==0) && this.moveLineItems.length>0){
+				this.refreshMoveRequest = false;
+
+				this.$.addAllToast.close();
+				var currentSize;
+				if(this.moveLineItems)
+					currentSize = this.moveLineItems.length;
+				else
+					currentSize = 0;
+				if(this._createdByRoom && this._lastLineItemCount == currentSize)
+					this.$.addAllCompleteBlankToast.open();
+				else
+					this.$.addAllCompleteToast.open();
+				this._createdByRoom = false;
+
+				this._toastDisplayed = false;
+			}
+			else if(this._createdByRoom && this.$.addAllToast.opened &&  ( this.moveRequest.workflowCount==0)){
+
+				this.refreshMoveRequest = false;
+				this.$.addAllToast.close();
+				var currentSize;
+				if(this.moveLineItems)
+					currentSize = this.moveLineItems.length;
+				else
+					currentSize = 0;
+				if(this._createdByRoom && this._lastLineItemCount == currentSize)
+					this.$.addAllCompleteBlankToast.open();
+				else
+					this.$.addAllCompleteToast.open();
+				this._createdByRoom = false;
+				this._toastDisplayed = false;
+			}
+			}
+			if(!this.refreshMoveRequest)
+				this.pageLoaded = false;
+
+			// If Statement: Check if there's MLI
+			if (this.moveLineItems) {
+				// Set MLI Count
+				this.$.header._isSubmitValid();
+				this.$.header._setMLICount(this.parentMLI.length);
+
+				// If Statement: Check if there's more than one MLI
+				if (this.moveLineItems.length > 0) {
+					// Open MLI collapsable section
+					this._toggleExpandMLI();
+				} else {
+					// Close MLI collapsable section
+					this._toggleCloseMLI();
+				}// end if
+			}// end if
+		},
+
+		_handleReset: function(){
+			this.fire("reset");
+		},
+
+		_isDraft: function(request) {
+			if (request) {
+				var status = request.status;
+				return !((status=="Issued")||(status=="Completed"));
+			}// end if
+		},
+
+		_isDraftRemove: function(item){
+			var status = "";
+			if(this.moveRequest)
+				status = this.moveRequest.status;
+			if((status=="Issued")||(status=="Completed"))
+				return true;
+			else{
+				if(this.moveLineItems){
+				for(var i=0;i<this.moveLineItems.length;i++){
+					if(item == this.moveLineItems[i].personRecordId){
+						if((this.moveLineItems[i].status=="Completed")||(this.moveLineItems[i].status=="Active"))
+							return true;
+						else
+							return false;
+					}
+				}
+				}
+				else{
+					return false;
+				}
+			}
+
+		},
+
+		_handleMLIUpdateComplete: function(event) {
+			if (event.detail && event.detail.actionName != "create") {
+				this.$.moveLineItems.refresh().then(
+					function() {
+						if (this._locationDropdownSelected) {
+							this.$.locationSearchSpaceSelector.refreshSelected();
+						}
+					}.bind(this)
+				);
+			}
+		},
+
+		openConfirmationDialog: function(){
+			this.$.confirmationDialog.open();
+		},
+
+		openConfirmationDialogAsset: function(){
+			this.$.confirmationDialogAsset.open();
+		},
+
+		openConfirmationDialogEquipment: function(){
+			this.$.confirmationDialogEquipment.open();
+		},
+
+		openConfirmationDialogRoom: function(){
+			this.$.confirmationDialogRoom.open();
+		},
+
+
+		_sort: function(sortField, sortDescending) {
+
+			// Sort MLIs
+			if (sortDescending) {
+				return function(mli1, mli2) {
+					if (mli1[sortField] && mli2[sortField]) {
+						if (mli1[sortField] == "") {
+							return 1; // blank strings go at the end of sorted list
+						} else {
+							var compare = mli2[sortField].localeCompare(mli1[sortField]);
+							return compare;
+						}
+					} else {
+						if (( mli1[sortField] === null) && (mli2[sortField] === null)) return 0;
+							else if (( mli1[sortField] === null) && (mli2[sortField] != null)) return 1;
+							else if (( mli1[sortField] != null) && (mli2[sortField] === null)) return -1;
+					}
+				}
+			}
+			else {
+				return function(mli1, mli2) {
+					if (mli1[sortField] && mli2[sortField]) {
+						if (mli1[sortField] == "") {
+							return 1; // blank strings go at the end of sorted list
+						} else {
+							var compare = mli1[sortField].localeCompare(mli2[sortField]);
+							return compare;
+						}
+					} else {
+						if (( mli1[sortField] === null) && (mli2[sortField] === null)) return 0;
+							else if (( mli1[sortField] === null) && (mli2[sortField] != null)) return -1;
+							else if (( mli1[sortField] != null) && (mli2[sortField] === null)) return 1;
+					}
+				}
+
+			}
+	   	},
+
+		_changeColumnSort: function(e){
+			this.sortFieldPeople = column;
+		},
+		_handleSortFirstName: function(e){
+			if(e.type ==  "keypress" && !(e.which == 13 || e.keyCode == 13)){
+				return 0;
+			}
+			if(this.sortFieldPeople == "firstName"){
+				this.sortDescendingPeople = !this.sortDescendingPeople;
+			}
+			else{
+				this.sortFieldPeople = "firstName";
+				this.sortDescendingPeople = false;
+				this.$.lastNameIcon.icon="sort";
+				this.$.cityIcon.icon="sort";
+				this.$.spaceIcon.icon="sort";
+				this.$.buildingIcon.icon="sort";
+				this.$.organizationIcon.icon="sort";
+				this.$.floorIcon.icon="sort";
+			}
+			if(!this.sortDescendingPeople)
+				this.$.firstNameIcon.icon="sort-descending";
+			else
+				this.$.firstNameIcon.icon="sort-ascending";
+		},
+		_handleSortLastName: function(e){
+			if(e.type ==  "keypress" && !(e.which == 13 || e.keyCode == 13)){
+				return 0;
+			}
+			if(this.sortFieldPeople == "lastName"){
+				this.sortDescendingPeople = !this.sortDescendingPeople;
+			}
+			else{
+				this.sortFieldPeople = "lastName";
+				this.sortDescendingPeople = false;
+				this.$.firstNameIcon.icon="sort";
+				this.$.cityIcon.icon="sort";
+				this.$.spaceIcon.icon="sort";
+				this.$.buildingIcon.icon="sort";
+				this.$.organizationIcon.icon="sort";
+				this.$.floorIcon.icon="sort";
+			}
+			if(!this.sortDescendingPeople)
+				this.$.lastNameIcon.icon="sort-descending";
+			else
+				this.$.lastNameIcon.icon="sort-ascending";
+		},
+		_handleSortCity: function(e){
+			if(e.type ==  "keypress" && !(e.which == 13 || e.keyCode == 13)){
+				return 0;
+			}
+			if(this.sortFieldPeople == "city"){
+				this.sortDescendingPeople = !this.sortDescendingPeople;
+			}
+			else{
+				this.sortFieldPeople = "city";
+				this.sortDescendingPeople = false;
+				this.$.firstNameIcon.icon="sort";
+				this.$.lastNameIcon.icon="sort";
+				this.$.spaceIcon.icon="sort";
+				this.$.buildingIcon.icon="sort";
+				this.$.organizationIcon.icon="sort";
+				this.$.floorIcon.icon="sort";
+			}
+			if(!this.sortDescendingPeople)
+				this.$.cityIcon.icon="sort-descending";
+			else
+				this.$.cityIcon.icon="sort-ascending";
+		},
+		_handleSortSpace: function(e){
+			if(e.type ==  "keypress" && !(e.which == 13 || e.keyCode == 13)){
+				return 0;
+			}
+			if(this.sortFieldPeople == "space"){
+				this.sortDescendingPeople = !this.sortDescendingPeople;
+			}
+			else{
+				this.sortFieldPeople = "space";
+				this.sortDescendingPeople = false;
+				this.$.firstNameIcon.icon="sort";
+				this.$.lastNameIcon.icon="sort";
+				this.$.cityIcon.icon="sort";
+				this.$.buildingIcon.icon="sort";
+				this.$.organizationIcon.icon="sort";
+				this.$.floorIcon.icon="sort";
+			}
+			if(!this.sortDescendingPeople)
+				this.$.spaceIcon.icon="sort-descending";
+			else
+				this.$.spaceIcon.icon="sort-ascending";
+		},
+		_handleSortBuilding: function(e){
+			if(e.type ==  "keypress" && !(e.which == 13 || e.keyCode == 13)){
+				return 0;
+			}
+			if(this.sortFieldPeople == "building"){
+				this.sortDescendingPeople = !this.sortDescendingPeople;
+			}
+			else{
+				this.sortFieldPeople = "building";
+				this.sortDescendingPeople = false;
+				this.$.firstNameIcon.icon="sort";
+				this.$.lastNameIcon.icon="sort";
+				this.$.cityIcon.icon="sort";
+				this.$.spaceIcon.icon="sort";
+				this.$.organizationIcon.icon="sort";
+				this.$.floorIcon.icon="sort";
+			}
+			if(!this.sortDescendingPeople)
+				this.$.buildingIcon.icon="sort-descending";
+			else
+				this.$.buildingIcon.icon="sort-ascending";
+		},
+		_handleSortOrganization: function(e){
+			if(e.type ==  "keypress" && !(e.which == 13 || e.keyCode == 13)){
+				return 0;
+			}
+			if(this.sortFieldPeople == "organization"){
+				this.sortDescendingPeople = !this.sortDescendingPeople;
+			}
+			else{
+				this.sortFieldPeople = "organization";
+				this.sortDescendingPeople = false;
+				this.$.firstNameIcon.icon="sort";
+				this.$.lastNameIcon.icon="sort";
+				this.$.cityIcon.icon="sort";
+				this.$.spaceIcon.icon="sort";
+				this.$.buildingIcon.icon="sort";
+				this.$.floorIcon.icon="sort";
+			}
+			if(!this.sortDescendingPeople)
+				this.$.organizationIcon.icon="sort-descending";
+			else
+				this.$.organizationIcon.icon="sort-ascending";
+		},
+		_handleSortFloor: function(e){
+			if(e.type ==  "keypress" && !(e.which == 13 || e.keyCode == 13)){
+				return 0;
+			}
+			if(this.sortFieldPeople == "floor"){
+				this.sortDescendingPeople = !this.sortDescendingPeople;
+			}
+			else{
+				this.sortFieldPeople = "floor";
+				this.sortDescendingPeople = false;
+				this.$.firstNameIcon.icon="sort";
+				this.$.lastNameIcon.icon="sort";
+				this.$.cityIcon.icon="sort";
+				this.$.spaceIcon.icon="sort";
+				this.$.buildingIcon.icon="sort";
+				this.$.organizationIcon.icon="sort";
+			}
+			if(!this.sortDescendingPeople)
+				this.$.floorIcon.icon="sort-descending";
+			else
+				this.$.floorIcon.icon="sort-ascending";
+		},
+		_handleSortIdAsset: function(e){
+			if(e.type ==  "keypress" && !(e.which == 13 || e.keyCode == 13)){
+				return 0;
+			}
+			if(this.sortFieldAsset == "id"){
+				this.sortDescendingAsset = !this.sortDescendingAsset;
+			}
+			else{
+				this.sortFieldAsset = "id";
+				this.sortDescendingAsset = false;
+				this.$.nameAssetIcon.icon="sort";
+				this.$.typeAssetIcon.icon="sort";
+				this.$.buildingAssetIcon.icon="sort";
+				this.$.floorAssetIcon.icon="sort";
+				this.$.spaceAssetIcon.icon="sort";
+			}
+			if(!this.sortDescendingAsset)
+				this.$.idAssetIcon.icon="sort-descending";
+			else
+				this.$.idAssetIcon.icon="sort-ascending";
+		},
+		_handleSortNameAsset: function(e){
+			if(e.type ==  "keypress" && !(e.which == 13 || e.keyCode == 13)){
+				return 0;
+			}
+			if(this.sortFieldAsset == "name"){
+				this.sortDescendingAsset = !this.sortDescendingAsset;
+			}
+			else{
+				this.sortFieldAsset = "name";
+				this.sortDescendingAsset = false;
+				this.$.idAssetIcon.icon="sort";
+				this.$.typeAssetIcon.icon="sort";
+				this.$.buildingAssetIcon.icon="sort";
+				this.$.floorAssetIcon.icon="sort";
+				this.$.spaceAssetIcon.icon="sort";
+			}
+			if(!this.sortDescendingAsset)
+				this.$.nameAssetIcon.icon="sort-descending";
+			else
+				this.$.nameAssetIcon.icon="sort-ascending";
+		},
+		_handleSortTypeAsset: function(e){
+			if(e.type ==  "keypress" && !(e.which == 13 || e.keyCode == 13)){
+				return 0;
+			}
+			if(this.sortFieldAsset == "type"){
+				this.sortDescendingAsset = !this.sortDescendingAsset;
+			}
+			else{
+				this.sortFieldAsset = "type";
+				this.sortDescendingAsset = false;
+				this.$.idAssetIcon.icon="sort";
+				this.$.nameAssetIcon.icon="sort";
+				this.$.buildingAssetIcon.icon="sort";
+				this.$.floorAssetIcon.icon="sort";
+				this.$.spaceAssetIcon.icon="sort";
+			}
+			if(!this.sortDescendingAsset)
+				this.$.typeAssetIcon.icon="sort-descending";
+			else
+				this.$.typeAssetIcon.icon="sort-ascending";
+		},
+		_handleSortBuildingAsset: function(e){
+			if(e.type ==  "keypress" && !(e.which == 13 || e.keyCode == 13)){
+				return 0;
+			}
+			if(this.sortFieldAsset == "building"){
+				this.sortDescendingAsset = !this.sortDescendingAsset;
+			}
+			else{
+				this.sortFieldAsset = "building";
+				this.sortDescendingAsset = false;
+				this.$.idAssetIcon.icon="sort";
+				this.$.nameAssetIcon.icon="sort";
+				this.$.typeAssetIcon.icon="sort";
+				this.$.floorAssetIcon.icon="sort";
+				this.$.spaceAssetIcon.icon="sort";
+			}
+			if(!this.sortDescendingAsset)
+				this.$.buildingAssetIcon.icon="sort-descending";
+			else
+				this.$.buildingAssetIcon.icon="sort-ascending";
+		},
+		_handleSortFloorAsset: function(e){
+			if(e.type ==  "keypress" && !(e.which == 13 || e.keyCode == 13)){
+				return 0;
+			}
+			if(this.sortFieldAsset == "floor"){
+				this.sortDescendingAsset = !this.sortDescendingAsset;
+			}
+			else{
+				this.sortFieldAsset = "floor";
+				this.sortDescendingAsset = false;
+				this.$.idAssetIcon.icon="sort";
+				this.$.nameAssetIcon.icon="sort";
+				this.$.typeAssetIcon.icon="sort";
+				this.$.buildingAssetIcon.icon="sort";
+				this.$.spaceAssetIcon.icon="sort";
+			}
+			if(!this.sortDescendingAsset)
+				this.$.floorAssetIcon.icon="sort-descending";
+			else
+				this.$.floorAssetIcon.icon="sort-ascending";
+		},
+		_handleSortSpaceAsset: function(e){
+			if(e.type ==  "keypress" && !(e.which == 13 || e.keyCode == 13)){
+				return 0;
+			}
+			if(this.sortFieldAsset == "space"){
+				this.sortDescendingAsset = !this.sortDescendingAsset;
+			}
+			else{
+				this.sortFieldAsset = "space";
+				this.sortDescendingAsset = false;
+				this.$.idAssetIcon.icon="sort";
+				this.$.nameAssetIcon.icon="sort";
+				this.$.typeAssetIcon.icon="sort";
+				this.$.buildingAssetIcon.icon="sort";
+				this.$.floorAssetIcon.icon="sort";
+			}
+			if(!this.sortDescendingAsset)
+				this.$.spaceAssetIcon.icon="sort-descending";
+			else
+				this.$.spaceAssetIcon.icon="sort-ascending";
+		},
+		_handleSortIdEquipment: function(e){
+			if(e.type ==  "keypress" && !(e.which == 13 || e.keyCode == 13)){
+				return 0;
+			}
+			if(this.sortFieldEquipment == "id"){
+				this.sortDescendingEquipment = !this.sortDescendingEquipment;
+			}
+			else{
+				this.sortFieldEquipment = "id";
+				this.sortDescendingEquipment = false;
+				this.$.nameEquipmentIcon.icon="sort";
+				this.$.buildingEquipmentIcon.icon="sort";
+				this.$.floorEquipmentIcon.icon="sort";
+				this.$.spaceEquipmentIcon.icon="sort";
+				this.$.specEquipmentIcon.icon="sort";
+			}
+			if(!this.sortDescendingEquipment)
+				this.$.idEquipmentIcon.icon="sort-descending";
+			else
+				this.$.idEquipmentIcon.icon="sort-ascending";
+		},
+		_handleSortNameEquipment: function(e){
+			if(e.type ==  "keypress" && !(e.which == 13 || e.keyCode == 13)){
+				return 0;
+			}
+			if(this.sortFieldEquipment == "name"){
+				this.sortDescendingEquipment = !this.sortDescendingEquipment;
+			}
+			else{
+				this.sortFieldEquipment = "name";
+				this.sortDescendingEquipment = false;
+				this.$.idEquipmentIcon.icon="sort";
+				this.$.buildingEquipmentIcon.icon="sort";
+				this.$.floorEquipmentIcon.icon="sort";
+				this.$.spaceEquipmentIcon.icon="sort";
+				this.$.specEquipmentIcon.icon="sort";
+			}
+			if(!this.sortDescendingEquipment)
+				this.$.nameEquipmentIcon.icon="sort-descending";
+			else
+				this.$.nameEquipmentIcon.icon="sort-ascending";
+		},
+		_handleSortBuildingEquipment: function(e){
+			if(e.type ==  "keypress" && !(e.which == 13 || e.keyCode == 13)){
+				return 0;
+			}
+			if(this.sortFieldEquipment == "building"){
+				this.sortDescendingEquipment = !this.sortDescendingEquipment;
+			}
+			else{
+				this.sortFieldEquipment = "building";
+				this.sortDescendingEquipment = false;
+				this.$.idEquipmentIcon.icon="sort";
+				this.$.nameEquipmentIcon.icon="sort";
+				this.$.floorEquipmentIcon.icon="sort";
+				this.$.spaceEquipmentIcon.icon="sort";
+				this.$.specEquipmentIcon.icon="sort";
+			}
+			if(!this.sortDescendingEquipment)
+				this.$.buildingEquipmentIcon.icon="sort-descending";
+			else
+				this.$.buildingEquipmentIcon.icon="sort-ascending";
+		},
+		_handleSortFloorEquipment: function(e){
+			if(e.type ==  "keypress" && !(e.which == 13 || e.keyCode == 13)){
+				return 0;
+			}
+			if(this.sortFieldEquipment == "floor"){
+				this.sortDescendingEquipment = !this.sortDescendingEquipment;
+			}
+			else{
+				this.sortFieldEquipment = "floor";
+				this.sortDescendingEquipment = false;
+				this.$.idEquipmentIcon.icon="sort";
+				this.$.nameEquipmentIcon.icon="sort";
+				this.$.buildingEquipmentIcon.icon="sort";
+				this.$.spaceEquipmentIcon.icon="sort";
+				this.$.specEquipmentIcon.icon="sort";
+			}
+			if(!this.sortDescendingEquipment)
+				this.$.floorEquipmentIcon.icon="sort-descending";
+			else
+				this.$.floorEquipmentIcon.icon="sort-ascending";
+		},
+		_handleSortSpaceEquipment: function(e){
+			if(e.type ==  "keypress" && !(e.which == 13 || e.keyCode == 13)){
+				return 0;
+			}
+			if(this.sortFieldEquipment == "space"){
+				this.sortDescendingEquipment = !this.sortDescendingEquipment;
+			}
+			else{
+				this.sortFieldEquipment = "space";
+				this.sortDescendingEquipment = false;
+				this.$.idEquipmentIcon.icon="sort";
+				this.$.nameEquipmentIcon.icon="sort";
+				this.$.buildingEquipmentIcon.icon="sort";
+				this.$.floorEquipmentIcon.icon="sort";;
+				this.$.specEquipmentIcon.icon="sort";
+			}
+			if(!this.sortDescendingEquipment)
+				this.$.spaceEquipmentIcon.icon="sort-descending";
+			else
+				this.$.spaceEquipmentIcon.icon="sort-ascending";
+		},
+		_handleSortSpecEquipment: function(e){
+			if(e.type ==  "keypress" && !(e.which == 13 || e.keyCode == 13)){
+				return 0;
+			}
+			if(this.sortFieldEquipment == "spec"){
+				this.sortDescendingEquipment = !this.sortDescendingEquipment;
+			}
+			else{
+				this.sortFieldEquipment = "spec";
+				this.sortDescendingEquipment = false;
+				this.$.idEquipmentIcon.icon="sort";
+				this.$.nameEquipmentIcon.icon="sort";
+				this.$.buildingEquipmentIcon.icon="sort";
+				this.$.floorEquipmentIcon.icon="sort";
+				this.$.spaceEquipmentIcon.icon="sort";
+			}
+			if(!this.sortDescendingEquipment)
+				this.$.specEquipmentIcon.icon="sort-descending";
+			else
+				this.$.specEquipmentIcon.icon="sort-ascending";
+		},
+		_handleSortIdRoom: function(e){
+			if(e.type ==  "keypress" && !(e.which == 13 || e.keyCode == 13)){
+				return 0;
+			}
+			if(this.sortFieldRoom == "id"){
+				this.sortDescendingRoom = !this.sortDescendingRoom;
+			}
+			else{
+				this.sortFieldRoom = "id";
+				this.sortDescendingRoom = false;
+				this.$.nameRoomIcon.icon="sort";
+				this.$.buildingRoomIcon.icon="sort";
+				this.$.floorRoomIcon.icon="sort";
+				this.$.spaceRoomIcon.icon="sort";
+			}
+			if(!this.sortDescendingRoom)
+				this.$.idRoomIcon.icon="sort-descending";
+			else
+				this.$.idRoomIcon.icon="sort-ascending";
+		},
+		_handleSortNameRoom: function(e){
+			if(e.type ==  "keypress" && !(e.which == 13 || e.keyCode == 13)){
+				return 0;
+			}
+			if(this.sortFieldRoom == "name"){
+				this.sortDescendingRoom = !this.sortDescendingRoom;
+			}
+			else{
+				this.sortFieldRoom = "name";
+				this.sortDescendingRoom = false;
+				this.$.idRoomIcon.icon="sort";
+				this.$.buildingRoomIcon.icon="sort";
+				this.$.floorRoomIcon.icon="sort";
+				this.$.spaceRoomIcon.icon="sort";
+			}
+			if(!this.sortDescendingRoom)
+				this.$.nameRoomIcon.icon="sort-descending";
+			else
+				this.$.nameRoomIcon.icon="sort-ascending";
+		},
+		_handleSortBuildingRoom: function(e){
+			if(e.type ==  "keypress" && !(e.which == 13 || e.keyCode == 13)){
+				return 0;
+			}
+			if(this.sortFieldRoom == "building"){
+				this.sortDescendingRoom = !this.sortDescendingRoom;
+			}
+			else{
+				this.sortFieldRoom = "building";
+				this.sortDescendingRoom = false;
+				this.$.idRoomIcon.icon="sort";
+				this.$.nameRoomIcon.icon="sort";
+				this.$.floorRoomIcon.icon="sort";
+				this.$.spaceRoomIcon.icon="sort";
+			}
+			if(!this.sortDescendingRoom)
+				this.$.buildingRoomIcon.icon="sort-descending";
+			else
+				this.$.buildingRoomIcon.icon="sort-ascending";
+		},
+		_handleSortFloorRoom: function(e){
+			if(e.type ==  "keypress" && !(e.which == 13 || e.keyCode == 13)){
+				return 0;
+			}
+			if(this.sortFieldRoom == "floor"){
+				this.sortDescendingRoom = !this.sortDescendingRoom;
+			}
+			else{
+				this.sortFieldRoom = "floor";
+				this.sortDescendingRoom = false;
+				this.$.idRoomIcon.icon="sort";
+				this.$.nameRoomIcon.icon="sort";
+				this.$.buildingRoomIcon.icon="sort";
+				this.$.spaceRoomIcon.icon="sort";
+			}
+			if(!this.sortDescendingRoom)
+				this.$.floorRoomIcon.icon="sort-descending";
+			else
+				this.$.floorRoomIcon.icon="sort-ascending";
+		},
+		_handleSortSpaceRoom: function(e){
+			if(e.type ==  "keypress" && !(e.which == 13 || e.keyCode == 13)){
+				return 0;
+			}
+			if(this.sortFieldRoom == "spaceclass"){
+				this.sortDescendingRoom = !this.sortDescendingRoom;
+			}
+			else{
+				this.sortFieldRoom = "spaceclass";
+				this.sortDescendingRoom = false;
+				this.$.idRoomIcon.icon="sort";
+				this.$.nameRoomIcon.icon="sort";
+				this.$.buildingRoomIcon.icon="sort";
+				this.$.floorRoomIcon.icon="sort";
+			}
+			if(!this.sortDescendingRoom)
+				this.$.spaceRoomIcon.icon="sort-descending";
+			else
+				this.$.spaceRoomIcon.icon="sort-ascending";
+		},
+
+		_handleSortBuildingLocation: function(e){
+			if(e.type ==  "keypress" && !(e.which == 13 || e.keyCode == 13)){
+				return 0;
+			}
+			this.sortDescendingLocation = !this.sortDescendingLocation;
+			if(this.sortDescendingLocation)
+				this.$.buildingLocationIcon.icon="sort-descending";
+			else
+				this.$.buildingLocationIcon.icon="sort-ascending";
+
+		},
+		_getTotalSize:function(){
+			this._peopleFilteredSize = this.lookupPeople.length;
+			this._peopleTotalSize = this.$.lookupPeople.queryTotalSize;
+			if(this._peopleTotalSize == 0  || this._peopleFilteredSize == 0){
+				this._peopleTotalSize = 0;
+				this._peopleFilteredSize = 0;
+			}
+			else if(this._peopleTotalSize < this._peopleFilteredSize)
+					this._peopleTotalSize = this._peopleFilteredSize;
+			this._checkAddAllDisabled();
+			this._showSearchResults();
+		},
+
+		_getTotalSizeAsset:function(){
+			this._assetFilteredSize = this.lookupAsset.length;
+			this._assetTotalSize = this.$.lookupAsset.queryTotalSize;
+			if(this._assetTotalSize == 0  || this._assetFilteredSize == 0){
+				this._assetTotalSize = 0;
+				this._assetFilteredSize = 0;
+			}
+			else if(this._assetTotalSize < this._assetFilteredSize)
+				this._assetTotalSize = this._assetFilteredSize;
+			this._checkAddAllDisabled();
+			this._showSearchResults();
+		},
+
+		_getTotalSizeEquipment:function(){
+			this._equipmentFilteredSize = this.lookupEquipment.length;
+			this._equipmentTotalSize = this.$.lookupEquipment.queryTotalSize;
+			if(this._equipmentTotalSize == 0  || this._equipmentFilteredSize == 0){
+				this._equipmentTotalSize = 0;
+				this._equipmentFilteredSize = 0;
+			}
+			else if(this._equipmentTotalSize < this._equipmentFilteredSize)
+				this._equipmentTotalSize = this._equipmentFilteredSize;
+			this._checkAddAllDisabled();
+			this._showSearchResults();
+		},
+		_getTotalSizeRoom:function(){
+			this._roomFilteredSize = this.lookupRoom.length;
+			this._roomTotalSize = this.$.lookupRoom.queryTotalSize;
+			if(this._roomTotalSize == 0  || this._roomFilteredSize == 0){
+				this._roomTotalSize = 0;
+				this._roomFilteredSize = 0;
+			}
+			else if(this._roomTotalSize < this._roomFilteredSize)
+				this._roomTotalSize = this._roomFilteredSize;
+			this._checkAddAllDisabled();
+			this._showSearchResults();
+		},
+    _getTotalSizeLocation: function() {
+			this._locationFilteredSize = this.lookupLocation.length;
+			this._locationTotalSize = this.$.lookupLocation.queryTotalSize;
+      if(this._locationTotalSize == 0  || this._locationFilteredSize == 0){
+				this._locationTotalSize = 0;
+				this._locationFilteredSize = 0;
+			}
+			else if(this._locationTotalSize < this._locationFilteredSize)
+				this._locationTotalSize = this._locationFilteredSize;
+			this._checkAddAllDisabled();
+			this._showSearchResults();
+
+
+      // Set Status to false
+			this._statusChangeLocation = false;
+
+			// Clear the array of selected floors
+			this.set("_selectedFloors", []);
+
+			// Reset Properties
+			this.set("_selectedBuildings", []);
+			this.set("_selectedBuilding", {});
+
+			// Set the _selectedBuildings as the array of buildings returning from the search
+			this.set("_selectedBuildings", this.lookupLocation);
+
+			// If Statement: auto select a building when the search return 1 building
+			if (this._selectedBuildings.length == 1) {
+				// Select radio
+				this._selectedBuildings[0].selected = true;
+				// Expand the collapsable
+				this._selectedBuildings[0].isExpanded = true;
+
+				// Clean the list of floors
+				this.buildingFloorSearchSelected = [];
+					// Loading
+					this._loadingFloors = true;
+
+				// Set a Selected Building
+				this.set("_selectedBuilding", this._selectedBuildings[0]);
+			}// end if
+		},
+
+		//=========================================================
+		// Function _toggleMLI
+		//------------------------------------------
+		// Objective: Toggle the MLI container
+		//=========================================================
+		_toggleMLI: function() {
+		  this.$.collapseSection._collapseToggle();
+
+			// If Statement: Check if there's MLI
+			if (this.moveLineItems) {
+				// Show or Hide the collapse button
+				this.$.header._isCollapseExpanded(this.moveLineItems.length);
+			}// end if
+		},
+
+		//=========================================================
+		// Function _toggleCloseMLI
+		//------------------------------------------
+		// Objective: Close the MLI container
+		//=========================================================
+		_toggleCloseMLI: function() {
+		  this.$.collapseSection._collapseHide();
+
+			// Show the collapse button
+			this.$.header._isCollapseBtnVisible();
+		},
+
+		//=========================================================
+		// Function _toggleExpandMLI
+		//------------------------------------------
+		// Objective: Expand the MLI container
+		//=========================================================
+		_toggleExpandMLI: function() {
+		  this.$.collapseSection._collapseShow();
+
+			// Hide the collapse button
+			this.$.header._isCollapseBtnHidden();
+		},
+
+    //=========================================================
+		// Function _hasFloors
+		//------------------------------------------
+		// Objective: Used to check if the building selected has floors
+		//=========================================================
+		_hasFloors: function(floorArray) {
+			return floorArray.length > 0;
+		},
+
+		//=========================================================
+		// Function _handleRadioBuildingSelect
+		//------------------------------------------
+		// Objective: Called when a radio of the building list is clicked
+		//=========================================================
+		_handleRadioBuildingSelect: function(e) {
+			e.stopPropagation();
+
+			if (this._selectedFloors.length > 0) {
+				this._selectedFloors = [];
+			}// end if
+
+			// Hide actionbar: when change the building with a floor selected
+			if (this._finalBuilding) {
+				if (!this._finalBuilding.name) {
+					// Search Collapse display
+					this.$.searchBuildingCollapse.hide();
+				} else {
+					// Disable action button
+					this._actionBtnDisabled = true;
+				}// end if
+			}// end if
+
+
+			// Handle with Radio Buttons
+			// First: Uncheck all radio buttons
+			var allRadios = Polymer.dom(this.root).querySelectorAll("paper-radio-button");
+			for (var i = 0; i < allRadios.length; i++) {
+				allRadios[i].checked = false;
+
+				// Handle with collapsable rows
+				// Collapse all rows first
+				var oneRadio = allRadios[i];
+				var modelRadio = this.$.locationList.modelForElement(oneRadio);
+				modelRadio.set('item.isExpanded', false);
+			}// end for
+
+			// Second: Check the selected radio button
+			var selectedRadio = e.currentTarget;
+			selectedRadio.checked = true;
+
+
+			// Selected Building
+			var building = e.model.item;
+
+			// If Statement: Check if the current selected building was equal to the previous selected building
+			if (building.building != this._selectedBuilding.building) {
+				// Clean the list of floors
+				this.buildingFloorSearchSelected = [];
+					// Loading
+					this._loadingFloors = true;
+			}// end if
+
+			if (building) {
+				if (building.selected) {
+					// Set a Selected Building
+					this.set("_selectedBuilding", building);
+					// Expand the row when the radio button is selected
+					e.model.set('item.isExpanded', true);
+				} else {
+					// Set Selected Building to empty
+					this.set("_selectedBuilding", {});
+					// Collapse the row
+					e.model.set('item.isExpanded', false);
+				}// end if
+			}// end if
+		},
+
+		//=========================================================
+		// Function _handleCheckboxFloorSelect
+		//------------------------------------------
+		// Objective: Called when a checkbox of the floors list is clicked
+		//=========================================================
+		_handleCheckboxFloorSelect: function(e) {
+			e.stopPropagation();
+
+			// Set Status to false
+			this._statusChangeLocation = false;
+
+			// Update selected Floors array
+			var floor = e.model.item;
+			if (floor) {
+				if (floor.selected) {
+					this.push("_selectedFloors", floor);
+				} else {
+					this._removeSelectedFloor(floor);
+				}// end if
+			}// end if
+
+			// Show the actionbar when 1 or more floors are selected
+			if (this._selectedFloors.length > 0) {
+				// Search Collapse display
+				this.$.searchBuildingCollapse.show();
+				// Disable action button
+				this._actionBtnDisabled = false;
+			} else {
+				// Collapse actionbar only when there's no building assign
+				if (!this._selectedBuilding.name) {
+					// Search Collapse display
+					this.$.searchBuildingCollapse.hide();
+				} else {
+					// Disable action button
+					this._actionBtnDisabled = true;
+				}// end if
+			}// end if
+		},
+
+		//=========================================================
+		// Function _removeSelectedFloor
+		//------------------------------------------
+		// Objective: Remove selected floor from the array of floors
+		//=========================================================
+		_removeSelectedFloor: function(selectedItem) {
+			// Variables
+			var selectedItemId = selectedItem._id;
+			var i = 0;
+			var found = false;
+
+			// Loop to remove the selected item
+			while (!found && i < this._selectedFloors.length) {
+				var curItemId = this._selectedFloors[i]._id;
+
+				if (selectedItemId == curItemId) {
+					found = true;
+					this.splice("_selectedFloors", i, 1);
+				}// end if
+				i++;
+			}// end while
+		},
+
+		//=========================================================
+		// Function _handleFloorsResults
+		//------------------------------------------
+		// Objective: Hide the floor loading and show the list of floors - Called when the search for floors returns a result
+		//=========================================================
+		_handleFloorsResults: function() {
+			// If Statement: Check if change location was click
+			if (this._statusChangeLocation) {
+
+					// If Statement: Check if there's a floor in the array
+					if (this._finalFloors.length > 0) {
+						// For: Iterate through array moveToFloor
+						for (var i = 0; i < this._finalFloors.length; i++) {
+							// For: Iterate through array buildingFloorSearchSelected
+							for (var aux = 0; aux < this.buildingFloorSearchSelected.length; aux++) {
+								// If Statement: Check the current floors
+								if ( this._finalFloors[i]._id == this.buildingFloorSearchSelected[aux]._id ) {
+									this.buildingFloorSearchSelected[aux].selected = true;
+
+									this._selectedFloors.push(this.buildingFloorSearchSelected[aux]);
+								}// end if
+							}// end for
+						}// end for
+					}// end if
+			}// end if
+
+			// Loading
+			this._loadingFloors = false;
+		},
+
+		//=========================================================
+		// Function _changeLocation
+		//------------------------------------------
+		// Objective: Handle change location
+		//=========================================================
+		_changeLocation: function() {
+			// Disable action button
+			this._actionBtnDisabled = true;
+			// Search Collapse display
+			this.$.searchBuildingCollapse.show();
+
+			// Change Location
+			this._statusChangeLocation = true;
+
+			// Workaround for Building
+				// Temporary variable to hold the current Building
+				var selectedBuilding = {};
+				selectedBuilding._id = this._finalBuilding._id;
+				selectedBuilding.building = this._finalBuilding.building;
+
+				// Temporary variable to hold the array with the current Building
+				var selectedBuildings = [];
+				selectedBuildings.push(selectedBuilding);
+
+				// Set _selectedBuildings
+				this.set("_selectedBuildings", selectedBuildings);
+				// Select radio
+				this._selectedBuildings[0].selected = true;
+				// Expand the collapsable
+				this._selectedBuildings[0].isExpanded = true;
+
+				// Clean the list of floors
+				this.buildingFloorSearchSelected = [];
+					// Loading Floors active
+					this._loadingFloors = true;
+
+				// Set a Selected Building
+				this.set("_selectedBuilding", this._selectedBuildings[0]);
+
+			// Show the container of buildings results
+			this._hideFloorBuildingContainer = false;
+
+      this.set("_hideSearchLocationTable", false);
+		},
+
+		//=========================================================
+		// Function _changeLocationCancel
+		//------------------------------------------
+		// Objective: Handle change location cancel
+		//=========================================================
+		_changeLocationCancel: function() {
+			// Search Collapse display
+			this.$.searchBuildingCollapse.hide();
+
+			// Clean Search
+			this.set("valueBuilding", "");
+			//this.$.searchBuildingField.clearSearch();
+
+			// Clean the array of buildings
+			this.set("_selectedBuildings", []);
+			// Clean selected building
+			this.set("_selectedBuilding", {});
+			// Clean array of floors
+			this.set("_selectedFloors", []);
+
+			// Change Location
+			this._statusChangeLocation = true;
+
+      this.set("_hideSearchLocationTable", true);
+		},
+
+		//=========================================================
+		// Function _handleSizeChanged
+		//------------------------------------------
+		// Objective: When the component size is changed, notify
+		// descendants a resize change.
+		// The iron-collapse takes 300 ms to close or open, because of the
+		// animation transition, so this method will notify the resize only
+		// after the animation is done.
+		//=========================================================
+		_handleSizeChanged: function() {
+			this.async(this.notifyResize, 350);
+		},
+
+		//=========================================================
+		// Function _validateChangingSpaceSelectorBuildingAndFloor
+		//------------------------------------------
+		// Objective: If space selector has selected spaces not
+		// saved to the request, it first asks the user to
+		// confirm if he want to continue.
+		// Otherwise, change the building and the floor of the
+		// space locator.
+		//=========================================================
+		_validateChangingSpaceSelectorBuildingAndFloor: function() {
+			if (this.$.locationSearchSpaceSelector.hasNonSavedSpaces()) {
+				this.$.confirmationDialogLocationSearch.open();
+			} else {
+				this._changeSpaceSelectorBuildingAndFloor();
+			}
+		},
+
+		//=========================================================
+		// Function _changeSpaceSelectorBuildingAndFloor
+		//------------------------------------------
+		// Objective: Change the building and floors of the
+		// location search space selector.
+		// If space selector has selected spaces not saved to the
+		// request and not contained in the selected floors, it
+		// first save them to the request.
+		//=========================================================
+		_changeSpaceSelectorBuildingAndFloor: function() {
+			// Search Collapse display
+			this.$.searchBuildingCollapse.hide();
+
+			// Hide the Search Container
+      		this.set("_hideSearchLocationTable", true);
+
+			if (this.$.locationSearchSpaceSelector.hasNonSavedSpaces()) {
+				var addedSpaces = this.$.locationSearchSpaceSelector.addedSpaces;
+				var removedSpaces = this.$.locationSearchSpaceSelector.removedSpaces;
+				var savePromise = this._saveLocationSearchSelectedSpaces(addedSpaces, removedSpaces);
+				savePromise.then(this._runChangeSpaceSelectorBuildingAndFloor.bind(this));
+			} else {
+				this._runChangeSpaceSelectorBuildingAndFloor();
+			}
+		},
+
+		//=========================================================
+		// Function _runChangeSpaceSelectorBuildingAndFloor
+		//------------------------------------------
+		// Objective: Executor method for the
+		// _changeSpaceSelectorBuildingAndFloor method.
+		//=========================================================
+		_runChangeSpaceSelectorBuildingAndFloor: function() {
+			this._finalBuilding = this._selectedBuilding;
+			if (this._selectedFloors) {
+				this._finalFloors = this._selectedFloors.sort(
+					function(a, b) {
+						return a.floor.localeCompare(b.floor);
+					}
+				);
+			} else {
+				this._finalFloors = [];
+			}
+
+      		// Clear temporary selected floor and building
+      		this.set("_selectedBuilding", {});
+			this.set("_selectedFloors", []);
+		},
+
+		_searchCriteriaDropDownOpen: function(e){
+			if(!this.kind){
+				this.kind = "user";
+				this.async(function(){
+					this.$.paperMenuButton.open();
+				});
+			}
+
+		},
+
+		_isSelectedIcon: function(kind, k){
+			if (k === kind){
+				return "icons:check";
+			}else{
+				return " ";
+			}
+		},
+
+		//=========================================================
+		// Function _handleUpdateAddedOrRemovedSpaces
+		//------------------------------------------
+		// Objective: When there is added or removed spaces on the
+		// location search selector and the user clicks the update
+		// button, it saves the selected spaces.
+		//=========================================================
+		_handleUpdateAddedOrRemovedSpaces: function(e) {
+			var addedSpaces = e.detail.addedSpaces;
+			var removedSpaces = e.detail.removedSpaces;
+			var __dictionary__headerMessageDone = " When you're done adding items, confirm the details of each item";
+			this.set("_searchHeaderMessage",__dictionary__headerMessageDone);
+			this._saveLocationSearchSelectedSpaces(addedSpaces, removedSpaces);
+		},
+
+		//=========================================================
+		// Function _saveLocationSearchSelectedSpaces
+		//------------------------------------------
+		// Objective: Saves the selected spaces on the location
+		// search selector. Return a promise that resolves when the
+		// save operation is complete.
+		//=========================================================
+		_saveLocationSearchSelectedSpaces: function(addedSpaces, removedSpaces) {
+			var promiseResolve, promiseReject;
+			var promise = new Promise(
+				function(resolve, reject) {
+					promiseResolve = resolve;
+					promiseReject = reject;
+				}
+			);
+
+			this.async(
+				this._runSaveLocationSearchSelectedSpaces.bind(
+					this, promiseResolve, promiseReject, addedSpaces, removedSpaces)
+				,1
+			);
+
+			return promise;
+		},
+
+
+		//=========================================================
+		// Function _runSaveLocationSearchSelectedSpaces
+		//------------------------------------------
+		// Objective: Executor method for the promise returned by
+		// the _saveLocationSearchSelectedSpaces method.
+		//=========================================================
+		_runSaveLocationSearchSelectedSpaces: function(promiseResolve, promiseReject, addedSpaces,
+			removedSpaces) {
+
+			this.$.locationSearchSpaceSelector.alertSavingStarted();
+
+			var addedPromise = this._saveLocationSearchAddedSpaces(addedSpaces);
+			addedPromise.then(
+				function() {
+					this._saveLocationSearchRemovedSpaces(removedSpaces).then(
+						function() {
+							this.$.locationSearchSpaceSelector.alertSaveFinished();
+							promiseResolve();
+						}.bind(this)
+					);
+				}.bind(this)
+			);
+		},
+
+		//=========================================================
+		// Function _saveLocationSearchAddedSpaces
+		//------------------------------------------
+		// Objective: Saves the added spaces on the location
+		// search selector. Return a promise that resolves when the
+		// save operation is complete.
+		//=========================================================
+		_saveLocationSearchAddedSpaces: function(addedSpaces) {
+			var promiseResolve, promiseReject;
+			var promise = new Promise(
+				function(resolve, reject) {
+					promiseResolve = resolve;
+					promiseReject = reject;
+				}
+			);
+
+			this.async(
+				this._runSaveLocationSearchAddedSpaces.bind(this, promiseResolve, promiseReject, addedSpaces)
+				,1
+			);
+
+			return promise;
+		},
+
+		//=========================================================
+		// Function _runSaveLocationSearchAddedSpaces
+		//------------------------------------------
+		// Objective: Executor method for the promise returned by
+		// the _saveLocationSearchAddedSpaces method.
+		//=========================================================
+		_runSaveLocationSearchAddedSpaces: function(promiseResolve, promiseReject, addedSpaces) {
+			if (addedSpaces && addedSpaces.length > 0) {
+				if (this.moveRequest.status==null) {
+					this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest",
+						"create").then(
+						function() {
+							this.isCreated = true;
+							this.fire("createdDraft");
+							this._runSaveLocationSearchAddedSpaces(promiseResolve, promiseReject, addedSpaces);
+						}.bind(this)
+					);
+				} else {
+					this.$.moveRequest.performAction(TriPlatDs.RefreshType.BOTH, "groupMoveRequest",
+						"addRoomMLI", {VARRoom: addedSpaces}).then(
+						function() {
+							this.pageLoaded = true;
+							promiseResolve();
+						}.bind(this)
+					);
+				}
+			} else {
+				promiseResolve();
+			}
+		},
+
+		//=========================================================
+		// Function _saveLocationSearchRemovedSpaces
+		//------------------------------------------
+		// Objective: Saves the removed spaces on the location
+		// search selector. Return a promise that resolves when the
+		// save operation is complete.
+		//=========================================================
+		_saveLocationSearchRemovedSpaces: function(removedSpaces) {
+			var promiseResolve, promiseReject;
+			var promise = new Promise(
+				function(resolve, reject) {
+					promiseResolve = resolve;
+					promiseReject = reject;
+				}
+			);
+
+			this.async(
+				this._runSaveLocationSearchRemovedSpaces.bind(
+					this, promiseResolve, promiseReject, removedSpaces)
+				,1
+			);
+
+			return promise;
+		},
+
+		//=========================================================
+		// Function _runSaveLocationSearchRemovedSpaces
+		//------------------------------------------
+		// Objective: Executor method for the promise returned by
+		// the _saveLocationSearchRemovedSpaces method.
+		//=========================================================
+		_runSaveLocationSearchRemovedSpaces: function(promiseResolve, promiseReject, removedSpaces) {
+			var removedCount = removedSpaces ? removedSpaces.length : 0;
+
+			if (removedCount > 0) {
+				this.$.moveRequest.performAction(
+					this.moveRequest._id,TriPlatDs.RefreshType.BOTH,
+					"groupMoveRequest", "deleteMultipleRooms", {varRooms: removedSpaces}).then(
+							function() {
+								promiseResolve();
+							}.bind(this)
+				);
+			} else {
+				promiseResolve();
+			}
+		},
+
+		//=========================================================
+		// Function _handleAppendFiltersLocationChanged
+		//------------------------------------------
+		// Objective: Hide the location search content if the
+		// appendFiltersLocation changes.
+		//=========================================================
+		_handleAppendFiltersLocationChanged: function(change) {
+			if(change.path == "appendFiltersLocation.splices") {
+				if (this.appendFiltersLocation.length > 0) {
+					this.set("_hideSearchLocationTable", false);
+				} else {
+					// Search Collapse display
+					this.$.searchBuildingCollapse.hide();
+				}// end if
+			}// end if
+		},
+
+		//=========================================================
+		// Function _getItemModel
+		//------------------------------------------
+		// Objective: Retrieve the model of the selected item
+		//=========================================================
+		_getItemModel: function(selectedElement) {
+			var model = null;
+
+			var model = null;
+			model = this.$.personTemplate.modelForElement(selectedElement);
+			if (model == null) {
+    		model = this.$.assetTemplate.modelForElement(selectedElement);
+  		}
+			if (model == null) {
+				model = this.$.equipmentTemplate.modelForElement(selectedElement);
+			}
+			if (model == null) {
+				model = this.$.roomTemplate.modelForElement(selectedElement);
+			}
+
+    	return model;
+		},
+
+		//=========================================================
+		// Function _selectAllPeopleCheckboxes
+		//------------------------------------------
+		// Objective: Handle select all checkbox
+		//=========================================================
+		_selectAllPeopleCheckboxes: function() {
+			if (!this.$.selectAllPeople.active) {
+				this._removeAllSelections("Person");
+			}
+			else
+			{
+				this._selectAllCheckboxes("Person");
+			}// end if
+		},
+
+		//=========================================================
+		// Function _selectAllAssetCheckboxes
+		//------------------------------------------
+		// Objective: Handle select all checkbox
+		//=========================================================
+		_selectAllAssetCheckboxes: function() {
+			if (!this.$.selectAllAssets.active) {
+				this._removeAllSelections("Asset");
+			}
+			else
+			{
+				this._selectAllCheckboxes("Asset");
+			}// end if
+		},
+
+		//=========================================================
+		// Function _selectAllEquipmentCheckboxes
+		//------------------------------------------
+		// Objective: Handle select all checkbox
+		//=========================================================
+		_selectAllEquipmentCheckboxes: function() {
+			if (!this.$.selectAllEquipment.active) {
+				this._removeAllSelections("Equipment");
+			}
+			else
+			{
+				this._selectAllCheckboxes("Equipment");
+			}// end if
+		},
+
+		//=========================================================
+		// Function _selectAllRoomCheckboxes
+		//------------------------------------------
+		// Objective: Handle select all checkbox
+		//=========================================================
+		_selectAllRoomCheckboxes: function() {
+			if (!this.$.selectAllRooms.active) {
+				this._removeAllSelections("Room Function");
+			}
+			else
+			{
+				this._selectAllCheckboxes("Room Function");
+			}// end if
+		},
+
+		//=========================================================
+		// Function _selectAllCheckboxes
+		//------------------------------------------
+		// Objective: Handle select all checkbox
+		//=========================================================
+		_selectAllCheckboxes: function(drawerType) {
+			var selectedRows = Polymer.dom(this.root).querySelectorAll(".line-item-row");
+
+			for (var i=0; i < selectedRows.length; i++) {
+				var model = this._getItemModel(selectedRows[i]);
+
+				if ((model.item.moveType == drawerType) && (model.item.child == null)) {
+					var selectedRowCheckbox = Polymer.dom(selectedRows[i]).querySelector(".inbox-checkbox > paper-checkbox");
+
+					if (!selectedRowCheckbox.checked) {
+						selectedRowCheckbox.checked = true;
+						this.push("_selectedRequests", model.item);
+
+						// If Statement: Check the moveType to feed the specific array type
+						if (model.item.moveType == "Person") {
+							this.push("_selectedPeopleCheckbox", model.item._id);
+						} else if (model.item.moveType == "Asset") {
+							this.push("_selectedAssetsCheckbox", model.item._id);
+						} else if (model.item.moveType == "Equipment") {
+							this.push("_selectedEquipmentCheckbox", model.item._id);
+						} else if (model.item.moveType == "Room Function") {
+							this.push("_selectedRoomsCheckbox", model.item._id);
+						}// end if
+					}// end if
+				}// end if
+			}// end for
+		},
+
+		//=========================================================
+		// Function _removeAllSelections
+		//------------------------------------------
+		// Objective: Remove all checkbox selections
+		//=========================================================
+		_removeAllSelections: function(drawerType) {
+			// Remove all selections
+			if (drawerType == null) {
+				this.set("_selectedRequests", []);
+				this.set("_selectedPeopleCheckbox", []);
+				this.set("_selectedAssetsCheckbox", []);
+				this.set("_selectedEquipmentCheckbox", []);
+				this.set("_selectedRoomsCheckbox", []);
+
+				var selectedRows = Polymer.dom(this.root).querySelectorAll(".line-item-row[selected]");
+
+				for (var i=0; i < selectedRows.length; i++) {
+					selectedRows[i].removeAttribute("selected");
+					var selectedRowCheckbox = Polymer.dom(selectedRows[i]).querySelector(".inbox-checkbox > paper-checkbox");
+					selectedRowCheckbox.checked = false;
+				}// end for
+
+				this.$.selectAllPeople.active = false;
+				this.$.selectAllAssets.active = false;
+				this.$.selectAllEquipment.active = false;
+				this.$.selectAllRooms.active = false;
+			}
+			// Remove selections from drawer
+			else {
+				var selectedRows = Polymer.dom(this.root).querySelectorAll(".line-item-row[selected]");
+
+				for (var i=0; i < selectedRows.length; i++) {
+					var model = this._getItemModel(selectedRows[i]);
+
+					if ((model.item.moveType == drawerType) && (model.item.child == null)) {
+						selectedRows[i].removeAttribute("selected");
+						var selectedRowCheckbox = Polymer.dom(selectedRows[i]).querySelector(".inbox-checkbox > paper-checkbox");
+						selectedRowCheckbox.checked = false;
+						this._removeSelectedRequest(model.item);
+					}// end if
+				}// end for
+			}// end if
+		},
+
+		//=========================================================
+		// Function _handleInboxSelect
+		//------------------------------------------
+		// Objective: Handle select 1 checkbox
+		//=========================================================
+		_handleInboxSelect: function(e) {
+			e.stopPropagation();
+
+			// update selected requests array
+			var request = e.model.item;
+
+			if (request) {
+				if (request.selected) {
+					this.push("_selectedRequests", request);
+
+					// If Statement: Check the moveType to feed the specific array type
+					if (request.moveType == "Person") {
+						this.push("_selectedPeopleCheckbox", request._id);
+					} else if (request.moveType == "Asset") {
+						this.push("_selectedAssetsCheckbox", request._id);
+					} else if (request.moveType == "Equipment") {
+						this.push("_selectedEquipmentCheckbox", request._id);
+					} else if (request.moveType == "Room Function") {
+						this.push("_selectedRoomsCheckbox", request._id);
+					}// end if
+				} else {
+					this._removeSelectedRequest(request);
+
+					if (this._checkboxListEmpty(request.moveType)) {
+						if (request.moveType == "Person") {
+							this.$.selectAllPeople.active = false;
+						}
+						else if (request.moveType == "Asset") {
+							this.$.selectAllAssets.active = false;
+						}
+						else if (request.moveType == "Equipment") {
+							this.$.selectAllEquipment.active = false;
+						}
+						else if (request.moveType == "Room Function") {
+							this.$.selectAllRooms.active = false;
+						}
+						else {
+							// not found
+						}// end if
+					}// end if
+				}// end if
+			}// end if
+		},
+
+		//=========================================================
+		// Function _removeSelectedRequest
+		//------------------------------------------
+		// Objective: Handle remove 1 checkbox selected
+		//=========================================================
+		_removeSelectedRequest: function(selectedItem) {
+			var selectedItemId = selectedItem._id;
+			var i = 0;
+			var found = false;
+
+			while (!found && i < this._selectedRequests.length) {
+				var curItemId = this._selectedRequests[i]._id;
+
+				if (selectedItemId == curItemId) {
+					found = true;
+					this.splice("_selectedRequests", i, 1);
+				}// end if
+
+				i++;
+			}// end while
+
+			// If Statement: Check the moveType to feed the specific array type
+			if (selectedItem.moveType == "Person") {
+				this.splice("_selectedPeopleCheckbox", this._selectedPeopleCheckbox.indexOf(selectedItemId), 1);
+			} else if (selectedItem.moveType == "Asset") {
+				this.splice("_selectedAssetsCheckbox", this._selectedAssetsCheckbox.indexOf(selectedItemId), 1);
+			} else if (selectedItem.moveType == "Equipment") {
+				this.splice("_selectedEquipmentCheckbox", this._selectedEquipmentCheckbox.indexOf(selectedItemId), 1);
+			} else if (selectedItem.moveType == "Room Function") {
+				this.splice("_selectedRoomsCheckbox", this._selectedRoomsCheckbox.indexOf(selectedItemId), 1);
+			}// end if
+		},
+
+		//=========================================================
+		// Function _checkboxListEmpty
+		//------------------------------------------
+		// Objective: Check if checkbox list is empty
+		//=========================================================
+		_checkboxListEmpty: function(type) {
+			var empty = true;
+			var selectedRows = Polymer.dom(this.root).querySelectorAll(".line-item-row[selected]");
+
+			for (var i=0; i < selectedRows.length; i++) {
+				var model = this._getItemModel(selectedRows[i]);
+
+				if ((model.item.moveType == type) && (model.item.child == null)) {
+					empty = false;
+					break;
+				}// end if
+			}// end for
+
+			return empty;
+		},
+
+		//=========================================================
+		// Function _handleSelectedRequestsLengthChange
+		//------------------------------------------
+		// Objective: Control when to show and hide actionbar
+		//=========================================================
+		_handleSelectedRequestsLengthChange: function(numSelected) {
+			if (this.$.actionButtonsCollapse.opened && numSelected == 0) this.$.actionButtonsCollapse.hide();
+			if (!this.$.actionButtonsCollapse.opened && numSelected > 0) this.$.actionButtonsCollapse.show();
+		},
+
+		//=========================================================
+		// Function _handleRemoveDialogTap
+		//------------------------------------------
+		// Objective: Open confirmation dialog
+		//=========================================================
+		_handleRemoveDialogTap: function() {
+			this.$.deleteConfirmationDialog.open();
+		},
+
+		_handleRemoveTap: function() {
+		  // mark selected records as unread
+		  var selectedRequests = Polymer.dom(this.root).querySelectorAll(".line-item-row[selected]");
+		  var selectedRequestItems = [];
+		  var moveType = null;
+
+		  for (var i = 0; i < selectedRequests.length; i++) {
+		    var selectedRequest = selectedRequests[i];
+		    var selectedRequestModel = this.$.personTemplate.modelForElement(selectedRequest);
+
+		    if (selectedRequestModel != null) {
+					var currentMLI = selectedRequestModel.item;
+		      moveType = "Person";
+
+					// Check if the items removed are on the search results
+					var peopleListResult = Polymer.dom(this.root).querySelectorAll("#listContainer div[tri-tr]");
+					if (peopleListResult) {
+						for (var k = 0; k < peopleListResult.length; k++) {
+							var currentPersonModel = this.$.peopleList.modelForElement(peopleListResult[k]);
+							var currentPersonObj = currentPersonModel.item;
+
+							// If Statement: If the removed item is on the search list set the 'added' attr to false
+							if (currentMLI.personRecordId == currentPersonObj._id) {
+								currentPersonModel.set("item.added", false);
+
+								break;
+							}// end if
+						}// end for
+					}// end if
+
+		      var people = {};
+
+		      // this.$.moveLineItems.performAction(currentMLI._id, TriPlatDs.RefreshType.BOTH, "defaultActions", "delete");
+
+		      for (var j = 0; j < this.peopleSelected.length; j++) {
+		        if (this.peopleSelected[j]._id == currentMLI.personRecordId) {
+		          people = this.peopleSelected[j];
+
+		          this.peopleSelected[j].added = false;
+
+		          this.$.peopleSelected.removeRecord(people, TriPlatDs.RefreshType.CLIENT);
+
+							break;
+		        }// end if
+		      }// end if
+
+		    }
+		    if (selectedRequestModel == null) {
+		      selectedRequestModel = this.$.assetTemplate.modelForElement(selectedRequest);
+		      if (selectedRequestModel != null) {
+						var currentMLI = selectedRequestModel.item;
+		        moveType = "Asset";
+
+						// Check if the items removed are on the search results
+						var assetsListResult = Polymer.dom(this.root).querySelectorAll("#listContainerAsset div[tri-tr]");
+						if (assetsListResult) {
+							for (var k = 0; k < assetsListResult.length; k++) {
+								var currentAssetModel = this.$.assetList.modelForElement(assetsListResult[k]);
+								var currentAssetObj = currentAssetModel.item;
+
+								// If Statement: If the removed item is on the search list set the 'added' attr to false
+								if (currentMLI.assetRecordId == currentAssetObj._id) {
+									currentAssetModel.set("item.added", false);
+
+									break;
+								}// end if
+							}// end for
+						}// end if
+
+		        var asset = {};
+
+		        // this.$.moveLineItems.performAction(currentMLI._id, TriPlatDs.RefreshType.BOTH, "defaultActions", "delete");
+
+		        for (var j = 0; j < this.assetSelected.length; j++) {
+		          if (this.assetSelected[j]._id == currentMLI.assetRecordId) {
+		            asset = this.assetSelected[j];
+
+		            this.assetSelected[j].added = false;
+
+		            this.$.assetSelected.removeRecord(asset, TriPlatDs.RefreshType.CLIENT);
+
+								break;
+		          }// end if
+		        }// end for
+		      }// end if
+		    }
+		    if (selectedRequestModel == null) {
+		      selectedRequestModel = this.$.equipmentTemplate.modelForElement(selectedRequest);
+		      if (selectedRequestModel != null) {
+						var currentMLI = selectedRequestModel.item;
+		        moveType = "Equipment";
+
+						// Check if the items removed are on the search results
+						var equipmentsListResult = Polymer.dom(this.root).querySelectorAll("#listContainerEquipment div[tri-tr]");
+						if (equipmentsListResult) {
+							for (var k = 0; k < equipmentsListResult.length; k++) {
+								var currentEquipmentModel = this.$.equipmentList.modelForElement(equipmentsListResult[k]);
+								var currentEquipmentObj = currentEquipmentModel.item;
+
+								// If Statement: If the removed item is on the search list set the 'added' attr to false
+								if (currentMLI.specificationBomId == currentEquipmentObj._id) {
+									currentEquipmentModel.set("item.added", false);
+
+									break;
+								}// end if
+							}// end for
+						}// end if
+
+		        var equipment = {};
+
+		        // this.$.moveLineItems.performAction(currentMLI._id, TriPlatDs.RefreshType.BOTH, "defaultActions", "delete");
+
+		        for (var j = 0; j < this.equipmentSelected.length; j++) {
+		          if (this.equipmentSelected[j]._id == currentMLI.specificationBomId) {
+		            equipment = this.equipmentSelected[j];
+
+		            this.equipmentSelected[j].added = false;
+
+		            this.$.equipmentSelected.removeRecord(equipment, TriPlatDs.RefreshType.CLIENT);
+
+								break;
+		          }// end if
+		        }// end for
+		      }// end if
+		    }
+		    if (selectedRequestModel == null) {
+		      selectedRequestModel = this.$.roomTemplate.modelForElement(selectedRequest);
+		      if (selectedRequestModel != null) {
+						var currentMLI = selectedRequestModel.item;
+		        moveType = "Room Function";
+
+						// Check if the items removed are on the search results
+						var roomsListResult = Polymer.dom(this.root).querySelectorAll("#listContainerRoom div[tri-tr]");
+						if (roomsListResult) {
+							for (var k = 0; k < roomsListResult.length; k++) {
+								var currentRoomModel = this.$.roomList.modelForElement(roomsListResult[k]);
+								var currentRoomObj = currentRoomModel.item;
+
+								// If Statement: If the removed item is on the search list set the 'added' attr to false
+								if (currentMLI.roomRecordId == currentRoomObj._id) {
+									currentRoomModel.set("item.added", false);
+
+									break;
+								}// end if
+							}// end for
+						}// end if
+
+		        var room = {};
+
+		        // this.$.moveLineItems.performAction(currentMLI._id, TriPlatDs.RefreshType.BOTH, "defaultActions", "delete");
+
+		        for (var j = 0; j < this.roomSelected.length; j++) {
+		          if (this.roomSelected[j]._id == currentMLI.roomRecordId) {
+		            room = this.roomSelected[j];
+
+		            this.roomSelected[j].added = false;
+
+		            this.$.roomSelected.removeRecord(room, TriPlatDs.RefreshType.CLIENT);
+
+								break;
+		          }// end if
+		        }// end for
+		      }// end if
+		    }// end if
+		  }// end for
+
+			// Remove selected MLIs
+			var selectedRequestsDel = this._selectedRequests;
+
+			this.$.moveRequest.performAction(
+				this.moveRequest._id, TriPlatDs.RefreshType.BOTH,
+				"groupMoveRequest", "deleteMultipleMLIs", {varMLIs: selectedRequestsDel});
+
+		  // remove all selections
+		  this._removeAllSelections();
+		},
+
+		//=========================================================
+		// Function _resetSearch
+		//------------------------------------------
+		// Objective: Reset the search
+		//=========================================================
+		_resetSearch: function() {
+			this.kind = "user";
+			this._selectPeopleIcon();
+			this._finalBuilding = null;
+			this._finalFloors = null;
+      		this.set("_selectedBuilding", {});
+			this.set("_selectedFloors", []);
+		},
+
+		_openDropdown: function(e){
+			if (e.which == 13 || e.keyCode == 13) {
+				this.$.paperMenuButton.open();
+			}
+		},
+
+		_openPeopleArrow: function(e){
+			if (e.which == 13 || e.keyCode == 13) {
+				this._peopleOpened = !this._peopleOpened;
+				}
+		},
+		_openAssetArrow: function(e){
+			if (e.which == 13 || e.keyCode == 13) {
+				this._assetOpened = !this._assetOpened;
+				}
+		},
+		_openEquipmentArrow: function(e){
+			if (e.which == 13 || e.keyCode == 13) {
+				this._equipmentOpened = !this._equipmentOpened;
+				}
+		},
+		_openRoomArrow: function(e){
+			if (e.which == 13 || e.keyCode == 13) {
+				this._roomOpened = !this._roomOpened;
+			}
+		},
+
+		_clearSearch: function(){
+			this.$.searchField.clearSearch();
+		},
+
+		//=========================================================
+		// Function _handleRoutePageActive
+		//------------------------------------------
+		// Objective: Handle with the change of routes
+		//=========================================================
+		_handleRoutePageActive: function(e) {
+			// If Statement: check if the current route (search) is active
+			if (e.detail.active) {
+				// Fire: Search page is open
+				this.fire('searchActive');
+			}// end if
+		},
+
+		//=========================================================
+		// Function _handleSelectedCheckboxChange
+		//------------------------------------------
+		// Objective: Called when checkbox change - Use to select and deselect showAll checkbox
+		//=========================================================
+		_handleSelectedPeopleCheckboxChange: function(change) {
+			// If Statement: Check the path
+			if (change.path == "_selectedPeopleCheckbox" || change.path == "_selectedPeopleCheckbox.splices") {
+				this._checkSelected("people");
+			}// end if
+		},
+		_handleSelectedAssetsCheckboxChange: function(change) {
+			// If Statement: Check the path
+			if (change.path == "_selectedAssetsCheckbox" || change.path == "_selectedAssetsCheckbox.splices") {
+				this._checkSelected("assets");
+			}// end if
+		},
+		_handleSelectedEquipmentCheckboxChange: function(change) {
+			// If Statement: Check the path
+			if (change.path == "_selectedEquipmentCheckbox" || change.path == "_selectedEquipmentCheckbox.splices") {
+				this._checkSelected("equipment");
+			}// end if
+		},
+		_handleSelectedRoomsCheckboxChange: function(change) {
+			// If Statement: Check the path
+			if (change.path == "_selectedRoomsCheckbox" || change.path == "_selectedRoomsCheckbox.splices") {
+				this._checkSelected("rooms");
+			}// end if
+		},
+
+		//=========================================================
+		// Function _checkSelected
+		//------------------------------------------
+		// Objective: Check all checkbox selected to determine when to showAll or not
+		//=========================================================
+		_checkSelected: function(type) {
+			// If Statement: Check what move type
+			if (type == "people") {
+				var allCheckboxes = Polymer.dom(this.root).querySelectorAll("#collapsiblePeople paper-checkbox");
+				var showAll = allCheckboxes &&  allCheckboxes.length > 0;
+
+				if (allCheckboxes) {
+					for (var i = 0; i < allCheckboxes.length; i++) {
+						allCheckboxes[i].checked = this._selectedPeopleCheckbox && this._selectedPeopleCheckbox.indexOf(allCheckboxes[i].criterion._id) >= 0;
+						showAll = showAll && allCheckboxes[i].checked;
+					}// end for
+				}// end if
+
+				this._showAllPeople = showAll;
+			} else if (type == "assets") {
+				var allCheckboxes = Polymer.dom(this.root).querySelectorAll("#collapsibleAsset paper-checkbox");
+				var showAll = allCheckboxes &&  allCheckboxes.length > 0;
+
+				if (allCheckboxes) {
+					for (var i = 0; i < allCheckboxes.length; i++) {
+						allCheckboxes[i].checked = this._selectedAssetsCheckbox && this._selectedAssetsCheckbox.indexOf(allCheckboxes[i].criterion._id) >= 0;
+						showAll = showAll && allCheckboxes[i].checked;
+					}// end for
+				}// end if
+
+				this._showAllAssets = showAll;
+			} else if (type == "equipment") {
+				var allCheckboxes = Polymer.dom(this.root).querySelectorAll("#collapsibleEquipment paper-checkbox");
+				var showAll = allCheckboxes &&  allCheckboxes.length > 0;
+
+				if (allCheckboxes) {
+					for (var i = 0; i < allCheckboxes.length; i++) {
+						allCheckboxes[i].checked = this._selectedEquipmentCheckbox && this._selectedEquipmentCheckbox.indexOf(allCheckboxes[i].criterion._id) >= 0;
+						showAll = showAll && allCheckboxes[i].checked;
+					}// end for
+				}// end if
+
+				this._showAllEquipment = showAll;
+			} else if (type == "rooms") {
+				var allCheckboxes = Polymer.dom(this.root).querySelectorAll("#collapsibleRoom paper-checkbox");
+				var showAll = allCheckboxes &&  allCheckboxes.length > 0;
+
+				if (allCheckboxes) {
+					for (var i = 0; i < allCheckboxes.length; i++) {
+						allCheckboxes[i].checked = this._selectedRoomsCheckbox && this._selectedRoomsCheckbox.indexOf(allCheckboxes[i].criterion._id) >= 0;
+						showAll = showAll && allCheckboxes[i].checked;
+					}// end for
+				}// end if
+
+				this._showAllRooms = showAll;
+			}// end if
+		},
+
+		_getAddPeopleString: function(val1,val2){
+			return "Add People "+ val1 + " " + val2;
+		},
+		_getRemovePeopleString: function(val1,val2){
+			return "Remove People "+ val1 + " " + val2;
+		},
+		_getAddAssetString: function(val1,val2){
+			return "Add Asset ID "+ val1 + " Name " + val2;
+		},
+		_getRemoveAssetString: function(val1,val2){
+			return "Remove Asset ID "+ val1 + " name " + val2;
+		},
+		_getAddEquipmentString: function(val1,val2){
+			return "Add Equipment ID "+ val1 + " Name " + val2;
+		},
+		_getRemoveEquipmentString: function(val1,val2){
+			return "Remove Equipment ID "+ val1 + " name " + val2;
+		},
+		_getAddRoomString: function(val1,val2){
+			return "Add Room ID "+ val1 + " Name " + val2;
+		},
+		_getRemoveRoomString: function(val1,val2){
+			return "Remove Room ID "+ val1 + " name " + val2;
+		},
+
+		_initToastMessage: function(){
+			this._toastDisplayed = false;
+			this._createdByRoom = false;
+			this.$.addAllToast.close();
+			this.$.addAllCompleteToast.close();
+			this.$.addAllCompleteBlankToast.close();
+			this.$.addAllTimeoutToast.close();
+			this.currentNumberRefresh = 0;
+			this._checkToastMessage();
+		},
+
+		_checkToastMessage: function(){
+			if(this.currentNumberRefresh>this.maxNumberRefresh){
+				this.currentNumberRefresh = 0;
+				this._createdByRoom = false;
+				this.$.addAllToast.close();
+				this.$.addAllTimeoutToast.open();
+				this._toastDisplayed = false;
+				return true;
+			}
+			if(this.moveRequest != null && ( this.moveRequest.workflowCount>0)){
+				if(!this._toastDisplayed){
+					this.$.addAllToast.open();
+					this._toastDisplayed = true;
+				}
+				this.currentNumberRefresh = this.currentNumberRefresh + 1;
+				this.$.moveLineItems.refresh();
+				setTimeout(function() {
+						this.$.moveRequest.refresh();
+						}.bind(this), this.refreshInterval);
+			}
+			else if(this._toastDisplayed){
+				if(this.moveLineItems !=null && this.moveLineItems.length>0){
+					this.$.addAllToast.close();
+				var currentSize;
+				if(this.moveLineItems)
+					currentSize = this.moveLineItems.length;
+				else
+					currentSize = 0;
+				if(this._createdByRoom && this._lastLineItemCount == currentSize)
+					this.$.addAllCompleteBlankToast.open();
+				else
+					this.$.addAllCompleteToast.open();
+				this._createdByRoom = false;
+					this._toastDisplayed = false;
+					this.currentNumberRefresh = 0;
+					this.$.moveLineItems.refresh();
+				}
+				else{
+					setTimeout(function() {
+						this.$.moveRequest.refresh();
+						}.bind(this), this.refreshInterval);
+				}
+			}
+		},
+
+		//=========================================================
+		// Function _handle-Type-Count
+		//------------------------------------------
+		// Objective: Set the type count content
+		//=========================================================
+		_handlePeopleCount: function(count) {
+			this.$.personCount.textContent = count;
+		},
+		_handleAssetsCount: function(count) {
+			this.$.assetCount.textContent = count;
+		},
+		_handleEquipmentCount: function(count) {
+			this.$.equipmentCount.textContent = count;
+		},
+		_handleRoomsCount: function(count) {
+			this.$.roomCount.textContent = count;
+		},
+		loadMoveRequest: function(){
+		
+				this.lookupPeople = [];
+				this.lookupAsset = [];
+				this.lookupEquipment = [];
+				this.lookupRoom = [];
+				this.lookupLocation = [];
+				this.$.lookupPeople.disable = false;
+				this.$.lookupAsset.disable = false;
+				this.$.lookupEquipment.disable = false;
+				this.$.lookupRoom.disable = false;
+				this.$.lookupLocation.disable = false;
+				this.set('peopleScroller', this.$.listContainer);
+				this.set('assetScroller', this.$.listContainerAsset);
+				this.set('equipmentScroller', this.$.listContainerEquipment);
+				this.set('roomScroller', this.$.listContainerRoom);
+				this.set('locationScroller', this.$.listContainerLocation);
+			
+		},
+	});
+</script>

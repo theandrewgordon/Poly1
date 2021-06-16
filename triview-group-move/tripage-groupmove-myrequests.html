@@ -1,0 +1,1222 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+
+<!-- TRIRIGA Platform Components -->
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-debug/triplat-debug.html">
+<link rel="import" href="../triplat-date-picker/triplat-date-picker.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+<link rel="import" href="../triplat-query/triplat-query.html">
+<link rel="import" href="../triplat-ds-search-input/triplat-ds-search-input.html">
+<link rel="import" href="../triplat-date-utilities/triplat-date-utilities.html">
+
+<!-- TRIRIGA Block Components -->
+<link rel="import" href="../triblock-page-container-behavior/triblock-page-container-behavior.html">
+
+<!-- TRIRIGA Core Components -->
+<link rel="import" href="../tricore-url/tricore-url.html">
+
+<!-- Polymer Paper Components -->
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-fab/paper-fab.html">
+<link rel="import" href="../paper-toggle-button/paper-toggle-button.html">
+<link rel="import" href="../paper-tooltip/paper-tooltip.html">
+
+<!-- Polymer Iron Components -->
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icons/image-icons.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<link rel="import" href="../triplat-loading-indicator/triplat-loading-indicator.html">
+
+<!-- Building Block Components -->
+<link rel="import" href="../triblock-tabs/triblock-tab-nav-layout.html">
+
+
+<!-- Local Components -->
+<link rel="import" href="tricomp-array-comparator.html">
+<link rel="import" href="tricomp-card-and-table-view.html">
+<link rel="import" href="tripage-groupmove-search-detail.html">
+<link rel="import" href="tricomp-groupmove-triblock-tabs.html">
+<link rel="import" href="tricomp-groupmove-myrequests-card.html">
+
+<dom-module id="tripage-groupmove-myrequests">
+
+	<style>
+
+		:host {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+		}
+
+		@media (min-width: 1560px) {
+			.inbox-card {
+				width: calc(25% - 5px);
+			}
+		}
+
+		@media (max-width: 1559px) and (min-width: 1160px) {
+			.inbox-card {
+				width: calc(33.3333% - 7px);
+			}
+		}
+
+		@media (max-width: 1159px) and (min-width: 650px) {
+			.inbox-card {
+				width: calc(50% - 10px);
+			}
+		}
+
+		@media (max-width: 649px) {
+			.inbox-card {
+				width: calc(100% - 20px);
+			}
+		}
+
+
+		.container {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			@apply(--layout-fit);
+			min-height: 0;
+			min-width: 0;
+			padding-top: 5px;
+		}
+
+		.filters-container {
+			@apply(--layout-horizontal);
+			padding-right: 40px;
+			padding-left: 40px;
+			padding-top: 10px;
+		}
+
+		.container-horizontal {
+			@apply(--layout-horizontal);
+			@apply(--layout-flex);
+			padding-left: 40px;
+			padding-right: 40px;
+			padding-top: 15px;
+		}
+
+		.search-container {
+			@apply(--layout-horizontal);
+			@apply(	--layout-justified);
+			min-height: auto;
+			padding-left: 40px;
+			padding-right: 40px;
+			padding-top: 15px;
+			padding-bottom: 20px;
+		}
+
+		.search-input-container {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-start-justified);
+			@apply(--layout-center);
+			min-width: 0;
+		}
+
+		triplat-ds-search-input /deep/ #inputContainer {
+			width: 90%;
+		}
+
+		.inbox-card-container {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-wrap);
+			align-content: flex-start;
+            min-width: 0;
+            margin-left: -20px;
+		}
+
+        .inbox-col-count-icons{
+            width: 44px;
+            min-width: 44px !important;
+            flex-shrink: 1;
+
+        }
+
+        .centralized-column-header{
+            @apply(--layout-center-justified);
+        }
+
+        .centralized-column-content{
+           @apply(--layout-center-justified);
+        }
+
+		.inbox-col-move-date {
+			@apply(--layout-flex);
+		}
+
+		.inbox-col-request-id {
+			padding-left: 10px;
+			@apply(--layout-flex);
+
+			overflow: hidden;
+		}
+
+
+		.inbox-col-status {
+			@apply(--layout-flex);
+		}
+
+
+		.inbox-col-building {
+			@apply(--layout-flex);
+            overflow: hidden;
+		}
+
+
+		.inbox-container {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-center-justified);
+			overflow-y: auto;
+		}
+
+		.inbox-layout-applaunch-button {
+			padding-left: 24px;
+			padding-right: 24px;
+			padding-top: 10px !important;
+			padding-bottom: 10px !important;
+			height: auto;
+			color: var(--tri-header-color);
+			font-size: 14px;
+			font-family: var(--tri-font-family);
+			font-weight: normal;
+			background-color: var(--tri-primary-color-40);
+		}
+
+		.inbox-layout-applaunch-container {
+			@apply(--layout-vertical);
+			padding-top: 0px;
+		}
+
+		.inbox-layout-applaunch-container-link {
+			text-decoration: none;
+		}
+
+		.inbox-layout-button-container {
+			@apply(--layout-vertical);
+		}
+
+		.inbox-layout-button {
+				flex-shrink: 0;
+				height: 44px;
+				width: 44px;
+
+		}
+
+		.inbox-row {
+			font-weight: normal;
+            font-size: 14px;
+			font-family: var(--tri-font-family);
+            color: var(--ibm-gray-100);
+
+		}
+
+
+		.inbox-row-collapsed {
+			@apply(--layout-horizontal);
+			@apply(--layout-flex);
+		}
+
+
+		.inbox-table-container {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-scroll);
+			background-color: var(--tri-primary-content-background-color);
+			min-height: 0;
+			min-width: 0;
+		}
+
+		.inbox-table {
+			box-sizing: border-box;
+			width: 100%;
+			min-width: 1021px; /* 100px/col * 10 cols + 21px scrollbar = 1021px... had to set this for scrolling to work properly */
+            border-bottom-color: var(--ibm-grey-30);
+	    	border-bottom-width: 1px;
+			@apply(--layout-flex);
+        }
+
+
+
+		.search-input {
+			@apply(--layout-flex);
+
+
+            --triplat-ds-search-input: {
+				border-bottom-color: var(--tri-primary-button-hover-background-color);
+				border-bottom-width: 2px;
+				color: var(--tri-secondary-icon-button-hover-color);
+				font-family: var(--tri-font-family);
+				font-weight: normal;
+				padding-left: 0px;
+				padding-right: 0px;
+			};
+
+			--triplat-ds-search-input-input: {
+				color: var(--tri-primary-content-color);
+				font-family: var(--tri-font-family);
+				font-weight: normal;
+				font-size: 14px;
+			};
+
+			--triplat-ds-search-input-search-icon: {
+				color: var(--tri-primary-content-label-color);
+				padding-left: 0px;
+				padding-right: 22px;
+			};
+
+			--triplat-ds-search-input-clear-icon {
+				color: var(--tri-secondary-color);
+				padding-right: 0px;
+				align-items: flex-end;
+				justify-content: flex-end;
+			};
+
+
+		}
+
+		.sort-column-header {
+			cursor: pointer;
+			outline: none;
+
+		}
+
+        .sort-column-header:hover {
+            cursor: pointer;
+            text-decoration: underline;
+		}
+
+
+        .column-header {
+            word-wrap: normal;
+
+		}
+
+        .sortColumnLabel {
+            font-weight: normal;
+		    font-size: 14px;
+            font-family: var(--tri-font-family);
+            line-height: 18px;
+            cursor: pointer;
+
+        }
+
+        .columnLabel {
+            font-weight: normal;
+		    font-size: 14px;
+            font-family: var(--tri-font-family);
+            color: var(--tri-secondary-color);
+            line-height: 18px;
+        }
+
+        .table-header{
+            border-bottom-color: var(--tri-secondary-icon-button-hover-color) !important;
+		    border-bottom-width: 1px !important;
+            border-left-color: var(--ibm-gray-20) !important;
+            border-left-width: 1px !important;
+        }
+
+		.sort-icon {
+			--iron-icon-height: 16px;
+			--iron-icon-width: 16px;
+		}
+
+		.sort-icon[icon="sort"] {
+			color: var(--tri-primary-content-accent-color);
+		}
+
+        .table-icon {
+            color: var(--tri-secondary-color);
+			width: 24px;
+		}
+
+
+		/*=========================================
+		 * Fix for Defect 215055
+		 *-----------------------------
+		 * Details: tri-td has a fixed height hidding part of content when the content height is bigger then the tri-td. Also, a long word wasn't breaking to the next line
+		 * Workaround: Set a min-height in px and a height of 100%. Set a word break property
+		 *=========================================*/
+		tricomp-card-and-table-view div[tri-tbody] > div[tri-tr] div[tri-td] {
+			min-height: 45px;
+			height: 100% !important;
+			word-break: initial;
+			word-wrap: break-word;
+		}
+
+		tricomp-card-and-table-view div[tri-tbody] > div[tri-tr] div[tri-td] div.td-content-text {
+			display: inline-block;
+			width: 100%;
+		}
+
+		tricomp-card-and-table-view .inbox-row-collapsed {
+			-ms-flex-align: center;
+			align-items: center;
+		}
+		/*=========================================
+		 * End of the Fix
+		 *=========================================*/
+
+
+		/*=========================================
+		 * Fix for Defect 221829
+		 *-----------------------------
+		 * Details: too many space between the container inbox-row-detail and its contents
+		 * Workaround: Set padding-top and padding-bottom to zero
+		 *=========================================*/
+		/*tricomp-card-and-table-view .inbox-row-collapse .inbox-row-detail {
+			padding-top: 5px;
+			padding-bottom: 10px;
+		}*/
+		/*=========================================
+		 * End of the Fix
+		 *=========================================*/
+
+    tricomp-groupmove-triblock-tabs {
+			flex: 1;
+			max-width: 1000px;
+
+			--triblock-tabs-height: 80px;
+
+			--triblock-tabs-width: auto;
+
+			--triblock-tab-width: 250px;
+
+			--triblock-tab-color: var(--tri-header-color);
+
+			--triblock-tab-background-color: var(--tri-primary-color-40);
+
+			--triblock-tabs-background-color: var(--tri-body-background-color);
+
+			--triblock-tab-unselected-color: var(--tri-header-color);
+
+			--triblock-tabs-container-style {
+				@apply(--layout-flex);
+				@apply(--layout-horizontal);
+				@apply(--layout-fit);
+			};
+
+		  --triblock-tabs-border-bottom-color: var(--tri-body-background-color);
+
+		  --triblock-tab-unselected-style: opacity: 0.5;
+
+			--triblock-tab-focused-band-background-color: var(--tri-primary-color-40);
+
+			--triblock-tabs-tricontent-style{
+				font-weight: bold;
+				font-size: 40px;
+				vertical-align: middle;
+			};
+
+			--triblock-tab-badge-style {
+				color: var(--tri-header-color);
+			};
+
+			--triblock-tab-style{
+				@apply(--layout-center-center);
+			};
+
+			--triblock-tabs-style{
+			 font-weight: bold;
+			 font-size: 40px;
+			 align: center;
+			};
+		}
+
+		.divider-line{
+			border-left: 1px solid var(--tri-secondary-button-hover-background-color);
+			height: 44px;
+		}
+		.divider-line, #printIcon, #submitButton{
+			margin-right: 15px;
+		}
+		#printIcon{
+			color: var(--tri-primary-button-background-color);
+			--triplat-icon-width:24px;
+			--triplat-icon-height:44px;
+			cursor: pointer;
+		}
+
+		/* hover print */
+		#printIcon:hover {
+			color: var(--tri-primary-button-hover-background-color);
+		}
+		/* pressed print */
+		#printIcon:active  {
+			color: var(--tri-primary-button-press-background-color);
+		}
+		paper-button {
+			height: 44px !important;
+		}
+		paper-icon-button{
+			--paper-icon-button:{
+				padding: 0px;
+			};
+
+		}
+
+		triblock-tab-nav-layout{
+			background-color: var(--tri-header-color);
+		}
+
+		triblock-tabs {
+			@apply(--layout-flex);
+			--triblock-tabs-background-color: transparent;
+			--triblock-tab-background-color: transparent;
+		}
+	</style>
+
+	<template>
+
+		<tricore-url id="urlGen"></tricore-url>
+
+    <triplat-route
+				id="inboxRoute"
+				name="inbox"
+				on-route-active="_handleRoutePageActive"></triplat-route>
+
+		<triplat-ds
+				id="myMoveRequestsDS"
+				name="myMoveRequests"
+                data="{{_myMoveRequestsUnfiltered}}"
+                filtered-data="{{myMoveRequests}}"
+				loading="{{myMoveRequestsDSLoading}}"
+				on-ds-get-complete="_handleMyMoveRequestsGetComplete">
+    			<triplat-query append-filters="{{appendFilters}}">
+				   <triplat-query-sort name="{{sortField}}" desc="{{sortDescending}}"></triplat-query-sort>
+				   <triplat-query-filter name="requestClass" operator="equals" value="Group Move" ignore-if-blank>
+                   </triplat-query-filter>
+
+			   </triplat-query>
+		</triplat-ds>
+
+		<triplat-ds name="currentUser" data="{{currentUser}}" loading="{{currentUserLoading}}"></triplat-ds>
+
+		<triplat-route id="openRequestDetailRoute" name="openRequestDetail"></triplat-route>
+
+		<div class="container"> <!-- layout-vertical -->
+
+			<div  class="filters-container"> <!-- layout-horizontal -->
+	
+				<triblock-tabs hide-scroll-buttons id="triblockTabs" selected="{{currentFilterId}}" attr-for-selected="id" nav>
+						<triblock-tab
+							id="activeTab"
+							icon="graph-in-progress"
+							label="Active"
+							badge-number="{{countActiveRequests}}"
+							tap-handler="_filterActive"
+							aria-label="Active"></triblock-tab>
+						<triblock-tab
+							id="draftTab"
+							icon="rating-star"
+							label="Draft"
+							badge-number="{{countDraftRequests}}"
+							tap-handler="_filterDraft"
+							aria-label="Draft"></triblock-tab>
+						<triblock-tab
+							id="completedTab"
+							icon="status-success"
+							label="History"
+							badge-number="{{countCompletedRequests}}"
+							tap-handler="_filterComplete"
+							aria-label="History"></triblock-tab>
+				</triblock-tabs>
+
+				<div class="inbox-layout-applaunch-container">
+					<div class="layout horizontal">
+						<paper-button class="inbox-layout-applaunch-button" on-tap="_handleLinkTap" noink>New Request</paper-button>
+					</a>
+					</div>
+				</div>
+			</div> <!-- end filters-container -->
+
+			<div class="search-container">
+				<div class="search-input-container">
+
+                    <triplat-ds-search-input
+							class="search-input"
+							id="searchField"
+							placeholder="Search"
+							search-icon-precede="true"
+							data="{{_filteredRequests}}"
+							aliases="{{aliases}}"
+							append-filters="{{appendFilters}}"
+							max-header-children="4">
+					</triplat-ds-search-input>
+
+
+				</div>
+				<div class="inbox-layout-button-container">
+					<paper-icon-button
+							primary
+							noink
+							class="inbox-layout-button"
+							icon="{{_computeTableLayoutIcon(_currentLayout)}}"
+							aria-label="Change Request List display"
+							on-tap="_handleLayoutToggleTap"></paper-icon-button>
+
+				</div>
+			</div> <!-- end search-container -->
+
+			<triblock-tab-nav-layout>
+
+				<div id="tableContainer" class="container-horizontal">
+					<triplat-loading-indicator show="{{_computeLoading(myMoveRequestsDSLoading, currentUserLoading)}}"></triplat-loading-indicator>
+
+					<tricomp-card-and-table-view id="inboxContainer" class="inbox-container" hidden$="{{_hideInboxContent}}" current-layout="{{_currentLayout}}" on-layout-change="_handleTableLayoutChange">
+
+						<div table-container class="inbox-table-container">
+							<div tri-fixed-table clickable-rows class="inbox-table">
+								<div tri-thead  class="table-header">
+									<div tri-tr>
+
+										<div class="inbox-col-request-id">
+											<div tri-th class="sort-column-header" on-tap="_handleColumnSort" data-column="requestID" tabindex="0"><span tri-th-label class="sortColumnLabel">Request</span>&nbsp;<triplat-icon class="sort-icon" icon="sort"></triplat-icon></div>
+										</div>
+										<div class="inbox-col-move-date">
+											<div tri-th class="sort-column-header" on-tap="_handleColumnSort" data-column="moveDate" tabindex="0"><span tri-th-label class="sortColumnLabel">Move Date</span>&nbsp;<triplat-icon class="sort-icon" icon="sort-descending"></triplat-icon></div>
+										</div>
+										<div class="inbox-col-building">
+											<div tri-th class="sort-column-header" on-tap="_handleColumnSort" data-column="toBuilding.value" tabindex="0">
+												<span tri-th-label class="sortColumnLabel">Target Building</span>&nbsp;<triplat-icon class="sort-icon" icon="sort"></triplat-icon></div>
+										</div>
+
+										<div class="inbox-col-status">
+											<div tri-th class="sort-column-header" on-tap="_handleColumnSort" data-column="status" tabindex="0">
+												<span tri-th-label class="sortColumnLabel">Status</span>&nbsp;<triplat-icon class="sort-icon" icon="sort"></triplat-icon></div>
+										</div>
+
+										<div class="inbox-col-count-icons">
+											<div tri-th class="centralized-column-header">
+												<triplat-icon id="userHeaderIcon" class="table-icon" icon="user" aria-label="Person"></triplat-icon>
+												<paper-tooltip for="userHeaderIcon" position="bottom" animation-delay="0">People included</paper-tooltip>
+											</div>
+										</div>
+										<div class="inbox-col-count-icons">
+											<div tri-th class="centralized-column-header">
+												<triplat-icon id="assetHeaderIcon" class="table-icon" icon="assets"  aria-label="Computer"></triplat-icon>
+												<paper-tooltip for="assetHeaderIcon" position="bottom" animation-delay="0">Assets included</paper-tooltip>
+											</div>
+										</div>
+										<div class="inbox-col-count-icons">
+											<div tri-th class="centralized-column-header">
+												<triplat-icon id="equipmentHeaderIcon" class="table-icon" icon="equipment"  aria-label="Table light"></triplat-icon>
+												<paper-tooltip for="equipmentHeaderIcon" position="bottom" animation-delay="0">Equipment included</paper-tooltip>
+											</div>
+										</div>
+										<div class="inbox-col-count-icons">
+											<div tri-th class="centralized-column-header">
+												<triplat-icon id="roomHeaderIcon" class="table-icon" icon="room-function"  aria-label="Table and seats"></triplat-icon>
+												<paper-tooltip for="roomHeaderIcon" position="bottom" animation-delay="0">Rooms included</paper-tooltip>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div tri-tbody id="listContainerRequests" >
+									<template
+										is="dom-repeat"
+										id="inboxTableTemplate"
+										items="{{myMoveRequests}}"
+										observe="selected"
+										on-dom-change="_handleTableTemplateDomChange"
+										filter="_requestTableFilter">
+										<div tri-tr class="inbox-row" id$="{{_computeRowId(item._id)}}" selected$="{{item.selected}}"  on-tap="_handleOpenRequest">
+											<div class="inbox-table" >
+												<div class="inbox-row-collapsed" role="navigation" tabindex="0" on-keypress="_handleOpenRequestKeyboard" aria-label$="{{_getRequestString(item)}}">
+
+													<div class="inbox-col-request-id">
+														<div tri-td><div class="td-content-text">{{item.requestID}}</div></div>
+													</div>
+
+													<div class="inbox-col-move-date">
+														<div tri-td><triplat-date-picker readonly display-format="{{currentUser._DateFormat}}" value ="{{item.moveDate}}"></triplat-date-picker></div>
+													</div>
+													<div class="inbox-col-building">
+														<div tri-td><div class="td-content-text">{{item.toBuilding.value}}</div></div>
+													</div>
+													<div class="inbox-col-status">
+														<div tri-td><div class="td-content-text">{{item.status2}}</div></div>
+													</div>
+													<div class="inbox-col-count-icons">
+														<div tri-td  class="centralized-column-content">{{item.mliPersonCount}}</div>
+													</div>
+													<div class="inbox-col-count-icons">
+														<div tri-td  class="centralized-column-content">{{item.mliAssetsCount}}</div>
+													</div>
+													<div class="inbox-col-count-icons">
+														<div tri-td  class="centralized-column-content">{{item.mliEquipmentCount}}</div>
+													</div>
+													<div class="inbox-col-count-icons">
+														<div tri-td  class="centralized-column-content">{{item.mliRoomCount}}</div>
+													</div>
+												</div> <!-- inbox-row-collapsed  -->
+											</div> <!-- end inbox-table -->
+										</div> <!-- end inbox-row -->
+									</template>
+								</div> <!-- end tri-tbody -->
+							</div> <!-- end tri-fixed-table  -->
+						</div>  <!-- end table-container  -->
+
+						<div card-container class="inbox-card-container">
+
+							<template
+							is="dom-repeat"
+							id="inboxCardTemplate"
+							items="{{myMoveRequests}}"
+							filter="_requestTableFilter"
+							observe="selected">
+							<tricomp-groupmove-myrequests-card
+								class="inbox-card"
+								id$="{{_computeCardId(item._id)}}"
+								move-to-building="{{item.toBuilding.value}}" 
+								move-date="{{item.moveDate}}"
+								request-id="{{item.requestID}}"
+								requested-for="{{item.requestedFor}}"
+								selected="{{item.selected}}"
+								on-select="_handleInboxSelect"
+								on-card-tap="_handleOpenRequest"
+								status="{{item.status2}}"
+								mli-person-count="{{item.mliPersonCount}}"
+								mli-assets-count="{{item.mliAssetsCount}}"
+								mli-equipment-count="{{item.mliEquipmentCount}}"
+								mli-room-count="{{item.mliRoomCount}}"
+								mli-ready-to-move-count="{{item.mliReadyToMoveCount}}" tabindex="0" on-keypress="_handleOpenRequestKeyboard"></tricomp-groupmove-myrequests-card>
+						</template>
+                        <!-- hide-inbox-icons="{{_hideInboxIcons}}" -->
+
+
+
+						</div>
+
+					</tricomp-card-and-table-view>
+
+
+				</div> <!-- end container-horizontal -->
+
+
+	        </triblock-tab-nav-layout>
+
+		</div>
+		<!-- </div> --><!-- end content -->
+
+
+	</template>
+
+</dom-module>
+
+<script>
+	Polymer({
+
+		is: "tripage-groupmove-myrequests",
+
+		behaviors: [TriBlockPageContainerBehavior, TriPlatTableBehavior],
+
+		properties: {
+
+			appendFilters: {
+                type: Array,
+                value: []
+            }, 
+
+			_disableMyImportantMoveRequestsLoading: {
+				type: Boolean,
+				value: false
+			},
+
+			_disableMyReadMoveRequestsLoading: {
+				type: Boolean,
+				value: false
+			},
+
+
+			_allRequests: {
+				type: Array,
+				value: []
+			},
+
+			_filteredRequests: {
+				type: Array,
+				value: []
+			},
+
+			_activeRequests: {
+				type: Array,
+				value: []
+			},
+
+			_completedRequests: {
+				type: Array,
+				value: []
+			},
+
+			_draftRequests: {
+				type: Array,
+				value: []
+			},
+
+
+			aliases: {
+				type: Object,
+				value: function() {
+					var __dictionary__requestID = "[Request]";
+					var __dictionary__toBuilding = "[Target Building]";
+					var __dictionary__status = "[Status]";
+					var _aliases = {};
+
+					_aliases["requestID"] = {alias: __dictionary__requestID, datasource: "lookupRequestID"};
+					_aliases["toBuilding"] = {alias: __dictionary__toBuilding, datasource: "lookupRequestToBuilding", stringwithid: true};
+					_aliases["status"] = {alias: __dictionary__status, datasource: "lookupRequestStatus"};
+
+					return _aliases;
+				}
+			},
+
+			pinnedRequestsChecked: {
+				type: Boolean,
+				value: false
+			},
+
+			currentFilterId : {
+				type : String,
+				value : "activeTab",
+				observer : "_handleCurrentFilterIdChange"
+			},
+
+			lastFilterId : {
+				type : String,
+				readOnly : true,
+				notify : true,
+				value : "activeTab"
+			},
+
+			countUnreadRequests: {
+				type: Number,
+				notify: true
+			},
+
+			countActiveRequests: {
+				type: Number,
+				notify: true
+			},
+
+			countDraftRequests: {
+				type: Number,
+				notify: true
+			},
+
+			countImportantRequests: {
+				type: Number,
+				notify: true
+			},
+			countCompletedRequests: {
+				type: Number,
+				notify: true
+			},
+			countUnscheduledRequests: {
+				type: Number,
+				notify: true
+			},
+
+			// needed to set a default class style
+			_unreadClassStyle : {
+				type : String,
+				value : "icon"
+			},
+
+			_activeClassStyle : {
+				type : String,
+				value : "icon"
+			},
+
+			_importantClassStyle : {
+				type : String,
+				value : "icon"
+			},
+
+			_draftClassStyle : {
+				type : String,
+				value : "icon"
+			},
+
+			// needed to set a default class style
+			_completedClassStyle : {
+				type : String,
+				value : "icon"
+			},
+
+			// needed to set a default class style
+			_unscheduledClassStyle : {
+				type : String,
+				value : "icon"
+			},
+
+			_currentRequestId: {
+				type: String
+			},
+
+			preCreateRequestId: {
+				type: String
+			},
+
+			opened : {
+				type : Boolean,
+				notify : true,
+				value : false
+			},
+			refreshFlag: {
+				type: Boolean
+			},
+
+			initFlag: {
+				type: Boolean,
+				value: true
+			},
+
+			initTriblockTab: {
+				type: Boolean,
+				notify: true
+			}
+
+		},
+
+
+
+		observers: [
+			"_handleMyMoveRequestsChange(myMoveRequests)" ,
+			"_handleUpdateRequestList(refreshFlag)",
+			"_handleInitTriblockTab(initTriblockTab)",
+			 "_appendFiltersChanged(appendFilters)",
+		],
+
+
+		_appendFiltersChanged: function(change){
+
+		},	
+
+		_handleUpdateRequestList: function() {
+			if (this.refreshFlag) {
+				this.$.myMoveRequestsDS.refresh();
+				this.refreshFlag=false;
+    	}
+
+		},
+
+		ready: function() {
+			// set the initial sort column
+			this.set("sortField", "moveDate");
+			this._filterActive();
+		},
+
+		_computeCardId: function(id) {
+			if (id) return "card"+id;
+			return "";
+		},
+
+		_computeLoading: function(myMoveRequestsDSLoading, currentUserLoading) {
+			return myMoveRequestsDSLoading || currentUserLoading;
+		},
+
+		_computeLocationString: function(building, floor, space) {
+			if (building && building != "") {
+				if (floor && floor != "") {
+					if (space && space != "") {
+						return building + " | " + floor + " | " + space;
+					}
+					return building + " | " + floor;
+				}
+				return building;
+			}
+			return "Not specified";
+		},
+
+		_computeRowId: function(id) {
+			if (id) return "row"+id;
+			return "";
+		},
+
+		_computeSmartObjectURL: function(specId) {
+			if (!specId)
+				return "";
+
+			var url = this.$.urlGen.getUrl("/WebProcess.srv?objectId=750000&actionId=750011&specId=" + specId);
+
+			return url;
+		},
+
+		_computeAppLaunchURL: function(app) {
+			if (!app)
+				return "";
+
+			var url = this.$.urlGen.getUrl("/p/web/" + app);
+
+			return url;
+		},
+
+		_computeTableLayoutIcon: function(currentLayout) {
+			return (currentLayout == "table") ? "ibm:tile-view" : "ibm:list-view";
+		},
+
+
+		_handleCompleteTap: function() {
+
+		},
+
+
+		_handleLayoutToggleTap: function() {
+			this.$.inboxContainer.toggleLayout();
+		},
+
+		_handleLinkTap: function(e) {
+
+			this._handleStartOver();
+
+
+		},
+		_handleStartOver: function(newreq){
+			this.fire("start-over");
+		},
+
+		_handleOpenRequest: function(e) {
+
+			var request = e.model.item;
+			if (request) {
+				this.$.openRequestDetailRoute.navigate({reqId: request._id});
+			}
+		},
+
+
+		_handleTableLayoutChange: function(e) {
+			// call resize handler for fixed header table
+			if (e.detail.layout == "table") this._handleResize();
+		},
+
+		_handleTableTemplateDomChange: function(e) {
+			// call resize handler for fixed header table
+			this._handleResize();
+		},
+
+		_isEmpty: function(val) {
+			return !val || val == "";
+		},
+
+
+		_pageLoaded: function() {
+			this._setFilter();
+
+		},
+
+		_pageAttached: function() {
+			// refresh inbox
+
+			if (this.$.myMoveRequestsDS) {
+                this.async(function() {
+					this.$.myMoveRequestsDS.refresh();
+
+					this._filterActive();
+
+				});
+			}
+
+			// call resize handler for fixed header table
+			this._handleResize();
+
+			// refresh card/table layout
+			this.$.inboxContainer.refreshLayout();
+
+		},
+
+		_pageDetached: function() {
+
+
+
+		},
+
+		_setFilter: function() {
+
+            switch (this.currentFilterId) {
+
+            case "activeTab":
+                this._filterActive();
+                break;
+		   case "draftTab":
+		   	    this._filterDraft();
+                break;
+            case "completedTab":
+                this._filterComplete();
+                break;
+            }
+
+		},
+
+
+// NEW FOR LEFT NAV FILTERING
+
+		_handleMyMoveRequestsChange: function(requests){
+
+			this._allRequests = requests;
+
+
+            if (this._allRequests){
+				this._activeRequests = this._allRequests.filter(function(item) {
+					return (item.status == "Issued" || item.status == "Review In Progress");
+			    });
+
+				this._draftRequests = this._allRequests.filter(function(item) {
+					return (item.status == "Draft" || item.status == "Revision In Progress");
+				});
+
+				this._completedRequests = this._allRequests.filter(function(item) {
+					return (item.status == "Completed" || item.previousStatus == "Issued" || item.status == "Routing In Progress");
+				});
+				this._setFilter();
+			}
+			this.countActiveRequests 		= this._activeRequests.length;
+			this.countCompletedRequests 	= this._completedRequests.length;
+			this.countDraftRequests 	= this._draftRequests.length;
+
+		},
+
+
+		_handleCurrentFilterIdChange: function() {
+			if (this.currentFilterId && this.currentFilterId != "") {
+				this._setLastFilterId(this.currentFilterId);
+
+
+			}
+		},
+
+		_filterActive : function() {
+			this._requestTableFilter = this._activeFilter;
+			this._filteredRequests = this._activeRequests;
+			this._refreshInbox();
+		},
+
+        _filterDraft : function() {
+			this._requestTableFilter = this._draftFilter;
+			this._filteredRequests = this._draftRequests;
+			this._refreshInbox();
+		},
+
+		_filterComplete : function() {
+			this.$.myMoveRequestsDS.refresh;
+			this._requestTableFilter = this._completedFilter;
+			this._filteredRequests = this._completedRequests;
+			this._refreshInbox(); 
+		},
+
+		_activeFilter: function(item) {
+			return (item.status == "Issued" || item.status == "Review In Progress");
+		},
+
+        _draftFilter: function(item) {
+			return (item.status == "Draft" || item.status == "Revision In Progress");
+		},
+
+		_completedFilter: function(item) {
+			return (item.status == "Completed" || item.previousStatus == "Issued" || item.status == "Routing In Progress");
+		},
+
+
+		_refreshInbox : function() {
+
+			var inboxTableTemplate = Polymer.dom(this.root).querySelector("#inboxTableTemplate");
+			var inboxCardTemplate = Polymer.dom(this.root).querySelector("#inboxCardTemplate");
+
+			if (inboxTableTemplate) inboxTableTemplate.render();
+			if (inboxCardTemplate) inboxCardTemplate.render();
+
+		},
+
+        _checkFilter: function(currentFilter) {
+				switch (currentFilter) {
+					//Active
+                    case "activeTab":
+						this._filterActive;
+						break;
+					case "draftTab":
+						this._filterDraft;
+						break;
+					case "completedTab":
+						this._filterComplete;
+						break;
+				}
+
+		},
+
+
+	_handleUpdateMyMoveRequests: function(){
+
+		this.$.myMoveRequestsDS.refresh();
+	},
+
+	_setPreCreateValue: function(precreateValue){
+		this.preCreateRequestId = precreateValue;
+		this.$.openRequestDetailRoute.navigate({reqId: this.preCreateRequestId});
+	},
+
+	  //=========================================================
+	  // Function _handleRoutePageActive
+	  //------------------------------------------
+	  // Objective: Handle with the change of routes
+	  //=========================================================
+	  _handleRoutePageActive: function(e) {
+	    // If Statement: check if the current route (my requests) is active
+	    //TODO: Revist and determine if neessary
+	    if (e.detail.active) {
+	      if (!this.initFlag)
+	      	this.$.myMoveRequestsDS.refresh();
+	      else
+	      	this.initFlag = false;
+	    }// end if
+	  },
+
+		//=========================================================
+	  // Function _handleInitTriblockTab
+	  //------------------------------------------
+	  // Objective: Handle init triblock tabs
+	  //=========================================================
+		_handleInitTriblockTab: function() {
+			// this.$.triblockTabs._notifyResize();
+		},
+
+		//=========================================================
+	  // Function _handleMyMoveRequestsGetComplete
+	  //------------------------------------------
+	  // Objective: Handle MyMoveRequest get complete
+	  //=========================================================
+		_handleMyMoveRequestsGetComplete: function() {
+			this._handleInitTriblockTab();
+
+			// Check if there's any request
+				// Indicate when there are no requests
+			if (this.myMoveRequests) {
+				if (this.myMoveRequests.length == 0) {
+					this.fire("no-requests");
+				} else {
+					this.fire("have-requests");
+				}// end if
+			}// end if
+		},
+
+		_handleOpenRequestKeyboard: function(e){
+			if (e.which == 13 || e.keyCode == 13) {
+				this._handleOpenRequest(e);
+			}
+		},
+		
+		_getRequestString: function(itemData){
+			if(itemData.toBuilding.value == "" || itemData.toBuilding.value == null){
+				return "Open Request ID " + itemData.requestID + " Move Date " + new Date(itemData.moveDate).toDateString() +  " Status " + itemData.status2 + " containing " +itemData.mliPersonCount+ " people "+itemData.mliAssetsCount+ " assets "+itemData.mliEquipmentCount+ " equipments and "+itemData.mliRoomCount+ " rooms";
+			}
+			else{
+				return "Open Request ID " + itemData.requestID + " Move Date " + new Date(itemData.moveDate).toDateString() + " Target Building " + itemData.toBuilding.value + " Status " + itemData.status2 + " containing " +itemData.mliPersonCount+ " people "+itemData.mliAssetsCount+ " assets "+itemData.mliEquipmentCount+ " equipments and "+itemData.mliRoomCount+ " rooms";
+			}
+		},
+	});
+</script>

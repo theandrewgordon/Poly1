@@ -1,0 +1,78 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2018 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../iron-icon/iron-icon.html">
+
+<link rel="import" href="../paper-input/paper-input-container.html">
+
+<dom-module id="tricomp-search-field">
+	<template>
+		<style>
+			paper-input-container {
+				border: 1px solid rgb(174, 174, 174);
+				color: black;
+				padding-bottom: 1px;
+				padding-top: 1px;
+				background-color: white;
+				@apply --tricomp-search-field-paper-input-container;
+			}
+			paper-input-container iron-icon {
+				--iron-icon-fill-color: var(--tri-secondary-color);
+				margin: 10px;
+			}
+			paper-input-container iron-icon.icon-clear {
+				--iron-icon-height: 20px;
+				--iron-icon-width: 20px;
+				cursor: pointer;
+				margin: 0;
+				margin-right: 5px;
+			}
+			paper-input-container input {
+				font-family: var(--tri-font-family);
+				font-size: 14px;
+			}
+			paper-input-container input::-webkit-contacts-auto-fill-button {
+				display: none !important;
+				pointer-events: none;
+				position: absolute;
+				right: 0;
+				visibility: hidden;
+			}
+			paper-input-container input::-ms-clear {
+				display: none;
+			}
+		</style>
+
+		<paper-input-container no-label-float>
+			<iron-icon icon="ibm:search" prefix></iron-icon>
+			<input placeholder="[[placeholder]]" is="iron-input" bind-value="{{value}}">
+			<iron-icon class="icon-clear" icon="ibm-glyphs:clear-input" suffix on-tap="clearSearch" hidden="[[_hideSearchClearBtn(value)]]"></iron-icon>
+		</paper-input-container>
+
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-search-field",
+
+			properties: {
+				value: {
+					type: String,
+					notify: true
+				},
+
+				placeholder: {
+					type: String
+				}
+			},
+
+			_hideSearchClearBtn: function(value) {
+				return (value == "") ? true : false;
+			},
+
+			clearSearch: function() {
+				this.set("value", "");
+			}
+
+		});
+	</script>
+</dom-module>

@@ -1,0 +1,158 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-loading-indicator/triplat-loading-indicator.html">
+<link rel="import" href="../triblock-responsive-layout/triblock-view-responsive-behavior.html">
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-input/iron-input.html">
+
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../triplat-icon/ibm-icons-glyphs.html">
+
+<link rel="import" href="../paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../paper-button/paper-button.html">
+
+<link rel="import" href="tricomp-page-toolbar.html">
+<link rel="import" href="tribehav-room-reservation-util.html">
+<link rel="import" href="tristyles-room-reservation-app.html">
+
+<dom-module id="tricomp-amenities">
+	<template>
+		<style include="shared-page-styles">
+
+			:host {
+				@apply(--layout-vertical);
+				@apply(--layout-flex);
+			}
+
+			.amenities-container {
+				@apply(--layout-vertical);
+				@apply(--layout-flex);
+				overflow-y: auto;
+			}
+
+			.amenity-checkbox {
+				--paper-checkbox-label-spacing: 0px;
+				--paper-checkbox-size: 22px;
+				padding: 10px;
+			}
+
+			.amenity-icon {
+				--iron-icon-height: 24px;
+				--iron-icon-width: 24px;
+				padding: 10px;
+			}
+
+			.amenity-label {
+				@apply(--layout-flex);
+			}
+
+			.amenity-list-item {
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+				border-bottom: 1px solid var(--tri-primary-content-accent-color);
+				cursor: pointer;
+				flex-shrink: 0;
+				margin: 0 0 0 10px;
+				padding: 5px 5px 5px 0;
+			}
+
+			.divider-line {
+				border-left: 1px solid var(--tri-primary-content-accent-color);
+				height: 24px;
+			}
+
+		</style>
+
+		<div class="amenities-container">
+			<div class="amenity-list-item" on-tap="_toggleIsCateringAvailableSelection">
+				<paper-checkbox class="amenity-checkbox" checked="[[reservationManager.isCateringAvailable]]"></paper-checkbox>
+				<div class="divider-line"></div>
+				<iron-icon class="amenity-icon" icon="ibm-glyphs:catering"></iron-icon>
+				<span class="amenity-label">Catering</span>
+			</div>
+			<div class="amenity-list-item" on-tap="_toggleIsADAAvailableSelection">
+				<paper-checkbox class="amenity-checkbox" checked="[[reservationManager.isADAAvailable]]"></paper-checkbox>
+				<div class="divider-line"></div>
+				<iron-icon class="amenity-icon" icon="ibm-glyphs:accessibility"></iron-icon>
+				<span class="amenity-label">Accessible</span>
+			</div>
+			<div class="amenity-list-item" on-tap="_toggleIsNetworkConnectionSelection">
+				<paper-checkbox class="amenity-checkbox" checked="[[reservationManager.isNetworkConnection]]"></paper-checkbox>
+				<div class="divider-line"></div>
+				<iron-icon class="amenity-icon" icon="ibm-glyphs:wired"></iron-icon>
+				<span class="amenity-label">Network Connection</span>
+			</div>
+			<div class="amenity-list-item" on-tap="_toggleIsProjectorSelection">
+				<paper-checkbox class="amenity-checkbox" checked="[[reservationManager.isProjector]]"></paper-checkbox>
+				<div class="divider-line"></div>
+				<iron-icon class="amenity-icon" icon="ibm-glyphs:projector"></iron-icon>
+				<span class="amenity-label">Projector</span>
+			</div>
+			<div class="amenity-list-item" on-tap="_toggleIsConferencePhoneSelection">
+				<paper-checkbox class="amenity-checkbox" checked="[[reservationManager.isConferencePhone]]"></paper-checkbox>
+				<div class="divider-line"></div>
+				<iron-icon class="amenity-icon" icon="ibm-glyphs:phone-call"></iron-icon>
+				<span class="amenity-label">Telephone Conference</span>
+			</div>
+			<div class="amenity-list-item" on-tap="_toggleIsVideoConferenceSelection">
+				<paper-checkbox class="amenity-checkbox" checked="[[reservationManager.isVideoConference]]"></paper-checkbox>
+				<div class="divider-line"></div>
+				<iron-icon class="amenity-icon" icon="ibm-glyphs:video"></iron-icon>
+				<span class="amenity-label">Video Conference</span>
+			</div>
+			<div class="amenity-list-item" on-tap="_toggleIsWhiteboardSelection">
+				<paper-checkbox class="amenity-checkbox" checked="[[reservationManager.isWhiteboard]]"></paper-checkbox>
+				<div class="divider-line"></div>
+				<iron-icon class="amenity-icon" icon="ibm-glyphs:whiteboard"></iron-icon>
+				<span class="amenity-label">Whiteboard</span>
+			</div>
+		</div>
+
+		<tricomp-page-toolbar small-screen-width="[[smallScreenWidth]]">
+			<paper-button on-tap="_handleDone" footer$="[[smallScreenWidth]]">Done</paper-button>
+		</tricomp-page-toolbar>
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-amenities",
+			behaviors: [
+				TriRoomReservationUtilBehavior,
+				TriBlockViewResponsiveBehavior
+			],
+
+			properties: {
+				backEventName: String
+			},
+
+			_handleDone: function(e) {
+				this.fire("done");
+			},
+
+			_toggleIsADAAvailableSelection: function() {
+				this.set("reservationManager.isADAAvailable", !this.reservationManager.isADAAvailable);
+			},
+			_toggleIsCateringAvailableSelection: function() {
+				this.set("reservationManager.isCateringAvailable", !this.reservationManager.isCateringAvailable);
+			},
+			_toggleIsConferencePhoneSelection: function() {
+				this.set("reservationManager.isConferencePhone", !this.reservationManager.isConferencePhone);
+			},
+			_toggleIsNetworkConnectionSelection: function() {
+				this.set("reservationManager.isNetworkConnection", !this.reservationManager.isNetworkConnection);
+			},
+			_toggleIsProjectorSelection: function() {
+				this.set("reservationManager.isProjector", !this.reservationManager.isProjector);
+			},
+			_toggleIsVideoConferenceSelection: function() {
+				this.set("reservationManager.isVideoConference", !this.reservationManager.isVideoConference);
+			},
+			_toggleIsWhiteboardSelection: function() {
+				this.set("reservationManager.isWhiteboard", !this.reservationManager.isWhiteboard);
+			},
+
+		});
+	</script>
+</dom-module>

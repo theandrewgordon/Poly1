@@ -1,0 +1,181 @@
+<link rel="import" href="../triplat-graphic/triplat-graphic.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icons/image-icons.html">
+
+<link rel="import" href="../tri-loading-indicator/tri-loading-indicator.html">
+
+<dom-module id="tricomp-multi-space-selector-floor-plan">
+	<style>
+		:host {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			@apply(--layout-relative);
+		}
+		
+		triplat-graphic {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			--triplat-graphic-selected: {
+				fill: var(--ibm-blue-40);
+			    fill-opacity: 1;
+            };
+			--triplat-graphic-selectable: {
+				fill: var(--ibm-gray-10);
+			    fill-opacity: 1;
+				cursor: pointer;
+			};
+			--triplat-graphic-non-selectable: {
+				fill: white;
+			    fill-opacity: 1;
+			}
+		}
+
+		#placeholder {
+			@apply(--layout-fit);
+			@apply(--layout-vertical);
+			@apply(--layout-center-center);
+			font-size: 1.5em;
+		}
+
+		#actions {
+			position: absolute;
+			top: 20px;
+			right: 20px;
+			z-index: 3;
+		}
+
+		tri-loading-indicator {
+			z-index: 5;
+		}
+
+		#actions paper-icon-button {
+			-moz-border-radius: 50px;
+			-webkit-border-radius: 50px;
+			border-radius: 50px;
+			--paper-icon-button-ink-color: #ffffff;
+			--paper-icon-button-disabled:  {
+				background-color: var(--tri-primary-color);
+				color: white;
+			};
+			--paper-icon-button : {
+				background-color: var(--ibm-gray-50);
+				color: white;
+			};
+		}
+
+	</style>
+	<template>
+
+		<triplat-ds id="spaceLabelStyleDs" name="spaceLabelStyle" data="{{spaceLabelStyle}}"></triplat-ds>
+		
+		<tri-loading-indicator show="[[_isLoading(hasGraphic, loaded)]]"></tri-loading-indicator>
+
+		<div id="actions" hidden$="[[!hasGraphic]]">
+			<paper-icon-button icon="icons:zoom-in" disabled="{{!_boundingSelectionEnabled}}" on-tap="_toggleBoundingSelectionEnabled"></paper-icon-button>
+			<paper-icon-button icon="image:photo-size-select-small" disabled="{{_boundingSelectionEnabled}}" on-tap="_toggleBoundingSelectionEnabled"></paper-icon-button>
+		</div>
+
+		<div id="placeholder" hidden$="[[hasGraphic]]">No floor plan is available.</div>
+		
+		<triplat-graphic id="graphic" hidden$="[[!hasGraphic]]" record-id="{{floorId}}" svg-loaded="{{loaded}}" has-graphic="{{hasGraphic}}">
+			<triplat-graphic-selectable 
+           		selectable="{{spaces}}"
+           		selected="{{selectedSpaces}}"
+           		multi>
+    		</triplat-graphic-selectable>
+			<triplat-graphic-bounding-selection
+				selected="{{selectedSpaces}}"
+				enabled="{{_boundingSelectionEnabled}}">
+			</triplat-graphic-bounding-selection>
+    		<triplat-graphic-zoomable enabled="{{!_boundingSelectionEnabled}}"></triplat-graphic-zoomable>
+    		<triplat-graphic-label label-id="{{spaceLabelStyleId}}"></triplat-graphic-label>
+		</triplat-graphic>
+
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-multi-space-selector-floor-plan",
+
+		properties : {
+			floorId : Number,
+			spaces : Array,
+
+			selectedSpaces : {
+				type : Array,
+				notify : true
+			},
+			searchTerms : String,
+			loaded : {
+				type : Boolean,
+				notify : true
+			},
+			hasGraphic : {
+				type : Boolean,
+				notify : true
+			},
+
+			_boundingSelectionEnabled : {
+				type : Boolean,
+				value : false
+			},
+
+			spaceLabelStyleId : Number
+		},
+
+		listeners: {
+			"spaceLabelStyleDs.ds-get-complete" : "_handleSpaceLabelStyle"
+		},
+		
+		_toggleBoundingSelectionEnabled : function(e) {
+			this.set('_boundingSelectionEnabled', !this._boundingSelectionEnabled);
+		},
+
+		_handleSpaceLabelStyle : function() {
+			if (this.spaceLabelStyle) {
+				var labelStyleId = parseInt(this.spaceLabelStyle[0]._id);
+				this.set("spaceLabelStyleId", labelStyleId);
+			}
+		},
+
+		_isLoading : function(hasGraphic, loaded) {
+			var isLoading = false;
+			if (hasGraphic && !loaded) {
+				isLoading = true;
+			}
+			return isLoading;
+		},
+
+		selectAll : function() {
+			var selectableSpaces = this.spaces;
+
+			if (this.selectedSpaces && this.selectedSpaces.length > 0) {
+				this.deselectAll();
+			}
+
+			for (var i = 0; i < selectableSpaces.length; i++) {
+				this.push('selectedSpaces', selectableSpaces[i]);
+			}
+		},
+
+		deselectAll : function() {
+			var selectableSpaces = this.spaces;
+			for (var i = 0; i < selectableSpaces.length; i++) {
+				var spaceToRemove = selectableSpaces[i];
+				var index = this.selectedSpaces.indexOf(spaceToRemove);
+				this.splice('selectedSpaces', index, 1);
+			}
+		},
+
+		reset : function() {
+			this.set('_boundingSelectionEnabled', false);
+		},
+
+	});
+</script>

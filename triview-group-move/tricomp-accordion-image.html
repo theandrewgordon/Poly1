@@ -1,0 +1,123 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<!-- TRIRIGA Platform Components -->
+<link rel="import" href="../triplat-image/triplat-image.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+<link rel="import" href="../tricore-url/tricore-url.html">
+
+<!--
+Tririga Componet:
+`tricomp-accordion-image` is a component that renders an image if the the image exists, otherwise it will render an icon.
+
+Example:
+    <tricomp-accordion-image
+        icon="user-profile"
+        picture="{{image.url}}"
+        height="100"
+        width="100"></tricomp-accordion-image>
+
+### Styling
+The following custom properties are available for styling:
+Custom property | Description | Default
+----------------|-------------|----------
+`--tricomp-accordion-image-height` | Host component's height | `auto`
+`--tricomp-accordion-image-width` | Host component's width | `auto`
+`--tricomp-accordion-image-icon-height` | Triplat Icon height | Triplat Icon default
+`--tricomp-accordion-image-icon-width` | Triplat Icon width | Triplat Icon default
+
+### Properties
+Element property | Description
+-----------------|-------------
+`icon` | The icon that should appear in case of no image
+`picture` | The image's url
+`height` | The image's height
+`width` | The image's width
+-->
+
+<dom-module id="tricomp-accordion-image">
+  <style>
+    /*=========================================
+     * Table of Contents
+     *-----------------------------
+     * Host
+     * Icons
+     *=========================================*/
+
+    /* Host */
+    :host {
+      position: relative;
+      z-index: 9;
+      display: flex;
+      flex-wrap: wrap;
+      height: var(--tricomp-accordion-image-height, auto);
+      width: var(--tricomp-accordion-image-width, auto);
+      border-radius: 100px;
+      background: gray;
+      overflow: hidden;
+      justify-content: center;
+      align-items: center;
+
+      /* Dimensions of the Triplat Icon */
+      --triplat-icon-height: var(--tricomp-accordion-image-icon-height);
+      --triplat-icon-width: var(--tricomp-accordion-image-icon-width);
+    }
+    /* End Host */
+
+
+    /* Icons */
+    iron-icon.placeholder {
+			color: var(--tri-primary-content-background-color);
+		}
+    /* End Icons */
+  </style>
+
+  <template>
+    <tricore-url raw-url="/getCompanyFile.jsp?fileLoc=" bind-url="{{imgUrl}}"></tricore-url>
+
+    <triplat-icon
+      class="placeholder"
+      icon="{{icon}}"
+      style="{{_iconDimension(height, width)}}"
+      hidden$="{{_hasImage(picture)}}"></triplat-icon>
+    <triplat-image
+      src="{{picture}}"
+      width="{{height}}"
+      height="{{width}}"
+      sizing="cover"
+      position="top"
+      hidden$="{{!_hasImage(picture)}}"></triplat-image>
+  </template>
+</dom-module>
+
+<script>
+  Polymer({
+    is: "tricomp-accordion-image",
+
+    properties: {
+      icon: String,
+      picture: String,
+      height: String,
+      width: String
+    },
+
+    _iconDimension : function(height, width) {
+      return "height: " + height + "px; width: " + width + "px;";
+    },
+
+    _hasImage : function(image) {
+			if ((image) && (image != "-1")) {
+				return true;
+			}
+			return false;
+		},
+
+    _computeImageUrl: function(img, baseUrl) {
+      if (!img) {
+          return "";
+      }
+      var url = baseUrl + img;
+
+      return url;
+    }
+  });
+</script>

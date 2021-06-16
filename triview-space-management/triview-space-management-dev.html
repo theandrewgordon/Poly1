@@ -1,0 +1,232 @@
+<link rel="import" href="../paper-header-panel/paper-header-panel.html">
+<link rel="import" href="../paper-toolbar/paper-toolbar.html">
+<link rel="import" href="../paper-toast/paper-toast.html">
+<link rel="import" href="../paper-menu/paper-menu.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-dialog/paper-dialog.html">
+
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icons/communication-icons.html">
+<link rel="import" href="../iron-pages/iron-pages.html">
+<link rel="import" href="../iron-selector/iron-selector.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-routing/triplat-routing.html">
+<link rel="import" href="../triplat-signout-button/triplat-signout-button.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+<link rel="import" href="../triplat-responsive-viewport/triplat-responsive-viewport.html">
+
+<link rel="import" href="../triapp-accessibility/triapp-accessibility.html">
+<link rel="import" href="../triview-space-assessment/tricomp-error-prompt.html">
+
+<link rel="import" href="tripage-my-space-assessments.html">
+<link rel="import" href="tripage-new-assessment-delegate.html">
+<link rel="import" href="tricomp-accessibility.html">
+<link rel="import" href="tripage-assessment-details.html">
+
+<dom-module id="triview-space-management">
+
+	<style>
+
+		:host {
+			@apply(--layout-fit);
+			@apply(--layout-vertical);
+			background-color: var(--tri-body-background-color);
+		}
+
+		paper-header-panel {
+			@apply(--layout-flex);
+		}
+
+		paper-toolbar {
+			background-color: var(--tri-header-background-color);
+			color: var(--tri-header-color);
+			font-size: 0.85em;
+		}
+
+		paper-toolbar section {
+			padding-left: 30px;
+		}
+
+		paper-toolbar,
+		paper-toolbar /deep/ div.toolbar-tools {
+			height: 45px;
+		}
+
+		.toolbar-title {
+			@apply(--layout-flex);
+			font-family: "Helvetica Neue", Helvetica, Arial, Roboto;
+			font-size: 20px;
+			line-height: 28px;
+			margin-left: 4px;
+			pointer-events: none;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			overflow: hidden;
+		}
+
+		triplat-route-selector, iron-pages {
+			@apply(--layout-fit);
+		}
+
+		triplat-icon {
+			cursor: pointer;
+			padding: 10px;
+		}
+
+		.accessibility {
+			display: none;
+		}
+
+		.error-dialog {
+			overflow: auto;
+		}
+	</style>
+
+	<template>
+
+		<triplat-ds id="currentUserDs" name="currentUser" data="{{currentUser}}"></triplat-ds>
+
+		<triplat-ds id="securityDS" name="security" data="{{security}}"></triplat-ds> 
+		
+		<triplat-route id="mySpaceAssessmentsRoute" name="mySpaceAssessmentsRoute" path="/myAssessments"></triplat-route>
+
+		<!-- route to tripage-space-assessment from space assessment app -->
+		<triplat-route id="newAssessmentRoute" name="newAssessmentRoute" path="/new"></triplat-route>
+
+		<triplat-route id="assessmentDetailsRoute" name="assessmentLogsList" path="/:assessmentId"></triplat-route>
+
+		<triapp-accessibility></triapp-accessibility>
+		<tricomp-accessibility></tricomp-accessibility>
+
+		<paper-header-panel mode="seamed">
+			<paper-toolbar role="region" aria-labelledby="menu">
+				<span class="toolbar-title">IBM TRIRIGA : <b>Space Management</b></span>
+				<section>
+					<span><span>{{currentUser.firstName}}</span> <span>{{currentUser.lastName}}</span></span>
+				</section>
+				<section>
+					<triplat-signout-button></triplat-signout-button>
+				</section>
+			</paper-toolbar>
+
+			<triplat-route-selector>
+				<iron-pages>
+					<tripage-my-space-assessments
+						default-route
+						id="mySpaceAssessments"
+						route="mySpaceAssessmentsRoute"
+						last-subroute-id="{{mySpaceAssessmentsSubrouteId}}"
+						on-open-assessment="_openSpaceAssessment"
+						create-permission= "[[createAssessmentPermission]]"
+						on-new-button-tapped="_openNewAssessmentPage">
+					</tripage-my-space-assessments>
+					<tripage-new-assessment-delegate
+						route="newAssessmentRoute"
+						model-and-view="triSpaceAssessment" 
+						instance-id="-1"
+						on-assessment-created="_handleAssessmentCreated"
+						on-back="_navigateToMySpaceAssessments">
+					</tripage-new-assessment-delegate>
+					<tripage-assessment-details	
+						id="assessmentDetails"
+						route="assessmentLogsList"
+						on-refresh-assessment-ds="_handleDsRefresh"
+						on-back="_navigateToMySpaceAssessments">
+					</tripage-assessment-details>
+				</iron-pages>
+			</triplat-route-selector>
+			
+		</paper-header-panel>
+
+		<paper-dialog modal with-backdrop id="errorDialog" class="error-dialog"><tricomp-error-prompt error-details="{{_errorDetails}}" is-admin="{{currentUser._Admin}}" on-error-details-collapse-or-expand="_handleErrorDetailsCollapseOrExpand"></tricomp-error-prompt></paper-dialog>
+		
+		<paper-toast id="assessmentCreatedToast" text="Space assessment has been created."></paper-toast>
+		
+		<triplat-responsive-viewport min-width="899"></triplat-responsive-viewport>
+
+	</template>
+</dom-module>
+<script>
+	Polymer({
+		is: "triview-space-management",
+
+		behaviors: [TriPlatViewBehavior],
+
+		properties: {
+
+				createAssessmentPermission : {
+				type : Boolean,
+				value : false
+			}
+		},
+
+		observers : [
+			'_handleSetSecurityPermission(security,currentUser)'
+		],
+
+		listeners: {
+			"ds-add-error": "_handleDSError",
+			"ds-create-error": "_handleDSError",
+			"ds-delete-error": "_handleDSError",
+			"ds-get-error": "_handleDSError",
+			"ds-perform-action-error": "_handleDSError",
+			"ds-remove-error": "_handleDSError",
+			"ds-update-error": "_handleDSError"
+		},
+
+		ready: function() {
+			var __dictionary__title = "Space Management";
+			document.title = __dictionary__title;
+		},
+
+		_handleAssessmentCreated: function() {
+			this._navigateToMySpaceAssessments();
+			this.$.assessmentCreatedToast.show();
+		},
+
+		_handleDSError: function(e) {
+			var errorDetails = e.detail;
+
+			if (errorDetails.status != 403) {
+				if (errorDetails) this.set("_errorDetails", errorDetails);
+				this.$.errorDialog.open();
+			}
+		},
+
+		_handleDsRefresh: function() {
+			this.$.mySpaceAssessments.refreshData();
+		},
+
+		_handleErrorDetailsCollapseOrExpand: function() {
+			this.async(function() {
+				this.$.errorDialog.center();
+			}.bind(this), 300);
+		},
+
+		_navigateToMySpaceAssessments : function() {
+			this.$.mySpaceAssessments.$[this.mySpaceAssessmentsSubrouteId].navigate();
+		},
+
+		_openNewAssessmentPage : function() {
+			this.$.newAssessmentRoute.navigate();
+		},
+
+		_openSpaceAssessment: function(e) {
+			this.$.assessmentDetailsRoute.navigate({assessmentId: e.detail.assessmentId});
+			 this.$.assessmentDetails.reset();
+		},
+
+		_handleSetSecurityPermission: function(security,currentUser) {
+			
+			if (security.mySpaceAssessments_defaultActions_create) {
+				this.set('createAssessmentPermission',true);
+				
+			} else {
+					this.set('createAssessmentPermission',false);
+			}
+		},
+
+	});
+</script>

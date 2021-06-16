@@ -1,0 +1,111 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017-2018 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+<link rel="import" href="../triblock-responsive-layout/triblock-view-responsive-behavior.html">
+<link rel="import" href="../iron-a11y-keys/iron-a11y-keys.html">
+
+<dom-module id="tricomp-portal-service-item">
+
+	<template>
+		<style>
+			:host {
+				text-align: center;
+				font-weight: lighter;
+				white-space: nowrap;
+			}
+
+			.service-item-container {
+				@apply --layout-vertical;
+				@apply --layout-center;
+				padding: 40px 0px;
+			}
+			:host([small-screen]) .service-item-container {
+				@apply --layout-horizontal;
+				padding: 10px 15px;
+				border-bottom: 1px solid var(--ibm-blue-60);
+			}
+
+			div.service-item-container:hover {
+				background-color: #325c80; /*not sure if there's an IBM color for this, none listed in style guide*/
+				cursor: pointer;
+			}
+
+			.help-text {
+				line-height: 21px;
+				font-size: 14px;
+				margin-top: 16px;
+			}
+
+			iron-icon {
+				width: 60px;
+				height: 60px;
+			}
+			:host(:not([small-screen])) iron-icon {
+				margin-bottom: 16px;
+			}
+			:host([small-screen]) iron-icon {
+				margin-right: 20px;
+			}
+
+			.service-title {
+				position: relative;
+				font-size: 22px;
+			}
+			:host([small-screen]) .service-title {
+				font-size: 18px;
+			}
+			:host(:not([small-screen])) .service-item-container:hover .service-title::after {
+				content: "";
+				position: absolute;
+				right: 0;
+				bottom: -5px;
+				left: 0;
+				display: inline-block;
+				height: 2px;
+				background-color: white;
+			}
+		</style>
+
+		<div class="service-item-container" id="serviceItemContainer" on-tap="_fireOnTap">
+			<iron-icon icon="[[icon]]" on-tap="_fireOnTap"></iron-icon>
+			<div class="service-title" on-tap="_fireOnTap">[[label]]</div>
+			<div class="help-text" hidden$="[[smallScreen]]" on-tap="_fireOnTap">
+				<content select="[help-text]"></content>
+			</div>
+		</div>
+		<iron-a11y-keys id="serviceItemContainerdKeys" target="[[target]]" keys="enter" on-keys-pressed="_fireOnTap"></iron-a11y-keys>
+
+
+	</template>
+	<script>
+		Polymer({
+			is: "tricomp-portal-service-item",
+
+			behaviors: [TriBlockViewResponsiveBehavior],
+
+			properties: {
+				type: String,
+				label: String,
+				icon: String,
+
+				target: {
+					type: Object,
+					value: function() {
+						return this;
+				    }
+                }
+			},
+
+			hostAttributes: {
+                tabindex: '0',
+				role:"button"
+            },
+
+			_fireOnTap: function() {
+				this.fire('service-item-tapped', { 'serviceType': this.type })
+			},
+
+		});
+	</script>
+</dom-module>

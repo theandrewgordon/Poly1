@@ -1,0 +1,81 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="tricomp-page-toolbar-button.html">
+
+<dom-module id="tricomp-page-toolbar">
+	<template>
+		<style>
+			:host {
+				@apply(--layout-horizontal);
+				@apply(--layout-center-center);
+				overflow-x: hidden;
+				flex-shrink: 0;
+			}
+
+			:host(:not([small-screen-width])) {
+				padding: 15px 0;
+			}
+
+			:host([small-screen-width]) {
+				background-color: var(--tri-footer-background-color);
+				padding: 5px;
+			}
+
+			.content-container {
+				@apply(--layout-horizontal);
+				@apply(--layout-center-center);
+			}
+
+			.content-container-flex {
+				@apply(--layout-flex);
+				min-width: 0;
+				@apply(--layout-horizontal);
+				@apply(--layout-center-center);
+			}
+
+			.toolbar-left {
+				padding-left: 20px;
+			}
+
+			.toolbar-right {
+				padding-right: 20px;
+			}
+
+			.wrapper-while-we-dont-support-desktop {
+				@apply(--layout-horizontal);
+				@apply(--layout-center-center);
+				max-width: var(--max-width-while-we-dont-support-desktop);
+				width: 100%;
+			}
+		</style>
+
+		<div class="wrapper-while-we-dont-support-desktop">
+			<div class="content-container toolbar-left">
+				<content select="[toolbar-left]"></content>
+			</div>
+
+			<div class="content-container-flex">
+				<content select=":not([toolbar-left]):not([toolbar-right])"></content>
+			</div>
+
+			<div class="content-container toolbar-right">
+				<content select="[toolbar-right]"></content>
+			</div>
+		</div>
+
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-page-toolbar",
+
+			properties: {
+				smallScreenWidth: {
+					type: Boolean,
+					value: false,
+					reflectToAttribute: true
+				}
+			}
+		});
+	</script>
+</dom-module>

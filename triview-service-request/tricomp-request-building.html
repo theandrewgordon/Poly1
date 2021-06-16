@@ -1,0 +1,100 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+<link rel="import" href="../triplat-select-input/triplat-select-input.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triapp-location-context/triapp-location-context.html">
+
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-spinner/paper-spinner.html">
+
+<dom-module id="tricomp-request-building">
+	<template>
+		<style>
+			:host {
+				@apply(--layout-vertical);
+			}
+
+		</style>
+
+		<triapp-location-context
+			id="userLocation"
+			label="Where is the problem?"
+			aria-label="Where is the problem?"
+			hide-message
+			override-building-id="[[_computeOverrideBuilding(request, overrideBuilding)]]"
+			on-location-changed="_buildingSelected"	
+			refresh="[[refresh]]"
+			change-location-type="icon"		
+			regular-font-size
+			no-image>
+		</triapp-location-context>
+
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-request-building",
+
+			properties: {
+				request: Object,
+
+				overrideBuilding: {
+					type: Boolean,
+					value: false
+				},
+
+				refresh: Boolean
+
+			},
+
+			observers: [
+				'_observeRequestBuilding(request.building.*)'
+			],
+
+			listeners: {
+			},
+
+			attached: function() {
+			},
+
+			// Update the request with the new building
+			_buildingSelected: function(e) {
+				var detail = e.detail;
+				if(!(detail.building && detail.building._id)){
+					return;
+				}
+				var newBuilding = detail.building;
+				var oldBuildingId = this.request.building ? this.request.building.id : "-1";
+
+				// Check if the new building is not equal to old building
+				if (newBuilding._id != oldBuildingId) {
+					// Change the building in the request
+					var finalBuilding = {
+						id: newBuilding._id,
+						value: newBuilding.building
+					};
+					this.set('request.building', finalBuilding);
+
+					// Reset request floor and room
+					var emptyObj = {id: "", value:""};
+					this.set('request.floor', emptyObj);
+					this.set('request.room', emptyObj);
+				}
+			},
+
+			_observeRequestBuilding: function() {
+				this.fire('field-changed');
+			},
+
+			_computeOverrideBuilding: function(request, overrideBuilding) {
+				var bldgId = null;
+				if (overrideBuilding) {
+					bldgId = request && request.building && request.building.id ? request.building.id: -1;
+				} 
+				return bldgId;
+			}
+
+		});
+	</script>
+</dom-module>

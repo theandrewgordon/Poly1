@@ -1,0 +1,119 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017-2018 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../paper-item/paper-item-behavior.html">
+
+<link rel="import" href="../triplat-accessibility-behavior/triplat-accessibility-behavior.html">
+
+<link rel="import" href="../triblock-responsive-layout/triblock-view-responsive-behavior.html">
+
+<dom-module id="tricomp-task-list-filter-item">
+	<template>
+		<style>
+			:host {
+				@apply --layout-horizontal;
+				@apply --layout-center-center;
+				background-color: transparent;
+				margin: 0;
+				min-width: 110px;
+			}
+
+			:host:hover {
+				cursor: pointer;
+			}
+
+			:host(:not([small-screen-width])) {
+				text-align: center;
+				color: var(--ibm-blue-70);
+				padding: 5px 15px;
+				border: 1px solid var(--ibm-blue-70);
+			}
+
+			:host-context([dir="ltr"]):not([small-screen-width]):not(:last-of-type) {
+				border-right: none;
+			}
+
+			:host-context([dir="ltr"]):not([small-screen-width]):first-of-type {
+				border-radius: 10px 0 0 10px;
+			}
+
+			:host-context([dir="ltr"]):not([small-screen-width]):last-of-type {
+				border-radius: 0 10px 10px 0;
+			}
+
+			:host-context([dir="rtl"]):not([small-screen-width]):not(:last-of-type) {
+				border-left: none;
+			}
+
+			:host-context([dir="rtl"]):not([small-screen-width]):first-of-type {
+				border-radius: 0 10px 10px 0;
+			}
+
+			:host-context([dir="rtl"]):not([small-screen-width]):last-of-type {
+				border-radius: 10px 0 0 10px;
+			}
+
+			:host(:not([small-screen-width])):hover {
+				background-color: var(--tri-primary-color);
+				color: white;
+				cursor: pointer;
+			}
+
+			:host(:not([small-screen-width]).iron-selected) {
+				background-color: var(--ibm-blue-70);
+				color: white;
+			}
+		</style>
+
+		[[label]]
+	</template>
+
+	<script>
+		Polymer({
+
+			is: "tricomp-task-list-filter-item",
+
+			behaviors: [
+				Polymer.PaperItemBehavior,
+				TriBlockViewResponsiveBehavior,
+				TriPlatAccessibilityBehavior
+			],
+
+			properties: {
+				label: {
+					type: String,
+					value: ""
+				},
+
+				name: {
+					type: String,
+					value: ""
+				},
+
+				selectedValue: {
+					type: String,
+					value: ""
+				},
+
+				_selected: {
+					type: Boolean,
+					value: false,
+					computed: "_computeSelected(name, selectedValue)",
+					observer: "_observeSelected"
+				}
+			},
+
+			hostAttributes: {
+				role: 'option'
+			},
+
+			_computeSelected: function(name, value) {
+				return (name == value);
+			},
+
+			_observeSelected: function(selected) {
+				this.setAriaProperty(this, selected, "selected");
+			}
+
+		});
+	</script>
+</dom-module>

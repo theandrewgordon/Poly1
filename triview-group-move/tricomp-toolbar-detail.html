@@ -1,0 +1,120 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../paper-toolbar/paper-toolbar.html">
+<link rel="import" href="../triplat-signout-button/triplat-signout-button.html">
+
+<dom-module id="tricomp-toolbar-detail">
+	<style>
+		:host {
+
+		}
+
+		.toolbar-title {
+			@apply(--layout-flex);	
+			@apply(--layout-horizontal);
+			font-family: var(--tri-font-family);
+			font-size: 18px;
+			
+			margin-left: 0px;
+			pointer-events: none;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			overflow: hidden;
+			color: var(--tri-header-color);
+            font-weight: light;
+		}
+
+		paper-toolbar,
+		paper-toolbar /deep/ div.toolbar-tools {
+			height: 44px;
+			--paper-toolbar-background: var(--tri-primary-color-40);
+		}
+		
+		.toolbar-title {
+			@apply(--layout-flex);
+			@apply(‑‑layout-start-justified);					
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;	
+		}
+
+		.toolbar-title-company {
+			@apply(--layout-flex);
+			font-family: var(--tri-font-family);
+			color: var(--tri-header-color);
+			font-size: 18px;
+			font-weight: lighter;
+			pointer-events: none;
+		}
+		
+		.toolbar-title-appname {
+			@apply(--layout-flex);
+			font-family: var(--tri-font-family);
+			color: var(--tri-header-color);
+			font-size: 18px;
+			font-weight: 900;
+			pointer-events: none;
+		}
+		
+		.signout {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-end-justified);	
+		}	
+		
+		.inbox-header-toolbar,
+		.inbox-header-toolbar /deep/ div.toolbar-tools {
+			height: 44px;
+		}
+
+		triplat-signout-button {
+			transition: background-color .25s, color .25s;
+			@apply(--triplat-signout-button);
+			opacity: 0.8;
+			min-width: 44px;
+		}
+		
+		triplat-signout-button:hover {
+			@apply(--triplat-signout-button-hover);
+			opacity: 1;					
+		}
+	
+	</style>
+	<template>
+			<triplat-route id="inboxRoute" name="inbox"></triplat-route>
+			<paper-toolbar class="inbox-header-toolbar">
+				<div class="toolbar-title">
+				<div on-tap="_goBack" >
+					<iron-icon icon="hardware:keyboard-arrow-left" aria-labelledby="{{backLabel}}" on-keypress="_keyPressHandler" tabindex="0"></iron-icon>
+					
+				</div>
+					<span class="toolbar-title-company">Inbox </span>
+					<span class="toolbar-title-appname">Request 1234</span>
+				</div> 
+				<div class="signout">
+					<triplat-signout-button></triplat-signout-button>
+				</div>
+			</paper-toolbar>
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-toolbar-detail",
+
+		properties : {
+			requestID: String,
+			isInbox: Boolean
+		},
+		
+		_goBack: function(){
+			this.$.inboxRoute.navigate();
+		},
+		
+		ready: function(){
+			if(window.location.hash="")
+				this.isInbox = true;
+		}
+
+	});
+</script>

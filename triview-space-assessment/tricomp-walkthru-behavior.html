@@ -1,0 +1,171 @@
+<script>
+	TriCompWalkthruBehavior = {
+
+		// CONSIDER CHANGING REFRESHTYPE.SERVER TO REFRESHTYPE.BOTH
+
+		properties : {
+			// for createNewDiscrepancyLog when there is no existing parent assessment log
+			_discrepancyTypeEnUS : String,
+			_discrepancyLogComment : String, 
+			_discrepancyRecord : Object
+		},
+
+		/* 
+			assesmentLogData = assessmentLog || { spaceId, assessmentId, comments } 
+		*/
+		_handleDiscrepancy : function(space, assessmentLogData, discrepancyTypeEnUS, discrepancyLogComment, discrepantRecord) {
+			// TODO: duplicate data!! space._id and assessmentLogData._id
+			this.fire('space-discrepant', space);
+			if (discrepantRecord) {
+				// handle record discrepancies
+				var discrepancyRecord = {
+					record : discrepantRecord
+				};
+				if (discrepancyTypeEnUS.indexOf("Person") > -1) {
+					discrepancyRecord.type = "person";
+				} else if (discrepancyTypeEnUS.indexOf("Asset") > -1) {
+					discrepancyRecord.type = "asset";
+				}
+				this._createDiscrepancyLog(assessmentLogData, discrepancyTypeEnUS, discrepancyLogComment, discrepancyRecord);
+			} else {
+				// handle comment discrepancies
+				if (assessmentLogData && assessmentLogData._id) {
+					var promise = this._updateAssessmentLog(assessmentLogData, true);
+				} else {
+					var promise = this._createAssessmentLog(assessmentLogData.spaceId, assessmentLogData.assessmentId, true, assessmentLogData.description);
+				}
+			}
+		},
+
+		_handleNonDiscrepancy : function(space, assessmentLogData) {
+			this.fire('space-non-discrepant', space);
+
+			if (assessmentLogData._id) {
+				this._updateAssessmentLog(assessmentLogData, false);
+			} else {
+				var promise = this._createAssessmentLog(assessmentLogData.spaceId, assessmentLogData.assessmentId, false);
+				promise.then(function(success) {
+					var assessmentLogId = success;
+					var assessmentLog = this._assessmentLogs.filter(function(log) {
+		      			return log._id == assessmentLogId;
+		      		})[0];
+		      		// set context for discrepancyLogsDs
+		      		// will also change assessment log in page-walkthru because notify : true
+		      		this.set('assessmentLog', assessmentLog);
+		      		this._verifyIsProcessing = false;
+					// this._createDiscrepancyLog(assessmentLog, this._discrepancyTypeEnUS, this._discrepancyLogComment, this._discrepancyRecord);
+				}.bind(this));
+			}
+		},
+
+		_createDiscrepancyLog : function(assessmentLogData, discrepancyTypeEnUS, discrepancyLogComment, discrepancyRecord) {
+			var newDiscrepancyLog = {
+				discrepancyType_en_US : discrepancyTypeEnUS,
+				comment : discrepancyLogComment
+			};
+			// TODO: don't need entire person record, just ._id
+			newDiscrepancyLog[discrepancyRecord.type] = { id : discrepancyRecord.record._id, value : "" };
+
+			if (assessmentLogData._id) {
+				this._updateAssessmentLog(assessmentLogData, true);
+				newDiscrepancyLog.spaceAssessmentLog = { id : assessmentLogData._id, value : "" };
+				var promise = this.$.discrepancyLogsDs.createRecord(newDiscrepancyLog, TriPlatDs.RefreshType.SERVER, "defaultActions", "create");
+				promise.then(function(success) {
+					this.fire('discrepancy-log-created');
+				}.bind(this), function(error) {
+					console.log(error);
+				});
+			} else {
+				var promise = this._createAssessmentLog(assessmentLogData.spaceId, assessmentLogData.assessmentId, true);
+				if (newDiscrepancyLog) {
+					this.set('_discrepancyTypeEnUS', discrepancyTypeEnUS);
+					this.set('_discrepancyLogComment', discrepancyLogComment);
+					this.set('_discrepancyRecord', discrepancyRecord);
+					promise.then(function(success) {
+						var assessmentLogId = success;
+						// Consider using .addRecord() instead? Will it refresh correct data sources (assessmentLogs and discrepancyLogs)
+						var assessmentLog = this._assessmentLogs.filter(function(log) {
+			      			return log._id == assessmentLogId;
+			      		})[0];
+			      		// set context for discrepancyLogsDs
+			      		// will also change assessment log in page-walkthru because notify : true
+			      		this.set('assessmentLog', assessmentLog);
+						this._createDiscrepancyLog(assessmentLog, this._discrepancyTypeEnUS, this._discrepancyLogComment, this._discrepancyRecord);
+					}.bind(this));
+				}
+			}
+		},
+
+		_deleteDiscrepancyLog : function(space, assessmentLog, discrepancyLogs, discrepancyLogId) {
+			// assessmentLog should never be null at this point because you can't create a discrepancy log without one
+			var promise = this.$.discrepancyLogsDs.performAction(discrepancyLogId, TriPlatDs.RefreshType.SERVER, "defaultActions", "delete");
+			promise.then(function(success) {
+				var isDiscrepant = this._isDiscrepant(space, assessmentLog, discrepancyLogs);
+				if (isDiscrepant) {
+					this._handleDiscrepancy(space, assessmentLog);
+				} else {
+					this._deleteAssessmentLog(space, assessmentLog._id);
+				}
+				this._updateAssessmentLog(assessmentLog, isDiscrepant);
+			}.bind(this), function(error) {
+				// nothing
+			});
+		},
+
+		_updateLogComments : function(space, assessmentId, assessmentLog, discrepancyLogs, comments) {
+			if (assessmentLog) {
+				assessmentLog.description = comments;
+				var isDiscrepant = this._isDiscrepant(space, assessmentLog, discrepancyLogs);
+				if (isDiscrepant) {
+					this._handleDiscrepancy(space, assessmentLog);
+				} else {
+					this._deleteAssessmentLog(space, assessmentLog._id);
+				}
+			} else {
+				var assessmentLogData = {
+					spaceId : space._id,
+					assessmentId : assessmentId, 
+					description : comments
+				};
+				this._handleDiscrepancy(space, assessmentLogData);
+			}
+		},
+
+		_isDiscrepant : function(space, assessmentLog, discrepancyLogs) {
+			// updated list
+			discrepancyLogs = this._discrepancyLogs;
+			var comments = assessmentLog.description;
+			if ((comments && comments.trim() != "") || discrepancyLogs.length > 0) {
+				return true;
+			} else {
+				return false;
+			}
+		},
+
+		_createAssessmentLog : function(spaceId, assessmentId, isDiscrepant, comments) {
+			var newAssessmentLog = {
+				space : { id : spaceId }, 
+				spaceAssessment : { id : assessmentId },
+				discrepantSpace : isDiscrepant,
+				description : comments
+			};
+			return this.$.assessmentLogsDs.createRecord(newAssessmentLog, TriPlatDs.RefreshType.SERVER, "defaultActions", "create");
+		},
+
+		_updateAssessmentLog : function(assessmentLog, isDiscrepant) {
+				assessmentLog.discrepantSpace = isDiscrepant;
+				// promise for update doesn't return id for some reason.. setting it now
+				this.set('assessmentLog', assessmentLog);
+				var promise = this.$.assessmentLogsDs.updateRecord(assessmentLog._id, TriPlatDs.RefreshType.SERVER, "defaultActions", "update");
+		},
+
+		_deleteAssessmentLog : function(space, assessmentLogId) {
+			this.fire('assessment-log-deleted', space);
+			this.set('assessmentLog', null);
+			this.set('_personDiscrepancyLogs', []);
+			this.set('_assetDiscrepancyLogs', []);
+			this.$.assessmentLogsDs.performAction(assessmentLogId, TriPlatDs.RefreshType.SERVER, "defaultActions", "delete");
+		}
+		
+	};
+</script>

@@ -1,0 +1,23 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+<link rel="import" href="../triplat-routing/triplat-routing.html">
+
+<dom-module id="tripage-open">
+	<template>
+		<triplat-route id="openRoute" name="open" params="{{pageParams}}" on-route-active="_handleRouteActive"></triplat-route>
+	</template>
+	<script>
+		Polymer({
+
+			is: "tripage-open",
+
+			_handleRouteActive: function(e) {
+				if (e.detail.active) {
+					// this is just an interim route/page to catch parameters
+					this.async(function() {
+						this.fire("reservation-open", this.pageParams);
+					});
+				}
+			},
+		});
+	</script>
+</dom-module>

@@ -1,0 +1,102 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017-2018 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<!-- This is a lazy-loaded component, DO NOT add imports here, add them to its corresponding -imports.html file. -->
+<dom-module id="tripage-view-request">
+	<template>
+		<style include="shared-page-styles">
+			:host {
+				@apply --layout-vertical;
+			}
+
+			tricomp-request-details {
+				padding-bottom: 30px;
+			}
+		</style>
+
+		<triplat-route id="viewRequestRoute" name="viewRequest"	params="{{requestDetailParams}}"></triplat-route>
+
+		<tricomp-request-page-container request="[[request]]">
+			<div class="header-action-bar">
+				<div class="action-bar">
+					<template is="dom-if" if="[[_isRequestedByOrFor(currentUser, request)]]" restamp>
+						<paper-button danger-outline$="[[!smallScreenWidth]]" footer-danger$="[[smallScreenWidth]]" on-tap="_onCancel" hidden="[[!_isSubmittedRequest(request.statusENUS)]]">Cancel Request</paper-button>
+					</template>
+					<paper-button footer$="[[smallScreenWidth]]" on-tap="_fireRequestDone">
+						<template is="dom-if" if="[[_isSubmittedRequest(request.statusENUS)]]">Done</template>
+						<template is="dom-if" if="[[!_isSubmittedRequest(request.statusENUS)]]">Close</template>
+					</paper-button>
+				</div>
+			</div>
+
+			<div class="request-page-left-panel">
+				<tricomp-request-read-only request="[[request]]" current-user="[[currentUser]]"></tricomp-request-read-only>
+			</div>
+			<div class="request-page-right-panel">
+				<tricomp-request-comments class="comments" request="{{request}}"
+						read-only="[[_isCompletedRequest(request.statusENUS)]]" current-user="[[currentUser]]">
+				</tricomp-request-comments>
+			</div>
+
+			<triblock-confirmation-popup id="cancelConfirmationDialog" 
+				on-confirm-tapped="_cancelRequest">
+				<p class="text">Are you sure you want to cancel request {{request.requestID}}?</p>
+			</triblock-confirmation-popup>
+		</tricomp-request-page-container>
+	</template>
+	<script>
+		Polymer({
+			is: "tripage-view-request",
+
+			behaviors: [
+				TriBlockViewResponsiveBehavior,
+			],
+
+			properties: {
+				request: Object,
+
+				currentUser: Object
+			},
+
+			observers: [
+				'_observeUrlParam(requestDetailParams)'
+			],
+
+			attached: function() {
+				Polymer.RenderStatus.afterNextRender(this, function(){
+				});
+			},
+
+			_observeUrlParam: function(param) {
+				this.fire("url-param", {item: param});
+			},
+
+			_isSubmittedRequest: function(status) {
+				return (status && (status.value == "Issued" || status.value == "Review In Progress"));
+			},
+
+			_isCompletedRequest: function(status) {
+				return (status && status.value == "Completed");
+			},
+
+			_fireRequestDone: function() {
+				this.fire("request-done", { item: this.request});
+			},
+
+			_onCancel: function() {
+				this.$.cancelConfirmationDialog.openPopup();
+			},
+
+			_cancelRequest: function() {
+				this.fire("cancel-request", {item: this.request});
+			},
+
+			_isRequestedByOrFor: function(user, request) {
+				var loggedUser = user.currentPerson.data._id;
+				var requestedBy = (request && request.requestedBy && request.requestedBy.id) ? request.requestedBy.id : "";
+				var requestedFor = (request && request.requestedFor && request.requestedFor.id) ? request.requestedFor.id : "";
+
+				return loggedUser == requestedBy || loggedUser == requestedFor;
+			}
+		});
+	</script>
+</dom-module>

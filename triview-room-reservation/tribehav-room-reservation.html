@@ -1,0 +1,1076 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-date-utilities/triplat-date-utilities.html">
+<link rel="import" href="../triapp-reservation-list/tribehav-reservation-utilities.html">
+
+<script>
+
+	TriRoomReservationBehaviorImpl = {
+
+		properties: {
+			// status
+			isProcessing: {
+				type: Boolean,
+				computed: '_computeProcessing(isPreCreating, isSaving, isCancelling)'
+			},
+			isPreCreating: {
+				type: Boolean,
+				value: false
+			},
+			isSaving: {
+				type: Boolean,
+				value: false
+			},
+			isCancelling: {
+				type: Boolean,
+				value: false
+			},
+
+			resourceId: {
+				type: String,
+				notify: true,
+				value: "-1",
+			},
+			orderId: {
+				type: String,
+				notify: true,
+				value: "-1",
+			},
+			equipmentId: {
+				type: String,
+				notify: true,
+				value: "-1",
+			}
+		},
+
+		listeners: {
+			"action-book-room": "_handleBookRoom",
+
+			"action-exception-assign": "_handleExceptionAssign",
+			"action-exception-auto-assign": "_handleExceptionAutoAssign",
+			"action-exception-auto-assign-all": "_handleExceptionAutoAssignAll",
+			"action-exception-clear-assignment": "_handleExceptionClearAssignment",
+			"action-exception-clear-assignment-all": "_handleExceptionClearAssignmentAll",
+
+			"action-submit": "_handleSubmit",
+			"action-cancel": "_handleCancel",
+
+			"action-checkin": "_handleCheckIn",
+			"action-checkout": "_handleCheckOut",
+			"action-earlyend": "_handleEarlyEnd",
+
+			"action-booked-room-remove": "_handleBookedRoomRemove",
+
+			"action-equipment-order-cancel": "_handleEquipmentOrderCancel",
+			"action-load-equipment-orders": "_loadEquipmentOrders",
+			"action-save-equipment-orders": "_saveEquipmentOrders",
+			"action-add-equipment-item": "_addEquipmentItem",
+
+			"action-food-order-cancel": "_handleFoodOrderCancel",
+			"action-load-food-order": "_loadFoodOrder",
+			"action-save-food-order": "_saveFoodOrder",
+			"action-add-food-order-item": "_addFoodOrderItem",
+
+			"refresh-reservation-list": "_refreshReservationList",
+			"refresh-reservation-locations": "_refreshReservationLocations",
+
+			"ds-add-error": "_handleDSError",
+			"ds-create-error": "_handleDSError",
+			"ds-delete-error": "_handleDSError",
+			"ds-get-error": "_handleDSError",
+			"ds-perform-action-error": "_handleDSError",
+			"ds-remove-error": "_handleDSError",
+			"ds-update-error": "_handleDSError",
+		},
+
+		// ------
+		// Status
+		_computeProcessing: function(isPreCreating, isSaving, isCancelling) {
+			return isPreCreating || isSaving || isCancelling;
+		},
+
+		_setSaving: function() {
+			this.set("isSaving", true);
+		},
+
+		_clearSaving: function() {
+			this.set("isSaving", false);
+		},
+
+		_isSaving: function() {
+			return this.isSaving;
+		},
+
+		_setCancelling: function() {
+			this.set("isCancelling", true);
+		},
+
+		_clearCancelling: function() {
+			this.set("isCancelling", false);
+		},
+
+		_isCancelling: function() {
+			return this.isCancelling;
+		},
+
+		// ------------
+		// Misc Utility
+		_setResourceOrder: function(resourceId, orderId) {
+			this.set("resourceId", resourceId);
+			this.set("orderId", orderId);
+		},
+
+		_clearResourceOrder: function() {
+			this._setResourceOrder("-1", "-1")
+		},
+
+		// TODO: Delete - do we need this?
+		_getDefaultSubject: function() {
+			var returnValue = null;
+
+			if (this.isOutlookEmbedded) {
+				if (this.outlookDataObserver && this.outlookDataObserver.subject) {
+					returnValue = this.outlookDataObserver.subject;
+				} else {
+					returnValue = "";
+				}
+			} else {
+				returnValue = "";
+			}
+			return returnValue;
+		},
+
+		// ------------
+		// Flow Control
+		_goHome: function() {
+			if (this.reservationManager) {
+				this._setBusy();
+				this.$.reservationManager.updateRecord(TriPlatDs.RefreshType.SERVER, "actions", "cleanup").then(function() {
+					this._clearBusy();
+
+					if (this.homeApp) {
+						this._handleNavigateHome(true);
+					} else {
+						this._goReservationList();
+					}
+				}.bind(this));					
+			}
+		},
+
+		_goReservationList: function() {
+			if (this.reservationManager) {
+				this._setBusy();
+				this.$.reservationManager.updateRecord(TriPlatDs.RefreshType.SERVER, "actions", "cleanup").then(function() {
+					this._clearBusy();
+
+					this._refreshReservationList();
+					this.fire("navigate-reservation-list");
+				}.bind(this));					
+			} else {
+				this._refreshReservationList();
+				this.fire("navigate-reservation-list");
+			}
+		},
+
+		// ------
+		// Search
+		_handleSearch: function(e) {
+			this._setBusy();
+
+			this.$.reservationManager.updateRecord(TriPlatDs.RefreshType.SERVER, "actions", "search").then(function() {
+				this._clearBusy();
+				this.fire("navigate-room-results", {"backEventName": "navigate-room-criteria-back"});
+			}.bind(this));
+		},
+
+		// ---------
+		// On Change
+		_handleRoomTypeChange: function(value) {
+			this._setBusy();
+			this.reservationManager.searchRoomType = value;
+			if (value && value.id != null) {
+				this.$.reservationManager.updateRecord(TriPlatDs.RefreshType.SERVER, "actions", "onChangeRoomType").then(function() {
+					this._clearBusy();
+				}.bind(this));
+			} else {
+				this._clearBusy();
+			}
+		},
+
+		_handleChangeAllDay: function(event) {
+			if (this.reservationManager != null && event.detail != null) {
+				var allDay = event.detail.reservationAllDay;
+				this._changeAllDay(allDay).then(
+					function() {
+						if (event.detail.completeCallback != null) {
+							event.detail.completeCallback();
+						}
+					}.bind(this)
+				);
+			}
+		},
+
+		_changeAllDay: function(value) {
+			var promise = new Promise(
+				function(resolve, reject) {
+					var oldAllDayToggle = this.reservationManager.reservationAllDay;
+					if (value != null && oldAllDayToggle != null && value == oldAllDayToggle) {
+						resolve();
+					} else {
+						this._setBusy();
+						this.reservationManager.reservationAllDay = value;
+						this.$.reservationManager.updateRecord(
+							TriPlatDs.RefreshType.SERVER, 
+							"actions", 
+							"onChangeAllDay"
+						).then(
+							function() {
+								this.fire("criteria-changed");
+								this._clearBusy();
+								resolve();
+							}.bind(this)
+						).catch(
+							function() {
+								this._clearBusy();
+								reject();
+							}.bind(this)
+						);
+					}
+				}.bind(this)
+			);
+			return promise;
+		},
+
+		_handleChangeStartAndEndTime: function(event) {
+			if (this.reservationManager != null && event.detail != null) {
+				var startTime = event.detail.reservationStartTime;
+				var endTime = event.detail.reservationEndTime;
+				this._changeStartTime(startTime).then(this._changeEndTime.bind(this, endTime));
+			}
+		},
+
+		_handleChangeStartTime: function(event) {
+			if (this.reservationManager != null && event.detail != null) {
+				var startTime = event.detail.reservationStartTime;
+				this._changeStartTime(startTime);
+			}
+		},
+
+		_handleChangeEndTime: function(event) {
+			if (this.reservationManager != null && event.detail != null) {
+				var endTime = event.detail.reservationEndTime;
+				this._changeEndTime(endTime);
+			}
+		},
+
+		_changeStartTime: function(value) {
+			var promise = new Promise(
+				function(resolve, reject) {
+					var oldStartTime = this.reservationManager.reservationStartTime; 
+					if (value != null && oldStartTime != null && moment(value).isSame(oldStartTime)) {
+						resolve();
+					} else {
+						this._setBusy();
+						this.reservationManager.reservationStartTime = value;
+						this.$.reservationManager.updateRecord(
+							TriPlatDs.RefreshType.SERVER, 
+							"actions", 
+							"onChangeStartTime"
+						).then(
+							function() {
+								this._clearBusy();
+								this.fire("criteria-changed");
+								resolve();
+							}.bind(this)
+						).catch(
+							function() {
+								this._clearBusy();
+								reject();
+							}.bind(this)
+						);
+					}
+				}.bind(this)
+			);
+			return promise;
+		},
+
+		_changeEndTime: function(value) {
+			var promise = new Promise(
+				function(resolve, reject) {
+					var oldEndTime = this.reservationManager.reservationEndTime;
+					if (value != null && oldEndTime !=null && moment(value).isSame(oldEndTime)) {
+						resolve();
+					} else {
+						this._setBusy();
+						this.reservationManager.reservationEndTime = value;
+						this.$.reservationManager.updateRecord(
+							TriPlatDs.RefreshType.SERVER, 
+							"actions", 
+							"onChangeEndTime"
+						).then(
+							function() {
+								this._clearBusy();
+								this.fire("criteria-changed");
+								resolve();
+							}.bind(this)
+						).catch(
+							function() {
+								this._clearBusy();
+								reject();
+							}.bind(this)
+						);
+					}
+				}.bind(this)
+			);
+			return promise;
+		},
+
+		_handleChangeStartDate: function(event) {
+			if (this.reservationManager != null && event.detail != null) {
+				var startDate = event.detail.reservationStartDate;
+				this._changeStartDate(startDate);
+			}
+		},
+
+		_changeStartDate: function(value) {
+			var promise = new Promise(
+				function(resolve, reject) {
+					var oldStartDate = this.reservationManager.reservationStartDate; 
+					if (this._isSameDayMonthYear(value, oldStartDate)) {
+						resolve();
+					} else {
+						this._setBusy();
+						this.reservationManager.reservationStartDate = value;
+						this.$.reservationManager.updateRecord(
+							TriPlatDs.RefreshType.SERVER, 
+							"actions", 
+							"onChangeStartDate"
+						).then(
+							function() {
+								this._clearBusy();
+								this.fire("criteria-changed");
+								resolve();
+							}.bind(this)
+						).catch(
+							function() {
+								this._clearBusy();
+								reject();
+							}.bind(this)
+						);
+					}
+				}.bind(this)
+			);
+			return promise;
+		},
+
+		_isSameDayMonthYear: function(dateA, dateB) {
+			var dateAMo = moment(dateA);
+			return (
+				dateA != null && dateB != null && 
+				dateAMo.isSame(dateB,"day") &&
+				dateAMo.isSame(dateB,"month") &&
+				dateAMo.isSame(dateB,"year")
+			);
+		},
+
+		_handleChangeEndDate: function(event) {
+			if (this.reservationManager != null && event.detail != null) {
+				var endDate = event.detail.reservationEndDate;
+				this._changeEndDate(endDate);
+			}
+		},
+
+		_changeEndDate: function(value) {
+			var promise = new Promise(
+				function(resolve, reject) {
+					var oldEndDate = this.reservationManager.reservationEndDate; 
+					if (this._isSameDayMonthYear(value, oldEndDate)) {
+						resolve();
+					} else {
+						this._setBusy();
+						this.reservationManager.reservationEndDate = value;
+						this.$.reservationManager.updateRecord(
+							TriPlatDs.RefreshType.SERVER, 
+							"actions", 
+							"onChangeEndDate"
+						).then(
+							function() {
+								this._clearBusy();
+								this.fire("criteria-changed");
+								resolve();
+							}.bind(this)
+						).catch(
+							function() {
+								this._clearBusy();
+								reject();
+							}.bind(this)
+						);
+					}
+				}.bind(this)
+			);
+			return promise;
+		},
+
+		// ---------
+		// Book Room
+		_handleBookRoom: function(e) {
+			var roomId = e.detail.roomId;
+
+			this._setBusy();
+
+			var wfParams = {};
+			wfParams.rooms = roomId;
+
+			this.$.reservationManager.updateRecord(TriPlatDs.RefreshType.SERVER, "actions", "bookSelectedRoom", wfParams).then(function() {
+				this.$.reservationLocations.refresh().then(function() {
+					this.$.exceptionOccurrences.refresh().then(function() {
+						this.async(function() {
+							this.fire("navigate-summary-page");
+							this._addRoomSuccess();
+						});
+
+						this._clearBusy();
+					}.bind(this));
+				}.bind(this));
+			}.bind(this));
+		},
+
+		_addRoomSuccess: function() {
+			var __dictionary__toastRoomAdded = "Room Added";
+			this.$.toast.text = __dictionary__toastRoomAdded;
+			this.$.toast.show();
+		},
+
+		_handleBookedRoomRemove: function(e) {
+			var resourceId = e.detail.bookedRoomId;
+
+			this._setBusy();
+
+			var wfParams = {};
+			wfParams.resource = resourceId;
+
+			this.$.reservationManager.updateRecord(TriPlatDs.RefreshType.SERVER, "actions", "removeBookedRoom", wfParams).then(function() {
+				this.$.reservationLocations.refresh().then(function() {
+					this.$.exceptionOccurrences.refresh().then(function() {
+						this.async(function() {
+							this.fire("navigate-summary-page");
+							this._removeRoomSuccess();
+						});
+
+						this._clearBusy();
+					}.bind(this));
+				}.bind(this));
+			}.bind(this));
+		},
+
+		_removeRoomSuccess: function() {
+			var __dictionary__toastRoomRemoved = "Room Removed";
+			this.$.toast.text = __dictionary__toastRoomRemoved;
+			this.$.toast.show();
+		},
+
+		// ----------
+		// Exceptions
+		_handleExceptionAssign: function(e) {
+			var occurrenceId = e.detail.occurrenceId;
+			var roomId = e.detail.roomId;
+
+			if (occurrenceId && roomId && this.resourceId) {
+				this._setBusy();
+
+				var wfParams = {};
+				wfParams.occurrence = occurrenceId;
+				wfParams.location = roomId;
+
+				this.$.reservationManager.updateRecord(this.reservationManager._id, TriPlatDs.RefreshType.SERVER, "actions", "exceptionAssignLocation", wfParams).then(function() {
+					this.$.exceptionOccurrences.refresh().then(function() {
+						this._clearBusy();
+					}.bind(this));
+				}.bind(this));
+			}
+		},
+
+		_handleExceptionAutoAssign: function(e) {
+			var occurrenceId = e.detail.occurrenceId;
+
+			if (occurrenceId && this.resourceId) {
+				this._setBusy();
+
+				var wfParams = {};
+				wfParams.occurrence = occurrenceId;
+
+				this.$.reservationManager.updateRecord(this.reservationManager._id, TriPlatDs.RefreshType.SERVER, "actions", "exceptionAutoAssignLocation", wfParams).then(function() {
+					this.$.exceptionOccurrences.refresh().then(function() {
+						this._clearBusy();
+					}.bind(this));
+				}.bind(this));
+			}
+		},
+
+		_handleExceptionAutoAssignAll: function(e) {
+			if (this.resourceId) {
+				this._setBusy();
+
+				var wfParams = {};
+				wfParams.resource = this.resourceId;
+
+				this.$.reservationManager.updateRecord(this.reservationManager._id, TriPlatDs.RefreshType.SERVER, "actions", "exceptionAutoAssignAll", wfParams).then(function() {
+					this.$.exceptionOccurrences.refresh().then(function() {
+						this._clearBusy();
+					}.bind(this));
+				}.bind(this));
+			}
+		},
+
+		_handleExceptionClearAssignment: function(e) {
+			var occurrenceId = e.detail.occurrenceId;
+
+			if (occurrenceId && this.resourceId) {
+				this._setBusy();
+
+				var wfParams = {};
+				wfParams.occurrence = occurrenceId;
+				wfParams.resource = this.resourceId;
+
+				this.$.reservationManager.updateRecord(this.reservationManager._id, TriPlatDs.RefreshType.SERVER, "actions", "exceptionClearAssignment", wfParams).then(function() {
+					this.$.exceptionOccurrences.refresh().then(function() {
+						this._clearBusy();
+					}.bind(this));
+				}.bind(this));
+			}
+		},
+
+		_handleExceptionClearAssignmentAll: function(e) {
+			if (this.resourceId) {
+				this._setBusy();
+
+				var wfParams = {};
+				wfParams.resource = this.resourceId;
+
+				this.$.reservationManager.updateRecord(this.reservationManager._id, TriPlatDs.RefreshType.SERVER, "actions", "exceptionClearAssignment", wfParams).then(function() {
+					this.$.exceptionOccurrences.refresh().then(function() {
+						this._clearBusy();
+					}.bind(this));
+				}.bind(this));
+			}
+		},
+
+		// ------------------
+		// Submit Reservation
+		_handleSubmit: function(e) {
+			this._setBusy();
+
+			var wfParams = {};
+			if (this.reservationManager.reservation != null && this.reservationManager.reservation.id) {
+				wfParams.reservation = this.reservationManager.reservation.id;
+			}
+
+			this._clearBusy();
+
+			this.$.reservationManager.updateRecord(TriPlatDs.RefreshType.SERVER, "actions", "isChanged", wfParams).then(function() {
+				if (this.reservationManager.isDirty) {
+					this._setSaving();
+
+					this.$.saveDialog.open();
+
+					this.$.reservationManager.updateRecord(TriPlatDs.RefreshType.SERVER, "actions", "submit").then(function() {
+						this.$.reservationLocations.refresh().then(function() {
+							this.$.exceptionOccurrences.refresh().then(function() {
+								this.$.reservationManagerInstance.refresh().then(function() {
+									this.$.saveDialog.close();
+
+									this.async(function() {
+										this._submitSuccess();
+
+										this._clearSaving();
+
+										this._goHome();
+									});
+								}.bind(this));
+							}.bind(this));
+						}.bind(this));
+					}.bind(this));
+				} else {
+					this._goHome();
+				}
+			}.bind(this));
+		},
+
+		_submitSuccess: function() {
+			var __dictionary__toastReservationSaved = "Reservation Saved";
+			this.$.toast.text = __dictionary__toastReservationSaved;
+			this.$.toast.show();
+		},
+
+		// ------------------
+		// Cancel Reservation
+		_handleCancel: function(e) {
+			this._setCancelling();
+
+			this.$.cancelDialog.open();
+
+			this._cancelRM().then(function() {
+				this.$.cancelDialog.close();
+				this.$.reservationLocations.refresh().then(function() {
+					this.async(function() {
+						this._clearCancelling();
+						this._cancelSuccess();
+						this._goHome();
+					});
+				}.bind(this));
+			}.bind(this));
+		},
+
+		// --------
+		// Check-In
+		_handleCheckIn: function(e) {
+			this._setBusy();
+
+			this.$.reservationManager.updateRecord(TriPlatDs.RefreshType.SERVER, "actions", "check-in").then(function() {
+				this.async(function() {
+					this._checkinSuccess();
+
+					this._refreshReservationList();
+
+					this._clearBusy();
+				});
+			}.bind(this));
+		},
+
+		// ---------
+		// Check-Out
+		_handleCheckOut: function(e) {
+			this._setBusy();
+
+			this.$.reservationManager.updateRecord(TriPlatDs.RefreshType.SERVER, "actions", "check-out").then(function() {
+				this.async(function() {
+					this._checkoutSuccess();
+
+					this._refreshReservationList();
+
+					this._clearBusy();
+				});
+			}.bind(this));
+		},
+
+		// ---------
+		// Early End
+		_handleEarlyEnd: function(e) {
+			this._setBusy();
+
+			this.$.reservationManager.updateRecord(TriPlatDs.RefreshType.SERVER, "actions", "early-end").then(function() {
+				this.async(function() {
+					this._earlyendSuccess();
+
+					this._refreshReservationList();
+
+					this._clearBusy();
+				});
+			}.bind(this));
+		},
+
+		// ----------------
+		// Equipment Orders
+		_handleEquipmentOrderCancel: function(e) {
+			var orderId = e.detail.orderId;
+
+			this._setBusy();
+
+			var wfParams = {};
+			wfParams.orders = orderId;
+
+			this.$.reservationManager.updateRecord(this.reservationManager._id, TriPlatDs.RefreshType.SERVER, "actions", "cancelEquipment", wfParams).then(function() {
+				this.async(function() {
+					this.fire("navigate-summary-page");
+					this._cancelEquipmentOrderSuccess();
+					this._refreshEquipmentOrdersData();
+				});
+
+				this._clearBusy();
+			}.bind(this));
+		},
+
+		_cancelEquipmentOrderSuccess: function() {
+			var __dictionary__toastEquipmentOrderCancelled = "Equipment Order cancelled.";
+			this.$.toast.text = __dictionary__toastEquipmentOrderCancelled;
+			this.$.toast.show();
+		},
+
+		_loadEquipmentOrders: function(e) {
+			this._refreshEquipmentOrdersData().then(function() {
+			}.bind(this));
+		},
+
+		_saveEquipmentOrders: function(e) {
+
+			if (e && e.detail) {
+				var resourceId = e.detail.resourceId;
+				var equipmentOrders = e.detail.equipmentOrders;
+
+				this._refreshEquipmentOrdersData().then(function() {
+					this._updateEquipmentOrders(resourceId, equipmentOrders);
+				}.bind(this));
+			}
+		},
+
+		_addEquipmentItem: function(e) {
+			if (e && e.detail) {
+				var equipmentId = e.detail.equipmentId;
+				var model = e.detail.model;
+
+				this._addEquipmentOrder(equipmentId, model);
+			}
+		},
+
+		_addEquipmentOrder: function(equipmentId, model) {
+			var wfParams = {};
+			wfParams.resource = this.resourceId;
+			wfParams.specifications = equipmentId;
+			this.$.reservationManager.updateRecord(this.reservationManager._id, TriPlatDs.RefreshType.SERVER, "actions", "addEquipment", wfParams).then(function(wfReturnParams) {
+
+				if (wfReturnParams.wfParametersMap.createdorder.length == 1) {
+					var createdOrderId = wfReturnParams.wfParametersMap.createdorder[0];
+					if (createdOrderId > 0) {
+						model.set("item.quantity", 1);
+						model.set("item.instructions", "");
+						model.set("item._id", createdOrderId);
+					}
+				}
+
+				this._refreshEquipmentOrdersData();
+			}.bind(this));
+		},
+
+		_refreshEquipmentOrdersData: function() {
+			return new Promise(function(resolve) {
+				if (this.resourceId && this.resourceId > 0) {
+					this.$.equipmentOrders.refresh().then(function() {
+						resolve();
+					}.bind(this));
+				} else {
+					resolve();
+				}
+			}.bind(this));
+		},
+
+		_updateEquipmentOrders: function(resourceId, equipmentOrders) {
+			return new Promise(function(resolve) {
+
+				var promises = [];
+
+				for (var orderIndex=0; orderIndex < equipmentOrders.slice(0).length; orderIndex++) {
+					var orderItem = equipmentOrders[orderIndex];
+
+					if (orderItem._id > 0) {
+						if (orderItem._modified) {
+							if (orderItem.quantity < 1) {
+								promises.push(this._cancelEquipmentOrder(orderItem));
+							} else {
+								promises.push(this._updateEquipmentOrder(orderItem));
+							}
+						}
+					}
+				}
+
+				Promise.all(promises).then(function() {
+					resolve();
+				}.bind(this));
+			}.bind(this));
+		},
+
+		_updateEquipmentOrder: function(orderItem) {
+			return new Promise(function(resolve) {
+
+				var equipmentOrders = this.equipmentOrders;
+				if (equipmentOrders) {
+					// find and update the equipmentorder with the quantity and instructions
+					for (var index=0; index < equipmentOrders.slice(0).length; index++) {
+						var equipmentOrder = equipmentOrders[index];
+
+						if (equipmentOrder.equipmentId == orderItem.equipmentId) {
+							equipmentOrder.quantity = orderItem.quantity;
+							equipmentOrder.instructions = orderItem.instructions;
+							break;
+						}
+					}
+				}
+
+				this.$.equipmentOrders.updateRecord(orderItem._id, TriPlatDs.RefreshType.SERVER).then(function() {
+
+					var wfParams = {};
+					wfParams.resource = this.resourceId;
+					wfParams.orders = orderItem._id;
+
+					this.$.reservationManager.updateRecord(this.reservationManager._id, TriPlatDs.RefreshType.SERVER, "actions", "updateEquipment", wfParams).then(function() {
+						resolve();
+					}.bind(this));
+				}.bind(this));
+			}.bind(this));
+		},
+
+		_cancelEquipmentOrder: function(orderItem) {
+			return new Promise(function(resolve) {
+
+				var wfParams = {};
+				wfParams.orders = orderItem._id;
+
+				this.$.reservationManager.updateRecord(this.reservationManager._id, TriPlatDs.RefreshType.SERVER, "actions", "cancelEquipment", wfParams).then(function() {
+					this._refreshEquipmentOrdersData().then(function() {
+						resolve();
+					}.bind(this));
+				}.bind(this));
+			}.bind(this));
+		},
+
+		// -----------
+		// Food Orders
+		_handleFoodOrderCancel: function(e) {
+			var orderId = e.detail.orderId;
+
+			this._setBusy();
+
+			var wfParams = {};
+			wfParams.orders = orderId;
+
+			this.$.reservationManager.updateRecord(this.reservationManager._id, TriPlatDs.RefreshType.SERVER, "actions", "cancelFood", wfParams).then(function() {
+				this.async(function() {
+					this._cancelFoodOrderSuccess();
+					this._refreshFoodOrdersData();
+				});
+
+				this._clearBusy();
+			}.bind(this));
+		},
+
+		_cancelFoodOrderSuccess: function() {
+			var __dictionary__toastFoodOrderCancelled = "Food Order cancelled.";
+			this.$.toast.text = __dictionary__toastFoodOrderCancelled;
+			this.$.toast.show();
+		},
+
+		_loadFoodOrder: function(e) {
+			this._refreshFoodOrdersData().then(function() {
+				if (this.orderId != undefined) {
+
+					if (this.orderId == "-1") {
+						this._setBusy();
+
+						this.$.reservationManager.updateRecord(this.reservationManager._id, TriPlatDs.RefreshType.SERVER, "actions", "selectFoodOrder").then(function() {
+							this.$.selectedFoodOrder.refresh().then(function() {
+								this._clearBusy();
+							}.bind(this));
+						}.bind(this));
+					} else {
+						var wfParams = {};
+						if (this.orderId != "-1") {
+							wfParams.order = this.orderId;
+						}
+
+						this._setBusy();
+
+						this.$.reservationManager.updateRecord(this.reservationManager._id, TriPlatDs.RefreshType.SERVER, "actions", "selectFoodOrder", wfParams).then(function() {
+							this.$.selectedFoodOrder.refresh().then(function() {
+								this._clearBusy();
+							}.bind(this));
+						}.bind(this));
+					}
+				}
+			}.bind(this));
+		},
+
+		_saveFoodOrder: function(e) {
+			if (e && e.detail) {
+				var resourceId = e.detail.resourceId;
+				var orderId = e.detail.orderId;
+				var foodOrderLineItems = e.detail.foodOrderLineItems;
+
+				this._updateFoodOrder(resourceId, orderId).then(function() {
+					this._updateFoodLineItems(resourceId, orderId, foodOrderLineItems);
+				}.bind(this));
+			}
+		},
+
+		_addFoodOrderItem: function(e) {
+			if (e && e.detail) {
+				var resourceId = e.detail.resourceId;
+				var orderId = e.detail.orderId;
+				var menuItemId = e.detail.menuItemId;
+				var model = e.detail.model;
+
+				this._addFoodItem(resourceId, orderId, menuItemId, model);
+			}
+		},
+
+		_addFoodItem: function(resourceId, orderId, menuItemId, model) {
+			var wfParams = {};
+			wfParams.resource = resourceId;
+			if (orderId && orderId != "-1") {
+				wfParams.order = orderId;
+			}
+			wfParams.menuitems = menuItemId;
+
+			this.fire("set-busy");
+
+			this.$.reservationManager.updateRecord(this.reservationManager._id, TriPlatDs.RefreshType.SERVER, "actions", "addFoodItem", wfParams).then(function(wfReturnParams) {
+
+				if (wfReturnParams.wfParametersMap.createdorder.length == 1) {
+					createdOrderId = wfReturnParams.wfParametersMap.createdorder[0];
+					this.set("orderId", createdOrderId);
+				}
+
+				if (wfReturnParams.wfParametersMap.createditem.length == 1) {
+					var createdItemId = wfReturnParams.wfParametersMap.createditem[0];
+					if (createdItemId > 0) {
+						model.set("item._id", createdItemId);
+						model.set("item.quantity", 1);
+					}
+				}
+
+				this.async(function() {
+					this.fire("clear-busy");
+				});
+			}.bind(this));
+		},
+
+		_refreshFoodOrdersData: function(e) {
+			return new Promise(function(resolve) {
+				this.$.foodOrders.refresh().then(function() {
+					this.$.selectedFoodOrder.refresh().then(function() {
+						if (this.selectedFoodOrder && this.selectedFoodOrder._id != this.orderId) {
+							this.set("orderId", this.selectedFoodOrder._id ? this.selectedFoodOrder._id : "-1");
+						}
+
+						if (this.orderId == "-1") {
+							this.set("foodOrderLineItems", new Array());
+							resolve();
+						} else {
+							this.$.foodOrderLineItems.refresh().then(function() {
+								resolve();
+							}.bind(this));
+						}
+					}.bind(this));
+				}.bind(this));
+			}.bind(this));
+		},
+
+		_updateFoodOrder: function(resourceId, orderId) {
+			return new Promise(function(resolve) {
+				var wfParams = {};
+				wfParams.resource = resourceId;
+				wfParams.order = orderId;
+
+				this.$.reservationManager.updateRecord(this.reservationManager._id, TriPlatDs.RefreshType.SERVER, "actions", "updateFood", wfParams).then(function() {
+					this._refreshFoodOrdersData().then(function() {
+						resolve();
+					}.bind(this));
+				}.bind(this));
+			}.bind(this));
+		},
+
+		_updateFoodLineItems: function(resourceId, orderId, foodOrderLineItems) {
+			return new Promise(function(resolve) {
+
+				var promises = [];
+
+				for (var orderIndex=0; orderIndex < foodOrderLineItems.slice(0).length; orderIndex++) {
+					var orderItem = foodOrderLineItems[orderIndex];
+
+					if (orderItem._id > 0) {
+						if (orderItem._modified) {
+							if (orderItem.quantity < 1) {
+								promises.push(this._removeFoodItem(orderId, orderItem, resourceId));
+							} else {
+								promises.push(this._updateFoodItem(orderItem));
+							}
+						}
+					}
+				}
+
+				Promise.all(promises).then(function() {
+					resolve();
+				}.bind(this));
+			}.bind(this));
+		},
+
+		_updateFoodItem: function(orderItem) {
+			return new Promise(function(resolve) {
+				var foodOrderLineItems = this.foodOrderLineItems;
+				if (foodOrderLineItems) {
+					// find and update the foodOrderLineItem with the quantity
+					for (var index=0; index < foodOrderLineItems.slice(0).length; index++) {
+						var item = foodOrderLineItems[index];
+
+						if (item.menuItemId == orderItem.menuItemId) {
+							item.quantity = orderItem.quantity;
+							item.instructions = orderItem.instructions;
+							break;
+						}
+					}
+				}
+
+				this.$.foodOrderLineItems.updateRecord(orderItem._id, TriPlatDs.RefreshType.SERVER).then(function() {
+					resolve();
+				}.bind(this));
+			}.bind(this));
+		},
+
+		_removeFoodItem: function(orderId, orderItem, resourceId) {
+			return new Promise(function(resolve) {
+				var wfParams = {};
+				if (orderId && orderId != "-1") {
+					wfParams.order = orderId;
+				}
+				wfParams.menuitem = orderItem._id;
+
+				this.$.reservationManager.updateRecord(this.reservationManager._id, TriPlatDs.RefreshType.SERVER, "actions", "removeFoodItem", wfParams).then(function() {
+					this._updateFoodOrder(resourceId, orderId).then(function() {
+						resolve();
+					}.bind(this));
+				}.bind(this));
+			}.bind(this));
+		},
+
+		// TODO: Delete - do we need this?
+		_handleDSError: function(e) {
+			var errorDetails = e.detail;
+			if (errorDetails) this.set("_errorDetails", errorDetails);
+			this.$.errorDialog.open();
+		},
+
+		// TODO: Delete - do we need this?
+		_handleErrorDetailsCollapseOrExpand: function() {
+			this.async(function() {
+				this.$.errorDialog.center();
+			}.bind(this), 300);
+		},
+
+		// TODO: Refactor - can we eliminate the concept of userInterfaceId?  Are we still using it?
+		_getUserInterfaceID: function() {
+			var returnValue = null;
+
+			if (this.userInterfaceID) {
+				returnValue = this.userInterfaceID;
+			} else {
+				returnValue = this._generateRandomIDValue();
+			}
+
+			return returnValue;
+		},
+
+		_buildOpenRouteParams: function(reservationId, occurrenceStartISO, occurrenceEndISO) {
+			return {
+				"reservationId": reservationId,
+				"occurrenceStart": occurrenceStartISO != null ? this.toMilliseconds(occurrenceStartISO): -1,
+				"occurrenceEnd" : occurrenceEndISO != null ? this.toMilliseconds(occurrenceEndISO): -1
+			}
+		},
+
+		_refreshReservationLocations: function() {
+			if (!this.$.reservationLocations.loading) {
+				return this.$.reservationLocations.refresh();
+			}
+		}
+	};
+
+	TriRoomReservationBehavior = [TriDateUtilities, TriReservationUtilitiesBehavior, TriRoomReservationBehaviorImpl];
+</script>

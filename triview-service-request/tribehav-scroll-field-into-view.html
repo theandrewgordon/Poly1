@@ -1,0 +1,61 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<script>
+	TriScrollFieldIntoViewBehavior = {
+		properties: {
+			_isAndroidDevice: {
+				type: Boolean,
+				value: function() {
+					return navigator.userAgent.match(/Android/i);
+				}
+			},
+
+			_scrollSelectInputIntoView: {
+				type: Boolean,
+				computed: "_computeScrollSelectInputIntoView(smallScreen, smallScreenHeight)"
+			}
+		},
+
+		_handleFieldFocus: function(event) {
+			// Add a delay for the Android virtual keyboard be displayed.
+			this.async(this._scrollFieldIntoView.bind(this, event.target), 1000);
+		},
+
+		_scrollFieldIntoView: function(field) {
+			field.scrollIntoView(true);
+		},
+
+		attached: function() {
+			if (!this._isAndroidDevice) {
+				return;
+			}
+			var fields = this.querySelectorAll("[tri-scroll-into-view]");
+			if (fields != null) {
+				for (var index = 0; index < fields.length; index++) {
+					var element = fields[index];
+					this.listen(element, 'focus', '_handleFieldFocus');
+				}
+			}
+		},
+
+		detached: function() {
+			if (!this._isAndroidDevice) {
+				return;
+			}
+			var fields = this.$$("[tri-scroll-into-view]");
+			if (fields != null) {
+				if (!Array.isArray(fields)) {
+					fields = [fields];
+				}
+				for (var index = 0; index < fields.length; index++) {
+					var element = fields[index];
+					this.unlisten(element, 'focus', '_handleFieldFocus');
+				}
+			}
+		},
+
+		_computeScrollSelectInputIntoView: function (smallScreen, smallScreenHeight) {
+			return smallScreen || smallScreenHeight;
+ 		}
+	};
+</script>

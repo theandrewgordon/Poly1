@@ -1,0 +1,133 @@
+/* Header */
+    .bx--header{
+        background-color: #161616;
+    }
+
+    /* Home Button */
+        a.bx--header__name, a.bx--header__name:hover {
+            color: #f4f4f4;
+        }
+
+    /* Expand/Collapse Side Nav button */
+        .bx--header__menu-trigger > svg {
+            fill: #f4f4f4;
+        }
+        .bx--header__menu-trigger:hover {
+            fill:#2c2c2c;
+        }
+
+    /* Info and User Profile buttons */
+        .bx--header__action > svg {
+            fill: #ffffff;
+        }
+        .bx--header__action:hover {
+            background-color:#353535;
+        }
+        .bx--header-action-btn:active {
+            background-color:#353535;
+        }
+        a.bx--header__menu-item > svg {
+            fill: #f4f4f4;
+        }
+        a.bx--header__menu-item:hover {
+            background-color: #2c2c2c;
+        }
+        a.bx--header__menu-item:hover > svg, a.bx--header__menu-item:active > svg, a.bx--header__menu-item:focus > svg {
+            fill: #f4f4f4;
+        }
+        .bx--header__menu-title[aria-expanded='true'] {
+            background-color:  #262626;
+            color: #ffffff;
+        }
+
+    /* User Profile Card*/
+        /* card background */
+        .bx--header__menu .bx--header__menu-item .iot--card {
+            background-color: #393939;
+        }
+        .bx--header__action:active, a.bx--header__menu-item:active {
+            background-color: #393939;
+        }
+
+        /* card text */
+        .bx--header__menu .bx--header__menu-item {
+            color: #f4f4f4;
+        }
+        .bx--header__menu .bx--header__menu-item:hover {
+            color: #f4f4f4;
+        }
+
+
+        /*Log-out Button*/
+        .bx--header__menu-title[aria-expanded='true'] + .bx--header__menu .bx--header__menu-item:hover {
+            background-color: #353535;
+        }
+
+
+/* Side Nav */
+    .bx--side-nav {
+        background-color: #161616;
+    }
+
+    /* Side Nav Item Text and Icon Color */
+    .bx--side-nav__submenu[aria-haspopup='true'], .bx--side-nav .bx--side-nav__link, .bx--side-nav a.bx--side-nav__link--current > span.bx--side-nav__link-text {
+        color: #f4f4f4;
+    }
+    .bx--side-nav__icon > svg {
+        fill: #ffffff;
+    }
+
+    /* top level node with children hover */
+    .bx--side-nav__item:hover .bx--side-nav__submenu, .bx--side-nav__item:hover .bx--side-nav__menu {
+        background-color: #2C2C2C;
+    }
+
+    /* leaf nodes background color*/
+    .bx--side-nav__item:hover .bx--side-nav__link {
+        background-color: #2c2c2c;
+    }
+
+    /* 2nd 3rd 4th level leaf node hover */
+    .bx--side-nav__item:hover .bx--side-nav__link[role='menuitem']:not(.bx--side-nav__link--current):not([aria-current='page']):hover, 
+    .bx--side-nav__item:hover a.bx--side-nav__link[role='menuitem']:not(.bx--side-nav__link--current):not([aria-current='page']):hover {
+        background-color:  #393939;
+    }
+
+    /* top level leaf node hover */
+    .bx--side-nav__item:not(.bx--side-nav__item--active) > .bx--side-nav__link:hover {
+        background-color: #2C2C2C;
+    }
+
+    /* 2nd 3rd 4th level nodes with children hover */
+    .bx--side-nav__item:not(.bx--side-nav__item--active):hover .bx--side-nav__item:not(.bx--side-nav__item--active) > .bx--side-nav__submenu:hover {
+        background-color:  #393939;
+    }
+
+    /* Side nav Item Text Hover*/
+    .bx--side-nav__item:not(.bx--side-nav__item--active) > .bx--side-nav__link:hover > span {
+        color: #f4f4f4;
+    }
+    .bx--side-nav__item:not(.bx--side-nav__item--active):hover .bx--side-nav__item:not(.bx--side-nav__item--active) > .bx--side-nav__submenu:hover {
+        color: #f4f4f4;
+    }
+    .bx--side-nav__item:not(.bx--side-nav__item--active) .bx--side-nav__menu-item > .bx--side-nav__link:hover > span {
+        color: #f4f4f4;
+    }
+
+    /*child hover color*/
+    .bx--side-nav__item:hover .bx--side-nav__link[role="menuitem"]:not(.bx--side-nav__link--current):not([aria-current="page"]):hover, .bx--side-nav__item:hover a.bx--side-nav__link[role="menuitem"]:not(.bx--side-nav__link--current):not([aria-current="page"]):hover{
+        background-color: #393939;
+    }
+
+    /* Expanded side nav item background color. These background colors should only appear when side nav is expanded.
+     * Note that .iot--side-nav--expanded indicates when the hamburger icon has been toggeled to expand the side nav.
+     * Hover without .iot--side-nav--expanded indicates when the hamburger icon is not used, and a mouse hover expands the side nav.
+     */
+    .bx--side-nav__navigation.iot--side-nav--expanded .bx--side-nav__submenu[aria-expanded="true"],
+    .bx--side-nav__navigation:not(.iot--side-nav--expanded):hover .bx--side-nav__submenu[aria-expanded="true"] {
+        background-color: #2c2c2c;
+    }
+    .bx--side-nav__navigation.iot--side-nav--expanded .bx--side-nav__menu,
+    .bx--side-nav__navigation:not(.iot--side-nav--expanded):hover .bx--side-nav__menu {
+        background-color: #2c2c2c;
+    }

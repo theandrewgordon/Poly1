@@ -1,0 +1,199 @@
+<!--
+@license
+IBM Confidential - OCO Source Materials - (C) COPYRIGHT IBM CORP. 2015-2016 - The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+-->
+<script>
+	Polymer.TriAppSearchDetailBehavior = {
+        
+        properties: {
+            aliases: Object,
+
+            aliasesForPeople: {
+				type: Object,
+				value: function() {
+					var __dictionary__name = "[Name]";
+                    var __dictionary__city = "[City]";
+                    var __dictionary__space = "[Space]";
+                    var __dictionary__building = "[Building]";
+                    var __dictionary__floor = "[Floor]";
+                    var __dictionary__organization = "[Organization]";
+					var _aliases = {};
+					_aliases["name"] = {alias: __dictionary__name, datasource: "lookupPeopleName"};
+                    _aliases["city"] = {alias: __dictionary__city, datasource: "lookupPeopleCity"};
+                    _aliases["space"] = {alias: __dictionary__space, datasource: "lookupPeopleSpace"};
+                    _aliases["building"] = {alias: __dictionary__building, datasource: "lookupPeopleBuilding"};
+                    _aliases["floor"] = {alias: __dictionary__floor, datasource: "lookupPeopleFloor"};
+                    _aliases["organization"] = {alias: __dictionary__organization, datasource: "lookupPeopleOrg"};
+					return _aliases;
+				}
+			}, 
+
+            aliasesForAsset: {
+				type: Object,
+				value: function() {
+					var __dictionary__name = "[Name]";
+                    var __dictionary__id = "[ID]";
+                    var __dictionary__building = "[Building]";
+                    var __dictionary__floor = "[Floor]";
+                    var __dictionary__type = "[Type]";
+                    var __dictionary__space = "[Space]";
+				    var _aliases = {};
+					_aliases["name"] = {alias: __dictionary__name, datasource: "lookupAssetName"};
+                    _aliases["id"] = {alias: __dictionary__id, datasource: "lookupAssetID"};
+                    _aliases["building"] = {alias: __dictionary__building, datasource: "lookupAssetBuilding"};
+                    _aliases["floor"] = {alias: __dictionary__floor, datasource: "lookupAssetFloor"};
+                    _aliases["type"] = {alias: __dictionary__type, datasource: "lookupAssetSpecClass"};
+                    _aliases["space"] = {alias: __dictionary__space, datasource: "lookupAssetSpace"};
+					return _aliases;
+				}
+			},
+
+            aliasesForEquipment: {
+				type: Object,
+				value: function() {
+					var __dictionary__name = "[Name]";
+                    var __dictionary__id = "[Id]";
+                    var __dictionary__building = "[Building]";
+                    var __dictionary__floor = "[Floor]";
+                    var __dictionary__space = "[Space]";
+                    var __dictionary__spec = "[Spec]";
+
+					var _aliases = {};
+					_aliases["name"] = {alias: __dictionary__name,     datasource: "lookupEquipmentName"};
+                    _aliases["id"] = {alias: __dictionary__id, datasource: "lookupEquipmentID"};
+                    _aliases["building"] = {alias: __dictionary__building, datasource: "lookupEquipmentBuilding"};
+                    _aliases["floor"] = {alias: __dictionary__floor, datasource: "lookupEquipmentFloor"};
+                    _aliases["space"] = {alias: __dictionary__space, datasource: "lookupEquipmentSpace"};
+                    _aliases["spec"] = {alias: __dictionary__spec, datasource: "lookupEquipmentSpecClass"};
+					return _aliases;
+				}
+			}, 
+
+            aliasesForRoom: {
+				type: Object,
+				value: function() {
+					var __dictionary__name = "[Name]";
+                    var __dictionary__id = "[ID]";
+                    var __dictionary__building = "[Building]";
+                    var __dictionary__floor = "[Floor]";
+                    var __dictionary__spaceclass = "[SpaceClass]";
+
+					var _aliases = {};
+					_aliases["name"] = {alias: __dictionary__name, datasource: "lookupRoomName"};
+                    _aliases["id"] = {alias: __dictionary__id, datasource: "lookupRoomID"};
+                    _aliases["building"] = {alias: __dictionary__building, datasource: "lookupRoomBuilding"};
+                    _aliases["floor"] = {alias: __dictionary__floor, datasource: "lookupRoomFloor"};
+                    _aliases["spaceclass"] = {alias: __dictionary__spaceclass, datasource: "lookupRoomSpaceClass"};
+					return _aliases;
+				}
+			},
+
+			aliasesForLocation: {
+				type: Object,
+				value: function() {
+					var __dictionary__building = "[Building]";
+                    var __dictionary__city = "[City]";
+                    var __dictionary__address = "[Address]";
+					var _aliases = {};
+					
+                    _aliases["building"] = {alias: __dictionary__building, datasource: "lookupBuildingLocation"};
+                    _aliases["city"] = {alias: __dictionary__city, datasource: "lookupBuildingLocation"};
+                    _aliases["address"] = {alias: __dictionary__address, datasource: "lookupBuildingLocation"}; 
+
+					return _aliases;
+				}
+			},
+            
+            appendFiltersPeople: {
+                type: Array,
+                value: []
+            },
+
+            appendFiltersAsset: {
+                type: Array,
+                value: []
+            },
+
+            appendFiltersEquipment: {
+                type: Array,
+                value: []
+            },
+
+            appendFiltersRoom: {
+                type: Array,
+                value: []
+            },
+
+            appendFiltersLocation: {
+                type: Array,
+                value: []
+            },
+            
+            appendFilters: {
+                type: Array,
+                value: []
+            }, 
+            
+        },
+        
+        observers: [
+            "_appendFiltersChanged(appendFilters.*)"
+        ],
+        
+        ready: function(){
+            this.aliases = this.aliasesForPeople;
+
+        },
+        
+        _appendFiltersChanged: function(change){
+            if(change.path == "appendFilters.splices"){
+                var filtersArrayName = this._getCurrentAppendFiltersName();
+                var indexSplice = change.value.indexSplices[0];
+                indexSplice.removed.forEach(function(removed) {
+                    this._removeFilter(removed, this.get(filtersArrayName), filtersArrayName);
+
+
+                }, this);
+                for (var i = 0; i < indexSplice.addedCount; i++) {
+    				var added = indexSplice.object[indexSplice.index + i];
+                    this._addFilter(added, filtersArrayName);
+                }
+                this.searchStarted = true;
+            }
+        },
+
+        _getCurrentAppendFiltersName: function(){
+            if(this._peopleDropdownSelected){
+                return "appendFiltersPeople";
+            } else if(this._assetDropdownSelected){
+                return "appendFiltersAsset";
+            } else if(this._equipmentDropdownSelected){
+                return "appendFiltersEquipment";
+            } else if(this._roomDropdownSelected){
+                return "appendFiltersRoom";
+            } else if (this._locationDropdownSelected) {
+            		return "appendFiltersLocation";
+            }
+        },
+
+        _removeFilter: function(filterOut, filtersArray, filtersArrayName){
+            var index = -1;
+            filtersArray.forEach(function(filterIn){
+                if(filterIn.name == filterOut.name &&
+                   filterIn.operator == filterOut.operator &&
+                   filterIn.value == filterOut.value){
+                       index = filtersArray.indexOf(filterIn);
+                }
+            }, this);
+            if(index > -1){
+                this.splice(filtersArrayName, index, 1);
+            }
+        },
+
+        _addFilter: function(filter, filtersArrayName){
+            this.push(filtersArrayName, filter);
+        },
+        
+        
+    };
+</script>

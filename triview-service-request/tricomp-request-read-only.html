@@ -1,0 +1,166 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017-2018 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triblock-responsive-layout/triblock-view-responsive-behavior.html">
+
+<link rel="import" href="tricomp-read-only-field.html">
+<link rel="import" href="tricomp-profile-card.html">
+
+<dom-module id="tricomp-request-read-only">
+	<template>
+		<style>
+			:host(:not([small-screen])) {
+				min-width: 200px;
+			}
+			
+			tricomp-read-only-field {
+				margin-bottom: 20px;
+			}
+			
+			.box-work-task tricomp-read-only-field {
+				margin-bottom: 10px;
+			}
+			
+			.box-work-task {
+				margin-bottom: 20px;
+				border-left-style: solid;
+			}
+			
+			 :host([small-screen]) .box-work-task {
+				margin-left: -10px;
+				border-left-width: 5px;
+				padding-left: 5px;
+			}
+			
+			:host(:not([small-screen])) .box-work-task {
+				margin-left: -20px;
+				border-left-width: 10px;
+				padding-left: 10px;
+			}
+			
+			.box-work-task * {
+				margin: 0;
+				font-size: 1em;
+				font-weight: 500;
+			}
+			
+			.task-completed {
+				border-color: var(--tri-success-color);
+			}
+			
+			.task-info {
+				border-color: var(--tri-info-color);
+			}
+		</style>
+
+		<triplat-ds id="workTask" name="workTask" data="{{_workTask}}">
+			<triplat-ds-context name="myRequest" context-id="[[request._id]]"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="responsiblePerson" name="responsiblePerson" data="{{_responsiblePerson}}">
+			<triplat-ds-context name="myRequest" context-id="[[request._id]]"></triplat-ds-context>
+			<triplat-ds-context name="workTask" context-id="[[_workTask._id]]"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="lookupBuilding" name="lookupBuilding" data="{{_lookupBuilding}}">
+			<triplat-ds-instance instance-id="{{request.building.id}}"></triplat-ds-instance>
+		</triplat-ds>
+
+		<tricomp-read-only-field field-label="Requested For:">
+			<span class="field-content">[[request.requestedFor.value]]</span>
+		</tricomp-read-only-field>
+
+		<tricomp-read-only-field field-label="Requested By:">
+			<span class="field-content">[[request.requestedBy.value]]</span>
+		</tricomp-read-only-field>
+
+		<tricomp-read-only-field field-label="Location:">
+			<span class="field-content">
+				[[request.building.value]]
+				<template is="dom-if" if="{{_lookupBuilding.stateProvince}}"><br>{{_lookupBuilding.city}}</template>
+				<template is="dom-if" if="{{_lookupBuilding.stateProvince}}">, </template>{{_lookupBuilding.stateProvince}}
+				<template is="dom-if" if="{{_lookupBuilding.country}}">, </template>{{_lookupBuilding.country}}
+				<template is="dom-if" if="[[request.floor.value]]"><br></template>[[request.floor.value]]
+				<template is="dom-if" if="[[request.room.value]]"><br></template>[[request.room.value]]
+			</span>
+		</tricomp-read-only-field>
+
+		<tricomp-read-only-field field-label="Category:">
+			<span class="field-content">
+				[[request.requestCategory.value]]
+				<template is="dom-if" if="[[request.requestService.value]]"><br></template>[[request.requestService.value]]
+			</span>
+		</tricomp-read-only-field>
+
+		<tricomp-read-only-field field-label="Description:">
+			<span class="field-content">[[request.desc]]</span>
+		</tricomp-read-only-field>
+
+		<template is="dom-if" if="[[_displayStatusField()]]" restamp>
+			<div class$="[[_computeTaskClass(_workTask.assignmentStatus.value)]]" hidden="[[!_computeWorkTask(_workTask)]]">
+				<tricomp-read-only-field field-label="Status:">
+					<span class="field-content">[[_workTask.assignmentStatus.value]]</span>
+				</tricomp-read-only-field>
+
+				<tricomp-profile-card data="[[_responsiblePerson]]" hidden$="[[!_responsiblePerson]]" custom>
+					<div class="card-content">
+						<h3>[[_responsiblePerson.name]]</h3>
+						<template is="dom-if" if="[[_workTask.taskID]]">
+							<p>Task #[[_workTask.taskID]]</p>
+						</template>
+					</div>
+				</tricomp-profile-card>
+			</div>
+		</template>
+
+		<tricomp-read-only-field hidden="[[!_workTask.createdDate]]" field-label="Date Submitted:">
+			<span class="field-content"><triplat-date-picker readonly display-format="{{currentUser._DateFormat}}" value ="{{_workTask.createdDate}}"></triplat-date-picker></span>
+		</tricomp-read-only-field>
+
+		<tricomp-read-only-field hidden="[[!_workTask.actualEndDate]]" field-label="Date Completed:">
+			<span class="field-content"><triplat-date-picker readonly display-format="{{currentUser._DateFormat}}" value ="{{_workTask.actualEndDate}}"></triplat-date-picker></span>
+		</tricomp-read-only-field>
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-request-read-only",
+
+			behaviors: [
+				TriBlockViewResponsiveBehavior
+			],
+
+			properties: {
+				request: Object,
+
+				currentUser: Object
+			},
+
+			// Compute the class of the work task box
+			_computeTaskClass: function (status) {
+				return (status === "Completed") ? "box-work-task task-completed" : "box-work-task task-info";
+			},
+
+			// Compute if there's a work task
+			_computeWorkTask: function (task) {
+				return (task && task.assignmentStatus && task.assignmentStatus.value);
+			},
+
+			_getURLParameter: function(getParam) {
+				var url = window.location.search.substring(1);
+				var urlParameters = url.split('&');
+				for (var i = 0; i < urlParameters.length; i++)  {
+					var parameterName = urlParameters[i].split('=');
+					if (parameterName[0] == getParam)  {
+						return decodeURIComponent(parameterName[1]);
+					}
+				}
+			},
+
+			_displayStatusField: function() {
+				var homeApp = this._getURLParameter('homeApp');
+				return homeApp !== "workTaskServices";
+			}
+
+		});
+	</script>
+</dom-module>

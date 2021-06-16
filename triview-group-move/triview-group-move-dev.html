@@ -1,0 +1,213 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-view-behavior/triplat-view-behavior.html">
+<link rel="import" href="../triplat-signout-button/triplat-signout-button.html">
+<link rel="import" href="../triplat-responsive-viewport/triplat-responsive-viewport.html">
+<link rel="import" href="../iron-pages/iron-pages.html">
+<link rel="import" href="../paper-header-panel/paper-header-panel.html">
+<link rel="import" href="../triplat-routing/triplat-routing.html">
+
+<link rel="import" href="../triblock-app-layout/triblock-app-layout.html">
+
+<!-- DOM-IF : Do not comment out the link imports -->
+<link rel="import" href="tricomp-group-move.html">
+<link rel="import" href="tricomp-inbox-group-move.html">
+
+<link rel="import" href="tripage-groupmove-intro.html">
+<link rel="import" href="tripage-groupmove-search-detail.html">
+<link rel="import" href="tripage-groupmove-myrequests.html">
+
+<dom-module id="triview-group-move">
+
+	<style>
+
+	triblock-app-layout {
+		--triblock-app-layout-content-max-width: none;
+	}
+
+	</style>
+
+	<template>
+
+        <!-- DOM-IF : Provide event handler to the on-route-active event of your routes. -->
+		<triplat-route
+				id="inboxRoute"
+				name="inbox"
+				on-route-active="_handleInboxRouteActive"
+				path="/myRequests"></triplat-route>
+
+		<triplat-route
+				id="openRequestDetailRoute"
+				name="openRequestDetail"
+				on-route-active="_handleGroupMoveDetailRouteActive"
+				path="/request/:reqId"></triplat-route>
+
+		<triblock-app-layout app-label="Group Move" show-mobile-back-button="[[groupMoveDetailRouteActive]]">
+			<triblock-banner-button home triplat-route-id="inboxRoute" tap-handler="_homeBtnClicked"></triblock-banner-button>
+			<triblock-banner-button back triplat-route-id="inboxRoute"></triblock-banner-button>
+
+			<triplat-route-selector>
+				<iron-pages class="pages">
+
+		            <!-- DOM-IF : Wrap your route pages with section and dom-if template.  You need to wrap it with section so triplat-route can be able to initialize the routes and pages when the page is not in the DOM initially then move the route properties from the route page to the section. Then wrap with template dom-if and assign boolean property.-->
+
+					<section route="inbox" default-route>
+						<template is="dom-if" if="{{inboxRouteActive}}">
+							<tricomp-inbox-group-move
+								id="tricompInbox"
+								OLDroute="inbox"
+								OLDdefault-route
+								refresh-flag="{{refreshFlag}}"
+								model-and-view="groupMove" instance-id="-1">
+							</tricomp-inbox-group-move>
+						</template>
+					</section>
+
+          <section route="openRequestDetail">
+						<template is="dom-if" if="{{groupMoveDetailRouteActive}}">
+							<tricomp-group-move
+								OLDroute="openRequestDetail"
+								model-and-view="groupMove" instance-id="-1">
+							</tricomp-group-move>
+						</template>
+					</section>
+
+				</iron-pages>
+			</triplat-route-selector>
+		</triblock-app-layout>
+		<triplat-responsive-viewport min-width="899"></triplat-responsive-viewport>
+	</template>
+</dom-module>
+<script>
+
+	Polymer({
+		is: "triview-group-move",
+
+		behaviors: [TriPlatViewBehavior],
+
+		properties: {
+			title: {
+				type: String,
+				value: null,
+				observer: "_setTitle"
+			},
+
+			refreshFlag: {
+				type: Boolean,
+				value: false
+			},
+
+			createdDraft: {
+				type: Boolean,
+				value: false
+			},
+
+            // DOM-IF: Add boolean properties for your dom-if templates with initial value of false
+			groupMoveDetailRouteActive: {
+				type: Boolean,
+				value: false
+			},
+
+			inboxRouteActive: {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _skipWelcome
+			//------------------------------------------
+			// Objective: Determine when to skip or not Welcome when Home button is clicked
+			//=========================================================
+			_skipWelcome: {
+				type: Array,
+				value: [],
+			},
+		},
+
+		listeners: {
+			"createdDraft": "_handleCreatedDraft",
+			"refresh": "_handleUpdateRefreshFlag",
+			"refreshCancel": "_setRefreshFlag",
+			"welcomeHide": "_welcomeHide",
+			"welcomeShow": "_welcomeShow",
+		},
+
+		_handleCreatedDraft: function() {
+			this.set("createdDraft",true);
+		},
+
+		_handleUpdateRefreshFlag: function() {
+			if (this.createdDraft) {
+				this.set("refreshFlag",true);
+            	this.refreshFlag = false;
+            	this.set("createdDraft",false);
+        	}
+		},
+
+		_setTitle: function() {
+			var title = this.$.title;
+			if (title && title.textContent)
+				document.title = title.textContent;
+		},
+
+		_handleStartOver: function() {
+			var groupMove = this.$.groupMove;
+			if (!groupMove)
+				return;
+
+			groupMove.fire('start-over');
+		},
+
+
+		_setRefreshFlag: function() {
+			this.set("refreshFlag",true);
+		},
+ 
+        // DOM-IF: Provide handlers to the on-route-active event and set the boolean property for your route page to true if the route is active.
+		// DOM-IF: Make sure to check if route is active and boolean property is false, then switch the property to true.
+		_handleGroupMoveDetailRouteActive: function(e) {
+			if (e.detail.active && !this.groupMoveDetailRouteActive) {
+				
+				this.set('groupMoveDetailRouteActive', true);
+			} else {
+				this.set('groupMoveDetailRouteActive', false);
+			}
+		},
+
+		_handleInboxRouteActive: function(e) {
+			if (e.detail.active && !this.inboxRouteActive) {
+				this.set('inboxRouteActive', true);
+			} else {
+				this.set('inboxRouteActive', false);
+			}
+		},
+
+		//=========================================================
+		// Function _welcomeHide and _welcomeShow
+		//------------------------------------------
+		// Objective: Show and hide home button
+		//=========================================================
+		_welcomeHide: function() {
+			this.push("_skipWelcome", "true");
+		},
+		_welcomeShow: function() {
+			this.splice("_skipWelcome", 0, 1);
+		},
+
+		//=========================================================
+		// Function _homeBtnClicked
+		//------------------------------------------
+		// Objective: handle Home button click
+		//=========================================================
+		_homeBtnClicked: function() {
+			var tricompInbox = Polymer.dom(this.root).querySelector('#tricompInbox');
+
+			// If Statement: Check when to skip Welcome
+			if (this._skipWelcome.length == 0 && tricompInbox) {
+				tricompInbox._handleHomeBtnNext();
+			}// end if
+		}
+
+	});
+
+</script>

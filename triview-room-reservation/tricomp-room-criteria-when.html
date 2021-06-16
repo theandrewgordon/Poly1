@@ -1,0 +1,328 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-pages/iron-pages.html">
+
+<link rel="import" href="tricomp-room-criteria-when-basic.html">
+<link rel="import" href="tricomp-room-criteria-when-advanced.html">
+<link rel="import" href="tribehav-room-reservation-util.html">
+<link rel="import" href="tristyles-room-reservation-app.html">
+
+<dom-module id="tricomp-room-criteria-when">
+	<template>
+		<style include="shared-page-styles">
+			.sub-pages {
+				border-top: 1px solid var(--tri-primary-content-accent-color);
+			}
+		</style>
+
+		<iron-pages selected="{{_criteriaWhenType}}" class="sub-pages" attr-for-selected="page">
+			<tricomp-room-criteria-when-basic
+				page="[[_getBasicType()]]"
+				disabled="[[disabled]]"
+				day="{{_day}}"
+				part-of-day="{{_partOfDay}}"
+				on-open-criteria-when-advanced="_handleOpenCriteriaWhenAdvanced">
+			</tricomp-room-criteria-when-basic>
+			<tricomp-room-criteria-when-advanced
+				page="[[_getAdvancedType()]]"
+				disabled="[[disabled]]"
+				current-user="[[currentUser]]"
+				reservation-edit-mode="[[reservationManager.reservationEditMode]]"
+				recurrence-rule-label="[[reservationManager.recurrenceRuleLabel]]"
+				recurring-meeting="[[_isRecurringMeeting(reservationManager)]]"
+				show-basic-button="[[_showBasicButton]]"
+				all-day-event="[[reservationManager.reservationAllDay]]"
+				start-date="[[reservationManager.reservationStartDate]]"
+				end-date="[[reservationManager.reservationEndDate]]"
+				start-time="[[reservationManager.reservationStartTime]]"
+				end-time="[[reservationManager.reservationEndTime]]"
+				on-open-criteria-when-basic="_handleOpenCriteriaWhenBasic">
+			</tricomp-room-criteria-when-advanced>
+		</iron-pages>
+	</template>
+	<script>
+		(function() {
+			TricompRoomCriteriaWhenConstants = {};
+			TricompRoomCriteriaWhenConstants.ADVANCED = "Advanced";
+			TricompRoomCriteriaWhenConstants.BASIC = "Basic";
+			TricompRoomCriteriaWhenConstants.START_HOUR = {hour: 8, minute: 0, second: 0, millisecond: 0};
+			TricompRoomCriteriaWhenConstants.MID_HOUR = {hour: 13, minute: 0, second: 0, millisecond: 0};
+			TricompRoomCriteriaWhenConstants.END_HOUR = {hour: 18, minute: 0, second: 0, millisecond: 0};
+			TricompRoomCriteriaWhenConstants.ZERO_HOUR = {hour: 0, minute: 0, second: 0, millisecond: 0};
+
+			Polymer({
+
+				is: "tricomp-room-criteria-when",
+
+				behaviors: [
+					TriRoomReservationUtilBehavior
+				],
+
+				properties: {
+					reservationManager: {
+						type: Object
+					},
+
+					currentUser: {
+						type: Object
+					},
+
+					isWorkspaceRoom: {
+						type: Boolean,
+						value: false
+					},
+
+					isMeetingRoom: {
+						type: Boolean,
+						value: false
+					},
+
+					disabled: {
+						type: Boolean,
+						value: false
+					},
+
+					active: {
+						type: Boolean,
+						value: false,
+						observer: "_handleActiveChanged"
+					},
+
+					hasBookedRooms: {
+						type: Boolean,
+						value: false
+					},
+
+					_day:  {
+						type: String
+					},
+
+					_partOfDay: {
+						type: String
+					},
+
+					_criteriaWhenType: {
+						type: String,
+						observer: "_handleCriteriaWhenTypeChanged"
+					},
+
+					_showBasicButton: {
+						type: Boolean,
+						value: false
+					}
+				},
+
+				observers: [
+					"_computeWorkspaceDateTime(_day, _partOfDay)",
+					"_handleCurrentRoomTypeChanged(isWorkspaceRoom, isMeetingRoom)"
+				],
+
+				refresh: function() {
+					if(!this.active) {
+						return;
+					}
+					this.debounce(
+						"room-criteria-when-refresh", 
+						this._doRefresh
+					);
+				},
+
+				_doRefresh: function() {
+					this._criteriaWhenType = null;
+					this._showBasicButton = this.isWorkspaceRoom;
+					if (this.isMeetingRoom) {
+						this._criteriaWhenType = TricompRoomCriteriaWhenConstants.ADVANCED;
+					} else if (this.isWorkspaceRoom) {
+						if (this._isRecurringOrAllDaySet()) {
+							this._criteriaWhenType = TricompRoomCriteriaWhenConstants.ADVANCED;
+						} else {
+							var basicDate = this._convertToBasicDate(
+								this.reservationManager.reservationStartTime,
+								this.reservationManager.reservationEndTime
+							);
+							if (basicDate.match || !this.hasBookedRooms) {
+								this._criteriaWhenType = TricompRoomCriteriaWhenConstants.BASIC;
+							} else {
+								this._criteriaWhenType = TricompRoomCriteriaWhenConstants.ADVANCED;
+							}
+						}
+					}
+				},
+
+				_isRecurringOrAllDaySet: function() {
+					return (
+						this._isRecurringMeeting(this.reservationManager) || 
+						(
+							this.reservationManager.reservationEditMode != "Occurrence" && this.reservationManager.reservationEditMode != "Series")
+						)	||
+						(
+							this.reservationManager.reservationAllDay && 
+							this.hasBookedRooms
+						);
+				},
+
+				_computeWorkspaceDateTime: function(dayOption, partOfDayOption) {
+					if (this.reservationManager == null || !this.active) {
+						return;
+					}
+					this.debounce(
+						"_computeWorkspaceDateTime", 
+						this._doComputeWorkspaceDateTime.bind(this, dayOption, partOfDayOption)
+					);
+				},
+				
+				_doComputeWorkspaceDateTime: function(dayOption, partOfDayOption) {
+					var timezone = this.currentUser._TimeZoneId;
+					if (this._criteriaWhenType == TricompRoomCriteriaWhenConstants.BASIC) {
+						var startMo = moment().tz(timezone);
+						var endMo;
+
+						if (dayOption == "tomorrow") {
+							startMo = startMo.add(1, 'days');
+						}
+
+						if (partOfDayOption == "all-day") {
+							startMo.set(TricompRoomCriteriaWhenConstants.START_HOUR);
+							endMo = startMo.clone().set(TricompRoomCriteriaWhenConstants.END_HOUR);
+						} else if (partOfDayOption == "am") {
+							startMo.set(TricompRoomCriteriaWhenConstants.START_HOUR);
+							endMo = startMo.clone().set(TricompRoomCriteriaWhenConstants.MID_HOUR);
+						} else if (partOfDayOption == "pm") {
+							startMo.set(TricompRoomCriteriaWhenConstants.MID_HOUR);
+							endMo = startMo.clone().set(TricompRoomCriteriaWhenConstants.END_HOUR);
+						}
+						this.fire(
+							"change-start-and-end-time", 
+							{
+								reservationStartTime: startMo.toISOString(), 
+								reservationEndTime: endMo.toISOString()
+							}
+						);
+					}
+				},
+
+				_handleActiveChanged: function(newActive) {
+					if (newActive) {
+						this.refresh();
+					}
+				},
+
+				_handleCriteriaWhenTypeChanged: function(newCriteriaWhenType) {
+					if (this.reservationManager == null || !this.active) {
+						return;
+					}
+					this.debounce(
+						"_handleCriteriaWhenTypeChanged", 
+						this._doHandleCriteriaWhenTypeChanged.bind(this, newCriteriaWhenType)
+					);
+				},
+
+				_doHandleCriteriaWhenTypeChanged: function(newCriteriaWhenType) {
+					if (newCriteriaWhenType == TricompRoomCriteriaWhenConstants.BASIC) {
+						if (this.reservationManager.reservationAllDay && !this.hasBookedRooms) {
+							this.fire(
+								"change-all-day", 
+								{
+									reservationAllDay: false,
+									completeCallback: this.refresh.bind(this)
+								}
+							);
+						} else {
+							var basicDate = this._convertToBasicDate(
+								this.reservationManager.reservationStartTime,
+								this.reservationManager.reservationEndTime
+							);
+							if (basicDate.match) {
+								this._day = basicDate.day;
+								this._partOfDay = basicDate.partOfDay;
+							} else {
+								this._day = "today";
+								this._partOfDay = "all-day";
+								this._computeWorkspaceDateTime(this._day, this._partOfDay);
+							}
+						}
+					}
+				},
+
+				_handleOpenCriteriaWhenAdvanced: function(e) {
+					this._criteriaWhenType = TricompRoomCriteriaWhenConstants.ADVANCED;
+				},
+
+				_handleOpenCriteriaWhenBasic: function(e) {
+					this._criteriaWhenType = TricompRoomCriteriaWhenConstants.BASIC;
+				},
+
+				_getBasicType: function() { 
+					return TricompRoomCriteriaWhenConstants.BASIC;
+				},
+
+				_getAdvancedType: function() { 
+					return TricompRoomCriteriaWhenConstants.ADVANCED;
+				},
+				
+				_computeBasicDayOption: function(reservationStartTime, reservationEndTime, timezone) {
+					var todayMo = moment().tz(timezone).set(TricompRoomCriteriaWhenConstants.ZERO_HOUR);
+					var tomorrowMo = todayMo.clone().tz(timezone).add(1, 'days');
+					
+					var reservationStartTimeMo = moment(reservationStartTime)
+							.tz(timezone).set(TricompRoomCriteriaWhenConstants.ZERO_HOUR);
+					var reservationEndTimeMo = moment(reservationEndTime)
+							.tz(timezone).set(TricompRoomCriteriaWhenConstants.ZERO_HOUR);
+
+					if (reservationStartTimeMo.isSame(todayMo) && reservationEndTimeMo.isSame(todayMo)) {
+						return "today";
+					} else if (reservationStartTimeMo.isSame(tomorrowMo) && reservationEndTimeMo.isSame(tomorrowMo)) {
+						return "tomorrow";
+					} else {
+						return null;
+					}
+				},
+
+				_computeBasicPartOfDayOption: function(reservationStartTime, reservationEndTime, timezone) {
+					var reservationStartTimeMo = moment(reservationStartTime).tz(timezone);
+					var reservationEndTimeMo = moment(reservationEndTime).tz(timezone);
+
+					var startHourMo = reservationStartTimeMo.clone()
+							.tz(timezone).set(TricompRoomCriteriaWhenConstants.START_HOUR);
+					var midHourMo = reservationStartTimeMo.clone()
+							.tz(timezone).set(TricompRoomCriteriaWhenConstants.MID_HOUR);
+					var endHourMo = reservationStartTimeMo.clone()
+							.tz(timezone).set(TricompRoomCriteriaWhenConstants.END_HOUR);
+
+					if (reservationStartTimeMo.isSame(startHourMo) && reservationEndTimeMo.isSame(endHourMo)) {
+						return "all-day";
+					} else if (reservationStartTimeMo.isSame(startHourMo) && reservationEndTimeMo.isSame(midHourMo)) {
+						return "am";
+					} else if (reservationStartTimeMo.isSame(midHourMo) && reservationEndTimeMo.isSame(endHourMo)) {
+						return "pm";
+					} else {
+						return null;
+					}
+				},
+
+				_convertToBasicDate: function(reservationStartTime, reservationEndTime) {
+					var day = null;
+					var partOfDay = null;
+					var timezone = this.currentUser != null ? this.currentUser._TimeZoneId : "";
+
+					day = this._computeBasicDayOption(reservationStartTime, reservationEndTime, timezone);
+					if (day != null) {
+						partOfDay = this._computeBasicPartOfDayOption(reservationStartTime, reservationEndTime, timezone);
+					}
+
+					return {
+						match: day != null && partOfDay != null, 
+						day: day,
+						partOfDay: partOfDay
+					};
+				},
+
+				_handleCurrentRoomTypeChanged: function(isWorkspaceRoom, isMeetingRoom) {
+					if (this.active) {
+						this.refresh();
+					}
+				}
+			});
+		})();
+	</script>
+</dom-module>

@@ -1,0 +1,251 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017-2018 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triblock-responsive-layout/triblock-responsive-layout.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+
+<link rel="import" href="../paper-radio-button/paper-radio-button.html">
+<link rel="import" href="../paper-radio-group/paper-radio-group.html">
+
+<link rel="import" href="tricomp-profile-card.html">
+<link rel="import" href="../triblock-search-popup/triblock-search-popup.html">
+
+<link rel="import" href="../triapp-people-search/triapp-people-search.html">
+
+<dom-module id="tricomp-request-who">
+	<template>
+		<style>
+
+			.header {
+				font-weight: lighter;
+				padding-bottom: 5px;
+			}
+
+			paper-radio-group {
+				@apply(--layout);
+				@apply(--layout-vertical);
+				margin-bottom: 1em;
+				padding: 0.5em 1em;
+			}
+
+			paper-radio-button {
+				--paper-radio-button-size: 24px;
+				padding: 0.5em 0;
+			}
+
+			.box-profile {
+				@apply(--layout);
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+			}
+
+			triblock-profile-card {
+				flex: 1;
+			}
+
+			.search-icon {
+				border-left: 1px solid var(--ibm-gray-10);
+				margin-top: 15px;
+				padding: 4px 4px 4px 11px;
+				height: 32px;
+				width: 43px;
+			}
+
+			.radio-group-wrapper {
+				@apply(--layout);
+				@apply(--layout-horizontal);
+			}
+
+			.radio-space {
+				height: 50px;
+			}
+
+			.search-icon-container {
+				@apply(--layout-end-justified);
+			}
+
+			.radio-group {
+				@apply(--layout-flex-5);
+			}
+
+			.radio-group-space {
+				@apply(--layout-flex-2);
+				@apply(--layout);
+				@apply(--layout-vertical);
+			}
+
+			.search-icon-container{
+				@apply(--layout);
+				@apply(--layout-end-justified);
+			}
+
+		</style>
+
+		<triplat-ds id="requestForTypeDS" name="requestForType" data="{{requestForTypes}}" disable></triplat-ds>
+
+		<triplat-ds id="lookupPeople" name="lookupPeople" data="{{_lookupPeople}}">
+			<triplat-ds-instance instance-id="[[request.requestedFor.id]]"></triplat-ds-instance>
+		</triplat-ds>
+
+		<div class="header tri-h3" aria-label="Who is this request for?">Who is this request for?</div>
+		<div class="radio-group-wrapper">
+			<paper-radio-group class="radio-group" id="radioGroup" attr-for-selected="id" selected="{{request.requestIsFor.id}}" on-iron-select="_onSelect" aria-label="Who is this request for?">
+				<template is="dom-repeat" items="[[requestForTypes]]" as="requestForType">
+					<paper-radio-button id="[[requestForType._id]]" name="[[requestForType.value]]" index="{{index}}" on-tap="_selectSomeone" aria-label$="[[_computeRadioAriaLabel(index, requestForType.value, request.requestedBy.id, request.requestedFor.id, _lookupPeople.name)]]">
+						<template is="dom-if" if="[[!_someoneSelected(index, request.requestedBy.id, request.requestedFor.id)]]">[[requestForType.value]]</template>
+
+						<template is="dom-if" if="[[_someoneSelected(index, request.requestedBy.id, request.requestedFor.id)]]">
+							<div class="box-profile">
+								<tricomp-profile-card data="[[_lookupPeople]]" search-value="[[_lookupPeople.name]]"></tricomp-profile-card>
+							</div>
+						</template>
+					</paper-radio-button>
+				</template>
+			</paper-radio-group>
+			<div class="radio-group-space">
+				<div class="radio-space"></div>
+				<div class="search-icon-container" on-tap="_selectSomeone" index="1">
+					<template is="dom-if" if="[[_someoneSelected(1, request.requestedBy.id, request.requestedFor.id)]]">
+						<paper-icon-button icon="ibm-glyphs:search" class="search-icon" primary></paper-icon-button>
+					</template>
+				</div>
+			</div>
+		</div>
+
+		<triapp-people-search id="peopleSearch"
+							title="[[_searchTitle]]"
+							placeholder="[[_searchPlaceholder]]"
+							on-person-selected="_personSelected">
+		</triapp-people-search>
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-request-who",
+
+			properties: {
+				request: Object
+			},
+
+			observers: [
+				'_observeRequestedFor(request.requestedFor.*)'
+			],
+
+			listeners: {
+				'peopleSearch.iron-overlay-closed': '_popupClose'
+			},
+
+			attached: function() {
+				var __dictionary__title = "Who is this request for?";
+				var __dictionary__placeholder = "Search using a person’s name";
+
+				this.set("_searchTitle", __dictionary__title);
+				this.set("_searchPlaceholder", __dictionary__placeholder);
+
+				Polymer.RenderStatus.afterNextRender(this, function() {
+					this.$.requestForTypeDS.disable = false;
+				});
+			},
+
+			_onSelect : function(e) {
+				var requestIsFor = e.detail.item.name;
+				this.set("request.requestIsFor.value", requestIsFor);
+
+				// Handle select "Me" radio
+				var radioIndex = this.$.radioGroup.indexOf(e.detail.item);
+				if (radioIndex == 0 
+					&& this.request.requestedFor.id != this.request.requestedBy.id) {
+					this._setRequestedFor(this.request.requestedBy.id, this.request.requestedBy.value);
+					this.fire("request-for-revert-to-self");
+				}
+			},
+
+			_setRequestedFor: function(id, value) {
+				var finalPerson = {
+					id: id,
+					value: value
+				};
+
+				// Update the request
+				this.set('request.requestedFor', finalPerson);
+			},
+
+			// Check if it is someone else
+			_isSomeElse: function(index) {
+				return index == 1;
+			},
+
+			// Open popup when select someone else radio
+			_selectSomeone: function(e) {
+				if (this._isSomeElse(e.currentTarget.index) || this._isSomeElse(e.currentTarget.getAttribute('index'))) {
+					// Open search popup
+					this.$.peopleSearch.open();
+				}
+			},
+
+			// Check if the request is for someone else
+			_someoneSelected: function(index, requestedBy, requestedFor) {
+				return ((this._isSomeElse(index)) && (requestedBy !== requestedFor));
+			},
+
+			// Listener for popup close
+			_popupClose: function() {
+				// Check if the person selected is equal to the person that requested the service
+				if (this.request.requestedBy.id == this.request.requestedFor.id) {
+					this._selectRadio(0);
+				}
+			},
+
+			// Update the request with the new person
+			_personSelected: function(e) {
+				var newPerson = e.detail;
+
+				// Set New Person Floor: The floor that comes from `triapp-people-search` is a STRING_WITH_ID type.
+				var floor = newPerson.floor;
+				newPerson.floorID = floor.id;
+				newPerson.floor = floor.value;
+
+				// Set New Person Space: The space that comes from `triapp-people-search` have a different name.
+				newPerson.spaceID = newPerson.roomId;
+				newPerson.space = newPerson.room;
+
+				var requestedBy = this.request.requestedBy;
+
+				// Check if the person selected is equal to the person that requested the service
+				if (requestedBy.id == newPerson._id) {
+					this._selectRadio(0);
+				} else {
+					//for someone else
+					if (this._isSwitchingFromMeToSomeoneElse(newPerson)) {
+						this.fire("switching-from-me-to-someone-else");
+					}
+					this._setRequestedFor(newPerson._id, newPerson.name);
+					this.fire("request-for-someone-else", {person: newPerson});
+				}
+			},
+
+			_isSwitchingFromMeToSomeoneElse: function(newPerson) {
+				return this.request.requestedFor.id == this.request.requestedBy.id
+					&& newPerson._id != this.request.requestedFor.id;
+			},
+
+			// Select the specified index
+			_selectRadio: function(index) {
+				this.$.radioGroup.selectIndex(index);
+			},
+
+			// Observer for requestedFor
+			_observeRequestedFor: function() {
+				this.fire('field-changed');
+			},
+
+			_computeRadioAriaLabel: function(index, requestedForValue, requestedById, requestedForId, selectedPerson) {
+				if (this._isSomeElse(index) && this._someoneSelected (index, requestedById, requestedForId)) {
+					return selectedPerson;
+				} else {
+					return requestedForValue;
+				}
+			}
+
+		});
+	</script>
+</dom-module>

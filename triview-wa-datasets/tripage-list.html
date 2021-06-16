@@ -1,0 +1,371 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<!-- Polymer Paper Components -->
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-header-panel/paper-header-panel.html">
+<link rel="import" href="../paper-toolbar/paper-toolbar.html">
+<link rel="import" href="../paper-tooltip/paper-tooltip.html">
+
+<!-- Polymer Iron Components -->
+<link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../iron-list/iron-list.html">
+<link rel="import" href="../iron-media-query/iron-media-query.html">
+
+<!-- TRIRIGA Block Components -->
+<link rel="import" href="../triblock-table/triblock-table.html">
+
+<!-- TRIRIGA Platform Components -->
+<link rel="import" href="../triplat-icon/ibm-icons.html">
+<link rel="import" href="../triplat-datetime-picker/triplat-datetime-picker.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-search-input/triplat-search-input.html">
+<link rel="import" href="../triplat-loading-indicator/triplat-loading-indicator.html">
+<link rel="import" href="../triplat-signout-button/triplat-signout.html">
+
+<!-- Local Components -->
+<link rel="import" href="tricomp-card-and-table-view.html">
+<link rel="import" href="tricomp-array-comparator.html">
+<link rel="import" href="tricomp-dataset-card.html">
+<link rel="import" href="tricomp-importance-icon-button-styles.html">
+
+<dom-module id="tripage-list">
+
+	<template>
+
+		<style include="tricomp-importance-icon-button-styles"></style>
+		<style>
+			:host {
+				@apply(--layout-vertical);
+			}
+
+			.data-content {
+				@apply(--layout-flex);
+				@apply(--layout-vertical);
+			}
+
+			.data-card-and-table-view {
+				@apply(--layout-flex);
+				@apply(--layout-vertical);
+			}
+
+			.data-cards {
+				padding: 0 5px;
+				@apply(--layout-flex);
+				@apply(--layout-scroll);
+				@apply(--layout-horizontal);
+				@apply(--layout-start);
+				@apply(--layout-center-justified);
+				@apply(--layout-start-aligned);
+				@apply(--layout-wrap);
+			}
+			.data-card {
+				flex: 1 1 350px;
+				max-width: 500px;
+			}
+
+			.data-header {
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+				margin: 10px 0;
+			}
+			.data-header-icon {
+				flex-shrink: 0;
+				padding: 8px;
+				height: 44px;
+				width: 44px;
+				margin: 0 3px;
+			}
+
+			.data-table-container {
+				@apply(--layout-flex);
+				@apply(--layout-vertical);
+			}
+			.data-table {
+				@apply(--layout-flex);
+			}
+			.data-table-col-important {
+				--triblock-table-column-fixed-width: 44px;
+			}
+			.data-table-col-export {
+				--triblock-table-column-fixed-width: 65px;
+			}
+			.data-table-importance-icon {
+				padding: 8px;
+				height: 44px; width: 44px;
+			}
+			.data-table-item-description {
+				margin-bottom: 5px;
+			}
+
+			.divider-line {
+				border-left: 1px solid var(--tri-primary-content-accent-color);
+				height: 24px;
+			}
+
+			.empty-data-message {
+				@apply(--layout-vertical);
+				@apply(--layout-center-center);
+				@apply(--layout-flex);
+				text-align: center;
+				padding: 10px 20px;
+			}
+			.empty-data-message > * {
+				text-align: center;
+				margin: 10px 0;
+			}
+			.empty-data-message-info-icon {
+				height: 32px;
+				width: 32px;
+			}
+
+			.export-icon {
+				height: 44px; width: 44px;
+			}
+
+			.header-icon {
+				color: var(--tri-header-color);
+				--paper-icon-button-ink-color: var(--tri-header-color);
+				padding: 8px;
+				height: 44px;
+				width: 44px;
+				margin: 0 5px;
+			}
+			.header-title {
+				@apply(--layout-flex);
+				font-size: 18px;
+				font-weight: bold;
+				padding: 0 20px;
+				@apply(--paper-font-common-nowrap);
+			}
+			.header-title-ibm {
+				font-weight: 100;
+			}
+
+			[hide-from-screen-width] {
+				display: none !important;
+			}
+
+			label {
+				margin-right: 10px;
+			}
+
+			.list {
+				@apply(--layout-vertical);
+				@apply(--layout-flex);
+			}
+
+			paper-header-panel {
+				@apply(--layout-flex);
+			}
+			.paper-header {
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+				height: 50px;
+				color: var(--tri-header-color);
+				background-color: var(--tri-header-background-color);
+			}
+
+			.search-input {
+				@apply(--layout-flex);
+				margin: 0 12px;
+			}
+		</style>
+
+		<triplat-ds name="currentUser" data="{{_currentUser}}"></triplat-ds>
+
+		<triplat-ds name="waDatasets" data="{{_waDatasetsUnfiltered}}" loading="{{_waDatasetsLoading}}"></triplat-ds>
+		<triplat-ds name="myImportantWADatasets" data="{{_importantWADatasets}}" loading="{{_importantWADatasetsLoading}}">
+			<triplat-ds-context name="currentUser" context-id="[[_currentUser._id]]"></triplat-ds-context>
+		</triplat-ds>
+		<tricomp-array-comparator
+				source="{{_waDatasetsUnfiltered}}"
+				compare-to="{{_importantWADatasets}}"
+				match-flag="isImportant"
+				result="{{_waDatasetsWithImportanceFlag}}">
+		</tricomp-array-comparator>
+		<triplat-query data="{{_waDatasetsWithImportanceFlag}}" filtered-data-out="{{_waDatasetsFiltered}}">
+			<triplat-query-sort name="{{sortProperty}}" desc="{{sortDescending}}"></triplat-query-sort>
+			<triplat-query-filter name="isImportant" operator="equals" value="{{_computeIsImportantFilterValue(_importantDatasetsSwitchActive)}}" ignore-if-blank></triplat-query-filter>
+			<triplat-query-and></triplat-query-and>
+			<triplat-query-open-paren></triplat-query-open-paren>
+			<triplat-query-filter name="name" operator="contains" value="{{searchValue}}" ignore-if-blank></triplat-query-filter>
+			<triplat-query-or></triplat-query-or>
+			<triplat-query-filter name="description" operator="contains" value="{{searchValue}}" ignore-if-blank></triplat-query-filter>
+			<triplat-query-close-paren></triplat-query-close-paren>
+		</triplat-query>
+
+		<iron-media-query query="(min-width: 800px)" query-matches="{{_hideDescriptionInRowDetails}}"></iron-media-query>
+		
+		<triplat-loading-indicator show="[[_showLoadingIndicator(_waDatasetsLoading, _importantWADatasetsLoading)]]"></triplat-loading-indicator>
+
+		<div class="data-content" hidden$="[[!_waDatasetsUnfiltered.length]]">
+
+			<div class="data-header">
+				<triplat-search-input class="search-input" placeholder="Search" search-icon-precede="true" value="{{searchValue}}"></triplat-search-input>
+				<div class="divider-line"></div>
+				<paper-icon-button id="importanceFilterToggleButton" noink class="importance-icon data-header-icon" icon="[[_computeImportanceIcon(_importantDatasetsSwitchActive)]]" active="{{_importantDatasetsSwitchActive}}" toggles></paper-icon-button>
+				<paper-tooltip for="importanceFilterToggleButton" fit-to-visible-bounds position="bottom" offset="5">[[_computeImportanceFilterButtonTooltip(_importantDatasetsSwitchActive)]]</paper-tooltip>
+				<div class="divider-line"></div>
+				<paper-icon-button id="layoutToggleButton" noink primary class="data-header-icon" icon="{{_computeLayoutIcon(_currentLayout)}}" on-tap="_onLayoutToggleTap"></paper-icon-button>
+				<paper-tooltip for="layoutToggleButton" fit-to-visible-bounds position="bottom" offset="5">[[_computeLayoutToggleButtonTooltip(_currentLayout)]]</paper-tooltip>
+			</div>
+
+			<tricomp-card-and-table-view id="dataCardAndTableView" class="data-card-and-table-view" current-layout="{{_currentLayout}}" responsive-width="0px">
+				<div table-container class="data-table-container">
+					<triblock-table class="data-table" data="{{_waDatasetsFiltered}}" fixed-header sort-property="{{sortProperty}}" sort-descending="{{sortDescending}}" remove-row-focus-and-hover>
+						<triblock-table-column property="isImportant" class="data-table-col-important" merge-with-previous-column remove-default-cell-padding>
+							<template>
+								<paper-icon-button noink tabindex$="[[tabIndex]]" class="importance-icon data-table-importance-icon" icon="[[_computeImportanceIcon(item.isImportant)]]" important$="[[item.isImportant]]" on-tap="_onToggleDatasetImportanceTap"></paper-icon-button>
+							</template>
+						</triblock-table-column>
+						<triblock-table-column title="Name" property="name" sortable initial-sort></triblock-table-column>
+						<triblock-table-column title="Description" property="description" class="wide" sortable hide-on-screen-width="800px"></triblock-table-column>
+						<triblock-table-column title="Export" class="data-table-col-export">
+							<template>
+								<paper-icon-button noink tabindex$="[[tabIndex]]" primary class="export-icon" icon="ibm:upload-export" on-tap="_onExportDatasetTap"></paper-icon-button>
+							</template>
+						</triblock-table-column>
+
+						<triblock-table-row-detail>
+							<template>
+								<div hidden$="[[!item.description]]" hide-from-screen-width$="[[_hideDescriptionInRowDetails]]" class="data-table-item-description">[[item.description]]</div>
+								<div>
+									<div>
+										<label>Last Export:</label><span>[[_computeLastExportDisplayValue(item.lastExportedDateTime, _currentUser)]]</span>
+									</div>
+									<div>
+										<label>Exported By:</label><span>[[_computeLastExportedByDisplayValue(item.lastExportedBy)]]</span>
+									</div>
+									<div>
+										<label>Number of Records Exported:</label><span>[[_computeNumberOfRecordsExportedDisplayValue(item.lastExportedCount)]]</span>
+									</div>
+								</div>
+							</template>
+						</triblock-table-row-detail>
+					</triblock-table>
+				</div>
+
+				<div card-container class="data-cards">
+					<template is="dom-repeat" items="{{_waDatasetsFiltered}}">
+						<tricomp-dataset-card class="data-card" item="{{item}}" last-exported-by-display-value="[[_computeLastExportedByDisplayValue(item.lastExportedBy)]]" last-export-display-value="[[_computeLastExportDisplayValue(item.lastExportedDateTime, _currentUser)]]"></tricomp-dataset-card>
+					</template>
+				</div>
+			</tricomp-card-and-table-view>
+		</div>
+
+		<template is="dom-if" if="[[!_waDatasetsUnfiltered.length]]">
+			<div class="empty-data-message">
+				<iron-icon class="empty-data-message-info-icon" icon="ibm:status-info" info></iron-icon>
+				<div>No Watson Analytic data sets have been created.</div>
+			</div>
+		</template>
+
+	</template>
+
+	<script>
+		Polymer({
+
+			is: "tripage-list",
+			behaviors: [ Polymer.IronResizableBehavior ],
+
+			observers: [ "_onLayoutChange(_currentLayout)" ],
+
+			get _dateTimePicker() {
+				var dateTimePicker = document.createElement("triplat-datetime-picker");
+				delete this._dateTimePicker;
+				return this._dateTimePicker = dateTimePicker;
+			},
+
+			_computeIsImportantFilterValue: function(importantDatasetsSwitchActive) {
+				return importantDatasetsSwitchActive ? true : "";
+			},
+
+			_computeImportanceFilterButtonTooltip: function(importantDatasetsSwitchActive) {
+				var __dictionary__importanceFilterActiveTooltip = "Show all datasets";
+				var __dictionary__importanceFilterInactiveTooltip = "Show only important datasets";
+				return (importantDatasetsSwitchActive) ? __dictionary__importanceFilterActiveTooltip : __dictionary__importanceFilterInactiveTooltip;
+			},
+
+			_computeImportanceIcon: function(important) {
+				return important ? "ibm:pinned" : "ibm:pin";
+			},
+
+			_computeLastExportedByDisplayValue: function(lastExportedBy) {
+				return (lastExportedBy && lastExportedBy.value) ? lastExportedBy.value : "N/A";
+			},
+
+			_computeLastExportDisplayValue: function(lastExportedDateTime, currentUser) {
+				var __dictionary__neverString = "Never";
+				var returnVal;
+				if (lastExportedDateTime) {
+					if (currentUser && currentUser._TimeZoneId && currentUser._DateTimeFormat) {
+						var dateTimePicker = this._dateTimePicker;
+						dateTimePicker.value = lastExportedDateTime;
+						returnVal = dateTimePicker.formatDate(lastExportedDateTime, currentUser._DateTimeFormat, currentUser._TimeZoneId);
+					}
+				} else {
+					returnVal = __dictionary__neverString;
+				}
+				return returnVal;
+			},
+
+			_computeLayoutIcon: function(currentLayout) {
+				return (currentLayout == "table") ? "ibm:tile-tiles-tileview" : "ibm:spreadsheet-listview";
+			},
+
+			_computeLayoutToggleButtonTooltip: function(currentLayout) {
+				var __dictionary__currentLayoutTableTooltip = "Switch to card layout";
+				var __dictionary__currentLayoutCardsTooltip = "Switch to table layout";
+				return (currentLayout == "table") ? __dictionary__currentLayoutTableTooltip : __dictionary__currentLayoutCardsTooltip;
+			},
+
+			_computeNumberOfRecordsExportedDisplayValue: function(lastExportedCount) {
+				return (lastExportedCount) ? lastExportedCount : "N/A";
+			},
+
+			_onExportDatasetTap: function(e) {
+				e.stopPropagation();
+				var item = e.model.item;
+
+				if (item && item.hasOwnProperty("_id")) {
+					var id = item._id;
+					this.fire("action-dataset-export", { 'datasetId' : id });
+				} else {
+					console.error("Could not complete dataset-export action.");
+				}
+			},
+
+			_onLayoutChange: function(layout) {
+				// notify resize when switching layouts (so iron-lists can resize themselves)
+				this.notifyResize();
+			},
+
+			_onLayoutToggleTap: function() {
+				this.$.dataCardAndTableView.toggleLayout();
+			},
+
+			_onSignoutTap: function() {
+				if (!this._triplatSignout) this._triplatSignout = document.createElement("triplat-signout");
+				this._triplatSignout.signout();
+			},
+
+			_onToggleDatasetImportanceTap: function(e) {
+				e.stopPropagation();
+				var item = e.model.item;
+
+				if (item && item.hasOwnProperty("_id") && item.hasOwnProperty("isImportant")) {
+					var id = item._id;
+					var isImportant = item.isImportant;
+					this.fire("action-dataset-set-importance", { "datasetId": id, "isImportant": !isImportant });
+				} else {
+					console.error("Could not complete dataset-importance-toggle action.");
+				}
+			},
+
+			_showLoadingIndicator: function(waDatasetsLoading, importantWADatasetsLoading) {
+				return waDatasetsLoading || importantWADatasetsLoading;
+			}
+		});
+	</script>
+</dom-module>

@@ -1,0 +1,402 @@
+<link rel="import" href="../triplat-routing/triplat-routing.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-date-picker/triplat-date-picker.html">
+
+<link rel="import" href="../triblock-page-container-behavior/triblock-page-container-behavior.html">
+
+<link rel="import" href="../tri-loading-indicator/tri-loading-indicator.html">
+
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icons/hardware-icons.html">
+<link rel="import" href="../iron-icons/maps-icons.html">
+<link rel="import" href="../iron-input/iron-input.html">
+<link rel="import" href="../iron-media-query/iron-media-query.html">
+<link rel="import" href="../iron-localstorage/iron-localstorage.html">
+<link rel="import" href="../paper-badge/paper-badge.html">
+<link rel="import" href="../paper-button/paper-button.html">
+
+<link rel="import" href="../triview-space-assessment/tricomp-search-input.html">
+
+<link rel="import" href="tripage-assessments-pending-review.html">
+<link rel="import" href="tripage-assessments-in-progress.html">
+<link rel="import" href="tripage-assessments-archived.html">
+	
+<dom-module id="tripage-my-space-assessments">
+
+	<style>
+
+		:host {
+			@apply(--layout-fit);
+			@apply(--layout-vertical);
+		}
+
+		.header {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			padding: 20px;
+		}
+
+		.action-button-container {
+			padding-left: 20px;
+			margin-left: 20px;
+			border-left: 1px solid var(--tri-primary-content-accent-color);
+			@apply(--layout-horizontal);
+			@apply(--layout-center-center);
+			align-content: flex-start;
+		}
+
+		.action-button {
+			@apply(--layout-vertical);
+			@apply(--layout-self-center);
+			@apply(--layout-center-justified);
+			@apply(--tri-active-button);
+			height: 44px;
+			font-size: 14px;
+			text-transform: none;
+			font-weight: bold;
+			padding-left: 18px;
+			padding-right: 18px;
+			margin-right: 0;
+		}
+
+		.container {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			min-height: 0;
+		}
+
+		.layout-button {
+			@apply(--layout-vertical);
+			@apply(--layout-center-center);
+			border-right: 1px solid var(--tri-primary-content-accent-color);
+			height: 50px;
+			color: #4178BE;
+			padding-left: 0px;
+			padding-right: 20px;
+			cursor: pointer;
+			margin-right: 20px;
+		}
+
+		.layout-icon {
+			width: 40px;
+			height: 40px;
+		}
+
+		.search-container {
+			@apply(--layout-horizontal);
+			@apply(--layout-flex);
+			@apply(--layout-center);
+			min-width: 0;
+		}
+
+		#vertical-tabs {
+			@apply(--layout-block);
+			@apply(--layout-vertical);
+			background-color: var(--tri-primary-color);
+			min-width: 80px;
+			text-align: center;
+			overflow-x: hidden;
+			word-wrap: normal;
+		}
+
+		#vertical-tabs > div {
+			@apply(--layout-vertical);
+			@apply(--layout-center);
+			color: white;
+			font-size: 14px;
+			cursor: pointer;
+			padding: 16px 10px 10px 10px;
+		}
+
+		#vertical-tabs triplat-icon .icon {
+			height: 44px;
+			width: 44px;
+		}
+
+		#vertical-tabs div.iron-selected {
+			background-color: var(--tri-primary-dark-color);
+		}
+
+		triplat-route-selector, iron-pages {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+		}
+
+		triplat-route-selector {
+			min-width: 0;
+		}
+
+		iron-pages {
+			@apply(--layout-relative);
+		}
+
+		tricomp-search-input {
+			flex-shrink: 1;
+		}
+
+		.badge {
+   			position: relative;
+		}
+		
+		.badge[data-badge]:after {
+   			content: attr(data-badge);
+   			position: absolute;
+   			top: -7px;
+   			right: -7px;
+   			font-size: .7em;
+			background-color: var(--tri-primary-dark-color);
+   			color: white;
+   			width: 23px;
+   			height: 23px;
+   			text-align: center;
+   			line-height: 23px;
+   			border-radius: 50%;
+		}
+
+		#vertical-tabs .iron-selected .badge[data-badge]:after {
+			background-color: var(--tri-primary-color);
+		}
+
+		.pending-review-badge[data-badge]:after {
+   			content: attr(data-badge);
+   			position: absolute;
+   			top: -7px;
+   			right: -7px;
+   			font-size: .7em;
+			background-color: #ff4081;
+   			color: white;
+   			width: 23px;
+   			height: 23px;
+   			text-align: center;
+   			line-height: 23px;
+   			border-radius: 50%;
+		}
+
+	</style>
+
+	<template>
+
+		<iron-media-query query="(min-width: 900px)" query-matches="{{_largeScreenWidth}}"></iron-media-query>
+
+		<iron-localstorage id="layoutPreferenceLocalStorage" name="layoutPreference" value="{{layoutPreference}}" use-raw on-iron-localstorage-load-empty="_initializeLayoutPreference"></iron-localstorage>
+
+		<triplat-route id="pendingReviewRoute" name="pendingReviewRoute" path="/pendingReview"></triplat-route>
+		<triplat-route id="inProgressRoute" name="inProgressRoute" path="/inProgress"></triplat-route>
+		<triplat-route id="archivedRoute" name="archivedRoute" path="/archived"></triplat-route>
+		
+		<div class="header">
+			<div class="search-container">
+				<div id="layoutButtons" class="layout-button">
+					<triplat-icon id="tableLayoutButton" class="layout-icon" icon="spreadsheet-listview" on-tap="_handleTableLayoutButtonTap" hidden$="{{_tableLayout}}" tab-index="0"></triplat-icon>
+					<triplat-icon id="cardLayoutButton" class="layout-icon" icon="spaces" on-tap="_handleCardLayoutButtonTap" hidden$="{{!_tableLayout}}" tab-index="0"></triplat-icon>
+
+				</div>
+				<tricomp-search-input value="{{_searchTerms}}" aria-labelledby="searchInput"></tricomp-search-input>
+			</div>
+			<div class="action-button-container" hidden$="{{!createPermission}}">
+				<paper-button class="action-button" on-tap="_handleNewButtonTapped" role="button" aria-labelledby="newAssessment">New Assessment</paper-button>
+			</div>
+		</div>
+
+		<div class="container" role="main">
+			<iron-selector id="vertical-tabs" attr-for-selected="route-id" selected="{{currentSubrouteId}}" role="region" aria-labelledby="verticalTab">
+				<div route-id="inProgressRoute" on-tap="_openInProgressPage">
+					<triplat-icon id="inProgressIcon" class$="{{_inProgressClassStyle}}" icon="graph-in-progress" tab-index="-1" data-badge$="{{countInProgressAssessments}}"></triplat-icon>
+					<div tabindex="0">In Progress</div>
+				</div>
+				<div route-id="pendingReviewRoute" on-tap="_openPendingReviewsPage">
+					<triplat-icon id="reviewIcon" class$="{{_pendingReviewClassStyle}}" icon="review" tab-index="-1" data-badge$="{{countCompletedAssessments}}"></triplat-icon>
+					<div tabindex="0"><span>Pending<br>Review</span></div>
+				</div>
+				<div route-id="archivedRoute" on-tap="_openArchivedPage">
+					<triplat-icon class="icon" icon="archive-storage" tab-index="-1"></triplat-icon>
+					<div tabindex="0">Completed</div>
+				</div>
+			</iron-selector>
+			
+			<triplat-route-selector id="myAssessmentsRouteSelector" selected="{{currentSubrouteId}}">
+				<iron-pages>
+					<tripage-assessments-in-progress
+						id="inProgress"
+						route="inProgressRoute"
+						search-terms="{{_searchTerms}}"
+						table-layout="{{_tableLayout}}"
+						count-in-progress-assessments="{{countInProgressAssessments}}">
+					</tripage-assessments-in-progress>
+					<tripage-assessments-pending-review
+						default-route
+						id="pendingReview"
+						route="pendingReviewRoute"
+						search-terms="{{_searchTerms}}"
+						table-layout="{{_tableLayout}}"
+						count-completed-assessments="{{countCompletedAssessments}}">
+					</tripage-assessments-pending-review>
+					<tripage-assessments-archived
+						id="archived"
+						route="archivedRoute"
+						search-terms="{{_searchTerms}}"
+						table-layout="{{_tableLayout}}">
+					</tripage-assessments-archived>
+				</iron-pages>
+			</triplat-route-selector>
+			
+		</div>
+
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+
+		is: "tripage-my-space-assessments",
+
+		behaviors: [TriBlockPageContainerBehavior],
+
+		properties: {
+			_largeScreenWidth: {
+				type: Boolean,
+				value: false
+			},
+			_tableLayout : {
+				type : Boolean
+			},
+
+			createPermission: {
+				type: Boolean,
+				value: false
+			}, 
+			currentSubrouteId : {
+				type : String,
+				value : "pendingReviewRoute",
+				observer : "_handleCurrentSubrouteIdChange"
+			},
+			lastSubrouteId : {
+				type : String,
+				readOnly : true,
+				notify : true,
+				value : "pendingReviewRoute"
+			},
+
+			countCompletedAssessments: Number,
+			countInProgressAssessments: Number,
+
+			_inProgressClassStyle : {
+				type : String,
+				value : "icon"
+			},
+			
+			_pendingReviewClassStyle : {
+				type : String, 
+				value : "icon"
+			}
+		},
+
+		observers: [
+			"_handleScreenWidthChange(_largeScreenWidth)",
+			'_handleInProgressCountChanged(countInProgressAssessments)',
+			'_handlePendingReviewCountChanged(countCompletedAssessments)'
+		],
+
+		_handleInProgressCountChanged : function(countInProgressAssessments) {
+			if (countInProgressAssessments > 0) {
+				this.set('_inProgressClassStyle', "icon badge");
+			} else {
+				this.set('_inProgressClassStyle', "icon");
+			}
+		},
+
+		_handlePendingReviewCountChanged : function(countCompletedAssessments) {
+			if (countCompletedAssessments > 0) {
+				this.set('_pendingReviewClassStyle', "icon pending-review-badge");
+			} else {
+				this.set('_pendingReviewClassStyle', "icon");
+			}
+		},
+
+		refreshData : function() {
+			this.$.pendingReview.refreshData();
+			this.$.archived.refreshData();
+		},
+
+		_handleTableLayoutButtonTap: function(e) {
+			this._tableLayout = true;
+			this.set("layoutPreference", "table");
+			this._handleViewKeyPress(e);
+		},
+
+		_handleCardLayoutButtonTap: function(e) {
+			this._tableLayout = false;
+			this.set("layoutPreference", "card");
+			this._handleViewKeyPress(e);
+		},
+
+		_handleNewButtonTapped : function() {
+			this.fire('new-button-tapped');
+		},
+
+		_handleScreenWidthChange: function(isLarge) {
+			if (isLarge) {
+				if (this.$.layoutPreferenceLocalStorage) this.$.layoutPreferenceLocalStorage.reload();
+				if (this.layoutPreference == "table") {
+					this.set("_tableLayout", true);
+				} else if (this.layoutPreference == "card") {
+					this.set("_tableLayout", false);
+				} else {
+					this.set("_tableLayout", true);
+				}
+			} else {
+				this.set("_tableLayout", false);
+			}
+		},
+
+		_initializeLayoutPreference: function() {
+			this.set("layoutPreference", "card");
+		},
+
+		_handleCurrentSubrouteIdChange: function() {
+			if (this.currentSubrouteId && this.currentSubrouteId != "") {
+				this._setLastSubrouteId(this.currentSubrouteId);
+			}
+		},
+		
+		_openPendingReviewsPage : function() {
+			this.$.pendingReviewRoute.navigate();
+		},
+
+		_openInProgressPage : function() {
+			this.$.inProgressRoute.navigate();
+		},
+
+		_openArchivedPage : function() {
+			this.$.archivedRoute.navigate();
+		},
+
+		_pageAttached : function() {
+			this.fire("completed-list-attached");
+		},
+
+		_handleOpenAssessment: function(e) {
+			var selectedAssessment = this.$.assessmentsTemplate.itemForElement(e.target);
+			if (selectedAssessment) {
+				this.$.assessmentLogsRouteOnCompleted.navigate({assessmentId: selectedAssessment._id});
+				this.fire("open-assessment");
+			}
+		},
+
+		_handleKeyPress: function(e) {
+			var keyCode = e.keyCode;
+
+			if (keyCode == 13) {
+				this._handleOpenAssessment(e);
+			}
+		},
+
+		_handleViewKeyPress: function(e) {
+			if (e.currentTarget.id == "tableLayoutButton"){
+				document.getElementById("cardLayoutButton").focus();
+			} else if (e.currentTarget.id == "cardLayoutButton") {
+				this.$.tableLayoutButton.focus();
+			}
+		}
+	});
+</script>

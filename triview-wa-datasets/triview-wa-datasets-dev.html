@@ -1,0 +1,271 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<!-- Polymer Iron Components -->
+<link rel="import" href="../iron-pages/iron-pages.html">
+
+<!-- Polymer Paper Components -->
+<link rel="import" href="../paper-toast/paper-toast.html">
+<link rel="import" href="../paper-dialog/paper-dialog.html">
+
+<!-- TRIRIGA Building Block Components -->
+<link rel="import" href="../triblock-app-layout/triblock-app-layout.html">
+
+<!-- TRIRIGA Platform Components -->
+<link rel="import" href="../triplat-view-behavior/triplat-view-behavior.html">
+<link rel="import" href="../triplat-debug/triplat-debug.html">
+<link rel="import" href="../triplat-routing/triplat-routing.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+
+<!-- Local Components -->
+<link rel="import" href="tripage-list.html">
+
+<dom-module id="triview-wa-datasets">
+
+	<template>
+
+		<style>
+			.danger {
+				color: var(--tri-danger-color);
+			}
+
+			.dialog-buttons {
+				@apply(--layout-horizontal);
+				@apply(--layout-center-center);
+			}
+
+			.error {
+				color: var(--tri-error-color);
+			}
+
+			paper-dialog {
+				--iron-overlay-backdrop-opacity: 0.88;
+			}
+
+			.pages > * {
+				@apply(--layout-fit);
+				background-color: var(--tri-body-background-color);
+			}
+		</style>
+
+		<triplat-route id="listPageRoute" name="listPageRoute" path="/"></triplat-route>
+
+		<triplat-ds name="applicationSettings" data="{{_applicationSettings}}"></triplat-ds>
+
+		<triplat-ds name="currentUser" data="{{_currentUser}}"></triplat-ds>
+
+		<triplat-ds id="waDatasetsDS" name="waDatasets" on-ds-update-complete="_onWADatasetsDSUpdateComplete" on-ds-update-error="_onWADatasetsDSUpdateError"></triplat-ds>
+
+		<triplat-ds id="myImportantWADatasetsDS" name="myImportantWADatasets">
+			<triplat-ds-context name="currentUser" context-id="[[_currentUser._id]]"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="myWaProfileExtensionDS" name="myWaProfileExtension" data="{{_myWAProfileExtension}}">
+			<triplat-ds-context name="currentUser" context-id="[[_currentUser._id]]"></triplat-ds-context>
+		</triplat-ds>
+
+		<triblock-app-layout app-label="Connector for Watson Analytics">
+			<triblock-banner-button icon="ibm:watson-globe" label="Open Watson Analytics" tap-handler="_onWABannerButtonTap"></triblock-banner-button>
+			<triplat-route-selector>
+				<iron-pages class="pages">
+					<tripage-list default-route route="listPageRoute"></tripage-list>
+				</iron-pages>
+			</triplat-route-selector>
+		</triblock-app-layout>
+
+		<paper-toast id="toast" duration="8000"></paper-toast>
+
+		<paper-dialog with-backdrop id="errorDialog">
+			<div class="tri-h2 error">Error</div>
+			<div>[[_errorDialogText]]</div>
+			<div class="dialog-buttons">
+				<paper-button dialog-dismiss>Close</paper-button>
+			</div>
+		</paper-dialog>
+
+		<paper-dialog with-backdrop id="warningDialog">
+			<div class="tri-h2 danger">Warning</div>
+			<div>[[_warningDialogText]]</div>
+			<div class="dialog-buttons">
+				<paper-button dialog-dismiss>Close</paper-button>
+			</div>
+		</paper-dialog>
+
+	</template>
+
+	<script>
+
+		Polymer({
+			is: "triview-wa-datasets",
+
+			behaviors: [TriPlatViewBehavior],
+
+			listeners: {
+				"action-dataset-export": "_onActionDatasetExport",
+				"action-dataset-set-importance": "_onActionDatasetSetImportance",
+			},
+
+			/**
+			 * Initiate the export process for a Watson Analytics Dataset with the given `datasetId`
+			 */
+			_exportDataset: function(datasetId) {
+				// verify clientId and clientSecret are present, as they are required for export process
+				if (this._applicationSettings && this._applicationSettings.clientId && this._applicationSettings.clientId != "" && this._applicationSettings.clientSecret && this._applicationSettings.clientSecret != "") {
+					this.$.waDatasetsDS.updateRecord(datasetId, TriPlatDs.RefreshType.NONE, "actions", "export");
+				} else {
+					var __dictionary__blankAppSettingsMessage2 = "Export process cannot be initiated. Your Client ID and/or Client Secret settings are blank. Please update your Watson Analytics system settings.";
+					this._showWarningDialog(__dictionary__blankAppSettingsMessage2);
+				}
+			},
+
+			/**
+			 * Triggered after "action-dataset-export" event
+			 */
+			_onActionDatasetExport: function(e) {
+				var datasetId = e.detail.datasetId;
+
+				// check to see if user is already authenticated
+				if (this._myWAProfileExtension && this._myWAProfileExtension.token) {
+					// user is authenticated - proceed with export
+					this._exportDataset(datasetId);
+				} else {
+					// authenticate with Watson by doing the following:
+					// 1. sumbit request to Watson for authentication code
+					// 2. Watson replies to our servlet (at redirectUrl) which exchanges auth code for access/refresh tokens and stores tokens
+					// 3. when auth is complete, authCallback is called
+
+					// validate the Application Settings
+					if (this._applicationSettings) {
+						if (this._applicationSettings.clientId && this._applicationSettings.clientId != "" && this._applicationSettings.clientSecret && this._applicationSettings.clientSecret != "" && this._applicationSettings.redirectUrl && this._applicationSettings.redirectUrl != "") {
+							// set up variables used for async callback
+							window.authCallback = this._onWatsonAuthenticationComplete.bind(this);
+							this._datasetId = datasetId;
+
+							// check if authentication pop-up is already open
+							if (this._authWin && !this._authWin.closed) {
+								this._authWin.focus();
+							} else {
+								// open the authentication pop-up
+								var baseUrl = 'https://api.ibm.com/watsonanalytics/run/clientauth/v1/auth';
+								var clientId = this._applicationSettings.clientId;
+								var redirectUrl = this._applicationSettings.redirectUrl;
+								var watsonUrl = baseUrl + '?response_type=code&client_id=' + clientId + '&scope=userContext&redirect_uri=' + redirectUrl;
+
+								var w = 600;
+								var h = 600;
+								var left = (window.screen.width/2)-(w/2);
+								var top = (window.screen.height/2)-(h/2);
+								this._authWin = window.open(watsonUrl, 'WatsonAuthWindow', 'width='+w+',height='+h+',top='+top+',left='+left);
+							}
+						} else {
+							var __dictionary__blankAppSettingsMessage = "Export process cannot be initiated. Your Client ID, Client Secret, and/or Redirect URL settings are blank. Please update your Watson Analytics system settings.";
+							this._showWarningDialog(__dictionary__blankAppSettingsMessage);
+						}
+					} else {
+						var __dictionary__missingAppSettingsMessage = "Export process cannot be initiated. Your system settings data was not found. Please contact your TRIRIGA administrator.";
+						this._showWarningDialog(__dictionary__missingAppSettingsMessage);
+					}
+				}
+			},
+
+			/**
+			 * Triggered after "action-dataset-set-importance" event
+			 */
+			_onActionDatasetSetImportance: function(e) {
+				var datasetId = e.detail.datasetId;
+				var isImportant = e.detail.isImportant;
+
+				var selectedRoom = {_id: datasetId};
+
+				if (isImportant) {
+					this.$.myImportantWADatasetsDS.addRecord(selectedRoom, TriPlatDs.RefreshType.CLIENT);
+				} else {
+					this.$.myImportantWADatasetsDS.removeRecord(selectedRoom, TriPlatDs.RefreshType.CLIENT);
+				}
+			},
+
+			/**
+			 * Triggered when user taps on WA app-banner-button
+			 */
+			_onWABannerButtonTap: function() {
+				// open Watson Analytics homePageUrl in a new tab
+				if (this._applicationSettings && this._applicationSettings.homePageUrl && this._applicationSettings.homePageUrl != "") {
+					window.open(this._applicationSettings.homePageUrl, "WatsonAnalyticsHomePageWindow");
+				} else {
+					window.open("https://watson.analytics.ibmcloud.com/home/data", "WatsonAnalyticsHomePageWindow");
+				}
+			},
+
+			/**
+			 * Triggered after "waDatasetsDS" datasource completes `updateRecord` call
+			 */
+			_onWADatasetsDSUpdateComplete: function(e) {
+				var actionName = e.detail.actionName;
+				switch (actionName) {
+					case "export":
+						// show "export initiated" toast
+						var __dictionary__exportInitiatedMessage = "Export initiated. You will receive a TRIRIGA Notification upon completion.";
+						this._showToast(__dictionary__exportInitiatedMessage);
+						break;
+				}
+			},
+
+			/**
+			 * Triggered when error occurs on "waDatasetsDS" datasource `updateRecord` call
+			 */
+			_onWADatasetsDSUpdateError: function(e) {
+				var action = e.detail.action;
+				var errorCode = e.detail.errorCode;
+				var transitionName = e.detail.transitionName;
+
+				// check for export error where the dataset that the user is attempting to export is currently in-progress and unavailable
+				if (action && action.toUpperCase()=="EXPORT" && errorCode && errorCode=="TransitionActionFailed" && transitionName && transitionName=="triProcessExport") {
+					var __dictionary__exportInProgressErrorMessage = "Export process cannot be initiated. The data set is currently in the process of exporting data to Watson Analytics. You will receive a TRIRIGA Notification upon completion.";
+					this._showErrorDialog(__dictionary__exportInProgressErrorMessage);
+				}
+			},
+
+			/**
+			 * Triggered after Watson Analytics authentication process
+			 */
+			_onWatsonAuthenticationComplete: function() {
+				// export the dataset the user originally tapped on to trigger the authentication
+				if (this._datasetId) this._exportDataset(this._datasetId);
+
+				// refresh the WA Profile Extension, so the new token appears
+				this.$.myWaProfileExtensionDS.refresh();
+
+				// clean up async variables
+				this._datasetId = null;
+				this._authWin.close();
+				this._authWin = null;
+				window.authCallback = null;
+			},
+
+			/**
+			 * Set message text and show warning dialog
+			 */
+			_showErrorDialog: function(msg) {
+				this._errorDialogText = msg;
+				this.$.errorDialog.open();
+			},
+
+			/**
+			 * Set message text and show warning dialog
+			 */
+			_showWarningDialog: function(msg) {
+				this._warningDialogText = msg;
+				this.$.warningDialog.open();
+			},
+
+			/**
+			 * Set message text and show toast
+			 */
+			_showToast: function(msg) {
+				this.$.toast.text = msg;
+				this.$.toast.show();
+			},
+
+		});
+	</script>
+
+</dom-module>

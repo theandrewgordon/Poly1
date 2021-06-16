@@ -1,0 +1,367 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triblock-side-nav/triblock-side-nav.html">
+<link rel="import" href="../triblock-side-nav/triblock-side-nav-item.html">
+<link rel="import" href="../triblock-side-nav/triblock-side-nav-layout.html">
+
+<link rel="import" href="../paper-spinner/paper-spinner.html">
+
+<link rel="import" href="../neon-animation/neon-animated-pages.html">
+<link rel="import" href="../neon-animation/neon-animatable.html">
+<link rel="import" href="../neon-animation/neon-animations.html">
+
+
+<link rel="import" href="tripage-groupmove-intro.html">
+<link rel="import" href="tripage-groupmove-myrequests.html">
+<link rel="import" href="tricomp-error-prompt.html">
+
+<dom-module id="tricomp-inbox-group-move">
+
+	<style>
+    /*=========================================
+     * Table of Contents
+     *-----------------------------
+     * Host
+     * Container - container-loading
+		 * Container - container-intro
+     *=========================================*/
+
+    /* Host */
+		:host {
+			@apply(--layout-fit);
+			@apply(--layout);
+			@apply(--layout-vertical);
+			background-color: var(--tri-body-background-color);
+		}
+    /* End Host */
+
+
+    /* Container - container-loading */
+    .container-loading {
+			position: fixed;
+			top: 44px;
+			right: 0;
+			bottom: 0;
+			left: 0;
+			z-index: 99;
+			background: white;
+		}
+			.container-loading > div {
+				display: flex;
+				height: 100%;
+				width: 100%;
+				align-items: center;
+				justify-content: center;
+			}
+    /* End Container - container-loading */
+
+
+		/* Container - container-intro */
+    .container-intro {
+			@apply(--layout-fit);
+			display: flex;
+		}
+    /* End Container - container-intro */
+
+
+		.toolbars {
+			display: none;
+		}
+
+		neon-animated-pages {
+			@apply(--layout-fit);
+		}
+
+		.container {
+				@apply(--layout-fit);
+				min-height: 0;
+		}
+		
+		.error-dialog {
+			overflow: auto;
+		}
+
+		triblock-side-nav-item[badge-icon="warning"] {
+				--tri-badge-icon-color: var(--tri-warning-icon-button-hover-color) !important;
+		}
+	</style>
+
+	<template>
+
+    <!-- Routes Definition -->
+		<triplat-route id="myRequestsRoute" name="requestsRouteGroupMove" path="/"></triplat-route>
+
+
+    <!-- DataSources -->
+		<triplat-ds id="currentPerson" name="currentPerson" data="{{currentPerson}}"  on-ds-get-complete="_handleCurrentPersonGetComplete"></triplat-ds>
+
+		<triplat-ds id="myMoveRequests" name="myMoveRequests" data="{{myMoveRequests}}"></triplat-ds>
+
+		<section class="toolbars">
+			<div id="topToolbar">
+			</div>
+			<span id="toolbarTitle" class="title">IBM TRIRIGA : <b>Group Move</b></span>
+		</section>
+
+    <div id="loadContainer" class="container-loading">
+      <div>
+        <paper-spinner active></paper-spinner>
+      </div><!-- end div -->
+    </div><!-- end .container-loading -->
+
+ 		<div id="introPageDiv" class="container-intro" hidden$="{{_skipWelcome}}">
+			<tripage-groupmove-intro
+				id="introPage">
+			</tripage-groupmove-intro>
+		</div><!-- end .container-intro -->
+
+		 <div id="mainPageDiv" class="wizard-main" hidden$="{{!_skipWelcome}}">
+		<!--<div class="wizard-main">-->
+
+				<div class="main-container">
+
+        	<tripage-groupmove-myrequests
+							id="myRequests"
+							refresh-flag="{{refreshFlag}}"
+							initTriblockTab>
+					</tripage-groupmove-myrequests>
+
+				</div>
+
+		</div>
+		
+		<paper-dialog modal with-backdrop id="errorDialog" class="error-dialog">
+			<tricomp-error-prompt error-details="{{_errorDetails}}" is-admin="{{currentUser._Admin}}" on-error-details-collapse-or-expand="_handleErrorDetailsCollapseOrExpand"></tricomp-error-prompt>
+		</paper-dialog>
+
+	</template>
+</dom-module>
+<script>
+
+	Polymer({
+		is: "tricomp-inbox-group-move",
+
+		behaviors: [TriPlatViewBehavior],
+
+		properties: {
+			moveRequest: Object,
+
+			start: Date,
+			end: Date,
+
+			preCreateRequestId: {
+				type: String,
+				value: null,
+			},
+
+			preCreating: {
+				type: Boolean,
+				value: true,
+				observer: '_calcPreCreateComplete',
+			},
+
+			preCreateComplete: {
+				type: Boolean,
+				value: false,
+			},
+
+
+			moveRequestLoading: {
+				type: Boolean,
+				value: true,
+				observer: '_calcPreCreateComplete',
+			},
+
+
+			entryAnimation: {
+				type: String,
+				value: "slide-from-right-animation",
+			},
+
+			exitAnimation: {
+				type: String,
+				value: "slide-left-animation",
+			},
+			_skipWelcome: {
+				type: Boolean,
+				value: false,
+			},
+
+			//=========================================================
+			// Property _noRequests
+			//------------------------------------------
+			// Objective: Indicate when there's no requests
+			//=========================================================
+			_noRequests: {
+				type: Boolean,
+				value: false
+			}
+		},
+
+		listeners: {
+			"myMoveRequests.ds-create-complete": "_handlePreCreateComplete",
+			"start-over": "_handleStartOver",
+			"init": "_init",
+			"introPage.next": "_handleNextIntroPage",
+			"no-requests": "_handleNoRequests",
+			"have-requests": "_handleHaveRequests",
+		},
+
+		_calcPreCreateComplete: function() {
+			if (this.preCreateComplete)
+				return;
+
+			this.set("preCreateComplete",
+					!this.preCreating
+					&& !this.moveRequestLoading);
+
+			if (this.preCreateComplete) {
+				this.set("end", new Date());
+ 
+			}
+		},
+
+		_handleAnimationComplete: function() {
+			this.$.when.animationComplete();
+		},
+
+
+		_handleStartOver: function() {
+			this.initRequest();
+		},
+
+
+		_init : function() {
+				this.async(function() {
+					this.fire("change-top-toolbar", this.$.topToolbar);
+					this.fire("change-toolbar-title", this.$.toolbarTitle);
+				});
+		},
+
+		initRequest : function() {
+			this.set("preCreateRequestId", null);
+			this.set("start", new Date());
+			this.preCreateRequest();
+
+		},
+
+
+		preCreateRequest : function() {
+			this.set("preCreateComplete", false);
+			this.set("preCreating", true);
+
+			var newRequest = {};
+			this.$.myMoveRequests.createRecord(newRequest, TriPlatDs.RefreshType.BOTH, "actionGroup", "preCreateGroupMove");
+
+		},
+
+		_handlePreCreateComplete: function(e) {
+			this.set("preCreateRequestId", e.detail);
+			this.$.myRequests._setPreCreateValue(this.preCreateRequestId);
+			this.async(function() {
+				this.set("preCreating", false);
+			});
+
+			// Hide Loading Container
+			this.$.loadContainer.hidden=true;
+		},
+
+
+		_handleNextIntroPage : function() {
+			// Fire: Indicate when the Welcome page is hidden
+			this.fire("welcomeHide");
+
+			// Show Loading Container
+			this.$.loadContainer.hidden=false;
+
+			// If Statement: Check if there are no requests
+			if (this._noRequests) {
+				// If there are no requests call init request
+				this.initRequest();
+			} else {
+				// If there are requests
+				// Hide Loading Container
+				this.$.loadContainer.hidden=true;
+			}// end if
+
+			this.$.introPageDiv.hidden=true;
+			this.$.mainPageDiv.hidden=false;
+
+			// Call triblock-tabs initializer
+			this.$.myRequests._handleInitTriblockTab();
+		},
+
+		//=========================================================
+	  // Function _handleCurrentPersonGetComplete
+	  //------------------------------------------
+	  // Objective: Handles currentPerson get complete - Handle skipWelcome
+	  //=========================================================
+		_handleCurrentPersonGetComplete: function(){
+			var skipWelcomeSession = sessionStorage.getItem("skipWelcome"); 
+			this._skipWelcome = this.currentPerson.skipGroupMoveWelcome;
+
+			// If Statement: Check if skip welcome
+			if (this._skipWelcome || skipWelcomeSession) {
+				// Fire: Indicate when the Welcome page is hidden
+				this.fire("welcomeHide");
+
+				this.$.introPageDiv.hidden=true;
+				this.$.mainPageDiv.hidden=false;
+				this.$.loadContainer.hidden=true;
+ 
+			}
+			else {
+				// Fire: Indicate when the Welcome page is not hidden
+				this.fire("welcomeShow");
+
+				this.$.introPageDiv.hidden=false;
+				this.$.mainPageDiv.hidden=true;
+				this.$.loadContainer.hidden=true;
+			}// end if
+		},
+
+		//=========================================================
+	  // Function _handleHomeBtnNext
+	  //------------------------------------------
+	  // Objective: Handles home button click on Welcome Page - It should always redirect to myRequests page
+	  //=========================================================
+		_handleHomeBtnNext: function() {
+			// Fire: Indicate when the Welcome page is hidden
+			this.fire("welcomeHide");
+
+			// Show Loading Container
+			this.$.introPageDiv.hidden=true;
+			this.$.mainPageDiv.hidden=false;
+
+			// Call triblock-tabs initializer
+			this.$.myRequests._handleInitTriblockTab();
+		},
+
+		//=========================================================
+	  // Function _handle-Requests
+	  //------------------------------------------
+	  // Objective: Handles when there is and there isn't requests for the user
+	  //=========================================================
+		_handleNoRequests: function() {
+			this.set("_noRequests", true);
+		},
+		_handleHaveRequests: function() {
+			this.set("_noRequests", false);
+		},
+		
+		_handleDSError: function(e) {
+			var errorDetails = e.detail;
+			if (errorDetails.status != 403){
+				if (errorDetails) this.set("_errorDetails", errorDetails);
+				this.$.errorDialog.open();
+			}
+		},
+
+		_handleErrorDetailsCollapseOrExpand: function() {
+			this.async(function() {
+				this.$.errorDialog.center();
+			}.bind(this), 300);
+		},
+	});
+</script>

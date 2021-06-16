@@ -1,0 +1,324 @@
+<link rel="import" href="../triplat-routing/triplat-routing.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-icons/hardware-icons.html">
+<link rel="import" href="../iron-selector/iron-selector.html">
+
+<link rel="import" href="../paper-input/paper-input.html">
+<link rel="import" href="../paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../paper-dialog/paper-dialog.html">
+<link rel="import" href="../paper-button/paper-button.html">
+
+<link rel="import" href="../tri-loading-indicator/tri-loading-indicator.html">
+<link rel="import" href="../triblock-page-container-behavior/triblock-page-container-behavior.html">
+
+<link rel="import" href="tricomp-new-assessment-header.html">
+<link rel="import" href="tricomp-multi-space-selector.html">
+
+<dom-module id="tripage-new-assessment">
+
+	<style>
+		:host {
+			display: block;
+			background-color: var(--tri-primary-content-background-color);
+			@apply(--layout-fit);
+			@apply(--layout);
+			@apply(--layout-vertical);
+		}
+
+		.hideContainer {
+			@apply(--layout-flex);
+			@apply(--layout);
+			@apply(--layout-vertical);
+		}
+
+		tricomp-new-assessment-header {
+			padding-bottom: 10px;
+		}
+		
+		tricomp-multi-space-selector {
+			@apply(--layout-flex);
+			border-top: 1px solid var(--tri-primary-content-accent-color);
+		}
+		
+		paper-dialog {
+			@apply(--layout-vertical);
+		}
+
+		paper-dialog .button-container {
+			@apply(--layout-self-end);
+		}
+
+		paper-dialog paper-button {	
+			@apply(--tri-button);
+		}
+
+		.security-warning {
+			@apply(--layout-vertical);
+			@apply(--layout-center);
+		}
+		
+	</style>
+
+	<template>
+
+		<div hidden$="{{createPermission}}">
+			<div class="security-warning">
+				<div><h2>Security Warning</h2> </div>
+				<span>You do not have permission to access this page.</span>
+				<span>Contact your TRIRIGA administrator for assistance.</span>
+			</div>	
+		</div>
+
+		<triplat-ds id="createAssessmentDs" name="mySpaceAssessments"></triplat-ds>
+
+		<triplat-ds id="assessmentSpacesDs" name="spacesForAssessments" data="{{spacesForAssessment}}">
+			<triplat-ds-context name="mySpaceAssessments" context-id="{{_createdId}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="securityDS" name="security" data="{{security}}"></triplat-ds>
+
+		<triplat-ds id="currentUserDs" name="currentUser" data="{{currentUser}}"></triplat-ds>
+
+		<div hidden$="{{!createPermission}}" class="hideContainer">
+			<paper-dialog id="validationPopup" aria-label="Validation dialog">
+				<h2>Error</h2>
+				<span>{{_validationMessage}}</span>
+				<div class="button-container">
+					<paper-button on-tap="_closeValidationPopup">OK</paper-button>
+				</div>
+			</paper-dialog>
+
+			<tricomp-new-assessment-header back-label="My Assessments" 
+				id="header"
+				action-label="Create"
+				description="{{_description}}"
+				building="{{_selectedBuilding}}"
+				floor="{{_selectedFloor}}"
+				manager-created="{{managerCreated}}"
+				auto-approve="{{autoApprove}}"
+				selected-person="{{_assignedToPerson}}"
+				due-date="{{dueDate}}"
+				aria-labelledby="backToAssessment"
+				on-action="_handleCreateAssessment"
+				loading="{{_createAssessmentLoading}}">
+			</tricomp-new-assessment-header>
+
+			<tricomp-multi-space-selector
+				hidden$="{{!_selectedFloor}}"
+				id="spaceSelector"
+				building-id="{{_selectedBuilding.id}}"
+				floor-id="{{_selectedFloor.id}}"
+				selected-spaces="{{_selectedSpaces}}">
+			</tricomp-multi-space-selector>
+		</div>
+
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tripage-new-assessment",
+
+		behaviors: [TriBlockPageContainerBehavior],
+
+		properties: {
+
+			_description: String,
+
+			_selectedFloor : {
+				type : Object,
+				notify : true,
+				value : null,
+				observer : '_handleSelectedFloorChange'
+			},
+
+			_selectedBuilding : {
+				type : Object,
+				notify : true
+			},
+
+			_createdId : String,
+
+			_selectedSpaces : Array,
+
+			_assignedToPerson: {
+				type: Object,
+				value: ""
+			},
+
+			createPermission: {
+				type: Boolean,
+				value: true
+			},
+
+			managerCreated: {
+				type: Boolean,
+				value: false
+			},
+
+			autoApprove: {
+				type: Boolean
+			},
+
+			_createAssessmentLoading : {
+				type : Boolean, 
+				value : false
+			},
+
+			dueDate: {
+				type: String,
+				value: ""
+			}
+
+		},
+
+		observers : [
+			"_initSpacesForAssessment(spacesForAssessment)",
+			'_handleSetSecurityPermission(security,currentUser)'
+		],
+
+		listeners : {
+			"createAssessmentDs.ds-create-complete": "_handleCreateComplete",
+			"assessmentSpacesDs.ds-add-complete": "_handleAddSpacesComplete",
+		},
+
+		_handleSelectedFloorChange : function(newFloor, oldFloor) {
+			if (!newFloor || (oldFloor && newFloor && oldFloor.id != newFloor.id)) {
+				this.$.spaceSelector.reset();
+			}
+			this.$.spaceSelector.updateView();
+		},
+
+		_closeValidationPopup : function() {
+			this.$.validationPopup.close();
+		},
+
+		_openValidationPopup : function() {
+			this.$.validationPopup.open();
+		},
+
+		_handleCreateAssessment: function() {
+			if (this._isValid()) {
+				// this.$.header.$.actionButton.disabled = true;
+				this.set('_createAssessmentLoading', true);
+
+				if (!this._assignedToPerson && this.managerCreated == false) {
+					var selectedPerson = {
+						id: "",
+					};
+
+					this.set("_assignedToPerson", selectedPerson);
+				}
+
+				var name = this._selectedBuilding.value + " - " + this._selectedFloor.value;
+				var newAssessment = {
+					name: name,
+					description: this._description,
+					dueDate: this.dueDate,
+					floor: this._selectedFloor,
+					building: this._selectedBuilding,
+					assignedTo: this._assignedToPerson,
+					managerCreated: this.managerCreated,
+					autoApprove: this.autoApprove
+				};
+				
+				this.$.createAssessmentDs.createRecord(newAssessment, TriPlatDs.RefreshType.SERVER, "defaultActions", "create");
+			}
+		},
+
+		_isValid : function() {
+			var isValid = true;
+			var spacesToAdd = this._selectedSpaces;
+			var dueDate = this.$.header.$.date;
+			var __dictionary__validationMessage;
+
+			if (!this._selectedFloor) {
+				__dictionary__validationMessage = 'Select a floor for this assessment.';
+				this.set('_validationMessage', __dictionary__validationMessage);
+				this._openValidationPopup();
+				isValid = false;
+			} else if (spacesToAdd.length < 1) {
+				__dictionary__validationMessage = 'Select spaces for this assessment.';
+				this.set('_validationMessage', __dictionary__validationMessage);
+				this._openValidationPopup();
+				isValid = false;
+			}  else if (!this._assignedToPerson.id && this.managerCreated == true) {
+				__dictionary__validationMessage = 'Select assigned to person for this assessment.';
+				this.set('_validationMessage', __dictionary__validationMessage);
+				this._openValidationPopup();
+				isValid = false;
+			} else if (dueDate._errorMsg) {
+				this.set('_validationMessage', dueDate._errorMsg);
+				this._openValidationPopup();
+				isValid = false;
+			} else if (this.dueDate == null || this.dueDate == undefined || this.dueDate == "") {
+				__dictionary__validationMessage = 'Select a due date for this assessment.';
+				this.set('_validationMessage', __dictionary__validationMessage);
+				this._openValidationPopup();
+				isValid = false;
+			}		
+							
+			return isValid;
+		},
+
+		_handleCreateComplete: function(e) {
+			this.set('_createdId', e.detail);
+		},
+
+		_initSpacesForAssessment : function(spacesForAssessment) {
+			if (!spacesForAssessment) {
+				return;
+			}
+
+			var spacesToAdd = this._selectedSpaces;
+			this.$.assessmentSpacesDs.addRecord(spacesToAdd);
+		},
+
+		_handleAddSpacesComplete : function(e) {
+			if (this.managerCreated) {
+				this.$.createAssessmentDs.performAction(this._createdId, TriPlatDs.RefreshType.SERVER, "defaultActions", "clearCreater");
+			}
+			
+			this.fire("assessment-created", { 'id' : this._createdId });
+		},
+
+		_pageAttached : function() {
+			this.resetNavigateToNewAssessment();
+	
+		},
+
+		_handleSetSecurityPermission: function(security,currentUser) {
+			
+			if (security.mySpaceAssessments_defaultActions_create) {
+				this.set('createPermission',true);
+			} else {
+				this.set('createPermission',false);
+			}
+		},
+
+		_pageDetached : function() {
+			this.resetNavigateAwayNewAssessment();
+		},
+
+		_reset: function() {
+			this.set("_description", "");
+			this.set("_assignedToPerson", "");
+			this.$.header.reset();
+			this.$.spaceSelector.reset();
+			this.set('_createAssessmentLoading', false);
+		},
+
+		resetNavigateToNewAssessment: function() {
+			this.set('_selectedFloor', null);
+		},
+
+		resetNavigateAwayNewAssessment: function() {
+			this.set('_createdId', null);
+			this._reset();
+		}
+
+      });
+</script>

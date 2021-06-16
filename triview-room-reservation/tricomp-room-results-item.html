@@ -1,0 +1,283 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triblock-responsive-layout/triblock-view-responsive-behavior.html">
+
+<link rel="import" href="../triapp-reservation-list/tricomp-multiline-overflow-text.html">
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-tooltip/paper-tooltip.html">
+
+<link rel="import" href="tristyles-room-reservation-app.html">
+
+<link rel="import" href="tribehav-room-reservation.html">
+<link rel="import" href="tribehav-room-reservation-util.html">
+
+<link rel="import" href="tricomp-amenities-list.html">
+<link rel="import" href="tricomp-alert-message.html">
+
+<dom-module id="tricomp-room-results-item">
+	<template>
+		<style include="shared-page-styles">
+			:host {
+				@apply(--layout-vertical);
+				flex-basis: 100%;
+				box-sizing: border-box;
+				position: relative;
+				min-width: 0;
+				margin-bottom: 16px;
+				border: 1px solid var(--ibm-gray-10);
+				padding: 20px;
+				cursor: pointer;
+				background-color: white;
+			}
+			:host:not([small-screen-width]):not([medium-screen-width]) {
+				flex-basis: 48%;
+				max-width: 48%;
+			}
+
+			.room-name-container {
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+			}
+
+			.room-name {
+				@apply(--layout-flex);
+				padding-right: 10px;
+			}
+
+			.divider-line {
+				height: 24px;
+				width: 1px;
+				margin-right: 15px;
+				margin-left: 10px;
+				background-color: var(--tri-primary-content-accent-color);
+			}
+
+			.favorite-icon {
+				flex-shrink: 0;
+				padding: 0px;
+				height: 20px;
+				width: 20px;
+			}
+
+			.room-item-container {
+				@apply(--layout-horizontal);
+				flex: 1;
+				min-width: 0;
+				padding: 8px 0;
+			}
+
+			.room-image-container {
+				@apply(--layout-vertical);
+				@apply(--layout-start);
+				@apply(--layout-relative);
+			}
+			.room-image {
+				width: 70px;
+				height: 70px;
+			}
+			.room-image-placeholder-icon {
+				--triplat-icon-height: 70px;
+				--triplat-icon-width: 70px;
+				--triplat-icon-fill-color: var(--tri-primary-content-accent-color);
+			}
+
+			.room-details-container {
+				@apply(--layout-vertical);
+				@apply(--layout-flex);
+				min-width: 0;
+				padding-left: 10px;
+			}
+
+			.room-info {
+				@apply(--paper-font-common-nowrap);
+				font-size: 14px;
+			}
+
+			.amenities-container {
+				position: relative;
+				overflow: hidden;
+				max-height: 30px;
+				padding-right: 1.5em;
+			}
+			:host(:not([compact-layout])) .amenities-container {
+				padding-top: 5px;
+			}
+			.amenities-container tricomp-multiline-overflow-text {
+				--multiline-overflow-text-ellipsis-line-height: 25px;
+			}
+
+			.approval-message {
+				margin-bottom: 3px;
+			}
+
+			.room-actions-container {
+				@apply(--layout-horizontal);
+				@apply(--layout-center-center);
+				padding-top: 10px;
+			}
+
+			.recurrence-count {
+				@apply(--layout-horizontal);
+				@apply(--layout-center-center);
+				text-align: center;
+			}
+
+			.action-button {
+				margin: 0 5px;
+				font-weight: 500;
+			}
+
+			paper-button {
+				--paper-button: {
+					margin: 0;
+				};
+			}
+		</style>
+
+		<tricore-url raw-url="/getCompanyFile.jsp?fileLoc=" bind-url="{{imgUrl}}"></tricore-url>
+
+		<div class="room-name-container">
+			<span id="roomName" class="room-name tri-h3 multiline-overflow-text" tabindex="0" aria-label$="[[item.room]]">
+				<tricomp-multiline-overflow-text
+					text="[[item.room]]"
+					parentElement="[[roomEl]]"></tricomp-multiline-overflow-text>
+			</span>
+			<span class="divider-line"></span>
+			<paper-icon-button class="favorite-icon" favorited$="[[item.isFavorite]]" icon="[[_computeFavIcon(item.isFavorite)]]" on-tap="_handleToggleFavorite" aria-label="Favorite icon"></paper-icon-button>
+		</div>
+
+		<div class="room-item-container"  on-tap="_handleOpenRoomDetails">
+			<template is="dom-if" if="[[_showImage(applicationSettings)]]">
+				<div class="room-image-container">
+					<iron-image id="roomImage" class="room-image" src="{{_computeImageUrl(item.image, imgUrl)}}" sizing="cover" hidden$="[[!roomImageLoaded]]" loaded="{{roomImageLoaded}}"></iron-image>
+					<triplat-icon class="room-image-placeholder-icon" icon="picturefile" 
+							hidden$="[[roomImageLoaded]]">
+					</triplat-icon>
+				</div>
+			</template>
+
+			<div class="room-details-container">
+				<div class="room-info">Capacity [[item.capacity]]</div>
+
+				<template is="dom-if" if="[[showLocation]]">
+					<div class="room-info">[[item.floor]]</div>
+					<div id="buildingName" class="multiline-overflow-text">
+						<tricomp-multiline-overflow-text
+							text="[[item.building]]"
+							parentElement="[[buildingEl]]"></tricomp-multiline-overflow-text>
+					</div>
+				</template>
+				
+				<div id="amenitiesContainer" class="amenities-container">
+					<tricomp-multiline-overflow-text id="multilineAmenities"
+						parentElement="[[amenitiesEl]]"
+						no-gradient>
+						<tricomp-amenities-list class="amenities-list"
+							catering="[[_isRoomServiceAvailable(item.isCateringAvailable)]]"
+							disabled-access="[[_isRoomServiceAvailable(item.isADAAvailable)]]"
+							network-connection="[[_isRoomServiceAvailable(item.isNetworkConnection)]]"
+							phone-conference="[[_isRoomServiceAvailable(item.isConferencePhone)]]"
+							projector="[[_isRoomServiceAvailable(item.isProjector)]]"
+							video-conference="[[_isRoomServiceAvailable(item.isVideoConference)]]"
+							whiteboard="[[_isRoomServiceAvailable(item.isWhiteboard)]]">
+						</tricomp-amenities-list>
+					</tricomp-multiline-overflow-text>
+				</div>
+			</div>
+		</div>
+
+		<tricomp-alert-message info id="approvalMessage" class="approval-message" hidden$="[[!_isApprovalRequired(item.approvalNameENUS)]]" show-tooltip-indicator-icon>[[item.approval]]</tricomp-alert-message>
+		<paper-tooltip for="approvalMessage" position="top" offset="5" animation-delay="100" fit-to-visible-bounds>Adding this room to your reservation will require approval from the room's owner, which may result in a delay of the acceptance of this room.  You will be notified of the room owner's decision.</paper-tooltip>
+
+		<div class="room-actions-container">
+			<div class="action-button recurrence-count" hidden$="[[_hideRecurrenceCount(item)]]">[[item._availCount]] of [[item._maxOccurrenceCount]] matches</div>
+			<paper-button secondary class="action-button" on-tap="_handleCloseTap" hidden="[[!showCloseButton]]">Close</paper-button>
+			<paper-button secondary hidden$="[[!_isAvailable(item)]]" on-tap="_handleBookRoom" class="action-button" noink>Book</paper-button>
+			<paper-button disabled$="[[!_isAvailable(item)]]" hidden$="[[_isAvailable(item)]]" class="action-button" noink>Unavailable</paper-button>
+		</div>
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-room-results-item",
+
+			behaviors: [
+				TriRoomReservationUtilBehavior, TriBlockViewResponsiveBehavior
+			],
+
+			properties: {
+				item: {
+					type: Object,
+				},
+				showLocation: {
+					type: Boolean,
+					value: false
+				},
+				showCloseButton: {
+					type: Boolean,
+					value: false
+				},
+				compactLayout: {
+					type: Boolean,
+					value: false,
+					reflectToAttribute: true
+				}
+			},
+
+			observers: [
+				"_observeAmenities(item.isCateringAvailable, item.isADAAvailable, item.isNetworkConnection, item.isConferencePhone, item.isProjector, item.isVideoConference, item.isWhiteboard)"
+			],
+
+			attached: function() {
+				this.set("roomEl", this.$.roomName);
+				this.set("buildingEl", this.$.buildingName);
+				this.set("amenitiesEl", this.$.amenitiesContainer);
+			},
+
+			_computeFavIcon: function(isFav) {
+				return isFav ? "ibm:rating-star-filled" : "ibm:rating-star";
+			},
+
+			_handleBookRoom: function(e) {
+				var roomId = this.item._id;
+				this.fire("action-book-room", { 'roomId' : roomId });
+			},
+
+			_handleOpenRoomDetails: function(e) {
+				var roomId = this.item._id;
+				this.fire("navigate-room-details", { 'roomId' : roomId, 'backEventName': "navigate-room-results-back"});
+			},
+
+			_handleToggleFavorite: function(e) {
+				var roomId = this.item._id;
+				this.fire("action-toggle-room-favorite", { 'roomId' : roomId, 'isFavorite' : !this.item.isFavorite });
+
+				e.stopPropagation();
+			},
+
+			_hideRecurrenceCount: function(item) {
+				var isRecurring = this._isRecurring(item);
+				var isAvailable = this._isAvailable(item);
+				return !(isRecurring && isAvailable);
+			},
+
+			_isApprovalRequired: function(approvalNameENUS) {
+				return approvalNameENUS && approvalNameENUS === "Requestable";
+			},
+
+			_handleCloseTap: function(e) {
+				var roomId = this.item._id;
+				this.fire("action-close-room", { 'roomId' : roomId});
+				e.stopPropagation();
+			},
+
+			_observeAmenities: function() {
+				this.$.multilineAmenities._checkOverflowText();
+			}
+
+		});
+	</script>
+</dom-module>

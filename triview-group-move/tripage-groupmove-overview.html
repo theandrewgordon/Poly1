@@ -1,0 +1,687 @@
+
+
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+
+<link rel="import" href="../triplat-debug/triplat-debug.html">
+<link rel="import" href="../triblock-page-container-behavior/triblock-page-container-behavior.html">
+<link rel="import" href="../triplat-select-input/triplat-select-input.html">
+<link rel="import" href="../triplat-date-picker/triplat-date-picker.html">
+<link rel="import" href="../triplat-table-behavior/triplat-table-behavior.html">
+<link rel="import" href="../triplat-loading-indicator/triplat-loading-indicator.html">
+
+<link rel="import" href="tricomp-comments-new.html">
+<link rel="import" href="tricomp-groupmove-detail-header.html">
+
+<!-- Polymer Paper Components -->
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-dialog/paper-dialog.html">
+
+<!-- Polymer Iron Components -->
+<link rel="import" href="../iron-icon/iron-icon.html">
+
+
+<dom-module id="tripage-groupmove-overview">
+
+<style>
+
+		.content {
+			background-color: var(--tri-header-color);
+			padding-left: 20px;
+		}
+
+		.container {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+		}
+
+		.page-label {
+			font-size: 18px;
+			padding-top:8px;
+			padding-left: 2px;
+			font-family: var(--tri-font-family);
+		}
+
+		.overview-header {
+			@apply(--layout-horizontal);
+			font-size: 22px;
+			padding-bottom: 15px;
+			padding-top:15px;
+			padding-left:0px;
+			background-color: var(--tri-body-background-color);
+			font-family: var(--tri-font-family);
+			font-size: 21px;
+		}
+
+		.header-button {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-center-center);
+			-webkit-justify-content: flex-end;
+    	    justify-content: flex-end;
+			padding-right: 1em;
+			font-size: 14px;
+		}
+
+        /* Container Calendar */
+		#moveCalendarContainer {
+			position: relative;
+		}
+
+		.calendar-mask {
+			position: absolute;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			left: 0;
+			z-index: 9;
+		}
+		/* End Container Calendar */
+
+		.move-planner-info {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-left);
+			@apply(--layout-wrap);
+			padding: 10px;
+			font-size: 14px;
+			font-family: var(--tri-font-family);
+		}
+
+		/* Container - mli-detail-image */
+		.move-planner-image {
+			@apply(--layout-vertical);
+			@apply(--layout-center-center);
+			width: 10%;
+		}
+
+	    .container-vertical {
+			@apply(--layout-vertical);
+			@apply(--layout-left);
+			padding: 5px;
+			width: 40%;
+		}
+
+		.move-planner-detail-item {
+			@apply(--layout-horizontal);
+			@apply(--layout-left);
+			margin: 5px;
+
+		}
+
+		.label-detail-item {
+             color: var(--ibm-cool-gray-30) !important;
+		}
+
+		.value-detail-item {
+             color: var(--tri-primary-color) !important;
+		}
+
+        .reason-section {
+			width: 50%;
+		}
+
+		.reason-section:not(:first-child) {
+			padding-top: 10px;
+		}
+
+		.reason-section:not(:last-child) {
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			padding-bottom: 10px;
+		}
+
+ 		.detail-item {
+			@apply(--layout-horizontal);
+			@apply(--layout-left);
+			min-height: 0;
+			font-size: 14px;
+			font-weight: normal;
+			font-family: var(--tri-font-family);
+		}
+
+		.info-blank-line{
+			height: 20px;
+		}
+
+
+		.info-line {
+			@apply(--layout-horizontal);
+			text-align: left;
+			font-size: 14px;
+			font-weight: normal;
+			font-family: var(--tri-font-family);
+			color: var(--ibm-cool-gray-70) !important;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			max-width: 300px;
+		}
+
+		.info-line-gray {
+			@apply(--layout-horizontal);
+			text-align: left;
+			font-size: 14px;
+			font-weight: normal;
+			font-family: var(--tri-font-family);
+			color: var(--ibm-cool-gray-30) !important;
+			overflow-x: hidden;
+		}
+
+
+		.approvers-info-body {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-left);
+			@apply(--layout-wrap);
+			padding: 10px;
+			font-size: 14px;
+			font-family: var(--tri-font-family);
+		}
+
+		.table-card {
+			margin: 15px;
+			min-width: 200px;
+			min-height: 95%;
+			transition: box-shadow .25s;
+			@apply(--layout-vertical);
+			@apply(--layout-flex);
+		}
+
+		.approval-history-section {
+			@apply(--layout-vertical);
+		}
+
+		.approval-history-table-container {
+			@apply(--layout-self-center);
+			@apply(--layout-horizontal);
+			margin-top: 8px;
+			width: 100%;
+		}
+
+		.approval-history-table {
+			width: 100%;
+		}
+
+		.approval-history-table-column {
+			@apply(--layout-flex);
+		}
+
+		.approval-history-table-row {
+			background-color: var(--tri-header-color) !important;
+		}
+
+		.sort-column-header {
+			cursor: pointer;
+		}
+
+        .sort-column-header:hover {
+            cursor: pointer;
+            text-decoration: underline;
+		}
+
+        .sortColumnLabel {
+            font-weight: normal;
+		    font-size: 14px;
+            font-family: var(--tri-font-family);
+            line-height: 18px;
+            cursor: pointer;
+			direction: inherit; 
+        }
+
+        .sortColumnLabel[dir="rtl"]{
+			float: right;
+		}
+		
+		.sort-icon {
+			--iron-icon-height: 16px;
+			--iron-icon-width: 16px;
+		}
+
+		.sort-icon[icon="sort"] {
+			color: var(--tri-primary-content-accent-color);
+		}
+
+		.sort-icon[dir="rtl"]{
+			float: right;
+		}
+
+        triplat-select-input{
+           --triplat-select-input-paper-item-min-height: 20px;
+		    font-weight: normal;
+		    font-size: 14px;
+            font-family: var(--tri-font-family);
+           --paper-input-container-label: {
+               font-family: var(--tri-font-family);
+			   font-size: 14px;
+			   color: var(--ibm-cool-gray-30) !important;
+		   };
+		   --paper-input-container-label-floating: {
+			   font-family: var(--tri-font-family);
+			   font-size: 16px;
+			   color: var(--ibm-cool-gray-30) !important;
+		   }
+
+}
+
+
+</style>
+
+<template>
+
+  <triplat-route
+		id="openRequestRoute"
+		name="openRequest"></triplat-route>
+
+   <triplat-route id="overviewRoute"
+                  on-route-active="_handleRoutePageActive"
+                  name="overviewRouteGroupMove"
+				  params="{{openRequestUrlParams}}"></triplat-route>
+
+   <triplat-ds id="currentUser" name="currentUser" data="{{currentUser}}"></triplat-ds>
+
+	<triplat-route id="inboxRoute" name="inbox"></triplat-route>
+
+	<triplat-ds
+			name="myMoveRequests"
+			data="{{openRequest}}"
+			id="moveRequestModel"
+			loading="{{myMoveRequestsLoading}}"
+			on-ds-get-complete="_handleMyMoveRequestsGetComplete"
+			on-ds-update-complete="_handleMyMoveRequestsUpdateComplete">
+		<triplat-ds-instance instance-id="{{openRequestUrlParams.reqId}}"></triplat-ds-instance>
+	</triplat-ds>
+
+	<triplat-ds name="moveRequest" data="{{moveRequest}}" loading="{{moveRequestLoading}}" id="moveRequest" on-ds-get-complete="_handleMoveRequestComplete" >
+		<triplat-ds-context name="myMoveRequests" context-id="{{openRequestUrlParams.reqId}}"></triplat-ds-context>
+	</triplat-ds>
+
+
+	<triplat-ds	name="workTask" data="{{workTask}}" loading="{{workTaskLoading}}">
+		<triplat-ds-context name="myMoveRequests" context-id="{{openRequestUrlParams.reqId}}"></triplat-ds-context>
+	</triplat-ds>
+
+	<triplat-ds	name="facilitiesProject" data="{{facilitiesProject}}" loading="{{facilitiesProjectLoading}}">
+			<triplat-ds-context name="myMoveRequests" context-id="{{openRequestUrlParams.reqId}}"></triplat-ds-context>
+	</triplat-ds>
+
+   <triplat-ds id="moveReasons" name="moveReasons" data="{{moveReasons}}" loading="{{moveReasonsLoading}}">
+		</triplat-ds>
+
+	<triplat-ds name="approvalHistory" data="{{approvalHistory}}" loading="{{approvalHistoryLoading}}">
+		<triplat-ds-context name="myMoveRequests" context-id="{{openRequestUrlParams.reqId}}"></triplat-ds-context>
+	</triplat-ds>
+
+	<triplat-ds name="moveToBuilding"
+				data="{{moveToBuilding}}"
+				loading="{{moveToBuildingLoading}}"
+				id="moveToBuilding">
+			<triplat-ds-context name="myMoveRequests" context-id="{{openRequestUrlParams.reqId}}"></triplat-ds-context>
+	</triplat-ds>
+
+	<triplat-ds	name="movePlanners" data="{{movePlanners}}" id="movePlanners" loading="{{movePlannersLoading}}">
+		<triplat-ds-context name="myMoveRequests" context-id="{{openRequestUrlParams.reqId}}"></triplat-ds-context>
+		<triplat-ds-context name="moveToBuilding" context-id="{{moveToBuilding._id}}"></triplat-ds-context>
+	</triplat-ds>
+
+<div class="container">
+
+     <!-- Header -->
+
+     <tricomp-groupmove-detail-header
+				 id="header"
+				 header-text-label="Detail Information"
+				 request$="{{openRequestUrlParams.reqId}}"></tricomp-groupmove-detail-header>
+
+    <div class="content">
+
+	 <div class="reason-section">
+
+
+		<div hidden$="{{_isReadonly(moveRequest.status)}}">
+		 <triplat-select-input
+					id="reason"
+					value="{{moveRequest.moveReason}}"
+					search-value="{{_reasonSearchValue}}"
+					value-name="name"
+					select-src="[[moveReasons]]"
+					label="Reason:">
+		</div>
+
+		<div hidden$="{{!_isReadonly(moveRequest.status)}}">
+
+
+		 <triplat-select-input
+					id="reason"
+					value="{{moveRequest.moveReason}}"
+					search-value="{{_reasonSearchValue}}"
+					value-name="name"
+					select-src="[[moveReasons]]"
+					label="Reason:"
+					readonly>
+		 </triplat-select-input>
+
+		</div>
+	 </div>
+
+	<div class="info-blank-line"> <span>&nbsp;</span></div>
+
+	<!-- Requested Date -->
+	<div class="detail-item">
+		<div class="info-line-gray">Requested Date: &nbsp;</div>
+		<triplat-date-picker readonly
+		                     class="info-line"
+							 display-format="{{currentUser._DateFormat}}"
+							 value="{{openRequest.moveDate}}"></triplat-date-picker>
+	</div>
+
+    <div class="info-blank-line"> <span>&nbsp;</span></div>
+
+    <!-- Scheduled Date -->
+	<div class="detail-item" hidden$="{{_isEmpty(workTask.plannedStart)}}">
+		<div class="info-line-gray">Scheduled Date: &nbsp;</div>
+		<triplat-date-picker readonly class="info-line" display-format="{{currentUser._DateFormat}}" value="{{workTask.plannedStart}}"></triplat-date-picker>
+	</div>
+
+	<div class="detail-item" hidden$="{{!_isEmpty(workTask.plannedStart)}}">
+		<div class="detail-item" hidden$="{{_isEmpty(openRequest.projectPlannedStart)}}">
+			<div class="info-line-gray">Scheduled Date: &nbsp;</div>
+			<triplat-date-picker readonly class="info-line" display-format="{{currentUser._DateFormat}}" value="{{openRequest.projectPlannedStart}}"></triplat-date-picker>
+		</div>
+		<div class="detail-item" hidden$="{{!_isEmpty(openRequest.projectPlannedStart)}}">
+			<div class="info-line-gray">Scheduled Date: &nbsp;</div>
+			<div class="info-line-gray">Pending</div>
+		</div>
+	</div>
+    <!-- End Scheduled Date -->
+
+	<div class="info-blank-line"> <span>&nbsp;</span></div>
+
+	<!-- Move Planner Info -->
+	<div id="movePlannerInfo">
+
+	<div class="page-label"> <span> Assigned To </span></div>
+
+	<div class="table-card">
+		<section class="approval-history-section">
+			<div table-container class="approval-history-table-container" >
+				<div tri-table class="approval-history-table">
+					<div tri-tbody>
+						<template is="dom-repeat" items="{{movePlanners}}">
+
+							<div tri-tr>
+							<div class="move-planner-info">
+								<div class="move-planner-image">
+									<tricomp-accordion-image
+											icon="ibm:user"
+											picture=""
+											height="48"
+											width="48"></tricomp-accordion-image>
+								</div>
+								<div class="container-vertical">
+									<div class="move-planner-detail-item">
+										<span>{{item.firstName}}</span>&nbsp;<span>{{item.lastName}}</span>
+									</div>
+									<div class="move-planner-detail-item">
+										<div><span>{{item.role}}</span></div>
+									</div>
+								</div>
+
+								<div class="container-vertical">
+									<div class="move-planner-detail-item" hidden$="{{_isEmpty(item.email)}}">
+										<triplat-icon icon="email"></triplat-icon>
+										<div>&nbsp;<a class="value-detail-item" href$="{{_computeEmailAddressLink(item.email)}}">{{item.email}}</a></div>
+									</div>
+									<div class="move-planner-detail-item" hidden$="{{_isEmpty(item.workPhone)}}">
+										<triplat-icon icon="phone-call"></triplat-icon>
+										<div>&nbsp;<a class="value-detail-item" href$="{{_computeTelephoneLink(item.workPhone)}}">{{item.workPhone}}</a></div>
+										<div class="label-detail-item"> &nbsp;(work) </div>
+									</div>
+									<div class="move-planner-detail-item" hidden$="{{_isEmpty(item.mobile)}}">
+										<triplat-icon icon="phone-call"></triplat-icon>
+										<div>&nbsp;<a class="value-detail-item" href$="{{_computeTelephoneLink(item.mobile)}}">{{item.mobile}}</a></div>
+										<div class="label-detail-item"> &nbsp;(mobile) </div>
+									</div>
+								</div>
+							</div>
+							</div> <!-- end tri-tr -->
+						</template>
+					</div> <!-- end tri-tbody -->
+				</div> <!-- end tri-tbable -->
+			</div> <!-- end table-container -->
+		</section>
+	</div> <!-- end table-card -->
+
+	</div> <!-- End - Move Planner Info -->
+
+
+   <div class="info-blank-line"> <span>&nbsp;</span></div>
+
+	<!-- Comments -->
+    <div class="page-label"> <span> Comments </span></div>
+	<div id="commentsPage">
+		<tricomp-comments-new
+		id="commentTab"
+		open-Request-What-Url-Params="{{openRequestUrlParams}}">
+		</tricomp-comments-new>
+	</div>
+
+<div class="info-blank-line"> <span>&nbsp;</span></div>
+
+<div class="page-label"> <span> Approvals </span></div>
+
+<!-- Approvals -->
+	<div class="approvers-info-body" hidden$="{{_arrayEmpty(approvalHistory)}}">
+		<div class="table-card">
+			<section class="approval-history-section">
+					<div table-container class="approval-history-table-container" >
+						<div tri-table class="approval-history-table">
+							<div tri-thead >
+								<div tri-tr>
+									<div tri-th class="sort-column-header" on-tap="_handleColumnSort" data-column="{{_computeApprovalHistoryApprover(item)}}" dir="[[_dir]]">
+										    <span tri-th-label class="sortColumnLabel" dir="[[_dir]]">Approver</span>&nbsp;<triplat-icon class="sort-icon" icon="sort-descending" dir="[[_dir]]"></triplat-icon></div>
+									<div tri-th class="sort-column-header" on-tap="_handleColumnSort" data-column="reviewStatus" dir="[[_dir]]">
+										    <span tri-th-label class="sortColumnLabel" dir="[[_dir]]">Review Status</span>&nbsp;<triplat-icon class="sort-icon" icon="sort" dir="[[_dir]]"></triplat-icon></div>
+									<div tri-th class="sort-column-header" on-tap="_handleColumnSort" data-column="sentDate" dir="[[_dir]]">
+										    <span tri-th-label class="sortColumnLabel" dir="[[_dir]]">Date</span>&nbsp;<triplat-icon class="sort-icon" icon="sort" dir="[[_dir]]"></triplat-icon></div>
+									<div tri-th class="sort-column-header" on-tap="_handleColumnSort" data-column="comment" dir="[[_dir]]">
+										    <span tri-th-label class="sortColumnLabel" dir="[[_dir]]">Comment</span>&nbsp;<triplat-icon class="sort-icon" icon="sort" dir="[[_dir]]"></triplat-icon></div>
+								</div>
+							</div>
+							<div tri-tbody>
+								<template is="dom-repeat" items="{{approvalHistory}}">
+                                    <div tri-tr>
+										<div tri-td class="approval-history-table-column" >{{_computeApprovalHistoryApprover(item)}}</div>
+										<div tri-td class="approval-history-table-column" >{{item.reviewStatus}}</div>
+									    <div tri-td class="approval-history-table-column" >
+											<triplat-date-picker readonly display-format="{{currentUser._DateFormat}}" value="{{item.sentDate}}"></triplat-date-picker>
+										</div>
+										<div tri-td class="approval-history-table-column" >{{item.comment}}</div>
+									</div>
+								</template>
+							</div>
+						</div>
+					</div>
+				</section>
+			</div>
+	</div>
+<!-- End Approvals -->
+
+<div class="info-blank-line"> <span>&nbsp;</span></div>
+
+   </div> <!-- content -->
+</div><!-- end .container -->
+
+<paper-dialog id="confirmationDialog" modal >
+	<p>Thank you. Your request has been submitted.<br><br>Your ID number is {{moveRequest.requestID}}.</p>
+	<div class="buttons dialog-buttons">
+		<paper-button class="solid-button" dialog-confirm dialog-dismiss on-tap="closeConfirmationDialog" noink>Close</paper-button>
+	</div>
+</paper-dialog>
+
+
+</template>
+
+</dom-module>
+
+
+<script>
+	Polymer({
+
+		is: "tripage-groupmove-overview",
+
+		behaviors: [TriBlockPageContainerBehavior, TriPlatTableBehavior],
+
+		properties: {
+			request: String,
+
+			_isNew: {
+					type: Boolean,
+					value: true
+			},
+
+			_submitValid: {
+				type: Boolean,
+				value: true,
+			},
+
+			movePlannersTemp: {
+				type: Array,
+				value: ["Planner1","Planner2","Planner3"]
+			},
+
+			_reason: {
+				type: String,
+				value: ""
+			},
+
+			_dir: String,
+		},
+
+        observers: [
+		    "_handleReasonValueChanged(moveRequest.moveReason)",
+		],
+
+
+		listeners: {
+
+		},
+
+		comments: {
+				type: Array,
+		},
+
+		ready: function() {
+			// Hide header btn collapse
+			this.$.header._isCollapseBtnHidden();
+		},
+
+		_handleReasonValueChanged: function(newReason){
+				if (newReason) {
+					this.$.moveRequest.updateRecord(TriPlatDs.RefreshType.CLIENT);
+				}
+
+		},
+
+		_handleCancel: function(){
+			this.fire("refresh");
+			this.$.inboxRoute.navigate();
+		},
+
+		_isEmpty: function(val) {
+			return !val || val == "";
+		},
+
+		_isNew: function() {
+			if (this.moveRequest) {
+					this._isNew = (this.moveRequest.status == null);
+			}// end if
+		},
+
+		_isDraft: function(request){
+			if (request) {
+				return  ((request.status=="Draft")||(request.status=="Revision in Progress")||(request.status==null));
+			}
+		},
+
+		_isReadonly: function(status){
+			if (status == "Draft" || status == "Revision In Progress") {
+				return  false;
+			}
+			return true;
+		},
+
+		_computeEmailAddressLink: function(email) {
+			return "mailto:" + email;
+		},
+
+		_computeTelephoneLink: function(phoneNumber) {
+			return "tel:" + phoneNumber;
+		},
+
+		_arrayEmpty: function(arr) {
+			return !arr || arr.length == 0;
+		},
+
+		_computeApprovalHistoryApprover: function(item) {
+			if (!item ||
+				(!item.approver && !item.sentDate) ||
+				(item.approver == "" && item.sentDate == "")) {
+				return "Auto-Approved";
+			}
+			return item.approver;
+		},
+
+		_jumpTo: function(e) {
+			e.target.scrollIntoView();
+		},
+
+
+        //=========================================================
+		// Function _handleRoutePageActive
+		//------------------------------------------
+		// Objective: Handle with the change of routes
+		//=========================================================
+		_handleRoutePageActive: function(e) {
+				// If Statement: check if the current route (overview) is active
+				if (e.detail.active) {
+					// Header Component: Update the header's 'isNew' property
+					this.$.header._isNewRequest();
+
+					// Fire: Overview page is open
+					this.fire('overviewActive');
+				}
+		},
+
+		openConfirmationDialog: function(){
+			this.$.confirmationDialog.open();
+		},
+
+		closeConfirmationDialog: function(){
+			this._submitRequest();
+		},
+
+		_submitRequest: function(){
+			this.fire("submit");
+			this.$.inboxRoute.navigate();
+
+		},
+
+		_handleMoveRequestComplete: function(){
+
+		},
+
+		_handleMyMoveRequestsGetComplete: function () {
+			this.$.header._isSubmitValid();
+		},
+
+		_initHeader: function(){
+			this.$.header._isSubmitValid();
+		},
+
+
+		attached: function() {
+			var textDirectionValue = document.querySelector('body').getAttribute('dir');
+			this.set('_dir', textDirectionValue ? textDirectionValue : "ltr");
+		},
+
+	});
+
+</script>

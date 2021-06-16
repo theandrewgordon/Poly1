@@ -1,0 +1,101 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-collapse/iron-collapse.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icons/hardware-icons.html">
+
+<link rel="import" href="../triplat-debug/triplat-debug.html">
+<link rel="import" href="../triplat-signout-button/triplat-signout.html">
+
+<dom-module id="tricomp-error-prompt">
+	<template>
+		<style>
+			:host {
+				display: block;
+				font-family: var(--tri-font-family);
+			}
+
+			a {
+				text-decoration: underline;
+				cursor: pointer;
+				color: var(--tri-primary-color) !important;
+			}
+
+			.content {
+				overflow: auto;
+			}
+
+			.error-details-collapser {
+				cursor: pointer;
+				color: var(--tri-error-color);
+			}
+		</style>
+
+		<triplat-signout id="signout"></triplat-signout>
+		
+		<div class="content">
+			<p>An error occurred. Please contact your server administrator.</p>
+
+			<p>You can either <a on-tap="_handleRefreshPageTap">refresh the page</a> or <a on-tap="_handleLogOutTap">log out</a>.</p>
+
+			<p class="error-details-collapser" on-tap="_handleErrorDetailsTap" hidden$="{{!_showErrorDetails(errorDetails, isAdmin)}}"><iron-icon icon="{{_computeCollapseIcon(_errorDetailsOpened)}}"></iron-icon>Error details:</p>
+			<iron-collapse opened="{{_errorDetailsOpened}}" aria-labelledby="errorDetails">
+				<span id="errorDetailsSpan"></span>
+			</iron-collapse>
+		</div>
+
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-error-prompt",
+
+			properties: {
+				errorDetails: {
+					type: Object,
+					value: {}
+				},
+				_errorDetailsOpened: {
+					type: Boolean,
+					value: false
+				},
+				isAdmin: {
+					type: Boolean,
+					value: false
+				}
+			},
+
+			_computeCollapseIcon: function(errorDetailsOpened) {
+				return (errorDetailsOpened) ? "hardware:keyboard-arrow-down" : "hardware:keyboard-arrow-right";
+			},
+
+			_handleErrorDetailsTap: function() {
+				this.set("_errorDetailsOpened", !this._errorDetailsOpened);
+				this.fire("error-details-collapse-or-expand");
+			},
+
+			_handleLogOutTap: function() {
+				this.$.signout.signout();
+			},
+
+			_handleRefreshPageTap: function() {
+				location.reload();
+			},
+
+			_showErrorDetails: function(errorDetails, isAdmin) {
+				if (!isAdmin) return false;
+				if (errorDetails && Object.keys(errorDetails).length > 0) {
+					var errorDetailsString = JSON.stringify(this.errorDetails, null, '\t');
+					var errorDetailsHTML = errorDetailsString.replace(new RegExp("\n", "g"), "<br>");
+					errorDetailsHTML = errorDetailsHTML.replace(new RegExp("\t", "g"), "&nbsp;&nbsp;&nbsp;&nbsp;")
+					this.$.errorDetailsSpan.innerHTML = errorDetailsHTML;
+					return true;
+				}
+				return false;
+			}
+
+		});
+	</script>
+</dom-module>

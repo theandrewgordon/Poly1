@@ -1,0 +1,555 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-countdown/triplat-countdown.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+
+<link rel="import" href="../triblock-responsive-layout/triblock-view-responsive-behavior.html">
+
+<link rel="import" href="../triapp-reservation-list/tricomp-multiline-overflow-text.html">
+
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-tooltip/paper-tooltip.html">
+
+<link rel="import" href="tristyles-room-reservation-app.html">
+
+<link rel="import" href="tribehav-room-reservation.html">
+<link rel="import" href="tribehav-room-reservation-util.html">
+
+<link rel="import" href="tricomp-alert-message.html">
+
+<dom-module id="tricomp-reservation-summary-item">
+	<template>
+		<style include="shared-page-styles">
+			:host {
+				@apply(--layout-vertical);
+				flex-basis: 100%;
+				position: relative;
+				min-width: 0;
+				border-bottom: 1px solid var(--ibm-gray-50);
+				padding-bottom: 10px;
+				cursor: pointer;
+				background-color: white;
+			}
+			:host:first-of-type {
+				border-top: 1px solid var(--ibm-gray-50);
+			}
+
+			tricomp-alert-message {
+				margin-bottom: 3px;
+			}
+
+			paper-tooltip {
+				font-weight: normal;
+
+				--paper-tooltip: {
+					line-height: 1.2em;
+					font-size: 14px;
+				}
+			}
+
+			.room-name-container {
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+				@apply(--layout-start-justified);
+				padding: 10px 0;
+			}
+
+			.room-name {
+				min-width: 0;
+				overflow: hidden;
+				color: var(--ibm-blue-50);
+			}
+
+			.divider-line {
+				height: 24px;
+				width: 1px;
+				background-color: var(--tri-primary-content-accent-color);
+				margin: 0 10px;
+			}
+
+			.favorite-icon {
+				flex-shrink: 0;
+				height: 22px;
+				width: 22px;
+				padding: 0px;
+				color: var(--ibm-blue-50);
+			}
+
+			.info-container,
+			.info-location,
+			.info-action {
+				@apply(--layout-horizontal);
+				box-sizing: border-box;
+			}
+
+			.info-container {
+				@apply(--layout-wrap);
+				@apply(--layout-center);
+				@apply(--layout-justified);
+			}
+
+			.info-container > div {
+				@apply(--layout-flex);
+				flex-basis: 100%;
+			}
+			
+			.info-location  {
+				min-width: 0;
+			}
+			:host:not([small-screen-width]):not([medium-screen-width]) .info-location {
+				flex-basis: 50%;
+				max-width: 50%;
+				padding-right: 10px;
+			}
+
+			.info-action {
+				@apply(--layout-center);
+				@apply(--layout-justified);
+				margin-top: 10px;
+			}
+			:host:not([small-screen-width]):not([medium-screen-width]) .info-action {
+				flex-basis: 49%;
+				max-width: 49%;
+				margin: 0px;
+				border-left: 1px solid var(--ibm-gray-10);
+				padding-left: 10px;
+			}
+
+			.delete-button {
+				box-sizing: content-box;
+				white-space: nowrap;
+			}
+
+			.room-image-container {
+				@apply(--layout-vertical);
+				@apply(--layout-start);
+				@apply(--layout-relative);
+			}
+
+			.room-image {
+				width: 63px;
+				height: 63px;
+			}
+
+			.room-image-placeholder-icon {
+				--triplat-icon-height: 63px;
+				--triplat-icon-width: 63px;
+				--triplat-icon-fill-color: var(--tri-primary-content-accent-color);
+			}
+
+			.room-details-container {
+				@apply(--layout-vertical);
+				@apply(--layout-flex);
+				min-width: 0;
+				padding-left: 10px;
+			}
+
+			.room-info {
+				@apply(--paper-font-common-nowrap);
+				font-size: 14px;
+			}
+
+			.amenities-list {
+				padding-top: 10px;
+			}
+
+			.declined-message {
+				background-color: var(--tri-danger-color);
+				@apply(--layout-vertical);
+				@apply(--layout-center-center);
+				color: white;
+				text-align: center;
+				padding: 10px;
+			}
+
+			.tappable-rows-section {
+				margin-top: 10px;
+				border-top: 1px solid var(--tri-primary-content-accent-color);
+			}
+
+			.row-container {
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+				padding: 0 12px 0 20px;
+			}
+
+			.row-container.tappable {
+				border-top: 1px solid var(--tri-primary-content-accent-color);
+				border-bottom: 1px solid var(--tri-primary-content-accent-color);
+				cursor: pointer;
+				margin-top: -1px; /* this merges borders between rows */
+				height: 44px;
+			}
+
+			.row-content {
+				@apply(--layout-flex);
+			}
+
+			.row-label {
+				color: var(--ibm-gray-50);
+			}
+
+			.row-content-count {
+				font-weight: bold;
+			}
+
+			.expand-button {
+				transform: rotate(90deg);
+			}
+
+			:host-context([dir="rtl"]) .expand-button {
+                 transform: scaleX(-1);
+            } 
+
+		</style>
+
+		<tricore-url raw-url="/getCompanyFile.jsp?fileLoc=" bind-url="{{imgUrl}}"></tricore-url>
+
+		<triplat-ds id="exceptionOccurrences" name="exceptionOccurrences" filtered-data="{{exceptionOccurrences}}" loading="{{exceptionOccurrencesLoading}}">
+			<triplat-ds-context name="myReservationManagers" context-id="[[specId]]">
+			</triplat-ds-context>
+			<triplat-query>
+				<triplat-query-filter name="resourceId" operator="equals" value="[[item._id]]"></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<triplat-ds id="equipmentOrders" name="equipmentOrders" filtered-data="{{equipmentOrders}}" loading="{{equipmentOrdersLoading}}">
+			<triplat-ds-context name="myReservationManagers" context-id="[[specId]]">
+			</triplat-ds-context>
+			<triplat-query>
+				<triplat-query-filter name="resourceId" operator="equals" value="[[item._id]]"></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<triplat-ds id="foodOrders" name="foodOrders" data="{{foodData}}" filtered-data="{{foodOrders}}" loading="{{foodOrdersLoading}}">
+			<triplat-ds-context name="myReservationManagers" context-id="[[specId]]">
+			</triplat-ds-context>
+			<triplat-query>
+				<triplat-query-filter name="resourceId" operator="equals" value="[[item._id]]"></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<tricomp-alert-message icon="ibm:clock-time" id="holdTimeMessage"
+				info="[[!holdTimeExpired]]" warning="[[holdTimeExpired]]"
+				class="hold-time-message" show$="[[item.holdTimeDeadline]]" show-tooltip-indicator-icon>
+			<span hidden$="[[holdTimeExpired]]">Hold expires in</span>
+			<triplat-countdown class="hold-time-countdown"
+				name="booking-expiration"
+				disabled="[[_computeDisableCountdown(disabled, item.holdTimeDeadline)]]"
+				deadline="[[item.holdTimeDeadline]]"
+				expired-text="Hold time is expired."
+				timezone="[[currentUser._TimeZoneId]]"
+				is-expired="{{holdTimeExpired}}">
+			</triplat-countdown>
+		</tricomp-alert-message>
+
+		<paper-tooltip for="holdTimeMessage" position="top" offset="5" animation-delay="100" fit-to-visible-bounds>When the hold time on this room expires, all added food and equipment are not saved, and the room is removed for this reservation.</paper-tooltip>
+
+		<tricomp-alert-message warning id="declinedMessage" class="alert-message" alert-title="[[item.status]]" hidden$="[[!_statusIsDeclined(item.statusENUS)]]">
+			<div>[[item.userMessage]]</div>
+		</tricomp-alert-message>
+
+		<tricomp-alert-message info id="approvalMessage" class="alert-message" hidden$="[[!_isApprovalRequired(item.statusENUS, item.approvalNameENUS)]]" show-tooltip-indicator-icon>[[item.approvalRequired]]</tricomp-alert-message>
+		<paper-tooltip for="approvalMessage" position="top" offset="5" animation-delay="100" fit-to-visible-bounds>Adding this room to your reservation requires approval from the room's owner, which may result in a delay of the acceptance of this room. You will be notified of the room owner's decision.</paper-tooltip>
+
+		<tricomp-alert-message info id="costMessage" class="alert-message" hidden$="[[!_roomHasCost(item.usageCost)]]">This room has associated costs.</tricomp-alert-message>
+
+		<tricomp-alert-message danger id="approvalMessage" class="alert-message" hidden$="[[!_computeIsPendingApproval(item.statusENUS)]]">This room has not yet been approved.</tricomp-alert-message>
+
+		<div class="room-name-container">
+			<span class="room-name tri-h3">[[item.room.value]]</span>
+			<span class="divider-line"></span>
+			<paper-icon-button class="favorite-icon" favorited$="[[item.isFavorite]]" icon="[[_computeFavIcon(item.isFavorite)]]" on-tap="_handleToggleFavoriteRoom" aria-label="Favorite Icon"></paper-icon-button>
+		</div>
+
+		<div class="info-container" on-tap="_handleOpenRoomDetails">
+			<div class="info-location">
+				<template is="dom-if" if="[[_showImage(applicationSettings)]]"> 
+					<div class="room-image-container">
+						<iron-image id="roomImage" class="room-image" src="{{_computeImageUrl(item.image, imgUrl)}}" sizing="cover" hidden$="[[!roomImageLoaded]]" loaded="{{roomImageLoaded}}"></iron-image>
+						<triplat-icon class="room-image-placeholder-icon" icon="picturefile" hidden$="[[roomImageLoaded]]"></triplat-icon>
+					</div>
+				</template> 
+
+				<div class="room-details-container">
+					<div class="room-info">Capacity [[item.capacity]]</div>
+					<div  class="room-info">[[item.floor]]</div>
+					<div id="buildingName" class="multiline-overflow-text">
+						<tricomp-multiline-overflow-text
+							text="[[item.building]]"
+							parentElement="[[buildingEl]]"></tricomp-multiline-overflow-text>
+					</div>
+					
+					<div class="room-info" >[[item.layout]] layout</div>
+				</div>
+			</div>
+
+			<div class="info-action">
+				<tricomp-amenities-list class="amenities-list"
+					catering="[[_isRoomServiceAvailable(item.isCateringAvailable)]]"
+					disabled-access="[[_isRoomServiceAvailable(item.isADAAvailable)]]"
+					network-connection="[[_isRoomServiceAvailable(item.isNetworkConnection)]]"
+					phone-conference="[[_isRoomServiceAvailable(item.isConferencePhone)]]"
+					projector="[[_isRoomServiceAvailable(item.isProjector)]]"
+					video-conference="[[_isRoomServiceAvailable(item.isVideoConference)]]"
+					whiteboard="[[_isRoomServiceAvailable(item.isWhiteboard)]]">
+				</tricomp-amenities-list>
+
+				<paper-button danger-outline on-tap="_handleRemoveBookedRoom" class="delete-button" noink>Cancel Room</paper-button>
+			</div>
+		</div>
+
+		<section class="tappable-rows-section" tabindex="0">
+			<div class="row-container tappable" hidden$="[[!_isExceptionOccurrences(exceptionOccurrences)]]" on-tap="_handleNavigateExceptions" tabindex="0">
+				<div class="row-content">
+					<span class="row-label">Exceptions</span>
+					<span class="row-content-count">&nbsp;[[exceptionOccurrences.length]]</span>
+				</div>
+				<paper-icon-button primary class="expand-button" icon="ibm-glyphs:expand-open"></paper-icon-button>
+			</div>
+			<div class="row-container tappable" hidden$="[[!_computeEnableEquipment(item)]]" on-tap="_handleNavigateEquipmentOrder" tabindex="0">
+				<div class="row-content">
+					<span class="row-label">Equipment</span>
+					<span class="row-content-count">&nbsp;[[_equipmentOrders.length]]</span>
+				</div>
+				<paper-icon-button primary class="expand-button" icon="ibm-glyphs:expand-open"></paper-icon-button>
+			</div>
+			<div class="row-container tappable" hidden$="[[!_computeEnableFood(item)]]" on-tap="_handleNavigateFoodOrders" tabindex="0">
+				<div class="row-content">
+					<span class="row-label">Food</span>
+					<span class="row-content-count">&nbsp;[[_foodOrders.length]]</span>
+				</div>
+				<paper-icon-button primary class="expand-button" icon="ibm-glyphs:expand-open"></paper-icon-button>
+			</div>
+		</section>
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-reservation-summary-item",
+
+			behaviors: [
+				TriRoomReservationUtilBehavior,
+				TriBlockViewResponsiveBehavior
+			],
+
+			properties: {
+				item: {
+					type: Object,
+					observer: "_handleItemChange"
+				},
+				specId: {
+					type: String,
+					value: null,
+				},
+				equipmentOrders: Object,
+				_equipmentOrders:{
+					type: Array,
+					value: function(){
+						return [];
+					},
+				},
+				foodOrders: Object,
+				_foodOrders: Array,
+
+				holdTimeExpired: {
+					type: Boolean,
+					value: false,
+					notify: true
+				},
+				disabled: {
+					type: Boolean,
+					value: false
+				},
+				recurrence: Object,
+			},
+
+			observers: [
+				"_handleEquipmentOrderChanges(equipmentOrders)",
+				"_handleFoodOrderChanges(foodOrders)",
+				"_handleRecurrenceChanges(recurrence)"
+			],
+
+			attached: function() {
+				this.set("buildingEl", this.$.buildingName);
+				this._handleItemIdReady();
+			},
+
+			_handleItemIdReady: function(){
+				var resourceId = this.item._id;
+				this.fire("update-resource-id", { 'resourceId' : resourceId });
+			},
+
+			_isExceptionOccurrences: function(exceptionOccurrences) {
+				return exceptionOccurrences && exceptionOccurrences.length > 0;
+			},
+
+			_computeIsPendingApproval: function(status) {
+				return status == 'Review In Progress';
+			},
+
+			_computeIsAccepted: function(status) {
+				return status == 'Accepted';
+			},
+
+			_statusIsDeclined: function(status) {
+				return status == "Declined";
+			},
+
+			_computeFoodOrderName: function(orderItem) {
+				if (!orderItem)
+					return "";
+
+				if (orderItem.name && orderItem.name.length > 0) {
+					return orderItem.name;
+				} else {
+					return "#" + orderItem.orderNum;
+				}
+			},
+
+			_computeEnableEquipment: function(item) {
+				return Boolean(item && (item.statusENUS && item.statusENUS != "Declined") && (item.roomDetails && item.roomDetails.data.isEquipmentServicesAvailable));
+			},
+
+			_computeEnableFood: function(item) {
+				return Boolean(item && (item.statusENUS && item.statusENUS != "Declined") && (item.roomDetails && item.roomDetails.data.isFoodServicesAvailable));
+			},
+
+			_handleEquipmentOrderChanges: function(equipmentOrders) {
+				this._equipmentOrders = new Array();
+
+				if (equipmentOrders && equipmentOrders.constructor === Array) {
+					for (var orderIndex=0; orderIndex < equipmentOrders.slice(0).length; orderIndex++) {
+						var orderItem = equipmentOrders[orderIndex];
+
+						if (orderItem.resourceId === this.item._id) {
+							this.push("_equipmentOrders", orderItem);
+						}
+					}
+				}
+			},
+
+			_handleFoodOrderChanges: function(foodOrders) {
+				this._foodOrders = new Array();
+
+				if (foodOrders && foodOrders.constructor === Array) {
+					for (var orderIndex=0; orderIndex < foodOrders.slice(0).length; orderIndex++) {
+						var orderItem = foodOrders[orderIndex];
+
+						if (orderItem.resourceId === this.item._id) {
+							this.push("_foodOrders", orderItem);
+						}
+					}
+				}
+			},
+
+			_computeDisableCountdown: function(disabled, holdTimeDeadline) {
+				return disabled || !holdTimeDeadline;
+			},
+
+			_computeApprovalText: function(approval) {
+				return approval;
+			},
+
+			_isEquipmentAllowed: function(equipmentSpecs) {
+				return equipmentSpecs && equipmentSpecs.length > 0;
+			},
+
+			_isFoodAllowed: function(menuItems) {
+				return menuItems && menuItems.length > 0;
+			},
+
+			_handleOpenBookedRoom: function(e) {
+				var resourceId = this.item._id;
+				this.fire("navigate-booked-room-details", { 'bookedRoomId' : resourceId });
+			},
+
+			_handleRemoveBookedRoom: function(e) {
+				e.stopPropagation();
+				
+				var resourceId = this.item._id;
+				this.fire("action-booked-room-remove", { 'bookedRoomId' : resourceId });
+			},
+
+			_handleNavigateExceptions: function(e) {
+				var resourceId = this.item._id;
+				this.fire("navigate-exceptions", { 'resourceId' : resourceId });
+			},
+
+			_handleNavigateEquipmentOrder: function(e) {
+				var resourceId = this.item._id;
+				this.fire("navigate-equipment-order", { 'resourceId' : resourceId, 'orderId' : "-1", 'room' : this.item.room.value });
+			},
+
+			_handleNavigateFoodOrders: function(e) {
+				var resourceId = this.item._id;
+				if (this._foodOrders != null && this._foodOrders.length > 0) {
+					// navigate to Food Orders Summary page
+					this.fire("navigate-food-orders-summary", { 'resourceId' : resourceId, 'room' : this.item.room.value });
+				} else {
+					// navigate directly to Add Food Order page
+					if (resourceId) this.fire("navigate-food-order-add", { 'resourceId' : resourceId, 'orderId' : "-1", 'room' : this.item.room.value });
+				}
+			},
+
+			_getOrderId: function(e) {
+				if (e.target.orderId != undefined) {
+					return e.target.orderId;
+				} else {
+					console.log("*** ERROR: [orderId] property is not set on the target.");
+					return null;
+				}
+			},
+
+			_getRoomId: function() {
+				return this.item.room.id;
+			},
+
+			_computeFavIcon: function(isFav) {
+				return isFav ? "ibm:rating-star-filled" : "ibm:rating-star";
+			},
+
+			_handleItemChange: function(item) {
+				var isRecurring = this._isRecurring(item);
+				var isAvailable = this._isAvailable(item);
+				var hideItem = isRecurring && !isAvailable;
+				this.toggleAttribute("hidden", hideItem);
+				this._handleItemIdReady();
+			},
+
+			_handleOpenRoomDetails: function(e) {
+				var roomId = this.item.room.id;
+				var resourceId = this.item._id;
+				this.fire("navigate-room-details", { 'roomId': roomId, 'backEventName': "navigate-summary-page-back", 'resourceId': resourceId });
+			},
+
+			_handleToggleFavoriteRoom: function(e) {
+				var roomId = this._getRoomId();
+				var isFavorite = this.item.isFavorite;
+				this.fire("action-toggle-room-favorite", { 'roomId' : roomId, 'isFavorite' : !isFavorite });
+			},
+
+			_isApprovalRequired: function(status, approvalNameENUS) {
+				return !this._computeIsPendingApproval(status) && (!this._computeIsAccepted(status) && approvalNameENUS && approvalNameENUS === "Requestable");
+			},
+
+			_noLocation: function(city, state, country) {
+				return (!city || city == "") && (!state || state == "") && (!country || country == "");
+			},
+
+			_handleRecurrenceChanges: function(recurrence) {
+				this.async(function() {
+					this.$.exceptionOccurrences.refresh();
+				}, 300);
+			},
+
+			_roomHasCost: function(cost) {
+				return cost && cost > 0;
+			}
+
+		});
+	</script>
+</dom-module>

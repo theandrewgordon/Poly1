@@ -1,0 +1,159 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-debug/triplat-debug.html">
+<link rel="import" href="../triplat-image/triplat-image.html">
+
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-query/triplat-query.html">
+<link rel="import" href="../triplat-select-input/triplat-select-input.html">
+<link rel="import" href="../triblock-responsive-layout/triblock-view-responsive-behavior.html">
+
+<link rel="import" href="../triplat-note/triplat-note.html">
+
+<link rel="import" href="../tricore-url/tricore-url.html">
+
+<link rel="import" href="../iron-image/iron-image.html">
+<link rel="import" href="../paper-tooltip/paper-tooltip.html">
+<link rel="import" href="../paper-button/paper-button.html">
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<link rel="import" href="tricomp-alert-message.html">
+
+<link rel="import" href="tribehav-room-reservation-util.html">
+<link rel="import" href="tricomp-page-toolbar.html">
+<link rel="import" href="tristyles-room-reservation-app.html">
+
+<dom-module id="tricomp-equipment-details">
+	<template>
+		<style include="shared-page-styles">
+
+			:host {
+				@apply(--layout-vertical);
+				@apply(--layout-flex);
+			}
+
+			.hold-time-message {
+				margin-bottom: 10px;
+				flex-shrink: 0;
+			}
+
+			.equipment-details-container {
+				@apply(--layout-vertical);
+				@apply(--layout-flex);
+				overflow-y: auto;
+			}
+			
+			.header {
+				padding-bottom: 10px;
+			}
+
+			.equipment-details-scrollable-area {
+				@apply(--layout-vertical);
+				@apply(--layout-flex);
+				@apply(--layout-scroll);
+				padding: 20px;
+			}
+
+			.equipment-image {
+				width: 200px;
+				height: 200px;
+			}
+
+			triplat-note {
+				--triplat-note-container: {
+					border: none;
+					padding: 0;
+				};
+			}
+
+			.section-header {
+				padding-top: 10px;
+			}
+			
+			.description {
+				margin: 14px 0;
+			}
+
+		</style>
+
+		<tricore-url raw-url="/getCompanyFile.jsp?fileLoc=" bind-url="{{imgUrl}}"></tricore-url>
+
+		<triplat-ds id="equipmentDetails" name="equipmentDetails" data="{{equipmentDetails}}" loading="{{equipmentDetailsLoading}}" manual>
+			<triplat-ds-context name="myReservationManagers" context-id="[[specId]]"></triplat-ds-context>
+			<triplat-ds-context name="reservationLocations" context-id="[[resourceId]]"></triplat-ds-context>
+			<triplat-ds-instance instance-id="[[equipmentId]]"></triplat-ds-instance>
+		</triplat-ds>
+
+		<div class="equipment-details-container">
+			<tricomp-alert-message danger icon="ibm:clock-time" id="holdTimeMessage" class="hold-time-message" show$="[[reservationLocation.holdTimeDeadline]]" show-tooltip-indicator-icon>
+				<span hidden$="[[holdTimeExpired]]">Hold expires in</span>
+				<triplat-countdown class="hold-time-countdown"
+					name="booking-expiration"
+					deadline="[[reservationLocation.holdTimeDeadline]]"
+					expired-text="Hold time is expired."
+					timezone="[[currentUser._TimeZoneId]]"
+					is-expired="{{holdTimeExpired}}">
+				</triplat-countdown>
+			</tricomp-alert-message>
+			<paper-tooltip for="holdTimeMessage" position="bottom" offset="5" animation-delay="100" fit-to-visible-bounds>When the hold time on this room expires, all added food and equipment are not saved, and the room is removed for this reservation.</paper-tooltip>
+
+			<div class="equipment-details-scrollable-area">
+				<div class="tri-h2 header" hidden$="[[_isEmpty(equipmentDetails.name)]]">[[equipmentDetails.name]]</div>
+
+				<template is="dom-if" if="[[_showImage(applicationSettings)]]">
+					<section hidden$="[[!equipmentImageLoaded]]">
+						<iron-image 
+								class="equipment-image" 
+								src="{{_computeImageUrl(equipmentDetails.image, imgUrl)}}"
+								loaded="{{equipmentImageLoaded}}"
+								sizing="contain"></iron-image>
+					</section>
+				</template>
+				
+				<div hidden$="[[_isEmpty(equipmentDetails.description)]]">
+					<div class="tri-h3 section-header">Description</div>
+					<div class="description">[[equipmentDetails.description]]</div>
+				</div>
+
+				<div hidden$="[[_isEmpty(equipmentDetails.descriptionNotes)]]">
+					<div class="tri-h3 section-header">Equipment Details</div>
+					<triplat-note value="[[equipmentDetails.descriptionNotes]]"></triplat-note>
+				</div>
+
+				<div hidden$="[[_isEmpty(equipmentDetails.featuresNotes)]]">
+					<div class="tri-h3 section-header">Features</div>
+					<triplat-note value="[[equipmentDetails.featuresNotes]]"></triplat-note>
+				</div>
+			</div>
+		</div>
+
+		<tricomp-page-toolbar small-screen-width="[[smallScreenWidth]]">
+			<paper-button footer$="[[smallScreenWidth]]" on-tap="_handleDoneTap">Done</paper-button>
+		</tricomp-page-toolbar>
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-equipment-details",
+
+			behaviors: [
+				TriRoomReservationUtilBehavior,
+				TriBlockViewResponsiveBehavior
+			],
+
+			_isEmpty: function(val) {
+				return !val || val == "";
+			},
+
+			_pageAttached : function() {
+				this.$.equipmentDetails.refresh().then(function() {
+				}.bind(this));
+			},
+
+			_handleDoneTap: function(e) {
+				this.async(this.fire.bind(this, "done"));
+			}
+		});
+	</script>
+</dom-module>

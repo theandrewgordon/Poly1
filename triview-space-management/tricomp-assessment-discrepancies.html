@@ -1,0 +1,344 @@
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-selector/iron-selector.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-query/triplat-query.html">
+<link rel="import" href="../triplat-image/triplat-image.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+
+<dom-module id="tricomp-assessment-discrepancies">
+
+	<style>
+
+		:host {
+			@apply(--layout);
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			background-color: var(--tri-body-background-color);
+		}
+
+
+		iron-selector {
+			@apply(--layout-scroll);
+			background-color: var(--tri-focus-background-color);
+		}
+
+		.back {
+			@apply(--layout);
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			padding-right: 20px;
+			cursor: pointer;
+		}
+
+		.back iron-icon,
+		.back span {
+			color: var(--tri-primary-color);
+		}
+
+		.back iron-icon {
+			width: 45px;
+			height: 45px;
+			margin: 0px 0px;
+		}
+
+		.row.iron-selected {
+			background-color: #C0E6FF;
+		}
+
+		.row .value {
+			color: var(--tri-focus-color);
+		}
+
+		.row label {
+			color: var(--tri-focus-label-color);
+
+		}
+
+		.row-content {
+			@apply(--layout);
+			@apply(--layout-horizontal);
+			margin-left: 20px;
+			padding: 10px;
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			background-color: #ffffff;
+			font-size: 14px;
+		}
+
+		.header-row {
+			@apply(--layout);
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			margin: 0px 10px;
+			padding: 20px;
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+		}
+
+		.space {
+			@apply(--layout-flex-2);
+		}
+
+		.class {
+		
+			@apply(--layout-flex-3);
+		}
+
+		.status {
+	
+			@apply(--layout-flex-4);
+		}
+
+		.date {
+		
+			@apply(--layout-flex-3);
+		}
+
+
+		.assessmentDetail {
+			@apply(--layout-flex);
+
+		}
+
+		.horizontal {
+			@apply(--layout-horizontal);
+		}
+		.padding {
+			padding: 20px;
+		}
+		.paddingTop {
+			padding-top: 10px;
+		}
+		.paddingLeft {
+			padding-left: 20px;
+		}
+
+		.icon {
+			cursor: pointer;
+
+		}
+
+		triplat-icon iron-icon, iron-icon {
+			width: 50px;
+			height: 50px;
+			color: var(--ibm-gray-60);
+		}
+
+		.action-container {
+			min-width: 100px;
+		}
+		
+		.action {
+			@apply(--layout);
+			@apply(--layout-center-center);
+		}
+
+		.comments-container {
+			@apply(--layout-horizontal);
+			@apply(--layout-flex);
+			min-width: 250px;
+		}
+
+		.comments-container .label {
+			margin-right: 16px;
+		}
+
+		.comments-container .value {
+			color: var(--tri-primary-content-color);
+			margin-right: 24px;
+		}
+
+		.recordInfo {
+			@apply(--layout-flex);
+			min-width: 200px;
+			margin-right: 24px;
+		}
+
+		.space label {
+			margin-right: 16px;
+		}
+	</style>
+
+	<template>
+
+		<triplat-route name="assessmentLogsList" params="{{assessmentParams}}"></triplat-route>
+
+		<triplat-ds id="discrepancyLogsDs" name="discrepancyLogs" filtered-data="{{discrepancyLogs}}">
+			<triplat-ds-context name="mySpaceAssessments" context-id="{{assessmentParams.assessmentId}}"></triplat-ds-context>
+			<triplat-ds-context name="assessmentLogs" context-id="{{logId}}"></triplat-ds-context>
+			<triplat-query>
+    			<triplat-query-filter name="approve" operator="equals" value="true"></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<template is="dom-repeat" id="spaceDiscrepancyTemplate" items="{{discrepancyLogs}}">
+			<div class="row">
+				<div class$="{{_isApproved(item.approve)}}">
+					<div class="recordInfo">
+						<div>
+							<span class="space">
+								<label>Action</label>
+								<span class="value">{{item.discrepancyType}}</span>
+							</span>
+						</div>
+						<div class="paddingTop">
+							<div class="layout horizontal">
+								<div hidden$="{{!_isPersonType(item)}}">
+									<div hidden$="{{!_isImageAvailable(item.personImage)}}">
+										<triplat-image src="{{item.personImage}}" width="50px" height="50px" sizing="contain"></triplat-image>
+									</div>
+									<div hidden$="{{_isImageAvailable(item.personImage)}}">
+										<triplat-icon class="image" icon="user-profile"></triplat-icon>
+									</div>		
+								</div>
+								<div hidden$="{{_isPersonType(item)}}">
+									<div hidden$="{{!_isImageAvailable(item.assetImage)}}">
+										<triplat-image src="{{item.assetImage}}" width="50px" height="50px" sizing="contain"></triplat-image> 
+									</div>
+									<div hidden$="{{_isImageAvailable(item.assetImage)}}">
+										<iron-icon class="image" icon="hardware:laptop-mac"></iron-icon>
+									</div>	
+								</div>
+								<div class="layout vertical paddingLeft" hidden$="{{!_isPersonType(item)}}">
+									<div>
+						    			<span class="value">{{item.person.value}}</span>
+						    		</div>
+						    		<div>
+						    			<span class="value">{{item.personTitle}}</span>
+						    		</div>
+						    		<div>
+						    			<span class="value">{{item.workPhone}}</span>
+						    		</div>
+						    	</div>
+						    	<div class="layout vertical paddingLeft" hidden$="{{_isPersonType(item)}}">
+									<div>
+						    			<span class="value">{{item.asset.value}}</span>
+						    		</div>
+						    		<div>
+						    			<span class="value">{{item.assetSerialNumber}}</span>
+						    		</div>
+						    	</div>
+					    	</div>	
+				     	</div>
+					</div>
+					<div class="comments-container" hidden$="{{!item.comment}}">
+						<div class="label">
+							<span><label>Assessment Comments</label></span>
+						</div>
+						<div class="value">
+							<span>{{item.comment}}</span>	
+						</div>
+					</div>
+					<div class="comments-container" hidden$="{{!item.reviewComment}}">
+						<div class="label">
+							<span><label>Review Comments</label></span>
+						</div>
+						<div class="value">
+							<span>{{item.reviewComment}}</span>	
+						</div>
+					</div>
+					<div class="action-container">
+						<div class="action">
+	    					<paper-button on-tap="_handleReject" hidden="{{item.approve}}" disabled="{{historyAssessment}}">Undo</paper-button>
+	    					<paper-button on-tap="_handleAccept" hidden="{{!item.approve}}" disabled="{{historyAssessment}}">Exclude</paper-button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</template>
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-assessment-discrepancies",
+
+		properties : {
+			
+			historyAssessment : Boolean,
+			logId: String,
+			count : {
+				type : Number,
+				notify : true,
+				value : 0
+			}
+		},
+
+		observers : [
+			'_handleDiscrepancyLogCountChange(discrepancyLogs.length)'
+		],
+
+		listeners: {
+			"discrepancyLogsDs.ds-update-complete" : "_handleRefreshDs",
+		},
+
+		_handleDiscrepancyLogCountChange : function(discrepancyLogsLength) {
+			this.set('count', discrepancyLogsLength);
+		},
+
+		_isApproved : function(isApproved) {
+			if (isApproved) {
+				return "row-content";
+			} else {
+				return "row-content rejectDiscrepancy";
+			}
+		},
+
+		_handleBackTap : function() {
+				this.fire("back")
+			},
+
+		_isPersonType : function(item) {
+			if (item.discrepancyType_en_US.indexOf("Person") != -1) {
+				return true;
+			}else {
+				return false ;
+			}
+		},	
+
+		_isImageAvailable: function(personImage) {
+			if(personImage) {
+				return true;
+			}
+			else {
+				return false;
+			}
+		},
+
+		_getSelectedElement: function(e){
+			return this.$.spaceDiscrepancyTemplate.itemForElement(e.target);
+		},
+
+		_handleReject: function(e) {
+			var _selectedDiscrepancyLog = this._getSelectedElement(e);
+			_selectedDiscrepancyLog.approve = true;
+			_selectedDiscrepancyLog.reviewComment = "";
+			var rtn = {'selectedDiscrepancyLog':_selectedDiscrepancyLog,'viewType' : "both"};
+			this.fire("update-discrepancy-log", rtn);
+
+		},
+
+		_handleAccept: function(e) {
+			var _selectedDiscrepancyLog = this._getSelectedElement(e);
+			_selectedDiscrepancyLog.approve = false;
+			this._handleDisplayComment(_selectedDiscrepancyLog);
+		},
+
+		_handleDisplayComment: function(discrepancyLog) {
+			var rtn = {'discrepancyLog':discrepancyLog,'viewType' : "both"};
+
+			this.fire("show-comment", rtn);
+		},
+
+		_handleUpdateDiscrepancyLog: function(discrepancyLog) {
+			this.$.discrepancyLogsDs.updateRecord(discrepancyLog._id, TriPlatDs.RefreshType.SERVER, "defaultActions", "update");
+		},
+
+		_handleRefreshDs: function() {
+			this.fire("refresh-datasources");
+		},
+
+		refresh : function() {
+			this.$.discrepancyLogsDs.refresh();
+		}
+
+    });
+</script>

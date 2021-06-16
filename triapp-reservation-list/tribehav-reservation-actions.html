@@ -1,0 +1,93 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<script>
+
+(function () {
+
+    TriReservationActionsBehavior = {
+
+        listeners: {
+            "action-cancel-from-list": "_handleCancelFromList",
+            "action-checkin-from-list": "_handleCheckInFromList",
+            "action-checkout-from-list": "_handleCheckOutFromList",
+            "action-earlyend-from-list": "_handleEarlyEndFromList"
+        },
+
+        _handleCancelFromList: function (e) {
+            var reservationId = e.detail.reservationId;
+            var occurrenceStart = e.detail.occurrenceStart;
+            var occurrenceEnd = e.detail.occurrenceEnd;
+
+            this.set("occurrenceStart", occurrenceStart);
+            this.set("occurrenceEnd", occurrenceEnd);
+
+            if (this.$.cancelDialog) this.$.cancelDialog.open();
+
+            this._getRM(reservationId).then(function () {
+                this._cancelRM().then(function () {
+                    if (this.$.cancelDialog) this.$.cancelDialog.close();
+
+                    this.$.reservationLocations.refresh().then(function () {
+                        this.async(function () {
+                            this._cancelSuccess();
+
+                            this._goReservationList();
+                        });
+                    }.bind(this));
+                }.bind(this));
+            }.bind(this));
+        },
+
+        _handleCheckInFromList: function (e) {
+            var instanceId = e.detail.instanceId;
+
+            this._setBusy();
+
+            this.$.reservationInstances.performAction(instanceId, TriPlatDs.RefreshType.NONE, "actions", "check-in").then(function () {
+                this.async(function () {
+                    this._checkinSuccess();
+
+                    this._refreshReservationList();
+
+                    this._clearBusy();
+                });
+            }.bind(this));
+        },
+
+        _handleCheckOutFromList: function (e) {
+            var instanceId = e.detail.instanceId;
+
+            this._setBusy();
+
+            this.$.reservationInstances.performAction(instanceId, TriPlatDs.RefreshType.NONE, "actions", "check-out").then(function () {
+                this.async(function () {
+                    this._checkoutSuccess();
+
+                    this._refreshReservationList();
+
+                    this._clearBusy();
+                });
+            }.bind(this));
+        },
+
+        _handleEarlyEndFromList: function (e) {
+            var instanceId = e.detail.instanceId;
+
+            this._setBusy();
+
+            this.$.reservationInstances.performAction(instanceId, TriPlatDs.RefreshType.NONE, "actions", "early-end").then(function () {
+                this.async(function () {
+                    this._earlyendSuccess();
+
+                    this._refreshReservationList();
+
+                    this._clearBusy();
+                });
+            }.bind(this));
+        }
+
+    }
+
+})();
+
+</script>

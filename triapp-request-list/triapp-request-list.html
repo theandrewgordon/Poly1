@@ -1,0 +1,293 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+<dom-module id="triapp-request-list">
+	<template>
+		<style>
+			:host {
+				@apply(--layout-vertical);
+			}
+
+			.no-requests-placeholder {
+				@apply(--layout-center-center);
+				@apply(--layout-vertical);
+				padding: 10px;
+			}
+			.no-requests-placeholder > * {
+				text-align: center;
+				margin: 10px 0;
+			}
+			.no-requests-placeholder-icon {
+				height: 32px;
+				width: 32px;
+			}
+
+			paper-icon-button {
+				width: 44px;
+				height: 44px;
+				padding: 10px;
+			}
+
+			triblock-scroll-container {
+				--triblock-scroll-container-button-background: var(--ibm-blue-50);
+				--triblock-scroll-container-left-arrow: 25px;
+				--triblock-scroll-container-right-arrow: 25px
+				}
+
+			.responsiveLayout {
+				@apply(--layout-wrap);
+				@apply(--layout-scroll);
+				border-top: 1px solid var(--tri-primary-content-accent-color);
+			}
+
+			.request-padding{
+				padding-left: 30px;
+			}
+			:host([small-screen-width]) .responsiveLayout > *{
+				@apply(--layout-flex-none);
+			}
+
+			triblock-tabs {
+				padding-left: 20px;
+				--triblock-tabs-background-color: white;
+				--triblock-tab-background-color: white;
+			}
+
+			:host([small-screen-width])>.action-bar-space{
+				max-height: 55px;
+			}
+		</style>
+
+		<tricore-url hidden raw-url="/p/web/serviceRequest" bind-url="{{serviceRequestUrl}}"></tricore-url>
+
+		<tricore-url hidden raw-url="/p/web/moveMe" bind-url="{{moveMeUrl}}"></tricore-url>
+
+		<triplat-ds id="myActiveRequestsDS" name="myRequests" data="{{myActiveRequests}}" loading="{{myActiveRequestsLoading}}" force-server-filtering disable>
+			<triplat-query>
+				<triplat-query-filter name="statusENUS" operator="equals" value="Issued" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="statusENUS" operator="equals" value="Revision In Progress" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="statusENUS" operator="equals" value="Review In Progress" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="statusENUS" operator="equals" value="Draft" ignore-if-blank></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<triplat-ds id="myHistoryRequestsDS" name="myRequests" data="{{myHistoryRequests}}" force-server-filtering disable>
+			<triplat-query>
+				<triplat-query-filter name="statusENUS" operator="equals" value="Completed" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="statusENUS" operator="equals" value="Retired" ignore-if-blank></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<triplat-auth-check app-name="serviceRequest"
+			auth="{{auth}}">
+		</triplat-auth-check>
+
+		<tricomp-request-list-title
+			count="[[count]]"
+			auth="[[auth]]"
+			maximized="[[maximized]]"
+			show-new-request="[[showNewRequest]]"></tricomp-request-list-title>
+
+		<template is="dom-if" if="[[myActiveRequests.length]]">
+			<template is="dom-if" if="[[!maximized]]">
+				<triblock-scroll-container class="request-padding" id="cardsContainer" auto-height>
+					<template is="dom-repeat" items="{{myActiveRequests}}">
+						<tricomp-request-list-item
+							request-item="{{item}}"
+							current-user="[[currentUser]]">
+						</tricomp-request-list-item>
+					</template>
+				</triblock-scroll-container>
+			</template>
+		</template>
+
+		<template is="dom-if" if="[[!myActiveRequests.length]]">
+			<div class="no-requests-placeholder" hidden$="[[maximized]]">
+				<iron-icon class="no-requests-placeholder-icon" icon="ibm:status-info" info></iron-icon>
+				<div>You don't have any active requests.</div>
+			</div>
+		</template>
+
+		<template is="dom-if" if="[[maximized]]">
+			<div id="maximizedContainer">
+				<triblock-tabs id="tabs" iron-pages-id="myIronPages" selected="inProgressTab" hide-scroll-buttons>
+				    <triblock-tab id="inProgressTab" iron-page-id="inProgress" label="In Progress" tap-handler="_inProgressTabIsActive">
+				    </triblock-tab>
+				    <triblock-tab id="historyTab" iron-page-id="history" label="History" tap-handler="_HistoryTabIsActive">
+				    </triblock-tab>
+				  </triblock-tabs>
+				  <iron-pages id="myIronPages">
+				    <section id="inProgress">
+					    <triblock-responsive-layout class="responsiveLayout">
+						    <template is="dom-repeat" items="{{myActiveRequests}}">
+								<tricomp-request-list-item
+									request-item="{{item}}"
+									current-user="[[currentUser]]">
+								</tricomp-request-list-item>
+							</template>
+							<template is="dom-if" if="[[!myActiveRequests.length]]">
+								<div class="no-requests-placeholder">
+									<iron-icon class="no-requests-placeholder-icon" icon="ibm:status-info" info></iron-icon>
+									<div>You do not have any Service Requests in progress.</div>
+								</div>
+							</template>
+						</triblock-reponsive-layout>
+				    </section>
+				    <section id="history">
+				     <triblock-responsive-layout class="responsiveLayout">
+						    <template is="dom-repeat" items="{{myHistoryRequests}}">
+								<tricomp-request-list-item
+									request-item="{{item}}"
+									current-user="[[currentUser]]">
+								</tricomp-request-list-item>
+							</template>
+							<template is="dom-if" if="[[!myHistoryRequests.length]]">
+								<div class="no-requests-placeholder">
+									<iron-icon class="no-requests-placeholder-icon" icon="ibm:status-info" info></iron-icon>
+									<div>You do not have any completed Service Requests.</div>
+								</div>
+							</template>
+						</triblock-reponsive-layout>
+				    </section>
+				  </iron-pages>
+			</div>
+		</template>
+
+		<div class="action-bar-space"></div>
+
+	</template>
+	<script>
+		Polymer({
+
+			is: "triapp-request-list",
+
+			behaviors: [
+				TriPlatViewBehavior,
+				TriBlockViewResponsiveBehavior
+			],
+
+			properties: {
+				count: {
+					type: Number,
+					computed: "_computeRecordCount(myActiveRequests)",
+					notify: true
+				},
+				homeApp: {
+					type: String
+				},
+				maximized: {
+					type: Boolean,
+					value: false,
+					reflectToAttribute: true
+				},
+				showNewRequest: {
+					type: Boolean,
+					value: false
+				}
+			},
+
+			listeners: {
+				"navigate-request-open": "_handleOpenRequest",
+				"dom-change": "_handleDomChange"
+			},
+
+			observers: [
+				"_observeActiveRequests(myActiveRequests)"
+			],
+
+			_onRefreshTap: function(e) {
+				this.doRefresh();
+			},
+
+			_handleOpenRequest: function(e) {
+				var requestId = e.detail.requestId;
+				if (requestId) {
+					this.fire("set-busy");
+
+					var url = this.serviceRequestUrl;
+
+					if (e.detail.requestType && e.detail.requestType == "Individual Move") {
+					url = this.moveMeUrl;
+
+					}
+
+					if (this.homeApp) {
+						url += "?homeApp=" + this.homeApp;
+					}
+
+					url += "#!/view/" + requestId;
+
+					console.log("url", url);
+
+					location.assign(url);
+				} else {
+					console.error("Cannot open request because [requestId] was not specified.");
+				}
+			},
+
+			_computeRecordCount: function(requests) {
+				var count = Boolean(requests) ? requests.length : 0;
+				return count;
+			},
+
+			doRefresh: function() {
+				this.debounce('doRefresh', function () {
+					if (this.$.myActiveRequestsDS) {
+						this.$.myActiveRequestsDS.disable = true;
+						this.$.myActiveRequestsDS.disable = false;
+					}
+
+					if (this.$.myHistoryRequestsDS) {
+						this.$.myHistoryRequestsDS.disable = true;
+						this.$.myHistoryRequestsDS.disable = false;
+					}
+				});
+			},
+
+			attached: function() {
+				Polymer.RenderStatus.afterNextRender(this, function() {
+					this.$.myActiveRequestsDS.disable = false;
+				});
+			},
+
+			_observeActiveRequests: function(activeRequests) {
+				this.fire("requests-changed", activeRequests);
+			},
+
+			_handleDomChange: function() {
+				this._cardsNotifyResize();
+			},
+
+			_cardsNotifyResize: function() {
+				this.debounce(
+					"cardsChanged",
+					function() {
+						var cardsContainer = document.querySelector("#cardsContainer");
+						if (cardsContainer) {
+							cardsContainer.notifyResize();
+						}
+					},
+					500
+				);
+			},
+
+			_inProgressTabIsActive: function(){
+				if(!this.$.myActiveRequestsDS.disable){
+					this.$.myActiveRequestsDS.refresh();
+				}
+
+			},
+
+			_HistoryTabIsActive: function(){
+				if(!this.$.myHistoryRequestsDS.disable){
+					this.$.myHistoryRequestsDS.refresh();
+				}else{
+					this.$.myHistoryRequestsDS.disable = false;
+				}
+			}
+
+		});
+	</script>
+</dom-module>

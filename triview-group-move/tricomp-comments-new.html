@@ -1,0 +1,476 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../paper-input/paper-textarea.html">
+<link rel="import" href="../triplat-icon/ibm-icons.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../triplat-datetime-picker/triplat-datetime-picker.html">
+
+<dom-module id="tricomp-comments-new">
+	<style>
+		.action-add {
+			color: var(--tri-primary-color);
+			cursor: pointer;
+		}
+
+		.action-delete {
+			cursor: pointer;
+			color: var(--tri-danger-color);
+		}
+
+		.item-container {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-start);
+			@apply(--layout-center-justified);
+			@apply(--layout-scroll);
+		}
+
+		.header-text span {
+			padding-left: 5px;
+		}
+
+		.header-text-bold {
+			font-weight: bold;
+		}
+
+		.header-text-main {
+			@apply(--layout);
+			@apply(--layout-center);
+			height: 44px;
+			background-color: var(--tri-body-background-color);
+
+		}
+
+		.mli-cell {
+			display: table-cell;
+			vertical-align: middle;
+			height: 25px;
+			padding: 10px 14px;
+		}
+		
+		.mli-cell > .assigned {
+			color: var(--tri-success-color);
+			padding-right: 15px;
+			vertical-align: middle;
+		}
+		
+		.mli-header-cell {
+			display: table-cell;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			line-height: 30px;
+			padding: 5px 14px 5px 0px;
+			text-align: left;
+		}
+
+		.mli-header-cell::before {
+			border-left: 1px solid var(--tri-primary-content-accent-color);
+			content: "";
+			font-size: 18px;
+			padding-right: 14px;
+		}
+
+		.mli-header-cell:first-child::before, .mli-header-cell.hide-border::before {
+			border-left: none !important;
+		}
+
+		.mli-row:nth-child(even) {
+			display: table-row;
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			transition-duration: 300ms;
+			background-color: var(--tri-body-background-color);
+
+		}
+
+		.mli-row:nth-child(odd) {
+			display: table-row;
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			transition-duration: 300ms;
+			background-color: var(--tri-primary-content-background-color);
+		}
+
+		.mli-table {
+			display: table;
+			border-collapse: collapse;
+			border-spacing: 0;
+			width: 100%;
+			background-color: var(--tri-primary-content-background-color);
+			color: var(--tri-primary-content-color);
+			font-size: 14px;
+		}
+
+		.mli-table-header {
+			display: table-header-group;
+			background-color: var(--tri-primary-content-background-color);
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			color: var(--tri-primary-color);
+		}
+
+		paper-textarea {
+			margin-top: 10px;
+		 	border: 1px solid;
+			color: var(--tri-primary-color) !important;
+			--paper-input-container-underline: {  
+     			background: transparent;
+			};
+			--paper-input-container-focus-color: var(--tri-primary-color);
+			--paper-input-container-input:{
+				font-size: 14px;
+				font-family: var(--tri-font-family);
+				padding-left: 5px;
+			};
+			--paper-input-container-label:{
+				padding-left: 5px;
+				font-size: 14px;
+				font-family: var(--tri-font-family);
+			};
+			--paper-input-container-underline-focus: {  
+     			background: none;
+			};
+		}
+
+
+        .request-comments-table-container {
+			@apply(--layout-self-center);
+			@apply(--layout-horizontal);
+			width: 100%;
+		}
+
+       .request-comments-table {
+			width: 100%;
+		}
+
+        .request-comments-info {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-left);
+			@apply(--layout-wrap);
+			padding: 10px;
+			font-size: 14px;
+			font-family: var(--tri-font-family);
+		}
+
+        .container-vertical {
+			@apply(--layout-vertical);
+			@apply(--layout-left);
+			padding: 5px;
+			width: 90%;
+		}
+
+		.container-horizontal {
+			@apply(--layout-horizontal);
+		}
+
+		.container-horizontal-right {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-center-center);
+			-webkit-justify-content: flex-end;
+    	    justify-content: flex-end;
+			padding-right: 15px;
+		}		
+
+        .request-comments-label {
+             color: var(--tri-secondary-icon-button-hover-color) !important;
+		}
+
+	</style>
+	
+	<template>
+
+		<triplat-ds name="currentUser" data="{{currentUser}}"></triplat-ds>
+
+		<triplat-ds name="myMoveRequests" data="{{openRequest}}" id="moveRequestModel" loading="{{myMoveRequestsLoading}}">
+			<triplat-ds-instance instance-id="{{openRequestWhatUrlParams.reqId}}"></triplat-ds-instance>
+		</triplat-ds>
+
+		<triplat-ds name="moveLineItems" data="{{moveLineItems}}">
+			<triplat-ds-context name="myMoveRequests" context-id="{{openRequestWhatUrlParams.reqId}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds name="comments" filtered-data="{{comments}}" loading="{{commentsLoading}}" id="commentsDS" on-ds-create-complete="_handleCommentCreateComplete" on-ds-delete-complete="_handleCommentDeleteComplete" on-ds-get-complete="_handleCommentGetComplete">
+			<triplat-ds-context name="myMoveRequests" context-id="{{openRequestWhatUrlParams.reqId}}"></triplat-ds-context>
+			<triplat-ds-context name="moveLineItems" context-id="{{currentMli}}"></triplat-ds-context>
+			<triplat-query>
+				<triplat-query-sort name="createdDateTime" desc></triplat-query-sort>
+			</triplat-query>
+		</triplat-ds>
+
+		<triplat-ds name="requestComments" filtered-data="{{requestComments}}" loading="{{requestCommentsLoading}}" id="requestCommentsDS" on-ds-create-complete="_handleCommentCreateComplete" on-ds-delete-complete="_handleCommentDeleteComplete" on-ds-get-complete="_handleCommentGetComplete">
+			<triplat-ds-context name="myMoveRequests" context-id="{{openRequestWhatUrlParams.reqId}}"></triplat-ds-context>
+			<triplat-query>
+				<triplat-query-sort name="createdDateTime" desc></triplat-query-sort>
+			</triplat-query>
+		</triplat-ds>
+ 
+		<div class="header-text">
+
+			<!-- MLI Comment Header -->				
+			<div hidden$="{{!isMliComment}}" class="header-text-main">
+				<p></p>
+				<span>Comments for&nbsp;</span>	
+				<span class="header-text-bold" hidden$="{{!_isAsset(selectedLineItem.moveType)}}">{{selectedLineItem.assetName}}</span>
+				<span class="header-text-bold" hidden$="{{!_isEquipment(selectedLineItem.moveType)}}">{{selectedLineItem.equipmentName}}</span>
+				<span class="header-text-bold" hidden$="{{!_isPerson(selectedLineItem.moveType)}}"><span>{{selectedLineItem.lastName}}</span><span>,&nbsp;</span><span>{{selectedLineItem.firstName}}</span></span>
+				<span class="header-text-bold" hidden$="{{!_isRoom(selectedLineItem.moveType)}}">{{selectedLineItem.fromSpace}}</span>
+				<p></p>
+			</div>
+
+
+            <!-- Enter Comment Text Field -->
+			<paper-textarea label="Add your comments" 
+			value="{{newComment.comment}}" 
+			rows="3" max-rows="3" maxlength="250" readonly$="{{_isCompleted(openRequest)}}" 
+			no-label-float></paper-textarea>	
+			
+            <!-- Add Request Comment -->
+			<div hidden$="{{isMliComment}}">
+			<div class="container-horizontal-right" id="peopleAddCommentIcon" on-tap="_handleAddComment" hidden$="{{_isCompleted(openRequest)}}">
+				<paper-icon-button primary noink icon="icons:add-circle"></paper-icon-button>
+				<span class="tri-link">Add</span>
+			</div>
+			</div>
+
+			<!-- Add Request MLI Comment -->
+			<div hidden$="{{!isMliComment}}">
+			<div class="container-horizontal-right" id="peopleAddCommentIcon" on-tap="_handleAddMLIComment" hidden$="{{_isCompleted(openRequest)}}">
+				<paper-icon-button primary noink icon="icons:add-circle"></paper-icon-button>
+				<span class="tri-link">Add</span>
+			</div>
+			</div>
+
+            <!-- new layout for Request Comments -->
+            <div id="requestComments" class="item-container" hidden$="{{isMliComment}}">
+                    <div class="mli-table" >
+                       
+                        <div table-container class="request-comments-table-container" >
+                            <div tri-table class="request-comments-table">
+
+                                <div tri-tbody>
+
+                                    <template id="requestCommentsTemplate" is="dom-repeat" items="{{requestComments}}">	
+
+                                        <div tri-tr class="request-comments-info">
+
+											<div class="container-horizontal"> 
+                                                <div class="container-vertical">
+													<div class="request-comments-label">
+														<span>{{item.createdBy}}</span>
+														<span> &nbsp; on &nbsp;</span>
+														<triplat-datetime-picker readonly display-format="{{currentUser._DateTimeFormat}}" value="{{item.createdDateTime}}"></triplat-datetime-picker>
+													</div>
+													<div >
+														<div><span>{{item.comment}}</span></div>
+													</div>
+													<div> <span> &nbsp;</span></div>
+                                                </div>
+												<div class="mli-cell">	
+								                     <paper-icon-button danger noink class="action-delete" icon="ibm:remove-delete" on-tap="_handleDeleteComment"></paper-icon-button>
+							                    </div>
+
+                                            </div> <!-- end container-horizontal -->
+
+                                        </div> <!-- end tri-tr -->
+                                    </template>
+                                
+                                </div>
+                            </div>
+                        </div>
+
+                    </div> <!-- End mli-table -->
+                </div>	
+
+
+            <!-- new layout for Request MLI Comments -->
+            <div id="MLIComments" class="item-container" hidden$="{{!isMliComment}}">
+                    <div class="mli-table" >
+                        <div table-container class="request-comments-table-container" >
+                            <div tri-table class="request-comments-table">
+                                <div tri-tbody>
+                                    <template id="mliCommentsTemplate" is="dom-repeat" items="{{comments}}" >	
+                                        <div tri-tr class="request-comments-info">
+											<div class="container-horizontal"> 
+                                                <div class="container-vertical">
+													<div class="request-comments-label">
+														<span>{{item.createdBy}}</span>
+														<span> &nbsp; on &nbsp;</span>
+														<triplat-datetime-picker readonly display-format="{{currentUser._DateTimeFormat}}" value="{{item.createdDateTime}}"></triplat-datetime-picker>
+													</div>
+													<div >
+														<div><span>{{item.comment}}</span></div>
+													</div>
+													<div> <span> &nbsp;</span></div>
+                                                </div>
+												<div class="mli-cell">	
+								                    <paper-icon-button danger noink class="action-delete" icon="ibm:remove-delete" on-tap="_handleDeleteMLIComment"></paper-icon-button>
+							                    </div>
+                                            </div> 
+                                        </div>
+                                    </template>
+                               </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+			
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-comments-new",
+
+		properties: {
+
+			
+			commentCount: {
+				type: String,
+				value: "",
+			},
+
+			currentMli: {
+				type: Number,
+				value: "",
+			},
+			
+			newComment: {
+				type: String,
+				value: {comment: ""},
+			},
+
+			isMliComment: {
+				type: Boolean,
+				value: false,
+			},
+
+
+			_selectedLineItem: Object,
+
+		
+		},
+
+		observers : [
+			'_handleCommentCountChanged(commentCount)'
+		],
+
+		
+		ready: function(e) {
+
+		},
+
+
+
+		_handleDeleteComment: function(e) {
+			var comment = e.model.item;
+			this.$.requestCommentsDS.deleteRecord(comment._id, TriPlatDs.RefreshType.BOTH, "actions", "delete");	
+		},
+
+		_handleAddComment: function() {
+			if (this.newComment && this.newComment.comment != "") {
+				this.$.requestCommentsDS.createRecord(this.newComment, TriPlatDs.RefreshType.BOTH, "defaultActions", "create");	
+			}
+		},
+
+		_handleDeleteMLIComment: function(e) {
+			var comment = e.model.item;
+			this.$.commentsDS.deleteRecord(comment._id, TriPlatDs.RefreshType.BOTH, "actions", "delete");		
+		},
+
+		_handleAddMLIComment: function() {
+			if (this.newComment && this.newComment.comment != "") {
+				this.$.commentsDS.createRecord(this.newComment, TriPlatDs.RefreshType.BOTH, "defaultActions", "create");	
+			}
+		},
+
+		_handleCommentCreateComplete: function() {
+			this.set("newComment.comment", "");
+			this.commentCount++;
+			this.set("commentCount", this.commentCount);
+			this.$.mliCommentsTemplate.render();
+			this.$.requestCommentsTemplate.render();			
+		},
+
+		_handleCommentDeleteComplete: function() {
+			this.commentCount--;
+			this.set("commentCount", this.commentCount);
+			this.$.mliCommentsTemplate.render();
+			this.$.requestCommentsTemplate.render();		
+		},
+
+		_handleCommentGetComplete: function() {
+			this.set("newComment.comment", "");
+			if ((this.comments) && (this.comments.length > 0)) {
+				this.set("commentCount", this.comments.length);
+			}
+			else {
+				this.set("commentCount", "");
+			}	
+		},
+
+		_isPerson: function(moveType) {
+			if (moveType == "Person") {
+				return true;
+			}
+			return false;
+		},
+
+		_isAsset: function(moveType) {
+			if (moveType == "Asset") {
+				return true;
+			}
+			return false;
+		},
+
+		_isEquipment: function(moveType) {
+			if (moveType == "Equipment") {
+				return true;
+			}
+			return false;
+		},
+
+		_isRoom: function(moveType) {
+			if (moveType == "Room Function") {
+				return true;
+			}
+			return false;
+		},
+
+		_handleCommentCountChanged: function() {
+			this.fire('commentCount', this.commentCount);
+		},
+
+		_isEmpty: function(val) {
+			return !val || val == "";
+		},
+
+		_isCompleted: function(request){
+			if (request) {
+				return  (request.status=="Completed");
+			}
+		},
+
+		_sort: function(sortField) {
+			return function(mli1, mli2) {
+					if (mli1[sortField] && mli2[sortField]) {
+						if (mli1[sortField] == "") {
+							return 1; // blank strings go at the end of sorted list
+						} else {
+							var compare = mli1[sortField].localeCompare(mli2[sortField]);
+							return compare;
+						}
+					} else {
+						if (( mli1[sortField] === null) && (mli2[sortField] === null)) return 0;
+							else if (( mli1[sortField] === null) && (mli2[sortField] != null)) return -1;
+							else if (( mli1[sortField] != null) && (mli2[sortField] === null)) return 1;
+					}
+				}
+
+			},
+
+
+
+	});
+</script>

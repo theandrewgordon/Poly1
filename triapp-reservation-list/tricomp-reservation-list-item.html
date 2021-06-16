@@ -1,0 +1,656 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2019 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../iron-dropdown/iron-dropdown.html">
+<link rel="import" href="../iron-a11y-keys/iron-a11y-keys.html">
+
+<link rel="import" href="../paper-dialog/paper-dialog.html">
+<link rel="import" href="../paper-button/paper-button.html">
+
+<link rel="import" href="../triblock-popup/triblock-popup.html">
+
+<link rel="import" href="tricomp-reservation-date.html">
+<link rel="import" href="tricomp-reservation-duration.html">
+<link rel="import" href="tricomp-reservation-title.html">
+<link rel="import" href="tricomp-reservation-room.html">
+<link rel="import" href="tricomp-reservation-lifecycle-events.html">
+
+<link rel="import" href="tribehav-reservation-utilities.html">
+
+<dom-module id="tricomp-reservation-list-item">
+	<template>
+		<style>
+			:host {
+				position: relative;
+				cursor: pointer;
+				background-color: white;
+			}
+			:host[is-card] {
+				@apply(--layout-vertical);
+				min-width: 308px;
+				max-width: 308px;
+				margin-right: 20px;
+				border: 1px solid var(--ibm-gray-10);
+			}
+			:host[is-card]:hover {
+				@apply(--shadow-elevation-3dp);
+				border-color: var(--ibm-blue-50);
+			}
+
+			.reservation-item-container {
+				@apply(--layout-horizontal);
+				max-width: 100%;
+				padding: 20px 0;
+			}
+			:host[small-screen] .reservation-item-container {
+				@apply(--layout-vertical);
+			}
+			:host[is-card] .reservation-item-container {
+				@apply(--layout-vertical);
+				flex: 1;
+				height: 100%;
+				padding: 20px;
+			}
+			:host(:not([is-card])) .reservation-item-container {
+				border-bottom: 1px solid var(--ibm-gray-10);
+			}
+			:host(:not([is-card])):first-of-type .reservation-item-container {
+				padding-top: 5px;
+			}
+			:host(:not([is-card])):last-of-type .reservation-item-container {
+				border-bottom: none;
+				padding-bottom: 0;
+			}
+
+			.reservation-details-container {
+				@apply(--layout-vertical);
+				@apply(--layout-center-justified);
+				min-width: 0px;
+				flex: 1;
+			}
+			:host[small-screen] .reservation-details-container,
+			:host[is-card] .reservation-details-container {
+				padding-bottom: 20px;
+			}
+
+			.room-item-container {
+				@apply(--layout-horizontal);
+				flex: 1;
+			}
+
+			.actions-container {
+				@apply(--layout-horizontal);
+				@apply(--layout-center-center);
+			}
+			:host(:not([small-screen]):not([is-card])) .actions-container {
+				margin-left: 20px;
+			}
+			:host(:not([small-screen]):not([is-card])) .actions-container-multi {
+				@apply(--layout-start);
+				padding-top: 3em;
+			}
+
+			.dialog-buttons {
+				@apply(--layout-horizontal);
+				@apply(--layout-end-justified);
+			}
+
+			.date-session {
+				@apply(--layout-vertical);
+				margin-right: 20px;
+			}
+
+			.reservation-session {
+				@apply(--layout-vertical);
+				flex: 1;
+				min-width: 0;
+			}
+
+			tricomp-reservation-title {
+				max-width: 100%;
+			}
+
+			tricomp-reservation-room {
+				flex: 1;
+				margin-top: 10px;
+			}
+
+			.openReservationDialog {
+				@apply(--layout-vertical);
+				font-size: 14px;
+				height: 190px;
+				width: 250px;
+			}
+
+			iron-dropdown paper-button {
+				align-items: flex-start !important;
+				margin: 0;
+				border-width: 0 !important;
+			}
+			iron-dropdown paper-button:hover {
+				padding: 10px 22px !important;
+			}
+
+			iron-dropdown {
+				border: 1px solid var(--ibm-gray-50);
+				background: white;
+			}
+
+			.loading-indicator {
+				margin: 20px;
+				text-align: center;
+			}
+
+			.force-one-line {
+				box-sizing: content-box;
+				white-space: nowrap;
+			}
+		</style>
+
+		<triplat-ds name="applicationSettings" data="{{applicationSettings}}"></triplat-ds>
+
+		<tricore-url raw-url="/getCompanyFile.jsp?fileLoc=" bind-url="{{imgUrl}}"></tricore-url>
+
+		<triplat-ds id="reservationResources" name="reservationResources" data="{{reservationResources}}" loading="{{reservationResourcesLoading}}" on-ds-get-complete="_onReservationResourcesGetComplete">
+			<triplat-ds-context name="reservationDefinition" context-id="[[eventItem.recordId]]"></triplat-ds-context>
+		</triplat-ds>
+
+		<tricomp-array-comparator
+				source="{{reservationResources}}"
+				source-match-field="roomId"
+				compare-to="{{favoriteRooms}}"
+				match-flag="isFavorite"
+				update-source>
+		</tricomp-array-comparator>
+
+		<iron-a11y-keys id="tapKeys" target="[[_targetItem]]" keys="enter" on-keys-pressed="_handleOpenReservationTap"></iron-a11y-keys>
+
+		<div id="reservationItem" class="reservation-item-container" on-tap="_handleOpenReservationTap">
+			<div class="reservation-details-container">
+				<div class="room-item-container">
+					<div class="date-session" hidden$="[[_computeDateHidden(smallScreen, isCard)]]">
+						<tricomp-reservation-date
+							day="[[day]]"
+							date="[[eventItem._Start_Datetime]]"
+							datetime="[[datetime]]"
+							current-user="[[currentUser]]"
+							disabled="[[_computeDateDisabled(itemIndex)]]"></tricomp-reservation-date>
+					</div>
+
+					<div class="reservation-session">
+						<template is="dom-if" if="[[!_reservationHasLocations(reservationResources)]]">
+							<tricomp-reservation-duration
+								event-item="[[eventItem]]"
+								current-user="[[currentUser]]"
+								is-card="[[isCard]]"></tricomp-reservation-duration>
+						</template>
+
+						<tricomp-reservation-duration
+							event-item="[[eventItem]]"
+							current-user="[[currentUser]]"
+							is-card="[[isCard]]"></tricomp-reservation-duration>
+
+						<tricomp-reservation-title id="reservationTitle"
+							event-item="[[eventItem]]"
+							is-card="[[isCard]]"></tricomp-reservation-title>
+
+						<!-- Location Reservation -->
+						<template is="dom-if" if="[[!isCard]]">
+							<template is="dom-repeat" items="[[reservationResources]]">
+								<tricomp-reservation-room
+									event-item="[[item]]"
+									application-settings="[[applicationSettings]]"
+									is-card="[[isCard]]"></tricomp-reservation-room>
+							</template>
+						</template>
+						<template is="dom-if" if="[[isCard]]">
+							<tricomp-reservation-room
+								event-item="[[_computeFirstReservationResource(reservationResources)]]"
+								application-settings="[[applicationSettings]]"
+								is-card="[[isCard]]"
+								total-rooms="[[_computeReservationResourcesLength(reservationResources)]]"></tricomp-reservation-room>
+						</template>
+
+						<div class="loading-indicator" hidden="[[!_isLoading]]">
+							<paper-spinner active></paper-spinner>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class$="[[_computeActionsContainerClass(reservationResources)]]">
+				<paper-button
+					id="delete"
+					class="force-one-line"
+					hidden$="[[!_isShowDelete(eventItem, isStarted, reservationResources, isOutlookEmbedded)]]"
+					on-tap="_handleCancelTap"
+					danger-outline
+					noink>Cancel</paper-button>
+				<tricomp-reservation-lifecycle-events
+					id="lifecyle"
+					is-started="{{isStarted}}"
+					disabled="[[_computeLifeCycleDisabled(reservationResources)]]"
+					timezone="[[currentUser._TimeZoneId]]"
+					check-in-required="[[reservationInstance.checkInRequired]]"
+					check-in-reminder="[[reservationInstance.checkInReminderDateTime]]"
+					check-in-auto-cancel="[[reservationInstance.cancellationAutoDateTime]]"
+					planned-start="[[reservationInstance.startDateTime]]"
+					planned-end="[[reservationInstance.endDateTime]]"
+					actual-start="[[reservationInstance.actualStart]]"
+					actual-end="[[reservationInstance.actualEnd]]"
+					reservation-instance="[[reservationInstance]]"
+					on-checkin="_handleCheckIn"
+					on-checkout="_handleCheckOut"
+					on-earlyend="_handleEarlyEnd"
+					on-start="_handleStart"
+					on-end="_handleEnd"
+					on-autocancel="_handleAutoCancel">
+				</tricomp-reservation-lifecycle-events>
+			</div>
+		</div>
+
+		<paper-dialog id="cancelDialog" with-backdrop>
+			<p>Are you sure you want to cancel this reservation?</p>
+			<div class="dialog-buttons">
+				<paper-button secondary dialog-dismiss>No</paper-button>
+				<paper-button dialog-confirm on-tap="_doCancel">Yes</paper-button>
+			</div>
+		</paper-dialog>
+
+		<triblock-popup id="cancelSeriesReservationDialog" class="cancelReservationDialog" small-screen-max-width="1">
+			<div>This is a recurring reservation.</div>
+			<br>
+			<paper-button id="cancelButton" on-tap="_doCancel" danger-outline noink>Cancel Occurrence</paper-button>
+			<br>
+			<paper-button id="cancelSeriesButton" on-tap="_doCancelSeriesReservation" danger-outline noink>Cancel Series</paper-button>
+		</triblock-popup>
+
+		<triblock-popup id="openReservationDialog" class="openReservationDialog" small-screen-max-width="1">
+			<div>This is a recurring reservation.</div>
+			<br>
+			<paper-button id="openButton" on-tap="_handleOpenReservation" secondary noink>Open Occurrence</paper-button>
+			<br>
+			<paper-button id="openSeriesButton" on-tap="_handleOpenSeriesReservation" secondary noink>Open Series</paper-button>
+		</triblock-popup>
+
+		<iron-dropdown id="openReservationDropdown"
+			horizontal-align="left"
+			horizontal-offset="[[_openDropdownWidth]]"
+			vertical-align="top"
+			vertical-offset="[[_openDropdownHeight]]"
+			position-target="[[_openDropdownTarget]]">
+			<div class="dropdown-content">
+				<paper-button on-tap="_handleOpenReservation" secondary noink>Open Occurrence</paper-button>
+				<paper-button on-tap="_handleOpenSeriesReservation" secondary noink>Open Series</paper-button>
+			</div>
+		</iron-dropdown>
+
+		<iron-dropdown id="cancelReservationDropdown"
+			horizontal-align="right"
+			vertical-align="[[_computeCancelDropdownVerticalAlign(isLastGroup, isLastItem)]]"
+			vertical-offset="49"
+			position-target="[[_cancelDropdownTarget]]">
+			<div class="dropdown-content">
+				<paper-button on-tap="_doCancel" secondary noink>Cancel Occurrence</paper-button>
+				<paper-button on-tap="_doCancelSeriesReservation" secondary noink>Cancel Series</paper-button>
+			</div>
+		</iron-dropdown>
+
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-reservation-list-item",
+
+			behaviors: [TriDateUtilities, TriReservationUtilitiesBehavior, TriBlockViewResponsiveBehavior],
+
+			properties: {
+				favoriteRooms: Array,
+				eventItem: {
+					type: Object,
+					value: null,
+					observer: '_eventItemChanged'
+				},
+				reservationInstance: {
+					type: Object,
+				},
+				disabled: {
+					type: Boolean,
+					value: false
+				},
+				enableCountdown: {
+					type: Boolean,
+					value: true
+				},
+				isStarted: {
+					type: Boolean,
+					value: false
+				},
+				day: String,
+				datetime: Date,
+				isCard: {
+					type: Boolean,
+					value: false,
+					reflectToAttribute: true
+				},
+				itemIndex: {
+					type: Number,
+					value: 0
+				},
+				isLastGroup: {
+					type: Boolean,
+					value: false
+				},
+				isLastItem: {
+					type: Boolean,
+					value: false
+				},
+				_isLoading: {
+					type: Boolean,
+					computed: "_isBusy(isBusy, reservationResourcesLoading)"
+				},
+				_targetItem: {
+					type: Object,
+					value: function() {
+						return this;
+					}
+				}
+			},
+
+			observers: [
+				'_setDateAndDay(eventItem, currentUser._TimeZoneId)'
+			],
+
+			listeners: {},
+
+			attached: function() {
+				this._cancelDropdownTarget = this.$.delete;
+				this._openDropdownTarget = this.$.reservationTitle;
+			},
+
+			_setDateAndDay: function(eventItem, timezone) {
+				if (eventItem && timezone) {
+					var mo = moment().tz(timezone)
+
+					var startMo = moment(eventItem._Start_Datetime).tz(timezone);
+					var lang = document.querySelector('html').getAttribute("lang") || 'en';
+					startMo.locale(lang);
+					var resultMo = startMo.locale(this.currentUser._Locale);
+
+					if (startMo.isBefore(mo, 'day')) {
+						resultMo = mo;
+					}
+
+					this.set('datetime', resultMo.toDate());
+					this.set('day', resultMo.format("ddd").toUpperCase());
+				}
+			},
+
+			_computeIsPendingApproval: function(status) {
+				return status == 'Review In Progress';
+			},
+
+			_computeIsDeclined: function(status) {
+				return status == 'Declined';
+			},
+
+			_reservationHasLocations: function(reservationResources) {
+				return Boolean(reservationResources) && reservationResources.length > 0;
+			},
+
+			_computeLifeCycleDisabled: function(reservationResources) {
+				var disableLifeCycle = false;
+				if (reservationResources && reservationResources.length > 0) {
+					for (var i = 0; i < reservationResources.length; i++) {
+						var room = reservationResources[i];
+						if (this._computeIsDeclined(room.status) || this._computeIsPendingApproval(room.status)) {
+							disableLifeCycle = true;
+							break;
+						}
+					}
+				}
+				return disableLifeCycle;
+			},
+
+			_isBusy: function(isBusy, reservationResourcesLoading) {
+				return isBusy || reservationResourcesLoading;
+			},
+
+			_isShowDelete: function(eventItem, isStarted, reservationResources, isOutlookEmbedded) {
+				var isPendingApproval = false;
+				if (reservationResources && reservationResources.length > 0) {
+					for (var i = 0; i < reservationResources.length; i++) {
+						var resource = reservationResources[i];
+						if (this._computeIsPendingApproval(resource.status)) {
+							isPendingApproval = true;
+							break;
+						}
+					}
+				}
+
+				return !this._isReadOnlyOutlook(isOutlookEmbedded, eventItem) && (isPendingApproval || (!eventItem.iCalUID && !isStarted));
+			},
+
+			_isShowSeriesDelete: function(eventItem, iCalUID, isStarted) {
+				return this._isSeries(eventItem) && !iCalUID && !isStarted;
+			},
+
+			_eventItemChanged: function(value, oldValue) {
+				if (!this.reservationInstance) {
+					this.set("reservationInstance", value.reservationInstance);
+				}
+			},
+
+			_handleCancel: function(e) {
+				e.stopPropagation();
+
+				this.$.cancelDialog.open();
+			},
+
+			_handleCancelTap: function(e) {
+				e.stopPropagation();
+
+				if (this._isSeries(this.eventItem)) {
+					if (this.isCard) {
+						if (this.$.openReservationDialog.opened) {
+							this.$.openReservationDialog.closePopup();
+						}
+						this.$.cancelSeriesReservationDialog.fitInto = this;
+						this.$.cancelSeriesReservationDialog.openPopup();
+					} else {
+						if (this.$.openReservationDropdown.opened) {
+							this.$.openReservationDropdown.close();
+						}
+						this.$.cancelReservationDropdown.toggle();
+					}
+				} else {
+					this._handleCancel(e);
+				}
+			},
+
+			_doCancel: function(e) {
+				e.stopPropagation();
+
+				if (this.$.cancelDialog.opened) {
+					this.$.cancelDialog.close()
+				};
+
+				var occurrenceStart = null;
+				var occurrenceEnd = null;
+				if (this._isSeries(this.eventItem)) {
+					occurrenceStart = this.eventItem._Start_Datetime;
+					occurrenceEnd = this.eventItem._End_Datetime;
+				}
+
+				this.fire("action-cancel-from-list", { 'reservationId' : this._getReservationDefinitionSpecId(),
+														'occurrenceStart' : occurrenceStart,
+														'occurrenceEnd' : occurrenceEnd});
+			},
+
+
+			_doCancelSeriesReservation: function(e) {
+				e.stopPropagation();
+
+				this.fire("action-cancel-from-list", { 'reservationId' : this._getReservationDefinitionSeriesSpecId(),
+														'occurrenceStart' : null,
+														'occurrenceEnd' : null});
+			},
+
+			_handleToggleRoomFavorite: function(e) {
+				e.stopPropagation();
+
+				var roomId = e.model.item.roomId;
+				var isFavorite = e.model.item.isFavorite;
+				this.fire("action-toggle-room-favorite", { 'roomId': roomId, 'isFavorite': !isFavorite });
+			},
+
+			_computeFavIcon: function(isFav) {
+				return isFav ? "ibm:rating-star-filled" : "ibm:rating-star";
+			},
+
+			_handleCheckIn: function(e) {
+				e.stopPropagation();
+
+				this.fire("action-checkin-from-list", { 'instanceId' : this._getReservationInstanceSpecId()});
+			},
+
+			_handleCheckOut: function(e) {
+				e.stopPropagation();
+
+				this.fire("action-checkout-from-list", { 'instanceId' : this._getReservationInstanceSpecId()});
+			},
+
+			_handleEarlyEnd: function(e) {
+				e.stopPropagation();
+
+				this.fire("action-earlyend-from-list", { 'instanceId' : this._getReservationInstanceSpecId()});
+			},
+
+			_handleStart: function(e) {
+				// Meeting has started
+				if (this.reservationInstance.cancellationAutoDateTime) {
+					// This meeting has an auto-cancellation policy - skipping auto start
+				} else {
+					this.set("instance.actualStart", new Date());
+				}
+			},
+
+			_handleEnd: function(e) {
+				// Meeting has ended
+				this.set("instance.actualEnd", new Date());
+				this.async(function() {
+				}, 5000);
+			},
+
+			_handleAutoCancel: function(e) {
+				// Meeting has been auto cancelled.
+				if (this.reservationInstance.cancellationAutoDateTime) {
+					this.set("instance.actualStart", "-1");
+					this.set("instance.actualEnd", "-1");
+				}
+			},
+
+			_getReservationInstanceSpecId: function() {
+				if (this.reservationInstance)
+					return this.reservationInstance._id;
+
+				return null;
+			},
+
+			_getReservationDefinitionSpecId: function() {
+				return this.eventItem.recordId;
+			},
+
+			_getReservationDefinitionSeriesSpecId: function() {
+				return this.eventItem.seriesId ? this.eventItem.seriesId : this._getReservationDefinitionSpecId();
+			},
+
+			_setOpenDropdownPosition: function() {
+				if (this.smallScreenWidth) {
+					this._openDropdownWidth = 0;
+					this._openDropdownHeight = this.$.reservationTitle.offsetHeight;
+				} else {
+					this._openDropdownWidth = this.$.reservationTitle.offsetWidth;
+					this._openDropdownHeight = 0;
+				}
+			},
+
+			_handleOpenReservationTap: function(e) {
+				e.stopPropagation();
+
+				if (this._isSeries(this.eventItem)) {
+					if (this.isCard) {
+						if (this.$.cancelSeriesReservationDialog.opened) {
+							this.$.cancelSeriesReservationDialog.closePopup();
+						}
+						this.$.openReservationDialog.fitInto = this;
+						this.$.openReservationDialog.openPopup();
+					} else {
+						if (this.$.cancelReservationDropdown.opened) {
+							this.$.cancelReservationDropdown.close();
+						}
+						this._setOpenDropdownPosition();
+						this.$.openReservationDropdown.toggle();
+					}
+				} else {
+					this._handleOpenReservation(e);
+				}
+			},
+
+			_handleOpenReservation: function(e) {
+				e.stopPropagation();
+
+				var occurrenceStart = null;
+				var occurrenceEnd = null;
+				if (this._isSeries(this.eventItem)) {
+					occurrenceStart = this.eventItem._Start_Datetime;
+					occurrenceEnd = this.eventItem._End_Datetime;
+				}
+
+				this.fire("navigate-reservation-open", { 'reservationId' : this._getReservationDefinitionSpecId(),
+														'occurrenceStart' : occurrenceStart,
+														'occurrenceEnd' : occurrenceEnd,
+														'iCalUID' : this.eventItem.iCalUID});
+			},
+
+			_handleOpenSeriesReservation: function(e) {
+				e.stopPropagation();
+
+				// ACM TODO: e.stopPropagation() if it's tapping on the heart icon
+				// if possible, find a way to make the heart icon invulnerable to this
+				this.fire("navigate-reservation-open", { 'reservationId' : this._getReservationDefinitionSeriesSpecId(),
+														'occurrenceStart' : null,
+														'occurrenceEnd' : null,
+														'iCalUID' : this.eventItem.iCalUID});
+			},
+
+			_onReservationResourcesGetComplete: function() {
+				this.fire("reservation-resources-change");
+			},
+
+			_computeActionsContainerClass: function(resources) {
+				return (resources && resources.length && resources.length > 1) ? "actions-container actions-container-multi" : "actions-container";
+			},
+
+			_computeDateDisabled: function(index) {
+				return (index === 0) ? false : true;
+			},
+
+			_computeCancelDropdownVerticalAlign: function(lastGroup, lastItem) {
+				return (lastGroup && lastItem) ? "bottom" : "top";
+			},
+
+			_computeDateHidden: function(smallScreen, isCard) {
+				return (!smallScreen && !isCard) ? true : false;
+			},
+
+			_computeFirstReservationResource: function(resource) {
+				return (resource && resource.length > 0) ? resource[0] : {};
+			},
+
+			_computeReservationResourcesLength: function(resource) {
+				return (resource) ? resource.length : 0;
+			}
+
+		});
+	</script>
+</dom-module>

@@ -1,0 +1,302 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../paper-input/paper-textarea.html">
+<link rel="import" href="../triplat-icon/ibm-icons.html">
+
+<dom-module id="tricomp-comments">
+	<style>
+		.action-add {
+			color: var(--tri-primary-color);
+			cursor: pointer;
+		}
+
+		.action-delete {
+			cursor: pointer;
+			color: var(--tri-danger-color);
+		}
+
+		.item-container {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-start);
+			@apply(--layout-center-justified);
+			@apply(--layout-scroll);
+		}
+
+		.header-text {
+			margin-left: 20px;
+		}
+
+		.header-text-bold {
+			font-weight: bold;
+		}
+
+		.header-text-main {
+			@apply(--layout);
+			@apply(--layout-center);
+			height: 44px;
+			background-color: var(--tri-body-background-color);
+		}
+
+		.mli-cell {
+			display: table-cell;
+			vertical-align: middle;
+			height: 25px;
+			padding: 10px 14px;
+		}
+		
+		.mli-cell > .assigned {
+			color: var(--tri-success-color);
+			padding-right: 15px;
+			vertical-align: middle;
+		}
+		
+		.mli-header-cell {
+			display: table-cell;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			line-height: 30px;
+			padding: 5px 14px 5px 0px;
+			text-align: left;
+		}
+
+		.mli-header-cell::before {
+			border-left: 1px solid var(--tri-primary-content-accent-color);
+			content: "";
+			font-size: 18px;
+			padding-right: 14px;
+		}
+
+		.mli-header-cell:first-child::before, .mli-header-cell.hide-border::before {
+			border-left: none !important;
+		}
+
+		.mli-row:nth-child(even) {
+			display: table-row;
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			transition-duration: 300ms;
+			background-color: var(--tri-body-background-color);
+
+		}
+
+		.mli-row:nth-child(odd) {
+			display: table-row;
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			transition-duration: 300ms;
+			background-color: var(--tri-primary-content-background-color);
+		}
+
+		.mli-table {
+			display: table;
+			border-collapse: collapse;
+			border-spacing: 0;
+			width: 100%;
+			background-color: var(--tri-primary-content-background-color);
+			color: var(--tri-primary-content-color);
+			font-size: 14px;
+		}
+
+		.mli-table-header {
+			display: table-header-group;
+			background-color: var(--tri-primary-content-background-color);
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			color: var(--tri-primary-color);
+		}
+
+		paper-textarea {
+			margin-top: 10px;
+		 	border: 1px solid black;
+		}
+	</style>
+	
+	<template>
+
+		<triplat-ds name="currentUser" data="{{currentUser}}"></triplat-ds>
+
+		<triplat-ds name="myMoveRequests" data="{{openRequest}}" id="moveRequestModel" loading="{{myMoveRequestsLoading}}">
+			<triplat-ds-instance instance-id="{{openRequestWhatUrlParams.reqId}}"></triplat-ds-instance>
+		</triplat-ds>
+
+		<triplat-ds name="moveLineItems" data="{{moveLineItems}}">
+			<triplat-ds-context name="myMoveRequests" context-id="{{openRequestWhatUrlParams.reqId}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds name="comments" data="{{comments}}" loading="{{commentsLoading}}" id="commentsDS" on-ds-create-complete="_handleCommentCreateComplete" on-ds-delete-complete="_handleCommentDeleteComplete" on-ds-get-complete="_handleCommentGetComplete">
+			<triplat-ds-context name="myMoveRequests" context-id="{{openRequestWhatUrlParams.reqId}}"></triplat-ds-context>
+			<triplat-ds-context name="moveLineItems" context-id="{{currentMli}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<div class="header-text">
+			
+			<div hidden$="{{_isEmpty(currentMli)}}" class="header-text-main">
+				<p></p>
+				<span>Comments for&nbsp;</span>	
+				<span class="header-text-bold" hidden$="{{!_isAsset(selectedLineItem.moveType)}}">{{selectedLineItem.assetName}}</span>
+				<span class="header-text-bold" hidden$="{{!_isEquipment(selectedLineItem.moveType)}}">{{selectedLineItem.equipmentName}}</span>
+				<span class="header-text-bold" hidden$="{{!_isPerson(selectedLineItem.moveType)}}"><span>{{selectedLineItem.lastName}}</span><span>,&nbsp;</span><span>{{selectedLineItem.firstName}}</span></span>
+				<span class="header-text-bold" hidden$="{{!_isRoom(selectedLineItem.moveType)}}">{{selectedLineItem.fromSpace}}</span>
+				<p></p>
+			</div>
+
+			<div hidden$="{{!_isEmpty(currentMli)}}" class="header-text-main">
+				<p></p>
+				<span>Comments &nbsp;</span>
+				<p></p>
+			</div>  
+
+			<div id="comments" class="item-container">
+				<div class="mli-table">
+					<div class="mli-table-header">
+						<div class="mli-header-cell">Comment</div>
+						<div class="mli-header-cell">Date</div>
+						<div class="mli-header-cell">Created By</div>
+						<div class="mli-header-cell">Action</div>
+					</div>
+
+					<template 
+				        id="commentsTemplate"
+						is="dom-repeat"                        
+						items="{{comments}}">
+
+                    	<div class="mli-row">
+							<div class="mli-cell">
+								<div>{{item.comment}}</div>
+							</div>
+							<div class="mli-cell">
+								<triplat-date-picker readonly display-format="{{currentUser._DateFormat}}" value="{{item.createdDateTime}}"></triplat-date-picker>
+							</div>
+							<div class="mli-cell">
+								<div>{{item.createdBy}}</div>
+							</div>
+							<div class="mli-cell">	
+								<triplat-icon class="action-delete" icon="remove-delete" on-tap="_handleDeleteComment"></triplat-icon>
+							</div>
+						</div>
+					</template>
+
+				</div>
+			</div>	
+
+			<paper-textarea label="Enter New Instruction..." value="{{newComment.comment}}" autofocus rows="3" max-rows="3" maxlength="250" readonly$="{{_completedRequest}}" always-float-label></paper-textarea>	
+			<div id="peopleAddCommentIcon" on-tap="_handleAddComment" hidden$="{{_completedRequest}}">
+				<triplat-icon class="action-add" icon="icons:add-circle"></triplat-icon>
+				<span><label>Add Instruction</label></span>
+			</div>
+		</div>
+			
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-comments",
+
+		properties: {
+
+			
+			commentCount: {
+				type: String,
+				value: "",
+			},
+
+			currentMli: {
+				type: Number,
+				value: "",
+			},
+			
+			newComment: {
+				type: String,
+				value: {comment: ""},
+			},
+
+			_selectedLineItem: Object,
+
+			_isOverview: {
+                type: Boolean,
+				value: false,
+			},				
+			
+		},
+
+		observers : [
+			'_handleCommentCountChanged(commentCount)'
+		],
+
+		
+		ready: function(e) {
+
+		},
+
+		_handleDeleteComment: function(e) {
+			var comment = e.model.item;
+			this.$.commentsDS.deleteRecord(comment._id, TriPlatDs.RefreshType.BOTH, "actions", "delete");	
+		},
+
+		_handleAddComment: function() {
+			if (this.newComment && this.newComment.comment != "") {
+				this.$.commentsDS.createRecord(this.newComment, TriPlatDs.RefreshType.BOTH, "defaultActions", "create");	
+			}
+		},
+
+		_handleCommentCreateComplete: function() {
+			this.set("newComment.comment", "");
+			this.commentCount++;
+			this.set("commentCount", this.commentCount);
+			this.$.commentsTemplate.render();
+		},
+
+		_handleCommentDeleteComplete: function() {
+			this.commentCount--;
+			this.set("commentCount", this.commentCount);
+			this.$.commentsTemplate.render();
+		},
+
+		_handleCommentGetComplete: function() {
+			this.set("newComment.comment", "");
+			if ((this.comments) && (this.comments.length > 0)) {
+				this.set("commentCount", this.comments.length);
+			}
+			else {
+				this.set("commentCount", "");
+			}	
+		},
+
+		_isPerson: function(moveType) {
+			if (moveType == "Person") {
+				return true;
+			}
+			return false;
+		},
+
+		_isAsset: function(moveType) {
+			if (moveType == "Asset") {
+				return true;
+			}
+			return false;
+		},
+
+		_isEquipment: function(moveType) {
+			if (moveType == "Equipment") {
+				return true;
+			}
+			return false;
+		},
+
+		_isRoom: function(moveType) {
+			if (moveType == "Room Function") {
+				return true;
+			}
+			return false;
+		},
+
+		_handleCommentCountChanged: function() {
+			this.fire('commentCount', this.commentCount);
+		},
+
+		_isEmpty: function(val) {
+			return !val || val == "";
+		},
+
+	});
+</script>

@@ -1,0 +1,193 @@
+<link rel="import" href="../triplat-graphic/triplat-graphic.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<link rel="import" href="../tri-loading-indicator/tri-loading-indicator.html">	
+
+<dom-module id="tricomp-walkthru-floor-plan">
+	<style>
+		:host {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			@apply(--layout-relative);
+		}
+		
+		triplat-graphic {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			--triplat-graphic-interactive-selected: {
+				stroke: var(--ibm-blue-40);
+				stroke-width: 5;
+				stroke-endpath: square;
+				fill-opacity: 0;
+				vector-effect: non-scaling-stroke;
+            };
+			--triplat-graphic-selectable: {
+				fill: var(--ibm-gray-10);
+			    fill-opacity: 1;
+				cursor: pointer;
+			};
+			--triplat-graphic-non-selectable: {
+				fill: white;
+			    fill-opacity: 1;
+			}
+			--triplat-graphic-highlight-1: {
+				fill: var(--ibm-red-60);
+			    fill-opacity: 1;
+			};
+			--triplat-graphic-highlight-2: {
+				fill: var(--ibm-green-20);
+			    fill-opacity: 1;
+			};
+		}
+
+		tri-loading-indicator {
+			z-index: 5;
+		}
+
+		#placeholder {
+			@apply(--layout-fit);
+			@apply(--layout-vertical);
+			@apply(--layout-center-center);
+			font-size: 1.5em;
+		}
+	</style>
+	<template>
+
+		<triplat-ds id="spaceLabelStyleDs" name="spaceLabelStyle" data="{{spaceLabelStyle}}"></triplat-ds>
+
+		<tri-loading-indicator show="{{_isLoading(hasGraphic, loaded, drawingIdLoading)}}"></tri-loading-indicator>
+
+		<div id="placeholder" hidden$="[[hasGraphic]]">No floor plan is available.</div>
+
+		<triplat-graphic id="graphic" hidden$="[[!hasGraphic]]" record-id="{{floorId}}" svg-loaded="{{loaded}}" has-graphic="{{hasGraphic}}" drawing-id-loading="{{drawingIdLoading}}">
+			<triplat-graphic-selectable 
+           		selectable="{{spaces}}"
+           		selected="{{selectedSpace}}">
+    		</triplat-graphic-selectable>
+    		<triplat-graphic-zoomable></triplat-graphic-zoomable>
+    		<triplat-graphic-highlight
+                class-number="1"
+                highlighted="{{_filter(discrepantSpaces, discrepantSpaces.length, searchTerms)}}">
+			</triplat-graphic-highlight>
+			<triplat-graphic-highlight
+			    class-number="2"
+			    highlighted="{{_filter(nonDiscrepantSpaces, nonDiscrepantSpaces.length, searchTerms)}}">
+			</triplat-graphic-highlight>
+			<triplat-graphic-label label-id="{{spaceLabelStyleId}}"></triplat-graphic-label>
+		</triplat-graphic>
+
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-walkthru-floor-plan",
+
+		properties: {
+			selectedSpace: {
+				type: Object,
+				notify : true
+			},
+			spaces : Array,
+			floorId : Number,
+			nonDiscrepantSpaces: {
+				type: Array,
+				value : []
+			},
+			discrepantSpaces: {
+				type: Array,
+				value : []
+			},
+			loaded : {
+				type : Boolean,
+				notify : true
+			},
+			hasGraphic : {
+				type : Boolean,
+				notify : true
+			},
+			searchTerms : String,
+			spaceLabelStyleId : Number,
+		},
+
+		listeners: {
+			"spaceLabelStyleDs.ds-get-complete" : "_handleSpaceLabelStyle"
+		},
+
+		_handleSpaceLabelStyle : function() {
+			if (this.spaceLabelStyle) {
+				var labelStyleId = parseInt(this.spaceLabelStyle[0]._id);
+				this.set("spaceLabelStyleId", labelStyleId);
+			}
+		},
+		
+		_isLoading : function(hasGraphic, loaded, drawingIdLoading) {
+			var isLoading = false;
+			if (drawingIdLoading || (hasGraphic && !loaded)) {
+				isLoading = true;
+			}
+			return isLoading;
+		},
+
+		markDiscrepant : function(discrepantSpace) {
+			this._mark(discrepantSpace, 'discrepantSpaces', 'nonDiscrepantSpaces');
+		},
+
+		markNonDiscrepant : function(nonDiscrepantSpace) {
+			this._mark(nonDiscrepantSpace, 'nonDiscrepantSpaces', 'discrepantSpaces');
+		},
+
+		_mark : function(space, newArrayName, oldArrayName) {
+			var index = this._getIndexOf(space, this[newArrayName]);
+			if (index < 0) {
+				this.push(newArrayName, space);
+			}
+			var index = this._getIndexOf(space, this[oldArrayName]);
+			if (index > -1) {
+				this.splice(oldArrayName, index, 1);
+			}
+		},
+
+		unmarkSpace : function(space) {
+			var arrayName = "discrepantSpaces";
+			var spaceToRemoveIndex = this._getIndexOf(space, this[arrayName]);
+			if (spaceToRemoveIndex < 0) {
+				arrayName = "nonDiscrepantSpaces";
+				spaceToRemoveIndex = this._getIndexOf(space, this[arrayName]);
+			}
+			this.splice(arrayName, spaceToRemoveIndex, 1);
+		},
+
+		_getIndexOf : function(space, spaces) {
+			var index = -1;
+			for (var i = 0; i < spaces.length; i++) {
+				if (space._id == spaces[i]._id) {
+					index = i;
+				}
+			}
+			return index;
+		},
+
+		reset : function() {
+			this.splice('nonDiscrepantSpaces', 0, this.nonDiscrepantSpaces.length);
+			this.splice('discrepantSpaces', 0, this.discrepantSpaces.length);
+		},
+
+		_filter : function(spaces, length, searchTerms) {
+			if ((!spaces || (spaces && spaces.length == 0)) && !searchTerms) {
+				return spaces;
+			}
+			var lowerSpacesFilter = searchTerms.toLowerCase();
+			return spaces.filter(function(space) {
+				return (space.space.toLowerCase().indexOf(lowerSpacesFilter) != -1)
+						|| space.spaceClass.toLowerCase().indexOf(lowerSpacesFilter) != -1
+						|| (space.occupancyStatus && space.occupancyStatus.toLowerCase().indexOf(lowerSpacesFilter) != -1)
+						|| space.id.toLowerCase().indexOf(lowerSpacesFilter) != -1
+						|| (space.occupancyOrgsString && space.occupancyOrgsString.toLowerCase().indexOf(lowerSpacesFilter) != -1)
+			});
+		},
+
+	});
+</script>

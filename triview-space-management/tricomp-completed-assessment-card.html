@@ -1,0 +1,135 @@
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icons/hardware-icons.html">
+<link rel="import" href="../iron-icons/communication-icons.html">
+
+<link rel="import" href="../triplat-image/triplat-image.html">
+<link rel="import" href="../triplat-date-picker/triplat-date-picker.html">
+
+<dom-module id="tricomp-completed-assessment-card">
+
+	<style>
+
+		.placeholder-icon {
+			--iron-icon-height: 100px;
+			--iron-icon-width: 100px;
+		}
+
+		:host {
+			display: block;
+			cursor: pointer;
+			background-color: var(--tri-primary-content-background-color);
+			border: 1px solid var(--tri-primary-content-accent-color);
+			color: var(--tri-primary-content-color);
+			padding: 20px 0px 20px 20px;
+			font-size: 14px;
+			@apply(--layout-horizontal);
+			@apply(--tricomp-completed-assessment-card);
+		}
+
+		.card-title {
+			font-weight: bold;
+		}
+
+		.date {
+			height: 300px;
+		}
+
+		.drill {
+			width: 40px;
+			height: 40px;
+			color: var(--tri-primary-color);
+			@apply(--layout-self-center);
+		}
+
+		.info-container {
+			@apply(--layout-flex);
+			padding: 0px 20px;
+			min-width: 0;
+		}
+
+		.info-line {
+  			overflow: hidden;
+  			white-space: nowrap;
+  			text-overflow: ellipsis;
+		}​
+
+	</style>
+
+	<template>
+
+		<triplat-image hidden$="{{_isNegNumber(image)}}" src="{{image}}" width="100px" height="100px" sizing="contain"></triplat-image>
+		<div hidden$="{{!_isNegNumber(image)}}"><iron-icon icon="communication:business" class="placeholder-icon"></iron-icon></div>
+		<div class="info-container">
+			<div class="info-line card-title">{{description}}</div>
+			<div class="info-line">{{city}}</div>
+			<div class="info-line">{{building}}</div>
+			<div class="info-line">{{floor}}</div>
+			<div class="info-line">{{assessor}}</div>
+			<div class="info-line"><span>Assessed: </span><triplat-date-picker class="date" value="{{completedDate}}" readonly display-format="{{dateFormat}}"></triplat-date-picker></div>
+			<div class="info-line">{{assessmentStatus}}</div>
+		</div>
+		<iron-icon class="drill" icon="hardware:keyboard-arrow-right" tabindex="0" on-keypress="_handleKeyPress" aria-labelledby="openAssessment" role="button"></iron-icon>
+
+	</template>
+
+</dom-module>
+
+<script>
+	Polymer({
+
+		is: "tricomp-completed-assessment-card",
+
+		observers: [
+			'_handleAssessmentCount(totalAssessed,totalUpdates)'
+		],
+
+		properties: {
+			image: String,
+			description: String,
+			city: String,
+			building: String,
+			floor: String,
+			completedDate: String,
+			dateFormat: String,
+			assessor: String,
+			totalAssessed: Number,
+			totalUpdates: Number,
+			assessmentStatus: String
+
+		},
+
+		_handleKeyPress: function(e) {
+			var keyCode = e.keyCode;
+			this.fire("drill-key-press", {keyCode: keyCode});
+		},
+
+		_isNegNumber: function(val) {
+			return !val || val == "" || val < 0;
+		},
+
+		_handleAssessmentCount: function(totalAssessed,totalUpdates){
+
+			if (this.totalUpdates > 0){ 
+				if (this.totalUpdates == 0 || this.totalUpdates== 1){
+					var __dictionary__count = this.totalUpdates+" Update";
+				}
+				else{
+					var __dictionary__count = this.totalUpdates+" Updates";
+				}
+				this.set("assessmentStatus", __dictionary__count);
+			}
+			else{
+				if (this.totalAssessed == 0 || this.totalAssessed== 1){
+					var __dictionary__count = this.totalAssessed+" Space Assessed";
+				}
+				else{
+					var __dictionary__count = this.totalAssessed+" Spaces Assessed";
+				}
+				
+				this.set("assessmentStatus", __dictionary__count);
+			}
+		}
+
+	});
+</script>

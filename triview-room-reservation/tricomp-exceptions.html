@@ -1,0 +1,304 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../paper-button/paper-button.html">
+
+<link rel="import" href="../triplat-date-utilities/triplat-date-utilities.html">
+<link rel="import" href="../triblock-responsive-layout/triblock-view-responsive-behavior.html">
+<link rel="import" href="../triblock-tabs/triblock-tabs.html">
+<link rel="import" href="../triblock-search-popup/triblock-search.html">
+
+<link rel="import" href="../triapp-reservation-list/tribehav-reservation-utilities.html">
+
+<link rel="import" href="tribehav-room-reservation-util.html">
+<link rel="import" href="tricomp-alert-message.html">
+<link rel="import" href="tricomp-page-toolbar.html">
+<link rel="import" href="tristyles-room-reservation-app.html">
+<link rel="import" href="tricomp-exceptions-table.html">
+<link rel="import" href="tricomp-room-criteria.html">
+<link rel="import" href="tricomp-room-results.html">
+
+
+<dom-module id="tricomp-exceptions">
+	<template>
+		<style include="shared-page-styles">
+
+			:host {
+				@apply(--layout-vertical);
+				@apply(--layout-flex);
+			}
+
+			.exceptions-container {
+				@apply(--layout-vertical);
+				@apply(--layout-flex);
+			}
+
+			.header {
+				padding: 10px 20px;
+				background-color: var(--ibm-gray-10);
+				font-size: 16px;
+			}
+
+			iron-pages {
+				@apply(--layout-vertical);
+				@apply(--layout-flex);
+				overflow-y: auto;
+			}
+
+			tricomp-room-criteria {
+				@apply(--layout-flex);
+				padding: 0 20px;
+			}
+
+			triblock-search {
+				@apply(--layout-vertical);
+				@apply(--layout-flex);
+				padding: 10px 25px;
+			}
+
+		</style>
+
+		<triplat-ds id="exceptionOccurrencesForResource" name="exceptionOccurrences" filtered-data="{{exceptionOccurrencesForResource}}" loading="{{exceptionOccurrencesLoading}}" manual>
+			<triplat-ds-context name="myReservationManagers" context-id="[[specId]]"></triplat-ds-context>
+			<triplat-query>
+				<triplat-query-filter name="resourceId" operator="equals" value="[[resourceId]]"></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<div class="exceptions-container" hidden$="[[!exceptionOccurrencesForResource.length]]">		
+			<tricomp-alert-message danger icon="ibm:clock-time" id="holdTimeMessage" class="hold-time-message" show$="[[reservationLocation.holdTimeDeadline]]" show-tooltip-indicator-icon>
+				<span hidden$="[[holdTimeExpired]]">Hold expires in</span>
+				<triplat-countdown class="hold-time-countdown"
+					name="booking-expiration"
+					deadline="[[reservationLocation.holdTimeDeadline]]"
+					expired-text="Hold time is expired."
+					timezone="[[currentUser._TimeZoneId]]"
+					is-expired="{{holdTimeExpired}}">
+				</triplat-countdown>
+			</tricomp-alert-message>
+			<paper-tooltip for="holdTimeMessage" position="bottom" offset="5" animation-delay="100" fit-to-visible-bounds>When the hold time on this room expires, all added food and equipment are not saved, and the room is removed for this reservation.</paper-tooltip>
+
+			<div class="header">Recurring Meeting Exceptions</div>
+
+			<triblock-tabs id="exceptionTab" iron-pages-id="tabPages" selected="selectRoomsTab">
+				<triblock-tab id="selectRoomsTab" label="Select Rooms" iron-page-id="selectRoomsPage"></triblock-tab>
+				<triblock-tab id="criteriaTab" label="Change Search Criteria" iron-page-id="criteriaPage"></triblock-tab>
+			</triblock-tabs>
+			
+			<iron-pages id="tabPages" attr-for-selected="tab" on-iron-select="_ironPageChanged">
+				<tricomp-exceptions-table
+					tab="selectRoomsPage"
+					exception-occurrences="{{exceptionOccurrencesForResource}}"
+					on-search-room="_handleSearch"></tricomp-exceptions-table>
+
+				<template is="dom-if" if="[[isActive]]">
+					<tricomp-room-criteria
+						id="roomCriteriaPageExceptions"
+						tab="criteriaPage"
+						is-outlook-embedded="[[isOutlookEmbedded]]"
+						override-building-id="{{buildingId}}"
+						current-user="[[currentUser]]"
+						favorite-rooms="{{favoriteRooms}}"
+						reservation-manager="{{reservationManager}}"
+						reservation-locations="{{reservationLocations}}"
+						spec-id="[[specId]]"
+						has-booked-rooms="[[_hasBookedRooms]]"
+						no-action-bar
+						no-popup
+						scroller="[[_scroller]]"
+						search-value="[[_searchValue]]"
+						search-result="{{_lookupBuildingSearch}}"
+						loading="{{_lookupBuildingLoading}}">
+					</tricomp-room-criteria>
+				</template>
+
+				<tricomp-room-results
+					id="roomResultsPage"
+					tab="roomResultsPage"
+					is-outlook-embedded="[[isOutlookEmbedded]]"
+					current-user="[[currentUser]]"
+					application-settings="[[applicationSettings]]"
+					favorite-rooms="{{favoriteRooms}}"
+					reservation-manager="{{reservationManager}}"
+					reservation-locations="{{reservationLocations}}"
+					resource-id="[[resourceId]]"
+					spec-id="[[specId]]"
+					hide-availability-tab
+					is-workspace-room="[[_isRoomTypeWorkspace(reservationManager.searchRoomType, _workspaceId)]]">>
+				</tricomp-room-results>
+
+				<triblock-search id="searchPage" tab="searchPage"
+					title="[[_searchTitle]]"
+					placeholder="[[searchPlaceholder]]"
+					scroller="{{_scroller}}"
+					search-value="{{_searchValue}}"
+					search-result="[[_lookupBuildingSearch]]"
+					loading="[[_lookupBuildingLoading]]"
+					search-only
+					on-item-selected="_searchItemSelected">
+					<template>
+						<tricomp-location-card data="[[item]]" search-value="[[_searchValue]]" ></tricomp-location-card>
+					</template>
+				</triblock-search>
+			</iron-pages>
+		</div>
+
+		<template is="dom-if" if="[[!exceptionOccurrencesForResource.length]]">
+			<div class="page-main empty-data-message">
+				<span hidden$="[[_pageLoading]]">This room reservation does not have any exceptions.</span>
+			</div>
+		</template>
+
+		<tricomp-page-toolbar small-screen-width="[[smallScreenWidth]]">
+			<paper-button footer$="[[smallScreenWidth]]" on-tap="_handleDoneTap">Done</paper-button>
+		</tricomp-page-toolbar>
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-exceptions",
+
+			behaviors: [
+				TriReservationUtilitiesBehavior,
+				TriRoomReservationUtilBehavior,
+				TriDateUtilities,
+				TriBlockViewResponsiveBehavior
+			],
+
+			properties: {
+				_pageLoading: {
+					type: Boolean,
+					computed: "_isBusy(isBusy, exceptionOccurrencesLoading)"
+				},
+				isActive: {
+					type: Boolean,
+					observer: "_onActiveChanged"
+				},
+				buildingId: Number
+			},
+
+			observers: [
+				"_handleExceptionOccurrencesChanged(exceptionOccurrencesForResource)"
+			],
+
+			listeners: {
+				"open-search-without-popup": "_openSearchWithoutPopup"
+			},
+
+			_onActiveChanged: function(isActive) {
+				if (isActive) {
+					this.async(function() {
+						this.$$("#roomCriteriaPageExceptions")._pageAttached();
+					});
+					this.$.roomResultsPage._pageAttached(true);
+					this.$.roomResultsPage.refresh();
+				} else {
+					if (this.$.roomResultsPage) {
+						this.$.roomResultsPage._pageDetached();
+					}
+				}
+			},
+
+			_handleExceptionOccurrencesChanged: function(exceptionOccurrencesForResource) {
+				if (exceptionOccurrencesForResource && exceptionOccurrencesForResource.length > 0) {
+					this.$.tabPages.selected = "selectRoomsPage";
+					this.$.exceptionTab.selected = "selectRoomsTab";
+
+					for (var i = 0; i < exceptionOccurrencesForResource.length; i++) {
+						var item = exceptionOccurrencesForResource[i];
+						var formattedDate = moment.tz(item.exceptionDateTime, this.currentUser._TimeZoneId).formatWithJDF(this.currentUser._DateFormat);
+						item['formattedDate'] = formattedDate;
+					}
+				}
+			},
+
+			// TODO: Push back to MAIN - eliminate RM usage
+			_handleSearch: function(e) {
+				var item = e.detail.item;
+
+				if (item) {
+					this._setBusy();
+
+					var occurrenceId = item._id;
+					var occurrenceDate = item.exceptionDateTime;
+
+					var wfParams = {};
+					wfParams.occurrence = occurrenceId;
+
+					this.rm.updateRecord(TriPlatDs.RefreshType.SERVER, "actions", "exceptionSearch", wfParams).then(function() {
+						this._clearBusy();
+
+						this.$.roomResultsPage._pageAttached(true);
+						this.$.roomResultsPage.refresh();
+						this.$.tabPages.selected = "roomResultsPage";
+						this.$.roomResultsPage.occurrenceId = occurrenceId;
+
+					}.bind(this));
+				}
+			},
+
+			_handleDoneTap: function(e) {
+				this.fire("done");
+			},
+
+			// override
+			_isBusy: function(isBusy, exceptionOccurrencesLoading) {
+				return isBusy  || exceptionOccurrencesLoading;
+			},
+
+			// TODO: Push back to MAIN - eliminate RM usage
+			_setOccurrenceSeriesContext: function(occurrenceId) {
+				return new Promise(function(resolve) {
+					var wfParams = {};
+					wfParams.occurrence = occurrenceId;
+
+					this.rm.updateRecord(this.reservationManager._id, TriPlatDs.RefreshType.SERVER, "actions", "setOccurrenceSeriesContext", wfParams).then(function() {
+						resolve();
+					}.bind(this));
+				}.bind(this));
+			},
+
+			// override
+			_pageAttached : function() {
+				this._setOccurrenceSeriesContext().then(function() {
+					this.$.exceptionOccurrencesForResource.refresh();
+				}.bind(this));
+
+				this.async(function() {
+					this.$$("#roomCriteriaPageExceptions").reloadLocalstorage();
+				}, 300);
+			},
+
+			_ironPageChanged: function(e) {
+				if (this.$$("#roomCriteriaPageExceptions")) {
+					// If the search page is active, enable the building search DS
+					if (this.$.tabPages.selected == "searchPage") {
+						this.$$("#roomCriteriaPageExceptions").enableSearchDs();
+					} else if (this.$.tabPages.selected != "searchPage") {
+						this.$.searchPage.clearSearch();
+						this.$$("#roomCriteriaPageExceptions").disableSearchDs();
+					}
+				}
+			},
+
+			_openSearchWithoutPopup: function() {
+				this.debounce(
+					"openSearchWithoutPopup",
+					function() {
+						this.$.tabPages.selected = "searchPage";
+					},
+					200
+				);
+			},
+
+			_searchItemSelected: function(e) {
+				var building = e.detail;
+
+				// Set an override-building-id
+				this.set("buildingId", building._id);
+
+				this.$.tabPages.selected = "criteriaPage";
+			}
+			
+		});
+	</script>
+</dom-module>

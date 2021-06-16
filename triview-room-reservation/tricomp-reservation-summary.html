@@ -1,0 +1,419 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017-2019 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-input/iron-input.html">
+
+<link rel="import" href="../paper-tooltip/paper-tooltip.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+<link rel="import" href="../paper-input/paper-textarea.html">
+
+
+<link rel="import" href="tristyles-room-reservation-app.html">
+
+<link rel="import" href="../triapp-reservation-list/tricomp-reservation-lifecycle-events.html">
+
+<link rel="import" href="tribehav-room-reservation-util.html">
+
+<link rel="import" href="tricomp-reservation-summary-item.html">
+<link rel="import" href="tricomp-alert-message.html">
+<link rel="import" href="tricomp-room-criteria-when.html">
+
+<dom-module id="tricomp-reservation-summary">
+	<template>
+		<style include="shared-page-styles">
+
+			:host {
+				@apply(--layout-vertical);
+			}
+
+			.row-container {
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+				padding: 10px 0;
+			}
+
+			.row-container.tappable {
+				cursor: pointer;
+				border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			}
+			.row-container.tappable[disabled] {
+				pointer-events: none;
+				cursor: default;
+			}
+
+			.row-label {
+				@apply(--layout-flex);
+				padding: 12px 10px 12px 20px;
+			}
+
+			paper-dialog {
+				overflow: auto;
+			}
+
+			.warning-text { 
+				color: red;
+				font-weight: bold;
+			}
+
+			.no-rooms-alert {
+				margin: 10px 20px 10px 0px;
+			}
+
+			.instructions-container {
+				@apply(--layout-vertical);
+			}
+
+			.instructions-label {
+				padding-top: 20px;
+			}
+
+			.instructions {
+				border: 1px solid var(--ibm-gray-30);
+				resize: none;
+				outline: none;
+				box-shadow: none;
+				font-size: inherit;
+				font-family: inherit;
+				margin: 10px 0;
+			}
+
+			:host([small-screen-width]) .page-main {
+				display: block;
+				@apply(--layout-flex-none);
+			}
+			
+			.card-container {
+				@apply(--layout-flex);
+				@apply(--layout-horizontal);
+				@apply(--layout-center-center);
+				@apply(--layout-wrap);
+				@apply(--layout-justified);
+				@apply(--layout-scroll);
+				align-content: flex-start;
+				min-width: 0;
+				padding: 20px 0;
+			}
+
+			.sub-page {
+				@apply(--layout-flex);
+				padding-right: 20px
+			}
+
+			.add-room-card {
+				@apply(--layout-flex);
+				@apply(--layout-horizontal);
+				@apply(--layout-center-center);
+				flex-basis: 100%;
+				padding: 20px 0;
+			}
+			:host:not([small-screen-width]) .add-room-card {
+				@apply(--layout-end-justified);
+			}
+			
+			:host([small-screen-width]) .action-bar-space {
+				height: 55px;
+			}	
+			
+			#subjectlabel{
+				font-size:13px;
+			}
+
+			.required-asterisk {
+				color: var(--tri-danger-color);
+				font-size: 14px;
+			}
+
+			.subject-container {
+				padding-top: 8px;
+			}
+			
+			paper-textarea {
+				word-break: break-all;
+			}
+
+		</style>
+
+		<triplat-ds id="roomTypes" name="roomTypes" data="{{roomTypes}}"></triplat-ds>
+
+		<div class="page-main">
+			<div class="page-wrap">
+				<template is="dom-if" if="[[!hideSummary]]">
+					<tricomp-alert-message info id="outlook-reservation" hidden$="[[!_isReadOnlyOutlook(isOutlookEmbedded, reservationManager)]]" show-tooltip-indicator-icon>Created in Outlook</tricomp-alert-message>
+					<paper-tooltip for="outlook-reservation" position="bottom" offset="5" animation-delay="100" fit-to-visible-bounds>This reservation was created in Microsoft Outlook. Parts of this reservation are editable in Outlook only.</paper-tooltip>
+
+					<tricomp-alert-message error hidden$="[[!_showMissingSubjectMessage]]">
+						<div>Provide a subject for the reservation.</div>
+					</tricomp-alert-message>
+
+					<tricomp-alert-message warning hidden$="[[!reservationManager.userMessage]]">
+						<div>[[reservationManager.userMessage]]</div>
+					</tricomp-alert-message>
+
+						<template is="dom-if" if="[[!isOutlookEmbedded]]">
+							<section class="padded-container subject-container">
+								<label id="subjectlabel"><span class="required-asterisk">*</span>Subject</label>
+								<paper-textarea 
+										no-label-float
+										value="{{reservationManager.reservationSubject}}"
+										maxlength="150"
+										readonly$="[[_readonlySubject(isOutlookEmbedded, reservationManager)]]"
+										required>
+								</paper-textarea>
+							</section>
+
+						<tricomp-room-criteria-when
+							id="criteriaWhen"
+							class="padded-container"
+							reservation-manager="{{reservationManager}}"
+							current-user="[[currentUser]]"
+							is-workspace-room="[[_isRoomTypeWorkspace(reservationManager.searchRoomType, _workspaceId)]]"
+							is-meeting-room="[[_isRoomTypeMeetingSpace(reservationManager.searchRoomType, _meetingSpaceId)]]"
+							has-booked-rooms="[[hasBookedRooms]]"
+							active="[[active]]"
+							disabled="[[_disableCriteriaWhen]]">
+						</tricomp-room-criteria-when>
+
+						<div class="instructions-container padded-container">
+							<label class="instructions-label" aria-label="Instructions">Instructions</label>
+							<textarea id="instructionsField" class="instructions" rows="3" maxlength="250"
+								value="[[_computeInstructions(reservationManager.reservationInstructions)]]"
+								on-input="_handleInstructionsChanged"></textarea>
+						</div>
+					</template>
+
+					<tricomp-reservation-lifecycle-events
+						timezone="[[currentUser._TimeZoneId]]"
+						disabled="[[_computeLifeCycleDisabled(reservationLocations)]]"
+						check-in-required="[[reservationManagerInstance.checkInRequired]]"
+						check-in-reminder="[[reservationManagerInstance.checkInReminderDateTime]]"
+						check-in-auto-cancel="[[reservationManagerInstance.cancellationAutoDateTime]]"
+						planned-start="[[reservationManagerInstance.startDateTime]]"
+						planned-end="[[reservationManagerInstance.endDateTime]]"
+						actual-start="[[reservationManagerInstance.actualStart]]"
+						actual-end="[[reservationManagerInstance.actualEnd]]"
+						reservation-instance="[[reservationManagerInstance]]"
+						on-checkin="_handleCheckIn"
+						on-checkout="_handleCheckOut"
+						on-earlyend="_handleEarlyEnd"
+						on-start="_handleStart"
+						on-end="_handleEnd"
+						on-autocancel="_handleAutoCancel">
+					</tricomp-reservation-lifecycle-events>
+				</template>
+
+				<template is="dom-if" if="[[!hideItems]]">
+					<tricomp-alert-message warning class="no-rooms-alert" hidden$="[[!_showNoRoomsMessage]]">
+						<div>You need to add a room to this reservation.</div>
+					</tricomp-alert-message>
+
+					<div class="sub-page">
+						<div class="card-container">
+							<template is="dom-repeat" items="[[reservationLocations]]">
+								<tricomp-reservation-summary-item
+									item="{{item}}"
+									current-user="[[currentUser]]"
+									application-settings="[[applicationSettings]]"
+									spec-id="[[specId]]"
+									recurrence="[[recurrence]]"
+									medium-screen-max-width="800px",
+									on-hold-time-expired-changed="_handleHoldTimeExpiredChanged">
+								</tricomp-reservation-summary-item>
+							</template>
+
+							<div class="add-room-card">
+								<paper-button secondary on-tap="_handleAddAnotherRoom" tabindex="0" on-keypress="_handleKeyboardAddRoom" aria-label="Add another room" hidden$="[[_isReadOnlyOutlook(isOutlookEmbedded, reservationManager)]]">Add another room</paper-button>
+							</div>
+						</div>
+					</div>
+				</template>
+
+				<div class="action-bar-space"></div>
+			</div>
+		</div>
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-reservation-summary",
+
+			behaviors: [
+				TriRoomReservationUtilBehavior,
+				TriBlockViewResponsiveBehavior
+			],
+
+			properties: {
+				currentUser: {
+					type: Object
+				},
+
+				reservationManager: {
+					type: Object
+				},
+
+				isOutlookEmbedded: {
+					type: Object
+				},
+
+				hasBookedRooms: {
+					type: Boolean,
+					value: false
+				},
+
+				active: {
+					type: Boolean,
+					value: false
+				},
+
+				_showMissingSubjectMessage: {
+					type: Boolean,
+					value: false,
+					observer: '_handleMissingSubjectMessageChanged'
+				},
+
+				hideSummary: {
+					type: Boolean,
+					value: false,
+					reflectToAttribute: true
+				},
+
+				hideItems: {
+					type: Boolean,
+					value: false,
+					reflectToAttribute: true
+				},
+
+				roomTypes: {
+					type: Array,
+					observer: "_handleRoomTypesChange"
+				},
+
+				_disableCriteriaWhen: {
+					type: Boolean,
+					value: false,
+					computed: "_computeDisableCriteriaWhen(isOutlookEmbedded, reservationManager)"
+				},
+
+				_showNoRoomsMessage: {
+					type: Boolean,
+					value: false
+				},
+
+				recurrence: Object
+			},
+
+			observers: [
+				"_loadedWorkspaceId(reservationManager.searchRoomType, _workspaceId)",
+				"_computeShowNoRoomsMessage(isOutlookEmbedded, reservationManager, reservationLocations)",
+				"_handleSubjectChange(reservationManager.reservationSubject)"
+			],
+
+			_handleSubjectChange: function(reservationSubject) {
+				if (reservationSubject && reservationSubject.length > 150) {
+					this.set("reservationManager.reservationSubject", reservationSubject.substring(0,150));
+				}
+			},	
+
+			_handleMissingSubjectMessageChanged: function(value) {
+				if (value) {
+					this._focusSubjectField();
+				}
+			},
+
+			_focusSubjectField: function() {
+				var subjectField = this.$$("#subjectField");
+				if (subjectField) {
+					subjectField.focus();
+				} 
+			},
+
+			_computeShowNoRoomsMessage: function(isOutlookEmbedded, reservationManager, reservationLocations) {
+				var showNoRoomsMessage = false;
+				if (!this._isReadOnlyOutlook(isOutlookEmbedded, reservationManager)) {
+					showNoRoomsMessage = !this._hasNonExpiredResources(reservationLocations);
+				}
+				this._showNoRoomsMessage = showNoRoomsMessage;
+			},
+
+			_computeIsPendingApproval: function(status) {
+				return status == 'Review In Progress';
+			},
+
+			_computeIsDeclined: function(status) {
+				return status == 'Declined';
+			},
+
+			_computeLifeCycleDisabled: function(reservationResources) {
+				var disableLifeCycle = false;
+				if (reservationResources && reservationResources.length > 0) {
+					for (var i = 0; i < reservationResources.length; i++) {
+						var room = reservationResources[i];
+						if (this._computeIsDeclined(room.statusENUS) || this._computeIsPendingApproval(room.statusENUS)) {
+							disableLifeCycle = true;
+							break;
+						}
+					}
+				}
+				return disableLifeCycle;
+			},
+
+			_handleAddAnotherRoom: function(e) {
+				this.fire("navigate-room-results-dramatic", {'backEventName': "navigate-summary-page-back"});
+			},
+
+			_handleNavigateRecurrence: function(e) {
+				this.fire("navigate-recurrence", {"backEventName": "navigate-summary-page-back"});
+			},
+
+			_handleRoomTypesChange: function() {
+				this.fire("room-types-changed", {roomTypes: this.roomTypes});
+			},
+
+			// override
+			_pageAttached : function() {
+				this.async(function(){
+					this._focusSubjectField();
+				}, 100);
+				this._showMissingSubjectMessage = false;
+			},
+
+			_computeInstructions: function(reservationInstructions) {
+				return reservationInstructions != null ? reservationInstructions : "";
+			},
+
+			_handleInstructionsChanged: function(event) {
+				this.reservationManager.reservationInstructions = event.currentTarget.value;
+			},
+
+			_loadedWorkspaceId: function(searchRoomType, workspaceId){
+				if (!this._isRoomTypeWorkspace(searchRoomType, workspaceId)) {					
+						if(this.$$("#subjectField")){
+							if(!this.$$("#subjectField").value){
+							this._focusSubjectField();
+						    }
+					    }
+				}
+			},
+
+			_computeDisableCriteriaWhen: function(isOutlookEmbedded, reservationManager) {
+				return this._isReadOnlyOutlook(isOutlookEmbedded, reservationManager);
+			}, 
+			
+			_handleKeyboardAddRoom: function(e){
+				if (e.which == 13 || e.keyCode == 13) {
+					this._handleAddAnotherRoom(e);
+				}
+			},
+
+			_handleHoldTimeExpiredChanged: function(e) {
+				if (e.detail.value) {
+					this._computeShowNoRoomsMessage(this.isOutlookEmbedded, this.reservationManager, this.reservationLocations);
+					this.debounce(
+						"refresh-reservation-locations",
+						this.fire.bind(this, "refresh-reservation-locations"),
+						30000
+					);
+				}
+			}
+		});
+	</script>
+</dom-module>

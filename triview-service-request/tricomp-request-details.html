@@ -1,0 +1,290 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-query/triplat-query.html">
+<link rel="import" href="../triplat-select-input/triplat-select-input.html">
+
+<link rel="import" href="../triblock-responsive-layout/triblock-view-responsive-behavior.html">
+
+<link rel="import" href="tribehav-validation.html">
+<link rel="import" href="tribehav-scroll-field-into-view.html">
+
+<dom-module id="tricomp-request-details">
+	<template>
+		<style>
+			:host {
+				@apply(--layout-vertical);
+				flex-shrink:0;
+			}
+
+			.header {
+				font-weight: lighter;
+			}
+
+			textarea {
+				margin-top: 6px;
+			 	border: 1px solid var(--ibm-gray-30);
+				resize: none;
+				outline: none;
+				box-shadow: none;
+				font-size: inherit;
+				font-family: inherit;
+				padding: 3px 6px;
+			}
+
+			.description-label {
+				padding-top: 14px;
+				font-weight: lighter;
+			}
+
+			:host(:not([small-screen])) .category-problem-type-container {
+				@apply(--layout-horizontal);
+			}
+
+			.category-select, .problem-type-select {
+				min-width: 250px;
+			}
+
+			:host(:not([small-screen])) .category-select[dir="ltr"] {
+				padding-right: 40px;
+			}
+
+			:host(:not([small-screen])) .category-select[dir="rtl"] {
+				padding-left: 40px;
+			}
+
+			.category-problem-type-container {
+				@apply(--layout-wrap);
+			}
+
+			triplat-select-input {
+   				--paper-input-container-color: var(--ibm-gray-30);
+				--triplat-select-input-margin-bottom-when-opened: 400px;
+				--paper-input-container-label-floating:{
+    				font-size:14px;
+   					webkit-transform: translateY(-75%) scale(1);
+    				transform: translateY(-75%) scale(1);
+    				font-family: var(--tri-font-family);
+   				};
+   				--paper-input-container-label:{
+   					padding-bottom: 4px;
+   					font-family: var(--tri-font-family);
+   				};
+   				--paper-input-container-input:{
+   					font-size: 14px;
+   					font-family: var(--tri-font-family);
+   				};
+   				--paper-input-container-underline:{
+   					height: 2px;
+   				};
+   				--triplat-select-input-clear-button: {
+   					color: var(--ibm-gray-30);
+   				};
+			}
+		</style>
+
+		<triplat-ds id="categoriesDS" name="availableRequestCategories" data="{{_categoriesForBuilding}}" filtered-data="{{_filteredRequestCategories}}">
+			<triplat-ds-context name="myRequest" context-id="{{request._id}}"></triplat-ds-context>
+			<triplat-ds-context name="building" context-id="{{request.building.id}}"></triplat-ds-context>
+			<triplat-query>
+				<triplat-query-filter name="wpsLabel" operator="contains" value="[[_categorySearchValue]]" ignore-if-blank></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<triplat-ds id="servicesDS" name="availableRequestServices" data="{{_requestServices}}" filtered-data="{{_servicesForCategory}}">
+			<triplat-ds-context name="myRequest" context-id="{{request._id}}"></triplat-ds-context>
+			<triplat-ds-context name="building" context-id="{{request.building.id}}"></triplat-ds-context>
+			<triplat-query>
+				<triplat-query-filter name="parentId" operator="equals" value="{{request.requestCategory.id}}"></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<triplat-query data="[[_servicesForCategory]]" filtered-data-out="{{_filteredRequestServices}}">
+			<triplat-query-filter name="wpsLabel" operator="contains" value="[[_serviceSearchValue]]" ignore-if-blank></triplat-query-filter>
+		</triplat-query>
+
+		<div class="header tri-h3" aria-label="What best describes the problem?">What best describes the problem?</div>
+
+		<div class="category-problem-type-container">
+			<triplat-select-input
+				id="categoryDropdown"
+				class="category-select"
+				label="Problem Category"
+				select-src="[[_filteredRequestCategories]]"
+				search-value="{{_categorySearchValue}}"
+				value="{{request.requestCategory}}"
+				value-name="wpsLabel"
+				dir="[[_dir]]" scroll-element-into-view="[[_scrollSelectInputIntoView]]"
+				placeholder="Select a problem category"></triplat-select-input>
+
+			<triplat-select-input
+				id="problemTypeDropdown"
+				class="problem-type-select"
+				label="Problem Type"
+				select-src="[[_filteredRequestServices]]"
+				search-value="{{_serviceSearchValue}}"
+				value="{{request.requestService}}"
+				value-name="wpsLabel"
+				hidden="[[!_categoryHasAvailableServices]]"
+				dir="[[_dir]]" scroll-element-into-view="[[_scrollSelectInputIntoView]]"></triplat-select-input>
+		</div>
+
+		<div class="description-label">Description</div>
+
+		<textarea id="descriptionField"
+			placeholder="Write your description of the problem"
+			value="{{request.desc::input}}"
+			rows="4" maxlength="250" aria-label="Problem Description"
+			tri-scroll-into-view></textarea>
+
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-request-details",
+			behaviors: [
+				TriBlockViewResponsiveBehavior,
+				TriValidationBehavior,
+				TriScrollFieldIntoViewBehavior
+			],
+
+			properties: {
+				request: {
+					type: Object,
+				},
+
+				_currentCategory: Object,
+
+				_categoryHasAvailableServices: {
+					type: Boolean,
+					value: false,
+				}
+			},
+
+			observers: [
+				'onCategoryChanged(request.requestCategory)',
+				"_onRequestCategoriesChanged(_categoriesForBuilding)",
+				"_onFilteredRequestServicesChanged(_servicesForCategory)",
+				'_onCategoryAndServiceChanged(request.requestCategory, request.requestService)',
+				'_onCategoryAndAvailableServicesChanged(request.requestCategory, _servicesForCategory)',
+				"_validateDescriptionField(request.desc)",
+				'_validateIsSelectedCategoryAvailableForBuilding(request.requestCategory, _categoriesForBuilding)',
+				'_observeRequestDetails(request.requestCategory, request.requestCategory.*, request.requestService, request.requestService.*, request.desc)'
+			],
+
+			attached: function() {
+				var textDirectionValue = document.querySelector('body').getAttribute('dir');
+				this.set('_dir', textDirectionValue ? textDirectionValue : "ltr");
+			},
+
+			onCategoryChanged: function(category) {
+				this._clearServiceOnCategoryChange(category);
+			},
+
+			_validateDescriptionField: function(requestDesc) {
+				if(requestDesc == null){
+				this.set("request.desc", "");
+				}
+	        },
+
+			_clearServiceOnCategoryChange: function(category) {
+				var emptyObj = { id: "", value: "" };
+
+				var newCategory = this._isValidSelectInputOption(category) ? category : emptyObj;
+				var oldCategory = this._currentCategory;
+
+				if (this._isValidSelectInputOption(oldCategory)) {
+					if ((newCategory.id != oldCategory.id)) {
+						if (oldCategory.id != "") {
+							this.set("request.requestService", emptyObj);
+						}
+					}
+				}
+				this.set('_currentCategory', newCategory);
+			},
+
+			_onRequestCategoriesChanged: function(requestCategories) {
+				if (requestCategories && requestCategories.length > 0) {
+					this._syncCurrentCategory(requestCategories);
+				}
+			},
+
+			_syncCurrentCategory: function(requestCategories) {
+				if (this.request && this.request.requestCategory && this.request.requestCategory.id) {
+					var matchingCategory = requestCategories.find(function(category) {
+							return category._id == this.request.requestCategory.id;
+						}.bind(this));
+
+					if (matchingCategory && matchingCategory.wpsLabel != this.request.requestCategory.value) {
+						this.set("request.requestCategory", {id: this.request.requestCategory.id, value: matchingCategory.wpsLabel});
+					}
+				}
+			},
+
+			_onFilteredRequestServicesChanged: function(filteredServices) {
+				if (filteredServices && filteredServices.length > 0) {
+					this._syncCurrentService();
+				}
+			},
+
+			_syncCurrentService: function() {
+				if (this.request && this.request.requestService && this.request.requestService.id) {
+					var matchingService = this._filteredRequestServices.find(function(service) {
+							return service._id == this.request.requestService.id;
+						}.bind(this));
+					if (matchingService && matchingService.wpsLabel != this.request.requestService.value) {
+						this.set("request.requestService", {id: this.request.requestService.id, value: matchingService.wpsLabel});
+					}
+				}
+			},
+
+			_onCategoryAndServiceChanged: function(category, service) {
+				var isDescriptionRequiredForCategory = this._isDescriptionRequired(this._categoriesForBuilding, category);
+				var isDescriptionRequiredForService = this._isDescriptionRequired(this._requestServices, service);
+				this.fire('request-description-required', isDescriptionRequiredForCategory || isDescriptionRequiredForService);
+			},
+
+			_isDescriptionRequired: function(list, selectInputOption) {
+				var isDescriptionRequired = false;
+				if (list && list.length > 0 && selectInputOption && this._isValidSelectInputOption(selectInputOption)) {
+					var requestClass = list.find(function(item) {
+						return item._id == selectInputOption.id;
+					});
+					if (requestClass && requestClass.descriptionReqd !== null) {
+						isDescriptionRequired = requestClass.descriptionReqd;
+					}
+				}
+				return isDescriptionRequired;
+			},
+
+			_onCategoryAndAvailableServicesChanged: function(category, filteredServices) {
+				var categoryHasAvailableServices = this._computeCategoryHasAvailableServices(category, filteredServices);
+				this.set('_categoryHasAvailableServices', categoryHasAvailableServices);
+				this.fire('category-has-available-services', categoryHasAvailableServices);
+			},
+
+			_computeCategoryHasAvailableServices: function(category, filteredServices) {
+				return category && this._isValidSelectInputOption(category) && filteredServices && filteredServices.length > 0;
+			},
+
+			_validateIsSelectedCategoryAvailableForBuilding: function(selectedCategory, categoriesAvailableForBuilding) {
+				if (this._isValidSelectInputOption(selectedCategory) && categoriesAvailableForBuilding) {
+					var selectedCategoryAvailableForBuilding = categoriesAvailableForBuilding.find(function(category) {
+						return selectedCategory.id == category._id;
+					}.bind(this));
+					if (!selectedCategoryAvailableForBuilding) {
+						this.$.categoryDropdown._clearValue();
+						this.$.problemTypeDropdown._clearValue();
+					}
+				}
+			},
+
+			_observeRequestDetails: function() {
+				this.fire('field-changed');
+			}
+
+		});
+	</script>
+</dom-module>

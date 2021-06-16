@@ -1,0 +1,125 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="tricomp-reservation-list-item.html">
+
+<dom-module id="tricomp-reservation-list-group">
+    <template>
+        <style>
+            :host(:not([is-card])) {
+                border-bottom: 1px solid var(--ibm-gray-30);
+                padding: 20px 0;
+            }
+            
+            :host(:not([is-card])):first-of-type {
+                padding-top: 0;
+            }
+            
+            :host(:not([is-card])):last-of-type {
+                border: 0;
+            }
+            
+            :host(:not([small-screen-width]):not([is-card])) {
+                @apply(--layout-horizontal);
+                @apply(--layout-flex);
+                flex-basis: 100%;
+            }
+            
+            :host([small-screen-width]:not([is-card])):last-of-type {
+                padding-bottom: 80px;
+            }
+            
+            tricomp-reservation-date {
+                margin-right: 20px;
+                padding-top: 5px;
+            }
+            
+            :host(:not([small-screen-width]):not([is-card])) .reservations-container {
+                @apply(--layout-flex);
+            }
+        </style>
+
+        <tricomp-reservation-date 
+            day="[[day]]" 
+            date="[[date]]" 
+            datetime="[[datetime]]" 
+            current-user="[[currentUser]]" 
+            hidden="[[_computeDateHidden(smallScreen, isCard)]]"></tricomp-reservation-date>
+
+        <div class="reservations-container">
+            <template is="dom-repeat" items="[[group]]">
+                <tricomp-reservation-list-item 
+                    event-item="[[item]]" 
+                    current-user="[[currentUser]]" 
+                    item-index="[[index]]" 
+                    is-card="[[isCard]]"
+                    is-last-group="[[isLastGroup]]" 
+                    is-last-item="[[_computeIsLastItem(index)]]">
+                </tricomp-reservation-list-item>
+            </template>
+        </div>
+
+    </template>
+    <script>
+
+        Polymer({
+
+            is: "tricomp-reservation-list-group",
+
+            behaviors: [TriBlockViewResponsiveBehavior],
+
+            properties: {
+                group: Array,
+                currentUser: Object,
+                isCard: {
+                    type: Boolean,
+                    value: false,
+                    reflectToAttribute: true
+                },
+                isLastGroup: {
+                    type: Boolean,
+                    value: false
+                },
+                day: String,
+                date: String,
+                datetime: Date
+            },
+
+            observers: [
+                '_setDateAndDay(group, currentUser._TimeZoneId)'
+            ],
+
+            _setDateAndDay: function (group, timezone) {
+                if (group && timezone) {
+                    var reservation = group[0];
+
+                    var mo = moment().tz(timezone);
+                    var startMo = moment(reservation._Start_Datetime).tz(timezone);
+                    var lang = document.querySelector('html').getAttribute("lang") || 'en';
+                    startMo.locale(lang);
+                    var resultMo = startMo;
+                    if (startMo.isBefore(mo, 'day')) {
+                        resultMo = mo;
+                    }
+
+                    this.set('datetime', resultMo.toDate());
+                    this.set('day', resultMo.format("ddd").toUpperCase());
+                    this.set('date', reservation._Start_Datetime);
+                }
+            },
+
+            _computeIsLastItem: function (index) {
+                if (this.group.length - 1 === index) {
+                    return true;
+                } else {
+                    return false;
+                }
+            },
+
+            _computeDateHidden: function (smallScreen, isCard) {
+                return (smallScreen || isCard) ? true : false;
+            }
+
+        });
+
+    </script>
+</dom-module>

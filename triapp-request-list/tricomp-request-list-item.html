@@ -1,0 +1,287 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-image/iron-image.html">
+<link rel="import" href="../iron-dropdown/iron-dropdown.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+
+<link rel="import" href="../paper-dialog/paper-dialog.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-listbox/paper-listbox.html">
+<link rel="import" href="../paper-item/paper-item.html">
+
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-debug/triplat-debug.html">
+<link rel="import" href="../triplat-date-picker/triplat-date-picker.html">
+<link rel="import" href="../triplat-date-utilities/triplat-date-utilities.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+
+<link rel="import" href="../triplat-loading-indicator/triplat-loading-indicator.html">
+
+<dom-module id="tricomp-request-list-item">
+	<template>
+		<style>
+
+			:host {
+				@apply(--layout-horizontal);
+				@apply(--layout-wrap);
+				position: relative;
+				min-width: 308px;
+				max-width: 308px;
+				margin-top: 20px;
+				margin-left: 20px;
+				border: 1px solid var(--ibm-gray-10);
+				cursor: pointer;
+				background-color: white;
+			}
+			:host:hover {
+				@apply(--shadow-elevation-3dp);
+				border-color: var(--ibm-blue-50);
+			}
+
+			.request-item-container {
+				@apply(--layout-horizontal);
+				flex-basis: 100%;
+				min-width: 0;
+				padding: 20px;
+			}
+
+			.request-details-container {
+				@apply(--layout-vertical);
+				@apply(--layout-start-justified);
+				min-width: 0;
+			}
+
+			.request-category,
+			.request-type,
+			.location-details-container {
+				color: var(--ibm-gray-100);
+			}
+
+			.request-category {
+				font-size: 18px;
+				padding-top: 5px;
+			}
+
+			.request-type {
+				font-size: 14px;
+			}
+
+			.move-request-type {
+				font-size: 18px;
+				padding-top: 5px;
+				height: 50px;
+			}
+
+			.location-item-container {
+				@apply(--layout-horizontal);
+				padding-top: 10px;
+			}
+
+			.location-details-container {
+				@apply(--layout-flex);
+				min-width: 0;
+				@apply(--layout-vertical);
+			}
+
+			.room-container {
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+				padding-bottom: 6px;
+			}
+
+			.room {
+				padding-right: 8px;
+				font-size: 14px;
+				@apply(--paper-font-common-nowrap);
+				font-weight: bold;
+			}
+
+			.building, .floor {
+				@apply(--paper-font-common-nowrap);
+				font-size: 14px;
+			}
+
+			.requested-for, .submitted {
+				font-size: 14px;
+				color: var(--ibm-gray-70);
+			}
+
+			.requested-info {
+				padding-top: 15px;
+			}
+
+			.horizontal-container {
+				@apply(--layout-horizontal);
+				min-width: 0;
+			}
+
+			.icon-session {
+				@apply(--layout-vertical);
+				padding-right: 20px;
+				vertical-align: top;
+			}
+
+			.request-id {
+				color:#4178be;
+				font-size: 18px;
+				text-align: left;
+			}
+
+			iron-icon {
+				width: 30px;
+				height: 30px;
+			}
+
+			.status-container {
+				@apply(--layout-self-end);
+				flex-basis: 100%;
+				position: relative;
+				border-top: 1px solid var(--ibm-gray-10);
+				padding: 15px 15px 15px 21px;
+			}
+			.box-status-color {
+				@apply(--layout-fit);
+				right: initial;
+				width: 11px;
+				background-color: var(--ibm-yellow-40);
+			}
+			.status-issued {
+				background-color: var(--ibm-green-30);
+			}
+
+		</style>
+
+		<triplat-loading-indicator show="[[_isBusy(isBusy)]]" hide-background></triplat-loading-indicator>
+
+		<div id="requestItem" class="request-item-container" on-tap="_handleOpen">
+			<div class="horizontal-container">
+				<div class="icon-session">
+					<iron-icon hidden$="{{_isMoveRequest(requestItem.requestTypeENUS.value)}}" icon="ibm-medium:service-request"></iron-icon>
+					<iron-icon hidden$="{{!_isMoveRequest(requestItem.requestTypeENUS.value)}}" icon="ibm:move"></iron-icon>
+				</div>
+
+				<div class="request-details-container">
+					<div class="request-id">ID: [[requestItem.requestID]]</div>
+					<div hidden$="{{_isMoveRequest(requestItem.requestTypeENUS.value)}}">
+						<div class="request-category" hidden$="[[!requestItem.requestCategory.value]]">{{requestItem.requestCategory.value}}</div>
+						<div class="request-type" hidden$="[[!requestItem.requestType.value]]">{{requestItem.requestType.value}}</div>
+						<div class="location-item-container">
+							<div class="location-details-container">
+								<span class="room">{{requestItem.room.value}}</span>
+								<div class="floor">{{requestItem.floor.value}}</div>
+								<div class="building">{{requestItem.building.value}}</div>
+							</div>
+						</div>
+						<div class="requested-info">
+							<div class="requested-for">Requested for: [[requestItem.requestedFor]]</div>
+							<div class="submitted">Submitted:
+							<triplat-date-picker
+								class="submitted"
+								value="[[requestItem.createdDateTime]]"
+								display-format="[[currentUser._DateFormat]]"
+								readonly></triplat-date-picker>
+							</div>
+						</div>
+					</div>
+
+					<div hidden$="{{!_isMoveRequest(requestItem.requestTypeENUS.value)}}">
+						<div class="move-request-type" hidden$="[[!requestItem.requestType.value]]">{{requestItem.requestType.value}}</div>
+						<div class="submitted">Requested move date:</div>
+						<div>
+							<triplat-date-picker
+								class="submitted"
+								value="[[requestItem.moveDate]]"
+								display-format="[[currentUser._DateFormat]]"
+								readonly></triplat-date-picker>
+						</div>
+						<div>&nbsp</div>
+						<div class="submitted">Scheduled move date:</div>
+						<div hidden$="{{_isEmpty(requestItem.scheduledDate)}}">
+							<triplat-date-picker
+								class="submitted"
+								value="[[requestItem.scheduledDate]]"
+								display-format="[[currentUser._DateFormat]]"
+								readonly></triplat-date-picker>
+						</div>
+						<div hidden$="{{!_isEmpty(requestItem.scheduledDate)}}">
+							<triplat-date-picker
+								class="submitted"
+								value="[[requestItem.scheduledDateProject]]"
+								display-format="[[currentUser._DateFormat]]"
+								readonly></triplat-date-picker>
+						</div>
+					</div>
+				</div>
+            </div>
+		</div>
+        <iron-a11y-keys id="tapKeys" target="[[_targetItem]]" keys="enter" on-keys-pressed="_handleOpen"></iron-a11y-keys>
+
+		<div class="status-container" hidden$="[[_hideStatusBar(requestItem.statusENUS)]]">
+			<div class$="[[_computedStatusColorClass(requestItem.statusENUS)]]"></div>
+			<div>[[requestItem.status]]</div>
+		</div>
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-request-list-item",
+
+			behaviors: [],
+
+			properties: {
+			},
+
+			hostAttributes: {
+                tabindex: '0'
+            },
+
+			observers: [
+			],
+
+			listeners: {
+			},
+
+			_handleOpen: function(e) {
+				this.fire("navigate-request-open", {"requestId": this.requestItem._id, "requestType": this.requestItem.requestTypeENUS.value});
+			},
+
+			_computeAssignmentStatusClass: function(assignmentStatus) {
+				var value = "assignmentStatus " + Boolean(assignmentStatus) ? assignmentStatus.toLowerCase() : '';
+				return value;
+			},
+
+			_isBusy: function(isBusy) {
+				return isBusy;
+			},
+
+			_isMoveRequest: function(requestType) {
+				if (requestType == "Individual Move") {
+					return true;
+				}
+				return false;
+			},
+
+			_isEmpty: function(val) {
+				return !val || val == "";
+			},
+
+			_hideStatusBar: function(status) {
+				return (!status || status === "");
+			},
+
+			_computedStatusColorClass: function(status) {
+				return (status === "Issued") ? "box-status-color status-issued" : "box-status-color";
+			},
+
+			_targetItem: {
+				type: Object,
+				value: function() {
+					return this;
+				}
+			}
+
+		});
+	</script>
+</dom-module>

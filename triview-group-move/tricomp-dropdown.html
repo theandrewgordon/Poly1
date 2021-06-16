@@ -1,0 +1,73 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<!-- Polymer Paper Components -->
+<link rel="import" href="../paper-button/paper-button.html">
+
+<!-- Polymer Neon Components -->
+<link rel="import" href="../neon-animation/neon-animations.html">
+
+<dom-module id="tricomp-dropdown">
+  <style>
+    :host {
+      display: inline-block;
+      margin: 1em;
+    }
+  </style>
+
+  <template>
+    <div on-tap="open">
+      <content select=".dropdown-trigger"></content>
+    </div>
+    <iron-dropdown id="dropdown"
+      vertical-align="[[verticalAlign]]"
+      horizontal-align="[[horizontalAlign]]"
+      disabled="[[disabled]]"
+      open-animation-config="[[openAnimationConfig]]"
+      close-animation-config="[[closeAnimationConfig]]">
+      <content select=".dropdown-content"></content>
+    </iron-dropdown>
+  </template>
+</dom-module>
+
+<script>
+  Polymer({
+    is: "tricomp-dropdown",
+    properties: {
+      verticalAlign: String,
+      horizontalAlign: String,
+      disabled: Boolean,
+      openAnimationConfig: {
+        type: Array,
+        value: function() {
+          return [{
+            name: 'fade-in-animation',
+            timing: {
+              delay: 150,
+              duration: 50
+            }
+          }, {
+            name: 'expand-animation',
+            timing: {
+              delay: 150,
+              duration: 200
+            }
+          }];
+        }
+      },
+      closeAnimationConfig: {
+        type: Array,
+        value: function() {
+          return [{
+            name: 'fade-out-animation',
+            timing: {
+              duration: 200
+            }
+          }];
+        }
+      }
+    },
+    open: function() {
+      this.$.dropdown.open();
+    }
+  });
+</script>

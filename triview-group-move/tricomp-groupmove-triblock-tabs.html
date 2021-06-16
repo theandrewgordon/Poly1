@@ -1,0 +1,530 @@
+
+<!--
+@license
+IBM Confidential - OCO Source Materials - (C) COPYRIGHT IBM CORP. 2016 - The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+-->
+<link rel="import" href="../paper-tabs/paper-tabs.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+
+<link rel="import" href="../triblock-tabs/triblock-tab.html">
+<link rel="import" href="../triblock-animation/triblock-slide-animation.html">
+<link rel="import" href="../triblock-animation/triblock-slide-animation-behavior.html">
+<link rel="import" href="../triblock-badge-behavior/triblock-badge-container-behavior.html">
+<link rel="import" href="../triblock-nav-behavior/triblock-nav-select-behavior.html">
+<link rel="import" href="../triblock-nav-behavior/triblock-nav-iron-pages-container-behavior.html">
+
+<!--
+	<div style="background-color:#FFFFCC">
+	    <div style="padding:20px;">
+			<b style="color:red;">Experimental:</b> This is an experimental component and is not yet supported.  The API may change.
+	    </div>
+	</div>
+
+	`triblock-tabs` is a component which provides a group of navigation items that will be rendered horizontally on the page.
+
+	Use the `triblock-tab` component to configure the navigation items that will be rendered in the tabs.  This is the only supported component that can be used inside the `triblock-tabs`.  See <a href="?active=triblock-tab">triblock-tab</a> for more information.
+
+	Example:
+
+		<triblock-tabs>
+			<triblock-tab
+				icon="activity"
+				label="Activity"></triblock-tab>
+			<triblock-tab
+				icon="admin"
+				label="Admin"></triblock-tab>
+			<triblock-tab
+				icon="applications"
+				label="Application"></triblock-tab>
+		</triblock-tabs>
+
+	It implements slide animation behavior which provides animation when the navigation item is selected or unselected.  See <a href="?active=TriBlockSlideAnimationBehavior">TriBlockSlideAnimationBehavior</a> for more information.
+
+
+	### Default maximum badge number
+
+	It implements badge container behavior which propagates its `badge-max-number` value to its navigation items that do not have a value for its `badge-max-number` property.  See <a href="?active=TriBlockBadgeContainerBehavior">TriBlockBadgeContainerBehavior</a> for more information.
+
+	Example:
+
+		<triblock-tabs badge-max-number="99">
+			<triblock-tab
+				icon="activity"
+				label="Activity"
+				badge-max-number="50"></triblock-tab>
+			<triblock-tab
+				icon="admin"
+				label="Admin"></triblock-tab>
+			<triblock-tab
+				icon="applications"
+				label="Application"></triblock-tab>
+		</triblock-tabs>
+
+	The `Activity` navigation item above will have a maximum badge number of 50 while the other two navigation items will have 99 as their maximum badge number which comes from the `triblock-side-nav`.
+
+
+	### Default id for `iron-pages`
+
+	It implements iron pages container behavior which propagates its `iron-pages-id` value to its navigation items that do not have a value for its `iron-pages-id` property.  When the `triblock-side-nav` component is used as a `nav` component inside the `triblock-side-nav-layout` component the `iron-pages-id` property will be automatically assigned a value from the `id` of the `iron-pages` component that is marked as `page` inside the layout component.  In this usage, you do not need to set a value for the `iron-pages-id` property.  See <a href="?active=TriBlockNavIronPagesContainerBehavior">TriBlockNavIronPagesContainerBehavior</a> for more information.
+
+
+	### Selection
+
+	It implements navigation selection behavior which maintains the currently selected navigation item based on the `id` or `attr-for-selected` property of its navigation items.  Use the `selected` property to get or set the selected side navigation item.  The index of the navigation item is not supported as a value for the `selected` property.  See <a href="?active=TriBlockNavSelectBehavior">TriBlockNavSelectBehavior</a> for more information.
+
+	`id` example:
+
+		<triblock-tabs selected="activityNav">
+			<triblock-tab
+				id="activityNav"
+				icon="activity"
+				label="Activity"></triblock-tab>
+			<triblock-tab
+				id="adminNav"
+				icon="admin"
+				label="Admin"></triblock-tab>
+			<triblock-tab
+				id="applicationNav"
+				icon="applications"
+				label="Application"></triblock-tab>
+		</triblock-tabs>
+
+	The `Activity` navigation item will be selected by default.
+
+	`attr-for-selected` example:
+
+		<triblock-tabs selected="adminNav" attr-for-selected="route-to">
+			<triblock-tab
+				route-to="activityNav"
+				icon="activity"
+				label="Activity"></triblock-tab>
+			<triblock-tab
+				route-to="adminNav"
+				icon="admin"
+				label="Admin"></triblock-tab>
+			<triblock-tab
+				route-to="applicationNav"
+				icon="applications"
+				label="Application"></triblock-tab>
+		</triblock-tabs
+
+	The `Admin` navigation item will be selected by default.
+
+
+	### Default styling
+
+	The `triblock-tabs` component comes with default TRIRIGA application styling such as:
+	<ul>
+  		<li>On hover or focus, a band appears from the bottom of the tab and follows the cursor between tabs.</li>
+  		<li>On hover or focus or selected, the primary tab label and icon change its opacity so that tab appears prominent.</li>
+  		<li>When selected, the primary tab band slides up and the tab color changes.</li>
+  		<li>When unselected, the tab band slides down and returns to its unselected or default state.</li>
+  		<li>Badges are positioned right next to the label with a bold font setting. </li>
+	</ul>
+
+
+	### Styling
+
+	The following custom properties and mixins are available for styling:
+
+	Custom property | Description | Default
+	----------------|-------------|----------
+	`--triblock-tabs-container-style` | Mixin applied to the tabs container | `{}`
+	`--triblock-tabs-height` | Height applied to the tabs  | `44px`
+	`--triblock-tabs-min-width` | Minimum width applied to the tabs  | `200px`
+	`--triblock-tabs-background-color` | Background color applied to tabs | `primary --tri-primary-dark-color, secondary white`
+	`--triblock-tabs-color` | Color applied to the tabs | `primary --tri-secondary-content-color, secondary --tri-primary-color`
+	`--triblock-tabs-border-bottom-color` | Color applied to the bottom border of the tabs |`secondary --tri-primary-content-accent-color`
+	`--triblock-tabs-tricontent-style` | Mixin applied to the tabs tri-content container | `primary padding: 0 24px, secondary padding: 0 16px`
+	`--triblock-tabs-style` | Mixin applied to the tabs | `{}`
+	`--triblock-tab-style` | Mixin applied to the tab | `{}`
+	`--triblock-tab-focused-style` | Mixin applied when a tab is focused or hovered on | `{}`
+	`--triblock-tab-focused-band-style` | Mixin applied to the band when tab is focused or hovered on | `{}`
+	`--triblock-tab-focused-band-background-color` | Background color applied to the band when tab is focused or hovered on | `primary --ibm-blue-60, secondary --tri-primary-color`
+	`--triblock-tab-focused-band-height` | Height applied to the band when tab is focused or hovered on | `primary 5px, secondary 4px`
+	`--triblock-tab-color` | Color applied to the tab | `primary --tri-secondary-content-color, secondary --tri-primary-dark-color`
+	`--triblock-tab-unselected-background-color` | Background color applied to the tab when it is not selected | `primary --tri-primary-dark-color`
+	`--triblock-tab-unselected-color` | Color applied to the tab when it is not selected |`primary --tri-secondary-content-color, secondary --tri-primary-color`
+	`--triblock-tab-unselected-style` | Mixin applied to the tab when it is not selected | '{}'
+	`--triblock-tab-background-color` | Background color applied to the tab | `secondary white`
+	`--triblock-tab-selected-background-color` | Background color applied to the overlay animation of the tab when it is selected | `--ibm-blue-60`
+	`--triblock-tab-selected-band-height` | Height applied to the band when the secondary tab is selected | `4px`
+	`--triblock-tab-selected-band-color` | Color applied to the band when the secondary tab is selected | `--tri-primary-dark-color`
+	`--triblock-tab-selected-band-style` | Mixin applied to the band when the secondary tab is selected | `{}`
+	`--triblock-tab-selected-style` | Mixin applied to the tab when it is selected | `opacity: 1; font-weight: normal`
+	`--triblock-tab-badge-style` | Mixin applied to the badge on the tab | `common font-weight: bold, primary color: white, secondary color: var(--tri-primary-dark-color)`
+
+
+@demo demo/index.html
+-->
+<dom-module id="tricomp-groupmove-triblock-tabs">
+	<template>
+		<style>
+
+			:host {
+				display: flex;
+				@apply(--layout-vertical);
+
+				@apply(--triblock-tabs-container-style);
+			};
+
+			paper-tabs {
+				height: var(--triblock-tabs-height, 50px);
+				/*min-width: var(--triblock-tabs-min-width, 400px);*/
+				width: var(--triblock-tabs-width, 400px); 
+                @apply(--triblock-tabs-style);
+				@apply(--layout-center-center);
+			}
+
+            paper-tab {
+				width: var(--triblock-tab-width);
+				/*width: calc( (var(--triblock-tabs-width) - 100)/3 );*/
+			}
+
+			/*applied on tab-content because it's in tab-content in paper-tab*/
+			paper-tab:focus > ::content > .tab-content,
+			paper-tab:hover > ::content > .tab-content {
+				opacity: 1;
+				font-weight: normal;
+
+				@apply(--triblock-tab-focused-style);
+			}
+
+			paper-tab:hover > ::content > .tab-content:before,
+			paper-tab:focus > ::content > .tab-content:before {
+				@apply(--layout-fit);
+		        opacity: 1;
+		        content: "";
+
+				@apply(--triblock-tab-focused-band-style);
+			}
+
+			paper-tabs.primary paper-tab:hover > ::content > .tab-content:before,
+			paper-tabs.primary paper-tab:focus > ::content > .tab-content:before {
+				background-color: var(--triblock-tab-focused-band-background-color, --ibm-blue-60);
+			  	height: var(--triblock-tab-focused-band-height, 5px);
+		        transform: translateY(calc(var(--triblock-tabs-height, 44px) - var(--triblock-tab-focused-band-height, 5px)));
+
+		        @apply(--triblock-tab-focused-band-style);
+			}
+
+			paper-tabs.secondary paper-tab:hover > ::content > .tab-content:before,
+			paper-tabs.secondary paper-tab:focus > ::content > .tab-content:before {
+		        background-color: var(--triblock-tab-focused-band-background-color, --tri-primary-color);
+			  	height: var(--triblock-tab-focused-band-height, 4px);
+		        transform: translateY(calc(var(--triblock-tabs-height, 44px) - var(--triblock-tab-focused-band-height, 4px)));
+
+		        @apply(--triblock-tab-focused-band-style);
+			}
+
+			paper-tabs.primary {
+				--paper-tabs: {
+					background-color: var(--triblock-tabs-background-color, --tri-primary-dark-color);
+					color: var(--triblock-tabs-color, --tri-secondary-content-color);
+					@apply(--triblock-tabs-style);
+				};
+			}
+
+			paper-tabs.primary paper-tab {
+				--paper-tab: {
+					padding: 0;
+					font-size: 16px;
+
+					@apply(--triblock-tab-style);
+				};
+				--paper-tab-content: {
+					color: var(--triblock-tab-color, --tri-secondary-content-color);
+
+					@apply(--triblock-tab-style);
+				};
+				--paper-tab-content-unselected: {
+					/* background-color: var(--triblock-tab-unselected-background-color, --tri-primary-dark-color);  */
+					color: var(--triblock-tab-unselected-color, --tri-secondary-content-color);
+
+					@apply(--triblock-tab-unselected-style);
+				};
+			}
+
+			paper-tabs.primary .tri-content {
+				padding: 0 24px;
+				@apply(--triblock-tabs-tricontent-style);
+			}
+
+			paper-tabs.secondary {
+				--paper-tabs: {
+					background-color: var(--triblock-tabs-background-color, white);
+					color: var(--triblock-tabs-color, --tri-primary-color);
+					border-bottom: 1px solid var(--triblock-tabs-border-bottom-color, --tri-primary-content-accent-color);
+					font-size: 14px;
+
+					@apply(--triblock-tabs-style);
+				};
+			}
+
+			paper-tabs.secondary paper-tab {
+				--paper-tab: {
+					@apply(--layout-end);
+					padding: 0px;
+					padding-bottom: 10px;
+					box-sizing: border-box;
+
+					@apply(--triblock-tab-style);
+				};
+				--paper-tab-content: {
+					@apply(--layout-end);
+					background-color: var(--triblock-tab-background-color, white);
+					color: var(--triblock-tab-color, --tri-primary-dark-color);
+
+					@apply(--triblock-tab-style);
+				};
+				--paper-tab-content-unselected: {
+					/*by default, paper-tab opacity: 0.8 and on select, 1.0*/
+					opacity: 1.0;
+					color: var(--triblock-tab-unselected-color, --tri-primary-color);
+
+					@apply(--triblock-tab-unselected-style);
+					background-color: var(--triblock-tab-unselected-background-color);
+				};
+			}
+
+			paper-tabs.secondary .tri-content {
+				padding: 0 16px;
+
+				@apply(--triblock-tabs-tricontent-style);
+			}
+
+			triblock-slide-animation {
+				z-index: -1;
+				--triblock-slide-animation-height: var(--triblock-tabs-height, 44px);
+				--triblock-slide-animation-background-color: var(--triblock-tab-selected-background-color, --ibm-blue-60);
+			}
+
+			paper-tabs.secondary paper-tab.iron-selected > ::content > .tab-content:before {
+				@apply(--layout-fit);
+			  	height: var(--triblock-tab-selected-band-height, 4px);
+		        background-color: var(--triblock-tab-selected-band-color, --tri-primary-dark-color);
+		        content: "";
+		        transform: translateY(calc(var(--triblock-tabs-height, 44px) - var(--triblock-tab-selected-band-height, 4px)));
+
+		        @apply(--triblock-tab-selected-band-style);
+			}
+
+			paper-tab.iron-selected > ::content > .tab-content {
+				opacity: 1;
+		        font-weight: normal;
+
+		        @apply(--triblock-tab-selected-style);
+			}
+
+			paper-tab > ::content > .tab-content {
+		        font-weight: normal;
+				font-family: var(--tri-font-family);
+
+				@apply(--triblock-tab-style);
+			}
+
+			.badge {
+				font-weight: bold;
+
+				@apply(--triblock-tab-badge-style);
+			}
+
+			.primary .badge {
+				color: white;
+				font-weight: bold;
+                font-size: 30px;
+			    font-family: var(--tri-font-family);
+
+			}
+
+			.secondary .badge {
+				/*color: var(--tri-primary-dark-color);*/
+				color: white;
+				font-weight: bold;
+                font-size: 30px;
+			    font-family: var(--tri-font-family);
+				/*@apply(--triblock-tab-badge-style);*/
+			}
+
+			.tab-container {
+				@apply(--layout-horizontal);
+				@apply(--layout-center-center);
+
+			}
+
+		    .tab-icon-container {
+				 @apply(--layout-center-center);
+
+			}
+
+			.tab-filter-container {
+				 @apply(--layout-vertical);
+                 @apply(--layout-center-center);
+			}
+
+			.tab-item {
+				 padding-left: 5px;
+				 padding-right: 5px;
+			}
+
+
+		</style>
+
+		<content style="display:none" select="triblock-tab"></content>
+
+		<paper-tabs id="triTab" selected="{{selected}}" on-iron-select="_handleIronSelected" on-iron-deselect="slideDown" attr-for-selected="select-id" hide-scroll-buttons="{{hideScrollButtons}}" class$="[[_computePaperTabsClass(primary)]]" no-bar noink no-slide scrollable fit-container>
+			<template id="tabsTemplate"  is="dom-repeat" items="{{_tabElements}}" as="item">
+
+				<paper-tab id="triTabItem" class="tab-item" select-id$="{{_computeSelectAttr(item, attrForSelected, _tabElements.length)}}" tab-item="{{item}}">
+					<div class="tri-content">
+                        <div class="tab-container">
+                             <div class="tab-icon-container">
+						        <triplat-icon hidden$="{{!item.icon}}" icon="{{item.icon}}"></triplat-icon>
+						     </div>
+							 <div class="tab-filter-container">
+
+                                <span class="badge" hidden$="{{_hasBadge(item, _tabElements.length)}}" dir="ltr">0</span>
+								<span class="badge" dir="ltr">{{_computeBadgeLabel(item, _tabElements.length)}}</span>
+
+								<span hidden$="{{!item.label}}" dir="[[dir]]">{{item.label}}</span>
+                             </div>
+                        </div>
+                    </div>
+					<triblock-slide-animation hidden="{{!primary}}"></triblock-slide-animation>
+				</paper-tab>
+			</template>
+		</paper-tabs>
+
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-groupmove-triblock-tabs",
+
+		behaviors: [TriBlockSlideAnimationBehavior,
+					TriBlockBadgeContainerBehavior,
+					TriBlockNavIronPagesContainerBehavior,
+					TriBlockNavSelectBehavior],
+
+		properties: {
+			/**
+			 * If true, tabs are created with primary tabs styles.
+			 */
+			primary: {
+				type: Boolean,
+				value: false
+			},
+			_tabElements: Array,
+			/**
+			 * Specifies the text direction of the component's content.
+			 */
+			dir: {
+				type: String,
+				value: "ltr"
+			},
+			/**
+			 * If true, scroll buttons (left/right arrow) will be hidden for scrollable tabs.
+			 */
+			hideScrollButtons: {
+				type: Boolean,
+				value: false 
+			}
+		},
+
+		listeners: {
+	        'update': '_tabsUpdated',
+	        'badge-update': '_tabsUpdated'
+      	},
+
+    	observers: [
+			'_handleBadgeMaxNumberAndTabs(badgeMaxNumber, _tabElements)'
+		],
+
+		attached: function() {
+			this._retrieveTabs();
+
+			var textDirectionValue = document.querySelector('body').getAttribute('dir');
+			if (textDirectionValue==="rtl") {
+				this.set('dir', "rtl");
+			}
+		},
+
+		ready: function() {
+			if (!this._tabElements) {
+				this._retrieveTabs();
+			}
+		},
+
+		_getElementsToApplyIronPagesId: function() {
+			if (!this._tabElements) {
+				this._retrieveTabs();
+			}
+
+			return this._tabElements;
+		},
+
+		_retrieveTabs: function() {
+			var tabs = Polymer.dom(this).querySelectorAll("triblock-tab");
+			this.set('_tabElements', tabs);
+		},
+
+		_handleBadgeMaxNumberAndTabs: function(badgeMaxNumber, _tabElements) {
+			this.setBadgeMaxNumber(_tabElements);
+		},
+
+		_handleIronSelected: function(e) {
+			this.slideUp(e.detail.item);
+			this._navigate(e);
+		},
+
+		_handleIronDeselected: function(e) {
+			this.slideDown(e.detail.item);
+		},
+
+		_computePaperTabsClass: function(primary) {
+			return primary ? "primary" : "secondary";
+		},
+
+		_computeBadgeLabel: function(item, length) {
+            return item.badgeLabel;
+		},
+
+		_tabElementsLoaded: function() {
+			return (this._tabElements && this._tabElements.length > 0);
+		},
+
+		_navigate: function(e) {
+			e.detail.item.tabItem.navigate();
+		},
+
+		_hasBadge: function(item, length) {
+			if (this._tabElementsLoaded() && (item.hasBadge() || item.badgeIcon)) {
+				return true;
+			}
+			return false;
+		},
+
+      	_tabsUpdated: function() {
+      		this._refreshTabs();
+      	},
+
+		_refreshTabs: function() {
+			this.debounce("refreshTabs", function() {
+				this._retrieveTabs();
+				this._computeInitialSelection(this._tabElements);
+			});
+		},
+
+		_computeSelectAttr: function(item, attrForSelected, length) {
+			return item.getAttribute(attrForSelected);
+		},
+
+		_notifyResize: function() {
+			this.$.triTab.notifyResize();
+		},
+
+	});
+</script>

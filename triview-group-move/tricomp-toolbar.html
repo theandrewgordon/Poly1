@@ -1,0 +1,201 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../paper-toolbar/paper-toolbar.html">
+<link rel="import" href="../triplat-signout-button/triplat-signout-button.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+<dom-module id="tricomp-toolbar">
+	<style>
+		:host {
+
+		}
+
+		.toolbar-title {
+			@apply(--layout-flex);	
+			font-family: "Helvetica Neue", Helvetica, Arial, Roboto;
+			font-size: 18px;
+			
+			margin-left: 0px;
+			pointer-events: none;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			overflow: hidden;
+			color: var(--tri-header-color);
+            font-weight: light;
+		}
+		paper-toolbar {
+			--paper-toolbar-height: 50px;
+			--paper-toolbar-content:{
+				padding:0px 3px 0px 20px;
+			};
+			--paper-toolbar-background: var(--tri-header-background-color);
+		}
+
+		
+		.toolbar-title {
+			@apply(--layout-flex);
+			@apply(‑‑layout-start-justified);					
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;	
+		}
+
+		.toolbar-requestid {
+			
+			@apply(--layout-center-justified);					
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;	
+			
+			
+		}
+		
+		.toolbar-title-company {
+			@apply(--layout-flex);
+			font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+			color: var(--tri-header-color);
+			font-size: 18px;
+			font-weight: 100;
+			pointer-events: none;
+		}
+		
+		.toolbar-title-appname {
+			@apply(--layout-flex);
+			font-family: "Helvetica Neue", Helvetica, Arial, Roboto;
+			color: var(--tri-header-color);
+			font-size: 18px;
+			font-weight: bold;
+			pointer-events: none;
+		}
+		
+		.signout {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-end-justified);	
+		}	
+		
+		.clickabe-section{
+			cursor: pointer;
+		}
+
+
+		triplat-signout-button {
+			transition: background-color .25s, color .25s;
+			@apply(--triplat-signout-button);
+			opacity: 0.8;
+			min-width: 44px;
+		}
+		
+		triplat-signout-button:hover {
+			@apply(--triplat-signout-button-hover);
+			opacity: 1;					
+		}
+		#home {
+			opacity: 1;
+			cursor:pointer;
+			padding-right: 20px;
+		}
+	
+	</style>
+	<template>
+	<triplat-route id="inboxRoute" name="inbox"></triplat-route>
+	<triplat-ds id="currentUser" name="currentUser" data="{{currentUser}}" on-ds-get-complete="_getCurrentPage"></triplat-ds>
+	
+	<triplat-ds id="moveRequest" name="moveRequest" data="{{moveRequest}}" loading="{{moveRequestLoading}}" disable on-ds-get-complete="_handleMoveRequestComplete" >
+			<triplat-ds-context name="myMoveRequests" context-id="{{_reqId}}">
+			</triplat-ds-context>
+		</triplat-ds>
+	
+			<paper-toolbar class="inbox-header-toolbar">
+				<div class="toolbar-title" hidden$="{{!_isInbox}}">
+					<span class="toolbar-title-company">IBM </span>
+					<span class="toolbar-title-appname">TRIRIGA Group Move</span>
+				</div>
+				<div class="toolbar-title clickabe-section" on-tap="goBack" hidden$="{{_isInbox}}">
+					<iron-icon icon="hardware:keyboard-arrow-left" tabindex="0"></iron-icon>
+					<span class="toolbar-title-appname">My Requests</span>
+				</div>
+				<div class="toolbar-requestid" hidden$="{{_isInbox}}">
+					<span class="toolbar-title-appname" hidden$="{{!_isNew}}">New </span>
+					<span class="toolbar-title-appname">Request </span>
+					<span class="toolbar-title-company" hidden$="{{_isNew}}">{{moveRequest.requestID}}</span>
+				</div>
+				<div class="signout">
+					<triplat-icon id="home" icon="home"></triplat-icon>
+					<triplat-signout-button></triplat-signout-button>
+				</div>
+			</paper-toolbar>
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-toolbar",
+
+		properties : {
+			_isInbox: {
+				type: Boolean,
+				value: true
+				},
+				_isNew: {
+				type: Boolean,
+				value: true
+				},
+			_reqId:{
+				type: String,
+			},
+			_draftCreated: {
+				type: Boolean,
+				value: false
+			},
+		}, 
+		
+		goBack: function(){
+			this.fire("refresh");
+			this.$.inboxRoute.navigate();
+			this.fire("setToolbar");
+		},
+		
+		_getCurrentPage: function(){
+			var currentURL = this.baseURI;
+			console.log("Base URI");
+			console.log(currentURL);
+			var reducedURL = currentURL.substring(currentURL.lastIndexOf("groupMove") +9,currentURL.length);
+			this._draftCreated = false;
+			if(reducedURL.match(/\d/i)){
+				reducedURL = reducedURL.substring(reducedURL.lastIndexOf("request") +8,reducedURL.length);
+				if(reducedURL.indexOf("/") < 0){
+					this._reqId = reducedURL;
+				}
+				else{
+					this._reqId = reducedURL.substring(0,reducedURL.indexOf("/"));
+					}
+				this._isInbox = false;
+				this.$.moveRequest.disable=false;
+				}
+				else{
+				this.$.moveRequest.disable=true;
+				this._isInbox = true;
+				} 
+		},
+		
+		_handleMoveRequestComplete: function(){
+			if(this.moveRequest.status == null){
+				if(this._draftCreated){
+					this._reloadMoveRequest();
+				}
+				this._isNew = true;
+			}
+			else{
+				this._isNew = false;
+			}
+		},
+
+		_reloadMoveRequest: function(){
+			this.$.moveRequest.disable=true;
+			this.$.moveRequest.disable=false;
+			this._draftCreated = true;
+		},
+	
+		
+	});
+</script>

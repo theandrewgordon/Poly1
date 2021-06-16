@@ -1,0 +1,180 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../iron-label/iron-label.html">
+<link rel="import" href="../triplat-datetime-picker/triplat-datetime-picker.html">
+<link rel="import" href="../triplat-icon/ibm-icons.html">
+<link rel="import" href="tricomp-importance-icon-button-styles.html">
+
+<dom-module id="tricomp-dataset-card">
+
+	<template>
+
+		<style include="tricomp-importance-icon-button-styles"></style>
+		<style>
+			:host {
+				@apply(--layout-horizontal);
+			}
+
+			.body {
+				@apply(--layout-vertical);
+				padding: 15px 0;
+				border-top: 1px solid var(--tri-primary-content-accent-color);
+			}
+			.body > *:not(:last-child) {
+				margin-bottom: 10px;
+			}
+
+			.content {
+				@apply(--layout-flex);
+				@apply(--layout-vertical);
+				background-color: var(--tri-primary-content-background-color);
+				border: 1px solid var(--tri-primary-content-accent-color);
+				color: var(--tri-primary-content-color);
+				margin: 5px;
+				overflow: hidden;
+				padding: 0 20px;
+			}
+
+			.divider-line {
+				border-left: 1px solid var(--tri-primary-content-accent-color);
+				height: 24px;
+				flex-shrink: 0;
+			}
+
+			.export-button-container {
+				cursor: pointer;
+				display: inline-block;
+			}
+			.export-button-container > * {
+				color: var(--tri-primary-icon-button-color);
+			}
+			.export-button-container:hover > * {
+				color: var(--tri-primary-icon-button-hover-color);
+			}
+			.export-button-container:hover > span {
+				text-decoration: underline;
+			}
+
+			.export-info-container {
+				@apply(--layout-horizontal);
+				@apply(--layout-start-aligned);
+				@apply(--layout-wrap);
+			}
+			.export-info-container > * {
+				flex: 1 1 auto;
+				padding-right: 9px;
+				padding-top: 5px;
+			}
+
+			.field-container {
+				@apply(--layout-vertical);
+			}
+
+			.header {
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+				margin: 15px 0 10px;
+			}
+
+			.importance-icon {
+				margin: 0 10px;
+				flex-shrink: 0;
+			}
+
+			label {
+				font-size: 12px;
+			}
+
+			paper-icon-button {
+				height: 44px; width: 44px;
+			}
+
+			.title {
+				@apply(--layout-flex);
+				min-width: 0;
+				font-size: 18px;
+				font-weight: bold;
+				margin: 0 10px;
+			}
+		</style>
+
+		<div class="content">
+			<div class="header">
+				<div class="title">[[item.name]]</div>
+				<div class="divider-line"></div>
+				<paper-icon-button class="importance-icon" icon="[[_computeImportantIcon(item.isImportant)]]" active="[[item.isImportant]]" noink toggles on-tap="_onToggleDatasetImportanceTap"></paper-icon-button>
+			</div>
+			<div class="body">
+				<div hidden$="[[!item.description]]">[[item.description]]</div>
+				<div class="export-info-container">
+					<div class="field-container">
+						<label>Last Export</label>
+						<div>[[lastExportDisplayValue]]</div>
+					</div>
+					<div class="field-container">
+						<label>Exported By</label>
+						<div>[[lastExportedByDisplayValue]]</div>
+					</div>
+					<div class="field-container">
+						<label>Number of Records Exported</label>
+						<div>[[_computeNumberOfRecordsExportedDisplayValue(item.lastExportedCount)]]</div>
+					</div>
+				</div>
+				<div>
+					<div class="export-button-container" on-tap="_onExportDatasetTap">
+						<paper-icon-button noink class="tri-disable-theme" icon="ibm:upload-export"></paper-icon-button>
+						<span>Export</span>
+					</div>
+				</div>
+			</div>
+		</div>
+
+	</template>
+
+	<script>
+		Polymer({
+			is: 'tricomp-dataset-card',
+
+			properties: {
+				item: Object,
+				lastExportDisplayValue: String,
+				lastExportedByDisplayValue: String
+			},
+
+			_computeImportantIcon: function(isFav) {
+				return isFav ? "ibm:pinned" : "ibm:pin";
+			},
+
+			_computeNumberOfRecordsExportedDisplayValue: function(lastExportCount) {
+				return (lastExportCount) ? lastExportCount : "N/A";
+			},
+
+			_onExportDatasetTap: function(e) {
+				e.stopPropagation();
+				var item = this.item;
+
+				if (item && item.hasOwnProperty("_id")) {
+					var id = item._id;
+					this.fire("action-dataset-export", { 'datasetId' : id });
+				} else {
+					console.error("Could not complete dataset-export action.");
+				}
+			},
+
+			_onToggleDatasetImportanceTap: function(e) {
+				e.stopPropagation();
+				var item = this.item;
+
+				if (item && item.hasOwnProperty("_id") && item.hasOwnProperty("isImportant")) {
+					var id = item._id;
+					var isImportant = item.isImportant;
+					this.fire("action-dataset-set-importance", { "datasetId": id, "isImportant": !isImportant });
+				} else {
+					console.error("Could not complete dataset-importance-toggle action.");
+				}
+			},
+		});
+	</script>
+
+</dom-module>

@@ -1,0 +1,224 @@
+<!--
+@license
+IBM Confidential - OCO Source Materials - (C) COPYRIGHT IBM CORP. 2015-2017 - The source code for this program is not
+    published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+-->
+<link rel="import" href="../iron-icons/iron-icons.html">
+
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-input/paper-input.html">
+<link rel="import" href="../paper-material/paper-material.html">
+
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-bim/triplat-bim-thumbnail.html">
+<link rel="import" href="../triplat-bim/triplat-bim-viewer-popup.html">
+<link rel="import" href="../triplat-bim/triplat-bim-viewer.html">
+<link rel="import" href="../triblock-popup/triblock-popup.html">
+
+<dom-module id="bim-test-building-link">
+	<style>
+	    html, body {
+			margin           : 0;
+			padding          : 0;
+			height           : 100%;
+			width            : 100%;
+			font-family      : arial; 
+	    }
+		paper-material {
+			padding: 20px;
+			background-color: white;
+			margin-top: 30px;
+		}
+		.item {
+			cursor           : pointer;
+		}
+		.fullPage {
+			height           : 1000p;
+			width            : 100%;
+		} 
+
+	</style>
+	<template>
+		<triplat-ds id="model" name="modelList" data="{{list}}"></triplat-ds>		
+
+		<triplat-bim-viewer-popup id="popup" on-select="_onViewerSelect">
+			<div slot="title">{{data.buildingId}}</div>
+		</triplat-bim-viewer-popup>
+
+		<paper-material style="height:100%; width:100%">
+			<h2>Building to Model Link</h2>
+			<table>
+				<tr>
+					<th>ID</th>
+					<th>Building ID</th>
+					<th>URN</th>
+					<th></th>
+					<th></th>
+				</tr>
+			    <template id="repeat" is="dom-repeat" items="[[list]]">
+			    	<tr>
+						<td on-click="_selectRow" class="item">{{item._id}}</td>
+						<td>{{item.buildingId}}</td>
+						<td>{{item.urn}}</td>
+						<td>
+							<triplat-bim-thumbnail buildingid="{{item.buildingId}}" height="96px" width="96px"
+							                       on-select="_onModelSelect">
+							</triplat-bim-thumbnail>
+						</td>
+						<td>
+							<paper-button raised on-click="_deleteLinkRow">Delete</paper-button>
+							<paper-icon-button icon="delete-forever" on-click="_deleteLinkRow" alt="Delete model">
+							</paper-icon-button>
+						</td>
+			    	</tr>
+				</template>
+			</table>
+			<div style="display:inline-flex; width: 100%;">
+				<div style="display:inline; width: 100%;">
+					<paper-input label="Building ID" floating-label value="{{data.buildingId}}"></paper-input>
+					<paper-input label="URN" floating-label value="{{data.urn}}"></paper-input>
+					<paper-input label="ID" floating-label value="{{data._id}}"></paper-input>
+				</div>
+				<div style="display:inline; float:right;">
+					<img id="thumbnail" on-load="_onThumnalLoad" scr="[[data.thumbnail]]" width='200' height='200'>
+				</div>
+			</div>
+			<div>
+			 	<div style="display: inline-flex;">
+					<paper-button raised on-click="_addLink">Add</paper-button>
+					<paper-button raised on-click="_updateLink">Update</paper-button>
+					<paper-button raised on-click="_deleteLink">Delete</paper-button>
+				</div>
+			</div>
+		 </paper-material>
+		
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "bim-test-building-link",
+
+	    attached: function() {
+    		this.data = {
+    			buildingId : "",
+    			urn        : "",
+    			_id        : ""
+    		};
+ 	    },
+
+	    _addLink : function(
+			event
+		) {
+			var l = this.list;
+			var update = [];
+			update.push( this.data );
+     		this.$.model.createRecord( this.data, TriPlatDs.RefreshType.BOTH, "actions", "create")
+     			.then ( (newID) => { console.log( "Create " + newID) },
+					    ( err ) => { console.error( err ); } ); 
+		},
+
+		_deleteLink : function(
+			event
+		) {
+			var id = this.data._id;
+		    this.$.model.deleteRecord( this.data._id, TriPlatDs.RefreshType.BOTH, "actions", "delete")
+     			.then ( (newID) => { 
+     						console.log( "Delete " + newID
+						) },
+					    ( err ) => { 
+					    	console.error( err ); 
+					    } ); 
+		},
+
+		_deleteLinkRow : function(
+			event
+		) {
+			var id = event.model.item._id;
+		    this.$.model.deleteRecord( id, TriPlatDs.RefreshType.BOTH, "actions", "delete")
+     			.then ( ( param1 ) => { 
+     						console.log( "deleteRecord " )
+     						console.log( param1 )
+     					},
+					    ( err ) => { 
+					    	console.error( err ); 
+					    } ); 
+		},
+
+		_updateLink : function(
+		) {
+			var found = false;
+			for( var i in this.list )
+			{
+				if( this.data._id == this.list[i]._id )
+				{
+					if( this.data.urn && this.data.urn  != "" )
+					{
+						this.set( "list." + i + ".urn", this.data.urn );
+					}
+					if( this.data.buildingId && this.data.buildingId  != "" )
+					{
+						this.set( "list." + i + ".buildingId", this.data.buildingId );
+					}
+					var d = this.list[i];
+					found = true;
+					break;
+				}
+			}
+		    this.$.model.updateRecord( this.data._id, TriPlatDs.RefreshType.BOTH, "actions", "update")
+     			.then ( ( param1 ) => { 
+     						console.log( "update " )
+     						console.log( param1 )
+     					},
+					    ( err ) => { 
+					    	console.error( err ); 
+					    } ); 
+		},
+
+		_selectRow : function(
+			event
+		) {
+			var item = event.model.item;
+			this.set( "data.buildingId", item.buildingId );
+			this.set( "data.urn",        item.urn );
+			this.set( "data._id",        item._id );
+			this.set( "data.thumbnail",  item.thumbnail );
+			this.$.thumbnail.src = item.thumbnail;
+		},
+
+		_onThumnalLoad : function(
+			event
+		) {
+			/*
+		    var canvas = document.createElement('CANVAS');
+		    var ctx = canvas.getContext('2d');
+		    var dataURL;
+		    var image = event.currentTarget;
+		    canvas.height = image.naturalHeight;
+		    canvas.width = image.naturalWidth;
+		    ctx.drawImage( image, 0, 0);
+		    dataURL = canvas.toDataURL();
+		    console.log( dataURL );
+		    */
+		},
+
+		_onModelSelect : function(
+			event
+		) {
+			this.set( "data.buildingId", event.detail.buildingId );
+			this.set( "data.urn", event.detail.urn );
+			this.set( "data._id", event.detail._id );
+			this.$.popup.openPopup( event.detail.buildingId ); 
+		},
+
+		_onViewerSelect : function(
+			event
+		) {
+			console.log( event.detail.selection );
+			console.log( event.detail.urn );
+			console.log( event.detail.buildingId );
+		}
+
+	});
+</script>

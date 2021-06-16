@@ -1,0 +1,111 @@
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<link rel="import" href="../triview-space-assessment/tricomp-accordion-arrow.html">
+<link rel="import" href="tricomp-assessment-discrepancies.html">
+
+<dom-module id="tricomp-assessment-log-item">
+
+	<style>
+
+		.space-header {
+			@apply(--layout-horizontal);
+			background-color: white;
+			margin-top: 10px;
+			padding: 10px;
+			border-top: 2px solid var(--tri-primary-color);
+			border-bottom: 1px solid var(--tri-primary-color);
+		}
+
+		.space-name {
+			font-size: 18px;
+			font-weight: bold;
+			color: var(--tri-primary-content-color);
+		}
+
+		.space-type {
+			padding-top: 2px;
+			padding-left: 10px;
+			font-style: italic;
+			color: var(--tri-primary-content-label-color);
+		}
+
+		.comments-label {
+			margin-right: 16px;
+		}
+
+		.comments-value {
+			@apply(--layout-flex);
+			color: var(--tri-primary-content-color);
+		}
+
+		.space-info {
+			@apply(--layout-vertical);
+			@apply(--layout-flex-4);
+		}
+
+		.comments-container {
+			@apply(--layout-horizontal);
+			@apply(--layout-flex-8);
+		}
+	</style>
+
+	<template>
+		<div class="container" hidden$="{{_spaceIsExcluded(log.description, discrepancyCount)}}">
+			<div class="space-header">
+		   		<div class="space-info">
+		   			<span class="space-name">{{log.space.value}}</span>
+			  	 	<span class="space-type">{{log.spaceClass}}</span>
+				</div>
+				<div class="comments-container" hidden$="{{!log.description}}">
+					<div class="comments-label">
+						<label>Comments</label>
+					</div>
+					<div class="comments-value">
+						<span>{{log.description}}</span>
+					</div>
+				</div>
+			</div>
+			<tricomp-assessment-discrepancies
+				id="discrepancyLogs"
+				log-id="[[log._id]]"
+				history-assessment="{{readOnly}}"
+				count="{{discrepancyCount}}">
+			</tricomp-assessment-discrepancies>	
+		</div>
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-assessment-log-item",
+
+		properties : {
+			log : Object,
+			readOnly : Boolean,
+			_opened : {
+				type : Boolean,
+				value : true
+			}
+		},
+
+		refresh : function() {
+			this.$.discrepancyLogs.refresh();
+		},
+
+		_handleUpdateDiscrepancyLog : function(discrepancyLog) {
+			this.$.discrepancyLogs._handleUpdateDiscrepancyLog(discrepancyLog);
+		},
+
+		_spaceIsExcluded : function(comment, discrepancyCount) {
+			return (comment == null || comment == undefined) && !this._hasDiscrepancies(discrepancyCount);
+		},
+
+		_hasDiscrepancies : function(discrepancyCount) {
+			return discrepancyCount > 0;
+		},
+
+		_toggleCollapse : function() {
+			this.set('_opened', !this._opened);
+		}
+    });
+</script>

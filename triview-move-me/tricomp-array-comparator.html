@@ -1,0 +1,131 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-debug/triplat-debug.html">
+
+<dom-module id="tricomp-array-comparator">
+
+	<template>
+		<!-- <triplat-debug
+				message="Source"
+				value="{{source}}"></triplat-debug>
+		<triplat-debug
+				message="Compare To"
+				value="{{compareTo}}"></triplat-debug> -->
+	</template>
+
+</dom-module>
+
+<script>
+	Polymer({
+
+		is: "tricomp-array-comparator",
+
+		properties: {
+
+			/**
+			 * Array that will be copied into `result` along with comparison match flags.
+			 */
+			source: {
+				type: Array
+			},
+
+			/**
+			 * Name of field for identifying records in `source` array.
+			 */
+			sourceMatchField: {
+				type: String,
+				value: "_id"
+			},
+
+			/**
+			 * Array used for matching elements in `source`.
+			 */
+			compareTo: {
+				type: Array
+			},
+
+			/**
+			 * Name of field for identifying records in `compareTo` array.
+			 */
+			compareToMatchField: {
+				type: String,
+				value: "_id"
+			},
+
+			/**
+			 * Name of property that will be applied to elements in `result` if that element is found in both `source` and `compareTo`.
+			 */
+			matchFlag: {
+				type: String,
+				value: "matches"
+			},
+
+			/**
+			 * Array copied from `source`, except elements will be flagged with a property (named via `matchFlag`) if that element is also found in `compareTo` array. Matching is determined by the `sourceMatchField` and `compareToMatchField` property values that should be present and uniquely-valued on all elements in `source` and `compareTo`.
+			 */
+			result: {
+				type: Array,
+				notify: true,
+				readOnly: true
+			}
+
+		},
+
+		observers: [
+			"_handleInputArrayChange(source, compareTo)",
+			"_handleSourcePathChange(source.splices)",
+			"_handleCompareToPathChange(compareTo.splices)"
+		],
+
+		/**
+		 * When any input array property is changed, generate the result array
+		 */
+		_handleInputArrayChange: function(source, compareTo) {
+			if (source && compareTo && source.constructor === Array && compareTo.constructor === Array) {
+				var result = [];
+				var sourceCopy = source.slice(0);
+				var compareToCopy = compareTo.slice(0);
+
+				// copy source into result
+				for (var i=0; i < sourceCopy.length; i++) {
+					var curElement = sourceCopy[i];
+
+					// If Statement: Check if there's a current element - Problem of some arrays missing some index
+					if (curElement) {
+						var curElementId = curElement[this.sourceMatchField];
+						var matched = false;
+						var j = 0;
+
+						curElement[this.matchFlag] = false;
+
+						// set flag to true if element is found in compareTo
+						while (!matched && j < compareToCopy.length) {
+							var curComparison = compareToCopy[j];
+							var curComparisonId = curComparison[this.compareToMatchField];
+							if (curElementId && curComparisonId && curElementId == curComparisonId) {
+								// match found - set flag to true and remove matched element from compareToCopy array so it is not used in future comparisons (for performance reasons)
+								matched = true;
+								compareToCopy.splice(j, 1);
+								curElement[this.matchFlag] = true;
+							}
+							j++;
+						}
+
+						result.push(curElement);
+					}// end if
+				}// end for
+
+				this._setResult(result);
+			}
+		},
+
+		_handleCompareToPathChange: function(compareToChanges) {
+			if (compareToChanges) this._handleInputArrayChange(this.source, this.compareTo);
+		},
+
+		_handleSourcePathChange: function(sourceChanges) {
+			if (sourceChanges) this._handleInputArrayChange(this.source, this.compareTo);
+		}
+
+	});
+</script>

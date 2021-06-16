@@ -1,0 +1,80 @@
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-autogrow-textarea/iron-autogrow-textarea.html">
+<link rel="import" href="../paper-button/paper-button.html">
+
+<link rel="import" href="../triview-space-assessment/tricomp-discrepancy-comment.html">
+<link rel="import" href="../triview-space-assessment/tricomp-asset-item.html">
+<link rel="import" href="../triview-space-assessment/tricomp-person-item.html">
+
+<dom-module id="tricomp-exclude-discrepancy">
+
+	<style>
+		:host {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			background-color: #ffffff;
+			margin: 10px;
+		}
+
+		.discrepancy-log-list-container {
+			@apply(--layout-vertical);
+		}
+
+	</style>
+
+	<template>
+		<div class="discrepancy-log-list-container">	
+			<tricomp-asset-item
+				hidden$="{{!asset}}"
+				asset="{{asset}}">
+			</tricomp-asset-item>
+			<tricomp-person-item 
+				hidden$="{{!person}}"
+				person="{{person}}">
+			</tricomp-person-item>
+			<tricomp-discrepancy-comment 
+				id="comment"
+				comment="{{_comment}}"
+				disabled="{{!_exists(asset, person)}}">
+			</tricomp-discrepancy-comment>
+		</div>
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-exclude-discrepancy",
+
+		properties: {
+			reviewComment: String,
+			viewType: String,
+			person : Object,
+			asset : Object,
+
+			discrepancyLog : Object,
+		},
+
+		observers : [
+			'_handleDiscrepancyLogChanged(discrepancyLog)'
+		],
+
+		_handleUpdateDiscrepancyLog: function() {
+			if (!this.reviewComment) {
+				this.reviewComment = "";
+			}
+			
+			var rtn = {'comment':this.reviewComment, 'viewType': this.viewType};
+
+			this.fire("update-discrepancy-log", rtn);
+		},
+
+		_exists : function(asset, person) {
+			return asset || person;
+		},
+
+		reset: function() {
+			this.set("reviewComment", "");
+		}
+
+	});
+</script>

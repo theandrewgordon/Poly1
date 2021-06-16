@@ -1,0 +1,181 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../tricore-url/tricore-url.html">
+<link rel="import" href="../tricore-lazy-loading-behavior/tricore-lazy-loading-behavior.html">
+<link rel="import" href="../tricore-home-app-behavior/tricore-home-app-behavior.html">
+<link rel="import" href="../triplat-view-behavior/triplat-view-behavior.html">
+<link rel="import" href="../triplat-icon/ibm-icons.html">
+<link rel="import" href="../triblock-app-layout/triblock-app-layout.html">
+<link rel="import" href="../triblock-popup/triblock-popup.html">
+
+<link rel="import" href="../iron-pages/iron-pages.html">
+
+<link rel="import" href="../triblock-app-layout/triblock-app-layout-banner-routing-behavior.html">
+<link rel="import" href="../triblock-app-layout/triblock-app-layout-banner-popup-behavior.html">
+<link rel="import" href="../triblock-confirmation-popup/triblock-confirmation-popup.html">
+
+<link rel="import" href="tristyles-service-request-app.html">
+
+<link rel="import" href="trilazy-imports.html">
+
+<dom-module id="triview-service-request">
+	<template>
+		<style include="shared-page-styles">
+			triblock-app-layout {
+				--triblock-app-layout-body-background-color: white;
+				--triblock-app-layout-mobile-drawer-z-index: 104;
+			}
+
+			trimain-service-request {
+				@apply(--layout-flex);
+				@apply(--layout-vertical);
+			}
+		</style>
+
+		<tricore-url id="triurl" hidden></tricore-url>
+
+		<triblock-app-layout id="appLayout"
+			home-app="[[homeApp]]"
+			app-label="[[homeAppLabel]]"
+			mobile-page-label="[[mobilePageLabel]]"
+			show-mobile-back-button="[[showMobileBackButton]]"
+			hide-signout-button>
+
+			<triblock-banner-button tap-handler="_navigateHome" home></triblock-banner-button>
+			<triblock-banner-button back tap-handler="_handleBackButtonTap"></triblock-banner-button>
+
+			<triblock-banner-button icon="ibm:sign-out" 
+				label="Sign Out"  
+				tap-handler="_handleSignout"></triblock-banner-button>
+
+			<trimain-service-request id="serviceRequestMain" home-app="[[homeApp]]" content></trimain-service-request>
+		</triblock-app-layout>
+
+		<triblock-confirmation-popup id="unsavedPopup" 
+			on-confirm-tapped="_handleUnsavedConfirmation" aria-label="Changes not saved">
+			<p class="text">Your changes were not saved. Are you sure you want to discard them?</p>
+		</triblock-confirmation-popup>
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+
+		is: "triview-service-request",
+		
+		behaviors: [
+			TriPlatViewBehavior, 
+			TriLazyLoadingBehavior,
+			TriBlockAppLayoutBannerRoutingBehavior,
+			TriBlockAppLayoutBannerPopupBehavior,
+			TriHomeAppBehavior
+		],
+
+		properties: {
+			_unsavedChanges: {
+				type: Boolean,
+				value: false
+			},
+			_unsavedIntention: String
+		},
+
+		listeners: {
+            'inbox-route-active': '_manageBannerOnRouteChange',
+            'precreate-route-active': '_manageBannerOnRouteChange',
+            'request-detail-route-active': '_manageBannerOnRouteChange',
+			'navigate-home': '_navigateHome',
+			'serviceRequestMain.unsaved-changes': '_handeUnsavedChanges'
+		},
+
+		_manageBannerOnRouteChange: function(e) {
+			this.manageBannerOnRouteChange(e.detail);
+		},
+
+		_isBlank: function(val) {
+			return !val || val == "";
+		},
+
+		ready: function() {
+			document.querySelector("body").style.height = "auto";
+		},
+
+		_navigateHome: function(e) {
+			if (this.homeUrl) {
+				if (this._unsavedChanges) {
+					this._unsavedIntention = "home";
+					this._openUnsavedPopup();
+				} else {
+					this._goToHomeUrl();
+				}
+			} else {
+				this.fire('navigate-inbox', {}, {node: this.$.serviceRequestMain});
+			}
+		},
+
+		_goToHomeUrl: function() {
+			location.assign(this.homeUrl);
+		},
+
+		attached: function() {
+			Polymer.RenderStatus.afterNextRender(this, function(){
+				this._loadRequestsPage();
+
+				/* 
+				 * Set body height to 100%.
+				 */
+				document.querySelector("body").style.height = "100%";
+			});
+		},
+
+		_getDefaultAppLabel: function() {
+			var __dictionary__appLabel =  "Service Request";
+			return __dictionary__appLabel;
+		},
+
+		_loadRequestsPage: function() {
+			this.loadResource(this.$.requestsPage, "trimain-service-request.html");
+		},
+
+		_handeUnsavedChanges: function(e) {
+			this.set("_unsavedChanges", e.detail);
+		},
+
+		_openUnsavedPopup: function() {
+			this.$.unsavedPopup.openPopup();
+		},
+
+		_handleSignout: function() {
+			if (this._unsavedChanges) {
+				this._unsavedIntention = "signout";
+				this._openUnsavedPopup();
+			} else {
+				this._signout();
+			}
+		},
+
+		_signout: function() {
+			this.$.appLayout._signout();
+		},
+
+		_handleUnsavedConfirmation: function() {
+			var intention = this._unsavedIntention;
+			this._unsavedIntention = "";
+			
+			if (intention === "home") {
+				this._goToHomeUrl();
+			} else if (intention === "signout") {
+				this._signout();
+			}
+		},
+
+		_handleBackButtonTap: function() {
+			var isPopupOpened = this.isPopupOpened();
+			if(isPopupOpened){
+				this.managePopupBackBehavior();
+			}else{
+				this.navigateToPreviousRoutedPage();
+			}
+		}
+
+	});
+</script>

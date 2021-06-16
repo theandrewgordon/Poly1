@@ -1,0 +1,55 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../iron-icon/iron-icon.html">
+
+<dom-module id="tricomp-page-toolbar-button">
+	<template>
+		<style>
+			:host {
+				@apply(--layout-vertical);
+				@apply(--layout-center-center);
+				cursor: pointer;
+				color: var(--tri-footer-color);
+				padding: 5px;
+			}
+
+			:host[disabled] {
+				opacity: 0.5;
+				pointer-events: none;
+			}
+
+			.button-icon {
+				--iron-icon-height: 32px;
+				--iron-icon-width: 32px;
+			}
+
+			.button-label {
+				text-align: center;
+				font-size: 12px;
+				font-weight: 100;
+				margin-top: 2px;
+			}
+		</style>
+
+		<iron-icon class="button-icon" icon="[[icon]]"></iron-icon>
+		<div class="button-label">[[label]]</div>
+
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-page-toolbar-button",
+
+			properties: {
+				disabled: {
+					type: Boolean,
+					value: false,
+					reflectToAttribute: true
+				},
+				icon: String,
+				label: String
+			}
+
+		});
+	</script>
+</dom-module>

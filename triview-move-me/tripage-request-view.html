@@ -1,0 +1,53 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-routing/triplat-routing.html">
+
+<dom-module id="tripage-request-view">
+
+	<style>
+	</style>
+	<template>
+
+		<triplat-route id="viewRoute" name="viewRouteMoveRequest" params="{{pageParams}}"></triplat-route>
+
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+
+		is: "tripage-request-view",
+
+		properties: {
+			_hasLoaded: {
+				type: Boolean,
+				value: false
+			},
+			_previousHistory: String,
+		},
+
+		observers: [
+		],
+
+		listeners: {
+			"viewRoute.route-active": "_handleRouteActive",
+		},
+		//TODO: remove the tripage-request-view
+		// 		refactor the tripage-request-summary to handle route that contains the param /:Id
+		_handleRouteActive: function(e) {
+			console.log("params", this.pageParams);
+			if (e.detail.active && !this._hasLoaded) {
+				this.async(function() {
+					this.fire("navigate-readonly-summary-page", this.pageParams);
+					if(!this._hasLoaded){
+						this._previousHistory = document.referrer;
+						this._hasLoaded = true;
+					}
+				});
+			}else if(e.detail.active && this._hasLoaded) { 
+				window.location = this._previousHistory;
+			}
+		},
+
+	});
+</script>

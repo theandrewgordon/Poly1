@@ -1,0 +1,517 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017-2018 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+<dom-module id="triapp-task-list">
+	<template>
+		<style>
+			:host {
+				@apply --layout-vertical;
+				overflow-y: auto;
+			}
+
+			.tab-content {
+				@apply --layout-vertical;
+				@apply --layout-flex;
+				border-top: 1px solid var(--tri-primary-content-accent-color);
+			}
+
+			.message-placeholder {
+				@apply --layout-center-center;
+				@apply --layout-vertical;
+				padding: 10px;
+			}
+
+			.message-placeholder > * {
+				text-align: center;
+				margin: 10px 0;
+			}
+
+			triplat-route-selector, iron-pages {
+				@apply --layout-flex;
+				@apply --layout-vertical;
+			}
+
+			.header {
+				@apply --layout-horizontal;
+				@apply --layout-center;
+			}
+
+			#inProgress, 
+			#completed,
+			#draft,
+			#unassigned,
+			#closed {
+				@apply --layout-flex;
+				@apply --layout-vertical;
+				background-color: var(--ibm-neutral-2);
+			}
+
+			:host([_current-layout="card"]) .tab-content {
+				background-color: var(--ibm-neutral-2);
+			}
+
+			:host([_current-layout="table"]) .tab-content {
+				background-color: white;
+			}
+
+			:host([_current-layout="table"]) #inProgress,
+			:host([_current-layout="table"]) #completed,
+			:host([_current-layout="table"]) #draft,
+			:host([_current-layout="table"]) #closed,
+			:host([_current-layout="table"]) #unassigned {
+				background-color: white;
+			}
+
+			triblock-tabs {
+				--triblock-tabs-background-color: white;
+				--triblock-tab-background-color: white;
+				--triblock-tab-unselected-background-color: white;
+				background-color: white;
+				padding-left: 20px;
+				padding-right: 20px;
+				flex-shrink: 0;
+				@apply --layout-flex;
+				--triblock-tab-focused-tricontent: {
+					outline: 1px solid var(--tri-primary-color-40);
+				};
+			}
+
+			:host([small-screen-width]) > .action-bar-space {
+				max-height: 55px;
+			}
+
+			.header-title {
+				@apply --layout-flex;
+			}
+
+			.header-icon {
+				flex-shrink: 0;
+				height: 44px;
+				width: 44px;
+				margin-right: 12px;
+				@apply --layout-flex-1;
+			}
+
+			tricomp-search-field {
+				margin: 20px 20px 20px 20px;
+			}
+			:host[_is-draft-route-active] tricomp-search-field {
+				margin-bottom: 20px;
+			}
+
+			:host[_is-draft-route-active] tricomp-task-list-tab-content {
+				border-top: 1px solid var(--ibm-gray-10);
+			}
+		</style>
+
+		<triservice-work-task-base id="workTaskBaseService"
+			model-and-view="triWorkTask"
+			instance-id="-1"
+			online="[[online]]"
+			current-user="{{_currentUser}}"
+			my-in-progress-tasks="{{_myInProgressTasks}}"
+			my-completed-tasks="{{_myCompletedTasks}}"
+			my-draft-tasks="{{_myDraftTasks}}"
+			my-closed-tasks="{{_myClosedTasks}}"
+			unassigned-tasks="{{_unassignedTasks}}"
+			task-filter="[[_taskFilter]]"
+			sort-field="[[_sortField]]" sort-desc="[[_sortDesc]]" sort-type="[[_sortType]]"
+			disable-my-closed="[[_disableMyClosed]]"
+			task-search="[[_taskSearch]]"
+			tasks-scroller="[[_scroller]]">
+		</triservice-work-task-base>
+
+		<triplat-auth-check app-name="workTask" auth="{{_workTaskAuth}}"></triplat-auth-check>
+
+		<triroutes-task-list 
+			on-inprogress-route-active="_handleInprogressAndCompletedRouteActive"
+			on-completed-route-active="_handleInprogressAndCompletedRouteActive"
+			on-draft-route-active="_handleInprogressAndCompletedRouteActive"
+			unassigned-route-active="{{_unassignedRouteActive}}"
+			draft-route-active="{{_draftRouteActive}}"
+			closed-route-active="{{_closedRouteActive}}">
+		</triroutes-task-list>
+
+		<div class="header">
+			<tricomp-task-list-header class="header-title" auth="[[_workTaskAuth]]" show-new-task-button="[[showNewTaskButton]]"></tricomp-task-list-header>
+		</div>
+		
+		<div class="header">
+			<triblock-tabs id="tabs" selected="{{_selectedTab}}" hide-scroll-buttons fit-container="[[smallScreenWidth]]">
+				<triblock-tab id="inProgressTab" triplat-route-id="inProgressRoute" label="In Progress">
+				</triblock-tab>
+				<triblock-tab id="completedTab" triplat-route-id="completedRoute" label="Completed">
+				</triblock-tab>
+				<triblock-tab id="draftTab" triplat-route-id="draftRoute" label="Draft">
+				</triblock-tab>
+				<triblock-tab id="unassignedTab" triplat-route-id="unassignedRoute" label="Unassigned">
+				</triblock-tab>
+				<triblock-tab id="closedTab" triplat-route-id="closedRoute" label="Closed">
+				</triblock-tab>
+			</triblock-tabs>
+			<paper-icon-button id="layoutToggleButton" hidden$="[[_computeHideToggle(smallScreenWidth, mediumScreenWidth)]]" aria-label="Toggle task list layout" noink primary class="header-icon" icon="{{_computeLayoutIcon(_currentLayout)}}" on-tap="_onLayoutToggleTap"></paper-icon-button>
+			<paper-tooltip for="layoutToggleButton" fit-to-visible-bounds position="bottom" offset="5">[[_computeLayoutToggleButtonTooltip(_currentLayout)]]</paper-tooltip>
+		</div>
+		
+		<div class="tab-content" hidden$="[[!_showTabContent]]">
+			<tricomp-search-field value="{{_taskSearch}}" placeholder="[[_searchPlaceholder]]"></tricomp-search-field>
+			<tricomp-task-list-filter selected="{{_taskFilter}}" hidden="[[_draftRouteActive]]" aria-label="Task filter"></tricomp-task-list-filter>
+			<tricomp-task-list-sort id="taskListSortBy" hidden$="{{_computeSortHidden(_currentLayout)}}" ignore-location="[[!_disableMyClosed]]"></tricomp-task-list-sort>
+			<triplat-route-selector>
+				<iron-pages>
+					<div id="inProgress" route="inProgress" default-route>
+						<tricomp-task-list-tab-content id="inProgressTabContent" data="[[_myInProgressTasks]]" current-layout="{{_currentLayout}}" empty-message="[[_zeroInProgressMessage]]" sort-property="{{_sortField}}" sort-descending="{{_sortDesc}}"
+							sort-type="{{_sortType}}" embedded="[[!showNewTaskButton]]" work-task-auth="[[_workTaskAuth]]">
+						</tricomp-task-list-tab-content>
+					</div>
+
+					<div id="completed" route="completed">
+						<tricomp-task-list-tab-content data="[[_myCompletedTasks]]" current-layout="{{_currentLayout}}" empty-message="[[_zeroCompletedMessage]]" sort-property="{{_sortField}}" sort-descending="{{_sortDesc}}"
+							sort-type="{{_sortType}}" embedded="[[!showNewTaskButton]]" work-task-auth="[[_workTaskAuth]]">
+						</tricomp-task-list-tab-content>
+					</div>
+
+					<div id="draft" route="draft">
+						<tricomp-task-list-tab-content data="[[_myDraftTasks]]" current-layout="{{_currentLayout}}" empty-message="[[_zeroDraftMessage]]" sort-property="{{_sortField}}" sort-descending="{{_sortDesc}}"
+							sort-type="{{_sortType}}" embedded="[[!showNewTaskButton]]" work-task-auth="[[_workTaskAuth]]">
+						</tricomp-task-list-tab-content>
+					</div>
+
+					<div id="unassigned" route="unassigned">
+						<tricomp-task-list-tab-content data="[[_unassignedTasks]]" current-layout="{{_currentLayout}}" empty-message="[[_zeroUnassignedMessage]]" sort-property="{{_sortField}}" sort-descending="{{_sortDesc}}"
+							sort-type="{{_sortType}}" embedded="[[!showNewTaskButton]]" work-task-auth="[[_workTaskAuth]]">
+						</tricomp-task-list-tab-content>
+					</div>
+
+					<div id="closed" route="closed">
+						<tricomp-task-list-tab-content data="[[_myClosedTasks]]" current-layout="{{_currentLayout}}" empty-message="[[_zeroClosedMessage]]" sort-property="{{_sortField}}" sort-descending="{{_sortDesc}}"
+							sort-type="{{_sortType}}" embedded="[[!showNewTaskButton]]" ignore-location="[[!_disableMyClosed]]" table-scroller="{{_tableScroller}}" work-task-auth="[[_workTaskAuth]]">
+						</tricomp-task-list-tab-content>
+					</div>
+				</iron-pages>
+			</triplat-route-selector>
+		</div>
+
+		<template is="dom-if" if="[[_showClosedOfflineMessage]]">
+			<div class="message-placeholder" aria-live="polite">
+				<div>Closed tasks are not available if the application is offline.</div>
+			</div>
+		</template>
+
+		<template is="dom-if" if="[[_showUnassignedOfflineMessage]]">
+			<div class="message-placeholder" aria-live="polite">
+				<div>Unassigned tasks are not available if the application is offline.</div>
+			</div>
+		</template>
+
+		<div class="action-bar-space"></div>
+	</template>
+	<script>
+		Polymer({
+
+			is: "triapp-task-list",
+
+			behaviors: [
+				TriBlockViewResponsiveBehavior,
+				Polymer.IronResizableBehavior
+			],
+
+			properties: {
+				showNewTaskButton: {
+					type: Boolean,
+					value: false
+				},
+
+				online: {
+					type: Boolean,
+					value: true
+				},
+
+				_currentUser: {
+					type: Object
+				},
+
+				_myInProgressTasks: {
+					type: Array,
+					value: []
+				},
+
+				_myCompletedTasks: {
+					type: Array,
+					value: []
+				},
+				
+				_myDraftTasks: {
+					type: Array,
+					value: []
+				},
+
+				_unassignedTasks: {
+					type: Array,
+					value: []
+				},
+
+				_myClosedTasks: {
+					type: Array,
+					value: []
+				},
+
+				_currentLayout: {
+					type: String,
+					reflectToAttribute: true
+				},
+
+				_showClosedOfflineMessage: {
+					type: Boolean,
+					computed: "_computeShowClosedOfflineMessage(_selectedTab, online)"
+				},
+
+				_showUnassignedOfflineMessage: {
+					type: Boolean,
+					computed: "_computeShowUnassignedOfflineMessage(_selectedTab, online)"
+				},
+
+				_showTabContent: {
+					type: Boolean,
+					computed: "_computeShowTabContent(_showClosedOfflineMessage, _showUnassignedOfflineMessage)"
+				},
+
+				_selectedTab: {
+					type: String
+				},
+
+				_taskFilter: {
+					type: String
+				},
+
+				_sortField: {
+					type: String,
+					notify: true,
+					value: "plannedStart"
+				},
+
+				_sortDesc: {
+					type: Boolean,
+					notify: true,
+					value: false
+				},
+
+				_sortType: {
+					type: String,
+					notify: true,
+					value: "DATE_TIME"
+				},
+
+				_disableMyClosed: {
+					type: Boolean,
+					value: true
+				},
+
+				_zeroInProgressMessage: {
+					type: String
+				},
+
+				_zeroCompletedMessage: {
+					type: String
+				},
+
+				_zeroClosedMessage: {
+					type: String
+				},
+
+				_zeroUnassignedMessage: {
+					type: String
+				},
+
+				_taskSearch: {
+					type: String
+				},
+
+				_searchPlaceholder: {
+					type: String
+				},
+
+				_draftRouteActive: {
+					type: Boolean,
+					reflectToAttribute: true
+				},
+
+				_unassignedRouteActive: {
+					type: Boolean
+				},
+
+				_closedRouteActive: {
+					type: Boolean
+				},
+
+				_scroller: {
+					type: Object,
+					computed: "_computeScroller(_currentLayout, _tableScroller)"
+				},
+
+				_tableScroller: {
+					type: Object
+				},
+
+				_workTaskAuth: {
+					type: Object
+				}
+			},
+
+			observers: [
+				"_onLayoutChange(_currentLayout)",
+				"_onTasksChange(_myInProgressTasks, _myCompletedTasks, _myDraftTasks, _myClosedTasks, _unassignedTasks)",
+				"_onUnassignedRouteActiveChange(_unassignedRouteActive, online)",
+				"_onClosedRouteActiveChange(_closedRouteActive, online)"
+			],
+
+			listeners: {
+				"task-sort-selected": "_setTaskSort"
+			},
+
+			ready: function() {
+				this.mediumScreenMaxWidth = "800px";	
+			},
+
+			attached: function() {
+				var __dictionary__zeroInProgressMessage = "You do not have any tasks in progress.";
+				var __dictionary__zeroCompletedMessage = "You do not have any completed tasks.";
+				var __dictionary__zeroDraftMessage = "You do not have any draft tasks.";
+				var __dictionary__zeroUnassignedMessage = "Your team doesn't have any unassigned tasks.";
+				var __dictionary__zeroClosedMessage = "You do not have any closed tasks.";
+				var __dictionary__searchPlaceholder = "Search for an assigned task";
+				this.set("_zeroInProgressMessage", __dictionary__zeroInProgressMessage);
+				this.set("_zeroCompletedMessage", __dictionary__zeroCompletedMessage);
+				this.set("_zeroDraftMessage", __dictionary__zeroDraftMessage);
+				this.set("_zeroClosedMessage", __dictionary__zeroClosedMessage);
+				this.set("_zeroUnassignedMessage", __dictionary__zeroUnassignedMessage);
+				this.set("_searchPlaceholder", __dictionary__searchPlaceholder);
+			},
+
+			_refreshInProgressAndCompletedTasks: function() {
+				this.$.workTaskBaseService.refreshInProgressAndCompletedTasks();
+			},
+
+			_refreshUnassignedTasks: function() {
+				this.$.workTaskBaseService.refreshUnassignedTasks();
+			},
+
+			_handleInprogressAndCompletedRouteActive: function(e) {
+				if (e.detail.active) {
+					this._resetSort();
+					this._disableMyClosed = true;
+					Polymer.RenderStatus.afterNextRender(this, this._refreshInProgressAndCompletedTasks);
+				}
+			},
+
+			_handleCompletedRouteActive: function(e) {
+				if (e.detail.active) {
+					this._resetSort();
+					this._disableMyClosed = true;
+					Polymer.RenderStatus.afterNextRender(this, this._refreshMyCompletedTasks);
+				}
+			},
+
+			_onUnassignedRouteActiveChange: function(unassignedRouteActive, online) {
+				if (unassignedRouteActive && online) {
+					this._resetSort();
+					this._disableMyClosed = true;
+					Polymer.RenderStatus.afterNextRender(this, this._refreshUnassignedTasks);
+				}
+			},
+
+			_onClosedRouteActiveChange: function(closedRouteActive, online) {
+				if (closedRouteActive && online) {
+					this._resetSort();
+					this._disableMyClosed = false;
+				}
+			},
+
+			_computeShowClosedOfflineMessage: function(selectedTab, online) {
+				return selectedTab == "closedTab" && !online;
+			},
+
+			_computeShowUnassignedOfflineMessage: function(selectedTab, online) {
+				return selectedTab == "unassignedTab" && !online;
+			},
+
+			_computeShowTabContent: function(showClosedOfflineMessage, showUnassignedOfflineMessage) {
+				return !showClosedOfflineMessage && !showUnassignedOfflineMessage;
+			},
+
+			_setTaskSort: function(e) {
+				var taskSortName = e.detail;
+				if (taskSortName == "plannedStart") {
+					this.set('_sortField', "plannedStart");
+					this.set('_sortDesc', false);
+					this.set('_sortType', "DATE_TIME");
+				} else if (taskSortName == "priority") {
+					this.set('_sortField', "priorityRanking");
+					this.set('_sortDesc', false);
+					this.set('_sortType', null);
+				} else if (taskSortName == "status") {
+					this.set('_sortField', "status");
+					this.set('_sortDesc', false);
+					this.set('_sortType', "STRING_WITH_ID");
+				} else if (taskSortName == "location") {
+					this.set('_sortField', "computedLocation");
+					this.set('_sortDesc', false);
+					this.set('_sortType', null);
+				} else if (taskSortName == "newest") {
+					this.set('_sortField', "createdDate")
+					this.set('_sortDesc', true);
+					this.set('_sortType', "DATE_TIME");
+				}
+			},
+
+			_resetSort: function() {
+				this.set('_sortField', "priorityRanking");
+				this.set('_sortDesc', false);
+				this.set('_sortType', "null");
+				this.$.taskListSortBy.selected = "priority";
+			},
+
+			_onLayoutToggleTap: function() {
+				this.$.inProgressTabContent.toggleLayout();
+				this._resetSort();
+			},
+
+			_computeLayoutIcon: function(currentLayout) {
+				return (currentLayout == "table") ? "ibm:tile-tiles-tileview" : "ibm:spreadsheet-listview";
+			},
+
+			_computeLayoutToggleButtonTooltip: function(currentLayout) {
+				var __dictionary__currentLayoutTableTooltip = "Switch to card layout";
+				var __dictionary__currentLayoutCardsTooltip = "Switch to table layout";
+				return (currentLayout == "table") ? __dictionary__currentLayoutTableTooltip : __dictionary__currentLayoutCardsTooltip;
+			},
+
+			_computeSortHidden: function(currentLayout) {	
+				return currentLayout == "table";
+			},
+
+			_onLayoutChange: function(layout) {
+				this._notifyResize();
+			},
+
+			_onTasksChange: function(myInProgressTasks, myCompletedTasks, myDraftTasks, myClosedTasks, unassignedTasks) {
+				this._notifyResize();
+			},
+
+			_notifyResize: function() {
+				this.async(function() {
+					this.notifyResize();
+				});
+			},
+
+			_computeScroller(layout, tableScroller) {
+				if (tableScroller) {
+					return (layout == "table") ? tableScroller : this;
+				}
+			},
+
+			_computeHideToggle: function(smallScreenWidth, mediumScreenWidth) {
+				return smallScreenWidth ? smallScreenWidth : mediumScreenWidth;
+			}
+
+		});
+	</script>
+</dom-module>

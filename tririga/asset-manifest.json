@@ -1,0 +1,28 @@
+{
+  "files": {
+    "main.css": "./static/css/main.d9bc7726.chunk.css",
+    "main.js": "./static/js/main.b88cfb36.chunk.js",
+    "main.js.map": "./static/js/main.b88cfb36.chunk.js.map",
+    "runtime-main.js": "./static/js/runtime-main.a78830ef.js",
+    "runtime-main.js.map": "./static/js/runtime-main.a78830ef.js.map",
+    "static/css/2.336bf421.chunk.css": "./static/css/2.336bf421.chunk.css",
+    "static/js/2.970ec680.chunk.js": "./static/js/2.970ec680.chunk.js",
+    "static/js/2.970ec680.chunk.js.map": "./static/js/2.970ec680.chunk.js.map",
+    "index.html": "./index.html",
+    "precache-manifest.5d988c02bef6519bcbfe861ad6c87d96.js": "./precache-manifest.5d988c02bef6519bcbfe861ad6c87d96.js",
+    "service-worker.js": "./service-worker.js",
+    "static/css/2.336bf421.chunk.css.map": "./static/css/2.336bf421.chunk.css.map",
+    "static/css/main.d9bc7726.chunk.css.map": "./static/css/main.d9bc7726.chunk.css.map",
+    "static/js/2.970ec680.chunk.js.LICENSE.txt": "./static/js/2.970ec680.chunk.js.LICENSE.txt",
+    "static/media/3D-MPR-Toggle.15840c7c.svg": "./static/media/3D-MPR-Toggle.15840c7c.svg",
+    "static/media/Not-authorized.c9ec4202.svg": "./static/media/Not-authorized.c9ec4202.svg",
+    "static/media/stacked-scrolling--1.781b4a4e.svg": "./static/media/stacked-scrolling--1.781b4a4e.svg"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.a78830ef.js",
+    "static/css/2.336bf421.chunk.css",
+    "static/js/2.970ec680.chunk.js",
+    "static/css/main.d9bc7726.chunk.css",
+    "static/js/main.b88cfb36.chunk.js"
+  ]
+}

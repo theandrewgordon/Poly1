@@ -1,0 +1,466 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../iron-collapse/iron-collapse.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-selector/iron-selector.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+<link rel="import" href="tricomp-move-accordion-arrow.html">
+
+<dom-module id="tricomp-table-container">
+	<style>
+		:host {
+			@apply(--layout-vertical);
+		}
+
+		#mliHeader {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			padding: 0px 10px 0px 20px;
+			border-bottom: 1px solid var(--tri-card-border-color);
+			border-top: 1px solid var(--tri-card-border-color);
+			background-color: var(--tri-body-background-color);
+
+		}
+
+		#mliHeader .title {
+			@apply(--layout-flex);
+			text-transform: uppercase;
+			font-size: 12px;
+			color: var(--tri-secondary-color);
+		}
+
+		#mliHeader .count {
+			font-weight: bold;
+			font-size: 14px;
+			color: var(--tri-primary-content-color);
+		}
+
+		#mliHeader > triplat-icon {
+			color: var(--tri-actionable-color);
+			cursor: pointer;
+			padding-right: 15px;
+			border-right: 1px solid var(--tri-card-border-color);
+		}
+
+		tricomp-move-accordion-arrow {
+			align: right;
+		}
+
+		#mliHeader, .item {
+			height: 44px;
+		}
+
+		#placeholder {
+			padding: 10px 10px 10px 30px;
+			font-style: italic;
+		}
+
+		.mli-cell {
+			display: table-cell;
+			vertical-align: middle;
+			height: 45px;
+			padding: 10px 14px;
+		}
+		.mli-cell:first-child {
+			padding-left: 0 !important;
+		}
+		.mli-col-collapse {
+			width: 22px;
+		}
+		.mli-col-icon {
+			width: 60px;
+		}
+		.mli-col-remove {
+			color: var(--tri-actionable-color);
+			width: 60px;
+		}
+		.mli-child-icon {
+			padding-left: 20px;
+		}
+
+		.mli-header-cell {
+			display: table-cell;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			line-height: 30px;
+			padding: 5px 14px 5px 0px;
+			text-align: left;
+		}
+		.mli-header-cell::before {
+			border-left: 1px solid var(--tri-primary-content-accent-color);
+			content: "";
+			font-size: 18px;
+			padding-right: 14px;
+		}
+		.mli-header-cell:first-child::before, .mli-header-cell.hide-border::before {
+			border-left: none !important;
+		}
+		.mli-row {
+			display: table-row;
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			transition-duration: 300ms;
+		}
+		.mli-row.child {
+			background-color: var(--tri-primary-content-background-color);
+		}
+		.mli-row.parent {
+			background-color: var(--tri-body-background-color);
+		}
+		.mli-row.parent[collapsible] {
+			cursor: pointer;
+		}
+
+
+		.mli-table {
+			display: table;
+			border-collapse: collapse;
+			border-spacing: 0;
+			width: 100%;
+			background-color: var(--tri-primary-content-background-color);
+			color: var(--tri-primary-content-color);
+			font-size: 14px;
+		}
+		.mli-table-header {
+			display: table-header-group;
+			background-color: var(--tri-primary-content-background-color);
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			color: var(--tri-primary-color);
+		}
+		.mli-table-body {
+			display: table-row-group;
+		}
+
+		.action {
+			color: var(--tri-primary-color);
+		}
+
+		.unassigned-count-message {
+			margin-left: 5px;
+			margin-right: 5px;
+		}
+
+		.warning-icon {
+			color: var(--tri-warning-color);
+			height: 25px;
+			width: 25px;
+		}
+
+	</style>
+
+	<template>
+
+		<div id="mliHeader">
+			<div class="title">
+				<span>{{label}}</span>
+				<span>&nbsp;</span>
+				<span class="count">{{count}}</span>
+			</div>
+
+			<div hidden$="{{_isZero(unassignedCount)}}">
+				<triplat-icon icon="warning" class="warning-icon"></triplat-icon>
+				<span class="unassigned-count-message">{{unassignedCount}} unassigned</span>
+			</div>
+
+			<div>
+				<triplat-icon class="action" icon="add-new" on-tap="_handleRoomPeopleTap"></triplat-icon>
+			</div>
+
+			<tricomp-move-accordion-arrow
+				id="detailsAccordionArrow1"
+				opened="{{_assetOpened}}"
+				enabled="{{_enableAccordionToggle(actionsEnabled, count)}}">
+			</tricomp-move-accordion-arrow>
+		</div>
+
+		<iron-collapse id="collapsible" opened="{{_assetOpened}}">
+
+			<div table-container class="item-container" id="itemsContainer">
+				<div class="mli-table">
+					<div tri-thead class="mli-table-header">
+						<div class="mli-header-cell mli-col-icon hide-border"></div>
+						<div class="mli-header-cell mli-col-collapse"></div>
+						<div class="mli-header-cell mli-col-icon hide-border"></div>
+
+						<div class="mli-header-cell">Description</div>
+						
+						<div class="mli-header-cell">ID</div>
+						
+						<div class="mli-header-cell">Type</div>
+						
+
+						<div class="mli-header-cell">Action</div>
+						
+
+						<div class="mli-header-cell">Move With</div>
+						
+						<div class="mli-header-cell">To Space</div>
+						
+					</div>
+					<div tri-tbody class="mli-table-body">
+						<template is="dom-if" if="{{_test()}}">
+						</template>
+						<template
+						        id="personTemplate"
+								is="dom-repeat"
+                                items="{{_computedFilteredList(mliDataBuffer, _searchValue, fieldsToFilter)}}"
+                                observe="selected">
+							<div tri-tr class="mli-row parent" id$="{{_computeRowId(item._id)}}"  selected$="{{item.selected}}" on-tap="_handleMLICollapseTap" collapsible$="{{_isMLIRowCollapsible(item.childMLIDataLength)}}">
+								<div class="mli-cell mli-col-collapse">
+									<paper-checkbox class="inbox-checkbox" checked="{{item.selected}}" on-tap="_handleInboxSelect"></paper-checkbox>
+								</div>
+								<div class="mli-cell mli-col-collapse">
+									<iron-icon icon="{{_computeCollapseIcon(item.openChildren, item.childMLIDataLength)}}"></iron-icon>
+								</div>
+
+								<div class="mli-cell mli-col-icon">
+									<div hidden$="{{!_isPerson(item.moveType)}}">
+										<triplat-icon class="placeholder" icon="ibm:user" hidden$="{{_hasImage(item.picture)}}"></triplat-icon>
+										<triplat-image src="{{item.picture}}" width="30px" height="30px" sizing="contain" hidden$="{{!item.picture}}"></triplat-image>
+									</div>
+
+									<div hidden$="{{!_isAsset(item.moveType)}}">
+										<triplat-icon class="placeholder" icon="ibm:assets" hidden$="{{_hasImage(item.assetImage)}}"></triplat-icon>
+										<triplat-image src="{{item.assetImage}}" width="30px" height="30px" sizing="contain" hidden$="{{!item.assetImage}}"></triplat-image>
+									</div>
+
+									<div hidden$="{{!_isEquipment(item.moveType)}}">
+										
+										<triplat-icon class="placeholder" icon="ibm:equipment" hidden$="{{_hasImage(item.equipmentImage)}}"></triplat-icon>
+										<triplat-image src="{{item.equipmentImage}}" width="30px" height="30px" sizing="contain" hidden$="{{!item.equipmentImage}}"></triplat-image>
+									</div>
+
+									<div hidden$="{{!_isRoom(item.moveType)}}">
+										
+										<triplat-icon class="placeholder" icon="room-function" hidden$="{{_hasImage(item.roomImage)}}"></triplat-icon>
+										<triplat-image src="{{item.roomImage}}" width="30px" height="30px" sizing="contain" hidden$="{{!item.roomImage}}"></triplat-image>
+									</div>
+								</div>
+
+								
+								<div class="mli-cell">
+									<div tri-td>{{item.description}}</div>
+								</div>
+								
+								<div class="mli-cell">{{item.genId}}</div>
+								<div class="mli-cell">{{item.moveType}}</div>
+
+								<div class="mli-cell">{{item.moveAction}}</div>
+								<div class="mli-cell">{{item.moveWith}}</div>
+								<div class="mli-cell">{{item.toSpace}}</div>
+
+
+							</div>
+							
+							<template is="dom-repeat" items="{{item.childMLIData}}" as="child">
+								<div class="mli-row child" hidden$="{{!item.openChildren}}">
+									<div class="mli-cell mli-col-icon"></div>
+									<div class="mli-cell mli-col-collapse"></div>
+									<div class="mli-cell mli-col-icon">
+										<div class="mli-child-icon">
+											<div hidden$="{{!_isAsset(child.moveType)}}">
+												<triplat-icon class="placeholder" icon="ibm:assets" hidden$="{{_hasImage(child.assetImage)}}"></triplat-icon>
+												<triplat-image src="{{child.assetImage}}" width="30px" height="30px" sizing="contain" hidden$="{{!child.assetImage}}"></triplat-image>
+											</div>
+											<div hidden$="{{!_isEquipment(child.moveType)}}">
+												
+												<triplat-icon class="placeholder" icon="ibm:equipment" hidden$="{{_hasImage(child.equipmentImage)}}"></triplat-icon>
+												<triplat-image src="{{child.equipmentImage}}" width="30px" height="30px" sizing="contain" hidden$="{{!child.equipmentImage}}"></triplat-image>
+											</div>
+										</div>
+									</div>
+
+									<div class="mli-cell">{{child.itemName}}</div>
+									<div class="mli-cell">{{_computeChildItemIdValue(child.moveType, child.assetId, child.equipmentId)}}</div>
+
+									<div class="mli-cell">{{child.moveType}}</div>
+
+									<div class="mli-cell">
+										<triplat-select-input
+											class="mli-cell"
+											id="moveAction"
+											on-select-input-list-open="_computeDependentListValues"
+											on-select-input-value-change="_handleMoveActionValueChanged"
+											value="{{child.moveActionId}}"
+											value-name="value"
+											search-value="{{moveActionDependentSearchValue}}"
+											select-src="[[moveActionDependent]]">
+										</triplat-select-input>
+									</div>
+
+									<div class="mli-cell">{{child.toSpace}}</div>
+								</div>
+							</template>
+
+						</template>
+					</div>
+				</div>
+			</div>
+		</iron-collapse>
+
+
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-table-container",
+
+		properties : {
+
+			mliDataBuffer : {
+				type: Array,
+				notify: true,
+			},
+
+			count : {
+				type : Number,
+				value : 0
+			},
+
+			unassignedCount : {
+				type : Number,
+				value : 0
+			},
+
+			actionsEnabled : {
+				type : Boolean,
+				value : true
+			},
+
+			_assetOpened : {
+				type : Boolean,
+				value : false
+			},
+
+			_searchValue: {
+				type: String
+			},
+
+			currentFilter: {
+				type: String,
+				value: "",
+			},
+
+			fieldsToFilter: {
+			  type: Array,
+			  value: ["itemName","personId", "assetId", "moveType", "moveAction", "toSpace" ]
+
+			},
+
+		},
+
+		ready: function() {
+		},
+
+		// Dynamic Search Function
+	    _computedFilteredList: function(unFilteredData, currentFilter, fieldsToFilter) {
+
+		   if (!currentFilter || currentFilter == "" || !fieldsToFilter) {
+			 this.count = unFilteredData.length;
+			 return unFilteredData;
+		   }
+
+		   var filteredData = unFilteredData.filter(function(record) {
+
+
+			 var lowerFilter = currentFilter.toLowerCase();
+
+			for (var field in fieldsToFilter) {
+			   if (fieldsToFilter[field]
+			       && record[fieldsToFilter[field]]
+				   && record[fieldsToFilter[field]].toLowerCase().indexOf(lowerFilter) != -1) {
+				 return true;
+			   }
+			 }
+
+			return false;
+		   });
+
+			this.count = filteredData.length;
+
+		   	return filteredData;
+	   },
+
+		_enableAccordionToggle : function(actionsEnabled, count) {
+			return actionsEnabled || count > 0;
+		},
+
+		_computeRowId: function(id) {
+			if (id) return "row"+id;
+			return "";
+		},
+
+		_isMLIRowCollapsible: function(numChildren) {
+			return numChildren > 0;
+		},
+
+		_computeCollapseIcon: function(openChildren, numChildren) {
+			if (numChildren > 0) return (openChildren) ? "hardware:keyboard-arrow-up" : "hardware:keyboard-arrow-down";
+			return "";
+		},
+
+		_handleMLICollapseTap: function(e) {
+			// toggle child MLIs collapse
+			if (e.model.item.openChildren) {
+				e.model.set("item.openChildren", false);
+			} else {
+				e.model.set("item.openChildren", true);
+			}
+		},
+
+		_isPerson: function(moveType) {
+			if (moveType == "Person") {
+				return true;
+			}
+			return false;
+		},
+
+		_isAsset: function(moveType) {
+			if (moveType == "Asset") {
+				return true;
+			}
+			return false;
+		},
+
+		_isEquipment: function(moveType) {
+			if (moveType == "Equipment") {
+				return true;
+			}
+			return false;
+		},
+
+		_isRoom: function(moveType) {
+			if (moveType == "Room Function") {
+				return true;
+			}
+			return false;
+		},
+
+		_getDescription: function (item) {
+			if (item.moveType == "Asset") {
+				return item.assetName;
+			}
+			else if (item.moveType == "Equipment") {
+				return item.equipmentName;
+			}
+			else if (item.moveType == "Person") {
+				return item.personName;
+			}
+			else if (item.moveType == "Room Function") {
+				return item.fromSpace;
+			}
+
+		},
+
+		_test: function() {
+			return true;
+		},
+
+		_isZero: function(val) {
+			return val == 0;
+		},
+
+	});
+</script>

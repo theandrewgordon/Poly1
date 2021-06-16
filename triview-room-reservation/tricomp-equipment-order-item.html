@@ -1,0 +1,234 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-tooltip/paper-tooltip.html">
+
+<link rel="import" href="../tricore-url/tricore-url.html">
+
+<link rel="import" href="../triblock-responsive-layout/triblock-view-responsive-behavior.html">
+
+<link rel="import" href="tristyles-room-reservation-app.html">
+
+<link rel="import" href="tribehav-room-reservation-util.html">
+
+<link rel="import" href="tricomp-incremental-number-input.html">
+
+<dom-module id="tricomp-equipment-order-item">
+	<template>
+		<style include="shared-page-styles">
+			:host {
+				@apply(--layout-vertical);
+				padding: 10px 0 10px 10px;
+				flex-shrink: 0;
+			}
+
+			:host:nth-of-type(even) {
+				background-color: var(--ibm-neutral-2);
+			}
+
+			.top-container {
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+				padding: 10px 0;
+				margin-left: 10px;
+			}
+
+			.image-container {
+				@apply(--layout-vertical);
+				padding-right: 10px;
+			}
+
+				.image {
+					width: 64px;
+					height: 64px;
+				}
+
+				.image-placeholder-icon {
+					--triplat-icon-height: 64px;
+					--triplat-icon-width: 64px;
+					--triplat-icon-fill-color: var(--tri-primary-content-accent-color);
+				}
+
+			.details-container {
+				@apply(--layout-flex);
+				@apply(--layout-vertical);
+				@apply(--layout-self-start);
+			}
+
+				.item-name {
+					font-weight: bold;
+				}
+
+				.description {
+					overflow: hidden;
+					text-overflow: ellipsis;
+					display: -webkit-box;
+					-webkit-box-orient: vertical;
+					-webkit-line-clamp: 2;
+				}
+
+			.button-container {
+				@apply(--layout-horizontal);
+			}
+
+			.top-container .button-container {
+				padding-left: 10px;
+			}
+
+			:host([small-screen-width]) .top-container .button-container {
+				display: none;
+			}
+
+			.drill-container {
+				@apply(--layout-self-stretch);
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+				cursor: pointer;
+				padding: 0 10px;
+			}
+
+			.bottom-container {
+				@apply(--layout-vertical);
+			}
+
+			paper-input-container {
+				padding: 0;
+			}
+
+			:host([small-screen-width]) .bottom-container {
+				padding: 0 10px;
+			}
+
+			:host(:not([small-screen-width])) .bottom-container {
+				padding: 0 52px 0 74px;
+			}
+
+			.bottom-container .button-container {
+				@apply(--layout-center);
+			}
+
+			:host(:not([small-screen-width])) .bottom-container .action-button {
+				display: none;
+			}
+
+			:host([small-screen-width]) .bottom-container .button-container {
+				@apply(--layout-center-center);
+			}
+
+			:host-context([dir="rtl"]) .expand-button {
+                 transform: scaleX(-1);
+            } 
+
+		</style>
+
+		<tricore-url raw-url="/getCompanyFile.jsp?fileLoc=" bind-url="{{imgUrl}}"></tricore-url>
+
+		<div class="top-container">
+			<template is="dom-if" if="[[_showImage(applicationSettings)]]">
+				<div class="image-container">
+					<iron-image class="image" src="{{_computeImageUrl(item.image, imgUrl)}}" sizing="cover" hidden$="[[!imageLoaded]]" loaded="{{imageLoaded}}"></iron-image>
+					<triplat-icon class="image-placeholder-icon" icon="picturefile" hidden$="[[imageLoaded]]"></triplat-icon>
+				</div>
+			</template>
+			<div class="details-container">
+				<div class="item-name">[[item.equipment]]</div>
+				<div class="description">[[item.equipmentDescription]]</div>
+			</div>
+			<div class="button-container">
+				<paper-button secondary class="action-button" hidden$="[[_computeIsAdded(item._id, item.quantity)]]" on-tap="_handleAddEquipment">Add</paper-button>
+				<paper-button danger-outline class="action-button" hidden$="[[!_computeIsAdded(item._id, item.quantity)]]" on-tap="_handleRemoveEquipment">Remove</paper-button>
+			</div>
+			<div class="drill-container" on-tap="_handleOpenEquipmentDetails">
+				<paper-icon-button primary class="expand-button" icon="ibm-glyphs:expand-open"></paper-icon-button>
+			</div>
+		</div>
+
+		<div class="bottom-container">
+			<div class="button-container">
+				<tricomp-incremental-number-input class="quantity" on-user-change="_handleQuantityChange" hidden$="[[!_computeIsAdded(item._id, item.quantity)]]" min="1" value="{{item.quantity}}"></tricomp-incremental-number-input>
+				<paper-button secondary class="action-button" hidden$="[[_computeIsAdded(item._id, item.quantity)]]" on-tap="_handleAddEquipment">Add</paper-button>
+				<paper-button danger-outline class="action-button" hidden$="[[!_computeIsAdded(item._id, item.quantity)]]" on-tap="_handleRemoveEquipment">Remove</paper-button>
+			</div>
+			<paper-textarea label="[[_computeInstructionsLabel(item.instructions, _instructionsMaxLength)]]" on-change="_handleInstructionsChange" value="{{item.instructions}}" max-rows="4" hidden$="[[!_computeIsAdded(item._id, item.quantity)]]" maxlength="[[_instructionsMaxLength]]"></paper-textarea>
+		</div>
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-equipment-order-item",
+
+			behaviors: [
+				TriRoomReservationUtilBehavior,
+				TriBlockViewResponsiveBehavior
+			],
+
+			properties: {
+				item: Object,
+
+				_instructionsMaxLength: {
+					type: Number,
+					value: 700
+				}
+			},
+
+			_computeIsAdded: function(id, quantity) {
+				return id != null && quantity > 0;
+			},
+
+			_setModified: function() {
+				this.item._modified = true;
+				this.fire("equipment-order-changed");
+			},
+
+			_handleQuantityChange: function() {
+				if (this.item && this.item._id) {
+					this._setModified();
+				}
+			},
+
+			_handleInstructionsChange: function() {
+				if (this.item && this.item._id) {
+					this._setModified();
+				}
+			},
+
+			_handleAddEquipment: function() {
+				if (this.item._id > 0) {
+					this.set("item.quantity", 1);
+					this._setModified();
+					return;
+				} else {
+					var equipmentId = this.item.equipmentId;
+					this.fire("action-add-equipment", { 'equipmentId' : equipmentId, 'el' : this });
+				}
+			},
+
+			_handleRemoveEquipment: function() {
+				this.set("item.quantity", 0);
+				this._setModified();
+			},
+
+			_handleOpenEquipmentDetails: function(e) {
+				var equipmentId = this.item.equipmentId;
+				this.fire("navigate-equipment-details-save", { 'equipmentId' : equipmentId });
+			},
+
+			_computeInstructionsLabel: function(value, maximum) {
+				var __dictionary__instructionsString = "Instructions";
+				var __dictionary__charactersString = "characters";
+				var __dictionary__charactersRemainingString = "characters remaining";
+
+				if (!value || value == "") {
+					return __dictionary__instructionsString + " (" + maximum + " " + __dictionary__charactersString + ")";
+				} else {
+					var count = value.length;
+					var remaining = maximum - count;
+					return __dictionary__instructionsString + " (" + remaining + " " + __dictionary__charactersRemainingString + ")";
+				}
+			}
+
+		});
+	</script>
+</dom-module>

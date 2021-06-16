@@ -1,0 +1,67 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017-2018 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-routing/triplat-route.html">
+
+<dom-module id="triroutes-task-list">
+	<template>
+		<triplat-route id="inProgressRoute" name="inProgress" path="/inprogress" on-route-active="_onInProgressRouteActive"></triplat-route>
+		<triplat-route id="completedRoute" name="completed" path="/completed" on-route-active="_onCompletedRouteActive"></triplat-route>
+		<triplat-route id="draftRoute" name="draft" path="/draft" active="{{draftRouteActive}}" on-route-active="_onDraftRouteActive"></triplat-route>
+		<triplat-route id="unassignedRoute" name="unassigned" path="/unassigned" active="{{unassignedRouteActive}}"></triplat-route>
+		<triplat-route id="closedRoute" name="closed" path="/closed" active="{{closedRouteActive}}"></triplat-route>
+	</template>
+
+	<script>
+		(function () {
+			var singleton = null;
+
+			TriroutesTaskList = Polymer({
+				is: "triroutes-task-list",
+
+				properties: {
+					draftRouteActive: {
+						type: Boolean,
+						notify: true
+					},
+
+					unassignedRouteActive: {
+						type: Boolean,
+						notify: true
+					},
+
+					closedRouteActive: {
+						type: Boolean,
+						notify: true
+					}
+				},
+
+				created: function () {
+					if (!singleton) {
+						singleton = this;
+					} else {
+						throw "Cannot instantiate more than one triroutes-task-list element";
+					}
+				},
+
+				_onInProgressRouteActive: function(e) {
+					e.stopPropagation();
+					this.fire("inprogress-route-active", { active: e.detail.active });
+				},
+
+				_onCompletedRouteActive: function(e) {
+					e.stopPropagation();
+					this.fire("completed-route-active", { active: e.detail.active });
+				},
+
+				_onDraftRouteActive: function(e) {
+					e.stopPropagation();
+					this.fire("draft-route-active", { active: e.detail.active });
+				}
+			});
+
+			TriroutesTaskList.getInstance = function () {
+				return singleton;
+			};
+		})();
+	</script>
+</dom-module>

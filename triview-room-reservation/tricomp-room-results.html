@@ -1,0 +1,1013 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-debug/triplat-debug.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-query/triplat-query.html">
+<link rel="import" href="../triplat-search-input/triplat-search-input.html">
+<link rel="import" href="../triplat-loading-indicator/triplat-loading-indicator.html">
+<link rel="import" href="../triplat-duration/triplat-duration.html">
+<link rel="import" href="../triplat-availability/triplat-availability.html">
+
+<link rel="import" href="../triplat-graphic/triplat-graphic.html">
+<link rel="import" href="../triblock-tabs/triblock-tabs.html">
+<link rel="import" href="../triblock-responsive-layout/triblock-view-responsive-behavior.html">
+
+<link rel="import" href="../triplat-date-utilities/triplat-date-utilities.html">
+
+<link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
+<link rel="import" href="../iron-pages/iron-pages.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-list/iron-list.html">
+<link rel="import" href="../iron-collapse/iron-collapse.html">
+<link rel="import" href="../triplat-zoom-slider/triplat-zoom-slider.html">
+
+<link rel="import" href="tribehav-room-reservation-util.html">
+
+<link rel="import" href="tricomp-array-comparator.html">
+<link rel="import" href="tricomp-room-results-item.html">
+<link rel="import" href="tricomp-amenities-list.html">
+<link rel="import" href="tricomp-select-input.html">
+<link rel="import" href="tricomp-alert-message.html">
+
+<link rel="import" href="tristyles-room-reservation-app.html">
+
+<dom-module id="tricomp-room-results">
+	<template>
+		<style include="shared-page-styles">
+			:host {
+				@apply(--layout-vertical);
+				@apply(--layout-flex);
+				@apply(--layout-relative);
+			}
+			:host > * {
+				flex-shrink: 0;
+			}
+
+			.amenities-list {
+				@apply(--layout-flex);
+			}
+
+			.button-container {
+				@apply(--layout-horizontal);
+				@apply(--layout-center-center);
+				@apply(--layout-wrap);
+			}
+
+			.divider-line {
+				border-left: 1px solid var(--tri-primary-content-accent-color);
+				height: 32px;
+				margin-left: 10px;
+			}
+
+			.list-page .empty-data-message {
+				background-color: var(--ibm-neutral-2);
+			}
+
+			.empty-data-message > div > * {
+				margin: 10px 0;
+			}
+
+			.empty-data-message > div {
+				position: absolute;
+				top: 25%;
+				left: 50%;
+				transform: translateX(-50%);
+			}
+
+			.empty-data-message-icon {
+				height: 32px;
+				width: 32px;
+			}
+
+			.favorite-icon {
+				flex-shrink: 0;
+				height: 20px;
+				width: 20px;
+				margin-left: 20px;
+				padding: 0;
+			}
+
+			.layout-dropdown {
+				display: block;
+				@apply(--layout-flex);
+			}
+
+			.list {
+				@apply(--layout-flex);
+				@apply(--layout-scroll);
+			}
+
+			.room-details-collapse {
+				@apply(--layout-horizontal);
+				position: absolute;
+				right: 0;
+				bottom: 0;
+				left: 0;
+				background-color: var(--tri-body-background-color);
+			}
+
+			.embedded-item {
+				@apply(--layout-flex);
+				max-width: none;
+				min-width: 0; 
+				margin: 0px;
+			}
+
+			.row-container {
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+				@apply(--layout-wrap);
+			}
+
+			.search-row-container {
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+				padding: 10px 20px;
+			}
+			.search-input {
+				@apply(--layout-flex);
+			}
+
+			.tabs-container {
+				@apply(--layout-horizontal);
+			}
+
+			.tabs {
+				@apply(--layout-flex);
+			}
+			.tab {
+				--triblock-tab-style: {			
+					width: 10px;
+				}
+			}
+
+			.search-criteria-section {
+				max-width: var(--max-width-while-we-dont-support-desktop);
+				width: 100%;
+				@apply(--layout-self-center);
+				@apply(--layout-vertical);
+			}
+			#searchCriteriaCollapse {
+				background-color: var(--tri-primary-content-background-color);
+				overflow: auto;
+			}
+			.section-header {
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+				background-color: var(--tri-footer-background-color);
+				color: white;
+				cursor: pointer;
+				padding: 10px;
+				flex-shrink: 0;
+			}
+			.section-title {
+				@apply(--layout-flex);
+				font-weight: 500;
+				font-size: 18px;
+			}
+			.sub-section {
+				margin: 0 10px;
+				padding-bottom: 12px;
+			}
+			.sub-section:not(:first-child) {
+				padding-top: 12px;
+			}
+			.sub-section:not(:last-child) {
+				border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			}
+			
+			.select-amenities-link {
+				@apply(--layout-flex);
+			}
+
+			.sub-pages {
+				@apply(--layout-flex);
+				@apply(--layout-vertical);
+			}
+
+			.sub-page {
+				@apply(--layout-flex);
+				border-top: 1px solid var(--ibm-gray-10);
+				padding: 20px;
+				background-color: var(--ibm-neutral-2);
+			}
+
+			.floorplan-page {
+				@apply(--layout-vertical);
+				padding: 5px 20px 5px 20px;
+			}
+
+			.availability-page {
+				@apply(--layout-vertical);
+				background-color: white;
+			}
+
+			.list-page[empty] {
+				@apply(--layout-vertical);
+			}
+
+			.list-page[empty] > .card-container {
+				display:none;
+			}
+
+			#availabilityComp {
+				@apply(--layout-flex);
+			}
+
+			.floor-graphic-container {
+				@apply(--layout-flex);
+				@apply(--layout-relative);
+				@apply(--layout-vertical);
+				min-height: 0;
+			}
+
+			.floor-graphic {
+				@apply(--layout-vertical);
+				@apply(--layout-flex);
+				user-select: none;
+				cursor: default;
+
+				--triplat-graphic-interactive-selected: {
+					stroke:blue;
+					stroke-width:10;
+					cursor: pointer;
+				};
+
+				--triplat-graphic-selected: {
+					fill-opacity: 1;
+				}
+
+				--triplat-graphic-interactive-selectable: {
+					cursor: pointer;
+				};
+
+				--triplat-graphic-non-selectable: {
+					fill: white;
+					fill-opacity: 1;
+				};
+
+				--triplat-graphic-highlight-group-1: {
+					fill: green;
+					fill-opacity: .5;
+				};
+
+				--triplat-graphic-highlight-group-2: {
+					fill: red;
+					fill-opacity: .5;
+				};
+			}
+
+			.slider-container {
+				@apply(--layout-vertical);
+				@apply(--layout-center);
+			}
+
+			.slider {
+				max-width: 280px;
+			}
+
+			.instruction {
+				padding:0px 0px 3px 0px;
+			}
+
+			.card-container {
+				@apply(--layout-flex);
+				@apply(--layout-horizontal);
+				@apply(--layout-wrap);
+				@apply(--layout-justified);
+				@apply(--layout-scroll);
+				align-content: flex-start;
+				min-width: 0;
+			}
+
+			.availability-loading {
+				width: 20px;
+				height: 20px;
+			}
+		</style>
+
+		<triplat-ds id="spaceLabelStyle" name="spaceLabelStyle" filtered-data="{{_spaceLabelStyle}}">
+			<triplat-query>
+				<triplat-query-filter name="ID" operator="equals" value="[[_spaceLabelID]]">
+				</triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<triplat-ds id="lookupFloorSearchResults" name="lookupFloorSearchResults" 
+				data="{{floors}}" loading="{{_lookupFloorSearchResultsLoading}}" manual>
+			<triplat-ds-context name="myReservationManagers" context-id="[[specId]]"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="lookupRoom" name="lookupRoom" data="{{_allRoomsUnfiltered}}" 
+				reserve-include-unavailable loading="{{_lookupRoomLoading}}" manual>
+			<triplat-ds-context name="myReservationManagers" context-id="[[specId]]"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-query data="{{_searchableRooms}}" append-filters="{{_roomFilters}}" 
+				filtered-data-out="{{_filteredRooms}}">
+		</triplat-query>
+
+		<tricomp-array-comparator
+				source="[[_filteredRooms]]"
+				compare-to="[[favoriteRooms]]"
+				match-flag="isFavorite"
+				result="{{_filteredRoomsWithFavoriteIndicator}}">
+		</tricomp-array-comparator>
+
+		<tricomp-array-comparator
+				source="[[_selectedRoom]]"
+				compare-to="[[favoriteRooms]]"
+				match-flag="isFavorite"
+				result="{{_roomDetails}}">
+		</tricomp-array-comparator>
+
+		<div class="page-main">
+			<div class="page-wrap">
+				<div class="search-row-container" hidden$="[[_hideResultsContainer(_hideResults, _hasResults)]]">
+					<triplat-search-input id="searchInput"
+							aliases="[[_roomSearchAliases]]"
+							append-filters="{{_roomFilters}}"
+							class="search-input"
+							data="[[_searchableRooms]]"
+							max-header-children="4"
+							placeholder="Search"
+							search-icon-precede>
+					</triplat-search-input>
+					<div class="divider-line"></div>
+					<paper-icon-button class="favorite-icon" icon="[[_computeFavIcon(preferredRoomsSwitchActive)]]" active="{{preferredRoomsSwitchActive}}" toggles></paper-icon-button>
+				</div>
+
+				<div id="resultsContainer" class="page-wrap" hidden$="[[_hideResultsContainer(_hideResults, _hasResults)]]">
+
+				<div class="tabs-container" hidden$="[[!_hasResults]]">
+					<triblock-tabs class="tabs" selected="{{_selectedTab}}" fit-container="[[smallScreenWidth]]">
+						<triblock-tab id="floorplanTab" icon="floorplan" label="Floor Plan"></triblock-tab>
+						<triblock-tab id="listTab" icon="list-view" label="List"></triblock-tab>
+						<template is="dom-if" if="[[_showAvailabilityTab]]" restamp>
+							<triblock-tab id="availabilityTab" icon="availability" label="Availability"></triblock-tab>
+						</template>
+					</triblock-tabs>
+				</div>
+
+				<iron-pages selected="{{_selectedTab}}" class="sub-pages" 
+						attr-for-selected="tab" hidden$="[[!_hasResults]]">
+
+					<!-- Floor Plan tab -->
+					<div class="sub-page floorplan-page" tab="floorplanTab">
+						<div class="floor-dropdown-container">
+							<tricomp-select-input
+								id="floorsDropdown"
+								label="Select a floor"
+								value="{{_selectedFloor}}"
+								value-name="bldgfloor"
+								select-src="[[floors]]"
+								search-value="{{_floorSearchValue}}"
+								scroller="{{_floorInputScroller}}"
+								on-tap="_jumpTo">
+							</tricomp-select-input>
+						</div>
+
+						<div class="floor-graphic-container" hidden$="[[!hasGraphic]]">
+							<div class="instruction">
+								You can pan or zoom on the floor plan.
+							</div>
+							<triplat-graphic id="floorplan" class="floor-graphic" record-id="[[_selectedFloor.id]]" 
+									has-graphic="{{hasGraphic}}" svg-loaded="{{_graphicLoaded}}"
+									hidden$="[[!_computeGraphicLoaded(hasGraphic, _graphicLoaded)]]">
+
+								<triplat-graphic-selectable 
+									selectable="{{_filteredRoomsGraphic}}"
+									selected="{{_selectedRoom}}">
+								</triplat-graphic-selectable>
+
+								<triplat-graphic-label id="graphicLabel" 
+										label-id="[[_getLabelId(_spaceLabelStyle.*)]]">
+								</triplat-graphic-label> 
+
+								<triplat-graphic-highlight-group spaces="{{_filteredRoomsGraphic}}" 
+										group-by="_isAvailable" color-by="color" mask-opacity="1.0" highlight-layer="ATTACHED">
+									<triplat-graphic-highlight-class value="true" class-number="1">
+									</triplat-graphic-highlight-class>
+
+									<triplat-graphic-highlight-class value="false" class-number="2">
+									</triplat-graphic-highlight-class>
+								</triplat-graphic-highlight-group>
+
+								<triplat-graphic-zoomable scale="{{_zoomScale}}" cached></triplat-graphic-zoomable>
+							</triplat-graphic>
+
+							<div class="slider-container">
+								<triplat-zoom-slider class="slider" min="0.01" max="1.5" step="0.1" 
+										value="{{_zoomScale}}">
+								</triplat-zoom-slider>
+							</div>
+
+							<div hidden$="[[_computeGraphicLoaded(hasGraphic, _graphicLoaded)]]">
+								<triplat-loading-indicator id="graphic-loading-indicator" 
+										show="[[!_graphicLoaded]]">
+								</triplat-loading-indicator>
+							</div>
+						</div>
+
+						<div class="page-main empty-data-message" hidden$="[[hasGraphic]]">
+							<div>
+								<iron-icon class="empty-data-message-icon" 
+									icon="ibm:status-info" info hidden$="[[isLoading]]">
+								</iron-icon>
+								<div hidden$="[[isLoading]]">
+									There is no floor plan for this floor.  Please switch to the List view or select a different floor.
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- List tab -->
+					<div class="sub-page list-page" tab="listTab" empty$="[[_showEmptyListPage]]">
+						<div class="card-container">
+							<template is="dom-repeat" items="{{_filteredRoomsAvailable}}">
+								<tricomp-room-results-item
+									class="list-item"
+									item="{{item}}"
+									index$="[[_computeEvenOdd(index)]]"
+									current-user="[[currentUser]]"
+									application-settings="[[applicationSettings]]"
+									show-location
+									medium-screen-max-width="800px">
+								</tricomp-room-results-item>
+							</template>
+						</div>
+						<div class="page-main empty-data-message"	hidden$="[[!_showEmptyListPage]]">
+							<div>
+								<iron-icon class="empty-data-message-icon" icon="ibm:status-info" info></iron-icon>
+								<div>No rooms are available for the given search criteria.</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Availability tab -->
+					<div class="sub-page  availability-page" tab="availabilityTab">
+						<template is="dom-if" if="[[!hideAvailabilityTab]]">
+							<tricomp-alert-message warning class="row-limit-alert" 
+									hidden$="[[!_computeShowRowLimitAlert(_rowLimitAlertMessage)]]">
+								<div>[[_rowLimitAlertMessage]]</div>
+							</tricomp-alert-message>
+							<triplat-availability id="availabilityComp"
+								on-resource-click="_handleResourceClick"
+								on-row-limit="_handleRowLimit"
+								selected="{{_selectedRoomsAvailability}}"
+								loading="{{_availabilityLoading}}"
+								visible-resources="[[_filteredRoomsAvailability]]">
+
+								<triplat-availability-layout
+									default-view-mode="day"
+									max-view-mode="month"
+									columns="[[_columns]]"
+									home-only-toolbar>
+								</triplat-availability-layout>
+
+								<triplat-availability-data
+									datasource="lookupRoom"
+									calendar-set-name="triResourceAvailability"
+									include-unavailable>
+
+									<triplat-availability-data-context
+										name="myReservationManagers" context-id="[[specId]]">
+									</triplat-availability-data-context>
+
+								</triplat-availability-data>
+							</triplat-availability>
+						</template>
+					</div>
+				</iron-pages>
+
+				<iron-collapse class="room-details-collapse" 
+						opened="[[_computeRoomDetailsOpened(_selectedRoom, _selectedTab)]]">
+					<tricomp-room-results-item
+							class="embedded-item"
+							item="{{_roomDetails}}"
+							current-user="[[currentUser]]"
+							application-settings="[[applicationSettings]]"
+							show-close-button
+							show-location
+							compact-layout
+							on-action-close-room="_clearSelectedRoom">
+					</tricomp-room-results-item>
+				</iron-collapse>
+
+				</div>
+
+				<div class="page-main empty-data-message" tabindex="0" hidden$="[[_hideInfoMessage(_hasResults, _hideResults)]]">
+					<div>
+						<iron-icon class="empty-data-message-icon" icon="ibm:status-info" info></iron-icon>
+						<div aria-label$="[[_computeInfoMessage(_searchInitiated, _hideResults)]]">[[_computeInfoMessage(_searchInitiated, _hideResults)]]</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-room-results",
+
+			behaviors: [
+				TriRoomReservationUtilBehavior,
+				TriDateUtilities,
+				Polymer.IronResizableBehavior,
+				TriBlockViewResponsiveBehavior
+			],
+
+			properties: {
+				reservationManager: {
+					type: Object
+				},
+
+				isWorkspaceRoom: {
+					type: Boolean,
+					value: false
+				},
+
+				hideAvailabilityTab: {
+					type: Boolean,
+					value: false
+				},
+
+				_graphicLoaded: {
+					type: Boolean,
+					value: false,
+					observer: "_handleGraphicLoaded"
+				},
+
+				_hasResults: {
+					type: Boolean,
+					computed: "_computeHasResults(_filteredRooms)"
+				},
+
+				/* Array of rooms after pre-filters (removing non-available/post-cutoff rooms) have been applied */
+				_searchableRooms: {
+					type: Array,
+					value: function() { return []; }
+				},
+
+				_filteredRoomsAvailable: {
+					type: Array,
+					value: function() { return []; }
+				},
+
+				_filteredRoomsGraphic: {
+					type: Array,
+					value: function() { return []; }
+				},
+
+				_filteredRoomsAvailability: {
+					type: Array,
+					value: function() { return []; }
+				},
+
+				_showEmptyListPage: {
+					type: Boolean,
+					value: false
+				},
+
+				backEventName: String,
+
+				currentTime: Date,			// used to calculate the cutoffDateTime
+
+				isLoading: {
+					type: Boolean,
+					value: false
+				},
+
+				occurrenceId: String,
+				occurrenceDate: Date,
+
+				_roomSearchAliases: {
+					type: Object,
+					value: function() {
+						var __dictionary__roomName = "Room Name";
+						var __dictionary__building = "Building";
+						var __dictionary__floor = "Floor";
+						var __dictionary__city = "City";
+						var aliases = {};
+						aliases["room"] = __dictionary__roomName;
+						aliases["building"] = __dictionary__building;
+						aliases["floor"] = __dictionary__floor;
+						aliases["city"] = __dictionary__city;
+						return aliases;
+					}
+				},
+
+				_selectedTab: {
+					type: Number,
+					value: "listTab"
+				},
+
+				_selectedFloor: {
+					type: Object,
+					value: {
+						id: null,
+						value: null
+					},
+					observer: "_handleSelectedFloorChange"
+				},
+
+				_roomDetails: {
+					type: Object,
+					value: null,
+				},
+				_selectedRoom: {
+					type: Object,
+					value: null,
+				},
+				_selectedRoomsAvailability: {
+					type: Array
+				},
+				_searchInitiated: {
+					type: Boolean,
+					value: false
+				},
+				_hideResults: {
+					type: Boolean,
+					value: false
+				},
+				_columns: {
+					type: Object,
+					value: function(){
+						var __dictionary__room = "Room";
+						var __dictionary__floor = "Floor";
+						var __dictionary__capacity = "Capacity";
+						var columns = {
+							room: __dictionary__room,
+							floor: __dictionary__floor,
+							capacity: __dictionary__capacity
+						};
+						return columns;
+					}
+				},
+				_refreshAvailability: {
+					type: Boolean,
+					value: false
+				},
+
+				reservationLocations: {
+						type: Array
+				},
+
+				_lookupFloorSearchResultsLoading: {
+					type: Boolean,
+					value: false
+				},
+
+				_lookupRoomLoading: {
+					type: Boolean,
+					value: false
+				},
+
+				_availabilityLoading: {
+					type: Boolean,
+					value: false
+				},
+
+				isLoading: {
+					type: Boolean,
+					computed: "_computeLoading(_lookupFloorSearchResultsLoading, _lookupRoomLoading, _availabilityLoading)",
+					notify: true
+				},
+
+				_showAvailabilityTab: {
+					type: Boolean,
+					computed: "_computeShowAvailabilityTab(smallScreenWidth, smallScreenHeight, hideAvailabilityTab)",
+					value: true
+				},
+
+				_zoomScale: {
+					type: Number,
+					value: 1.0
+				},
+
+				_rowLimitAlertMessage: {
+					type: String,
+					value: ""
+				},
+
+				_spaceLabelID: {
+					type: String,
+					computed: "_computeSpaceLabelID(isWorkspaceRoom)",
+				},
+
+				_spaceLabelStyle: {
+					type: Array
+				}
+			},
+
+			listeners: {
+				"action-book-room": "_handleBookRoom"
+			},
+
+			observers: [
+				"_preferredRoomsFilterToggled(preferredRoomsSwitchActive)",
+				"_handleFloorsChange(floors)",
+				"_handleSelectedTab(_selectedTab)",
+				"_handleHasResultsChange(_hasResults)",
+				"_handleSelectedRoomsAvailability(_selectedRoomsAvailability.*)",
+				"_handleFilteredRoomsWithFavoriteIndicatorChange(_filteredRoomsWithFavoriteIndicator, preferredRoomsSwitchActive)",
+				"_computeSearchableRooms(_allRoomsUnfiltered)"
+			],
+
+			refresh: function() {
+				if (this._selectedTab == "availabilityTab") {
+					this._rowLimitAlertMessage = "";
+					this.$$("#availabilityComp").refresh();
+				} else {
+					this._refreshAvailability = true;
+				}
+			},
+
+			_computeRoomDetailsOpened: function(selectedRoom, selectedTab) {
+				return selectedRoom != null && selectedRoom._id != null &&
+						(selectedTab == "floorplanTab" || selectedTab == "availabilityTab");
+			},
+
+			_handleSelectedRoomsAvailability: function(selectedRoomsAvailabilityChange) {
+				if (this._selectedTab == "availabilityTab" && 
+						this._selectedRoomsAvailability != null && this._selectedRoomsAvailability.length > 0) {
+					this._selectedRoom = this._getRoomById(this._selectedRoomsAvailability[0]);
+				} else {
+					this._selectedRoom = null;
+				}
+			},
+
+			_getRoomById: function(id) {
+				if (this._filteredRooms && this._filteredRooms.length > 0) {
+					return this._filteredRooms.find(
+						function(item) {
+							return item._id == id
+						}
+					);
+				} else {
+					return null;
+				}
+			},
+
+			_handleGraphicLoaded: function(value) {
+				if (value) {
+					this.$.floorplan.refreshViewBox();
+				}
+			},
+
+			_computeGraphicLoaded: function(hasGraphic, _graphicLoaded) {
+				return Boolean(hasGraphic && _graphicLoaded);
+			},
+
+			_jumpTo: function(e) {
+				e.target.scrollIntoView();
+			},
+
+			_handleHasResultsChange: function(value) {
+				this.async(function() {
+					this.notifyResize();
+				});
+			},
+			
+			_computeHasResults: function(results) {
+				return (results && results.length > 0);
+			},
+
+			_computeEvenOdd: function(index) {
+				return (index % 2 == 0) ? "even" : "odd";
+			},
+
+			_computeFavIcon: function(isFav) {
+				return isFav ? "ibm:rating-star-filled" : "ibm:rating-star";
+			},
+
+			_computeSearchableRooms: function(allRoomsUnfiltered) {
+				var reservationManager = this.reservationManager;
+				var currentTime = this.currentTime;
+				var timezone = this.currentUser._TimeZoneId;
+				var searchableRooms = [];
+
+				if (allRoomsUnfiltered && allRoomsUnfiltered.length > 0) {
+					if (reservationManager && currentTime) {
+						var triplatDuration = document.createElement("triplat-duration");
+						triplatDuration.displayTokens = "y:M:d";
+
+						// filter unavailable rooms and rooms outside of cutoff date
+						searchableRooms = allRoomsUnfiltered.filter(function(item) {
+							var isRecurring = this._isRecurring(item);
+							var isAvailable = this._isAvailable(item);
+
+							item._isAvailable = "" + isAvailable;
+							item.isAvailable = isAvailable;
+
+							triplatDuration.value = item.cutoffDuration;
+							var cutoffDateTime = triplatDuration.getCalculatedEndDateTime(currentTime);
+
+							var isNoEndRecurringCutoff = this._isNoEndRecurringCutoff(item, reservationManager, currentTime);
+							var isEndCutoff = this._isEndCutoff(item, reservationManager, currentTime, timezone, cutoffDateTime);
+
+							var hideItem = isNoEndRecurringCutoff || isEndCutoff;
+
+							return !hideItem;
+						}, this);
+					} else {
+						// return all rooms (since we don't have reservationManager and currentTime yet)
+						searchableRooms = allRoomsUnfiltered.slice(0);
+					}
+				}
+
+				this._searchableRooms = searchableRooms;
+			},
+
+			_handleFilteredRoomsWithFavoriteIndicatorChange: function(filteredRoomsWithFavoriteIndicator, preferredRoomsSwitchActive) {
+				this.debounce(
+					"_handleFilteredRoomsWithFavoriteIndicatorChange",
+					this._handleFilteredRoomsWithFavoriteIndicatorChange.bind(this, filteredRoomsWithFavoriteIndicator, preferredRoomsSwitchActive)
+				);
+			},
+
+			_handleFilteredRoomsWithFavoriteIndicatorChange: function(filteredRoomsWithFavoriteIndicator, preferredRoomsSwitchActive) {
+				var filteredRoomsAvailable = [];
+				var filteredRoomsGraphic = [];
+				var filteredRoomsAvailability = [];
+
+				if (filteredRoomsWithFavoriteIndicator  != null) {
+					for (var index = 0; index < filteredRoomsWithFavoriteIndicator.length; index++) {
+						var room = filteredRoomsWithFavoriteIndicator[index];
+						var isFavorite = preferredRoomsSwitchActive ? room.isFavorite : true;
+						if (isFavorite) {
+							if (this._isAvailable(room)) {
+								filteredRoomsAvailable.push(room);
+							}
+							filteredRoomsGraphic.push(room);
+							filteredRoomsAvailability.push(room);
+						}
+					}
+				}
+				
+				this._filteredRoomsAvailable = filteredRoomsAvailable;
+				this._filteredRoomsGraphic = filteredRoomsGraphic;
+				this._filteredRoomsAvailability = filteredRoomsAvailability;
+				this._showEmptyListPage = filteredRoomsAvailable.length == 0;
+			},
+
+			_preferredRoomsFilterToggled: function(preferredRoomsSwitchActive) {
+				// need to notify resize on the iron-list when it comes into view
+				// if (!preferredRoomsSwitchActive) this.$.allRoomsList.notifyResize();
+				this._clearSelectedRoom();
+			},
+
+			// check to see if we got here as part of the exception assignment process
+			// otherwise, let the event bubble-upwards
+			_handleBookRoom: function(e) {
+				this._clearSelectedRoom();
+				this.fire("book-room");
+				if (this.occurrenceId) {
+					e.stopPropagation();
+
+					var roomId = e.detail.roomId;
+					this.fire("action-exception-assign", { 'roomId' : roomId, 'occurrenceId': this.occurrenceId });
+				}
+			},
+
+			ready: function() {
+				this.smallScreenMaxHeight = "600px";
+			},
+
+			_pageAttached : function(searchInitiated) {
+				this.currentTime = new Date();
+				this._refreshResultsData(searchInitiated);
+				window.addEventListener("orientationchange", this.refresh.bind(this));
+			},
+
+			_pageDetached : function() {
+				this.$.searchInput.clearSearch();
+				this.set("_selectedTab", "listTab");
+				window.removeEventListener("orientationchange", this.refresh.bind(this));
+			},
+
+			_refreshResultsData: function(searchInitiated) {
+				this.debounce('_refreshResultsData', function () {
+					this.$.lookupRoom.refresh().then(function(){
+						if (searchInitiated) {
+							this.set("_searchInitiated", searchInitiated);
+						}
+						this.set("_hideResults", false);
+					}.bind(this));
+					this.$.lookupFloorSearchResults.refresh();
+				}, 150);
+			},
+
+			_computeInfoMessage: function(searchInitiated, hideResults) {
+				if (!searchInitiated || hideResults) {
+					var __dictionary__clickSearch = "Click on the Search action to refresh the rooms for the given search criteria.";
+					return __dictionary__clickSearch;
+				} else {
+					var __dictionary__noRooms = "No matching rooms found for the given search criteria.";
+					return __dictionary__noRooms;
+				}
+			},
+
+			//show info message if there is no result OR hideresult
+			_hideInfoMessage: function(hasResults, hideResults) {
+				return hasResults && !hideResults;
+			}, 
+
+			_hideResultsContainer: function(hideResults, hasResults) {
+				return hideResults || !hasResults;
+			},
+
+			hideResultsSection: function () {
+				this.set("_hideResults", true );
+			},
+
+			_handleSelectedTab: function (selectedTab) {
+				if(selectedTab == "availabilityTab") {
+					if(this._refreshAvailability) {
+						this._rowLimitAlertMessage = "";
+						this.$$("#availabilityComp").refresh();
+						this._refreshAvailability = false;
+					} else {
+						this.$$("#availabilityComp").scrollToCurrentOccurrence();
+					}
+				} else if (selectedTab == "floorplanTab") {
+					this.$.floorplan.refreshViewBox();
+				}
+			},
+
+			_handleSelectedFloorChange: function(value, oldValue) {
+				this._clearSelectedRoom();
+				this.$.floorplan.refreshViewBox();
+			},
+
+			_handleFloorsChange: function(value, oldValue) {
+				// pre-process the floors to create a new calculated property (bldgfloor) as "Building - Floor"
+				for (var i=0; i<value.length; i++) {
+					var floor = value[i];
+					floor.bldgfloor = floor.building + " - " + floor.floor;
+				}
+
+				// reset the current floor selection - if the floor was filtered-out
+				if (value && value.length > 0) {
+					if (this._selectedFloor.id == null) {
+						// set to the first item
+						this.set("_selectedFloor", {id: value[0]._id, value: value[0].bldgfloor});
+					} else {
+						var bFound = false;
+						for (var i=0; i<value.length; i++) {
+							var floor = value[i];
+							if (floor._id == this._selectedFloor.id) {
+								bFound = true;
+								break;
+							}
+						}
+
+						if (!bFound) {
+							// set to the first item
+							this.set("_selectedFloor", {id: value[0]._id, value: value[0].bldgfloor});
+						}
+					}
+				} else {
+					this.set("_selectedFloor", {id: null, value: null});
+				}
+			},
+
+			_clearSelectedRoom: function() {
+				this.set("_selectedRoom", null);
+			},
+
+			_getLabelId: function (change) {
+				var labelId = null;
+				if (change.base && change.base.length > 0) {
+					return change.base[0]._id;
+				}
+				return labelId;
+			},
+
+			_handleResourceClick: function(e){
+				var resourceId = e.detail.resourceId;
+				this.fire("navigate-room-details", {roomId: resourceId, backEventName: 'navigate-room-results-back'});
+			},
+
+			_handleRowLimit: function(e){
+				this._rowLimitAlertMessage = e.detail;
+			},
+
+			_computeLoading: function(lookupFloorSearchResultsLoading, lookupRoomLoading, availabilityLoading) {
+				return lookupFloorSearchResultsLoading || lookupRoomLoading || availabilityLoading;
+			},
+
+			_computeShowAvailabilityTab: function(smallScreenWidth, smallScreenHeight, hideAvailabilityTab) {
+				return (hideAvailabilityTab) ? false : (!smallScreenWidth && !smallScreenHeight);
+			},
+
+			_computeShowRowLimitAlert: function(rowLimitAlertMessage) {
+				return rowLimitAlertMessage != null && rowLimitAlertMessage.length > 0;
+			},
+
+			_computeSpaceLabelID: function(isWorkspaceRoom) {
+				return isWorkspaceRoom ? "triPeople001" : "triSpace002";
+			}
+		});
+	</script>
+</dom-module>

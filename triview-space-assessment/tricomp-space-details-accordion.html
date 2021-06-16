@@ -1,0 +1,294 @@
+<link rel="import" href="../iron-collapse/iron-collapse.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+
+<dom-module id="tricomp-space-details-accordion">
+	<style>
+		:host {
+			@apply(--layout-vertical);
+		}
+
+		#header {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			padding: 0px 10px 0px 20px;
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			border-top: 1px solid var(--tri-primary-content-accent-color);
+			background-color: var(--tri-body-background-color);
+		}
+		
+		#header .title {
+			@apply(--layout-flex);
+			text-transform: uppercase;
+			font-size: 12px;
+			color: #777677;
+		}
+
+		#header .count {
+			font-weight: bold;
+			font-size: 14px;
+			color: #464646;
+		}
+
+		#header > triplat-icon {
+			color: var(--tri-primary-color);
+			cursor: pointer;
+			padding-right: 15px;
+			border-right: 1px solid var(--tri-primary-content-accent-color);
+		}
+
+		tricomp-accordion-arrow {
+			padding-left: 15px;
+		}
+
+		#header, .item {
+			height: 44px;
+		}
+
+		#placeholder {
+			padding: 10px 10px 10px 30px;
+			font-style: italic;
+			color: var(--tri-primary-content-color);
+		}
+
+		#content > div:last-of-type {
+			border-bottom: none;
+		}
+
+		.item {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			padding-left: 10px;
+			padding-right: 10px;
+		}
+
+		.item > .info {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			font-size: 14px;
+			color: #5a5a5a;
+		}
+
+		.item > .info > .name {
+			margin-left: 10px;
+		}
+
+		.item > .action {
+			cursor: pointer;
+		}
+
+		.item.assigned > .action {
+			color: #921E29;
+		}
+
+		iron-icon.placeholder {
+			color: #5A5A5A;
+			height: 30px;
+			width: 30px;
+		}
+
+		.item.pending.added {
+			font-weight: bold;
+		}
+		
+		.item.pending.removed {
+			background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMCcgaGVpZ2h0PScxMCc+DQogIDxyZWN0IHdpZHRoPScxMCcgaGVpZ2h0PScxMCcgZmlsbC1vcGFjaXR5PScwJy8+DQogIDxwYXRoIGQ9J00tMSwxIGwyLC0yDQogICAgICAgICAgIE0wLDEwIGwxMCwtMTANCiAgICAgICAgICAgTTksMTEgbDIsLTInIHN0cm9rZT0nI0FEMTYyNScgc3Ryb2tlLXdpZHRoPScyJyBzdHJva2Utb3BhY2l0eT0nMC4yJy8+DQo8L3N2Zz4=");
+  			background-repeat: repeat; 
+		}
+
+		.item.pending > .action {
+			-moz-border-radius: 50px;
+			-webkit-border-radius: 50px;
+			border-radius: 50px;
+			background-color: white;
+			color: var(--tri-primary-color);
+		}
+
+		iron-icon.placeholder {
+			color: #5A5A5A;
+			height: 30px;
+			width: 30px;
+		}
+
+		/*FIXME: not working*/
+		iron-image {
+			border-radius: 50px;
+			-moz-border-radius: 50px;
+			-webkit-border-radius: 50px;
+		}
+		
+	</style>
+	<template>
+
+		<div id="header">
+			<div class="title">
+				<span>{{label}}</span>
+				<span>&nbsp;</span>
+				<span class="count">{{count}}</span>
+			</div>
+			<triplat-icon class="icon" hidden$="{{!_showAction(actionsEnabled, disabled)}}" icon="add-new" on-tap="_handleAdd" tab-index="0"></triplat-icon>
+			<tricomp-accordion-arrow
+				id="detailsAccordionArrow"
+				opened="{{_opened}}"
+				enabled="{{_enableAccordionToggle(actionsEnabled, count)}}">
+			</tricomp-accordion-arrow>
+		</div>
+		<iron-collapse id="collapsible" opened="{{_opened}}" aria-labelledby="openSpaceDetail">
+			<div id="placeholder" hidden$="{{!_showPlaceholder}}">
+				<span>{{placeholderMessageLabel}}</span>
+			</div>
+			<div id="content" hidden$="{{_showPlaceholder}}">
+				<template is="dom-repeat" id="assignedItemsTemplate" items="{{assignedItems}}">
+					<div class="item assigned">
+						<div class="info">
+							<div hidden$="{{!imageEnabled}}">
+								<triplat-icon class="placeholder" icon="{{placeholderIconName}}" hidden$="{{item.image}}"></triplat-icon>
+								<triplat-image src="{{item.image}}" width="30px" height="30px" sizing="contain" hidden$="{{!item.image}}"></triplat-image>
+							</div>
+							<div class="name" hidden$="{{!peopleEnabled}}">
+								<span>{{item.lastName}}</span>, <span>{{item.firstName}}</span>
+							</div>
+							<span class="name" hidden$="{{peopleEnabled}}">{{item.name}}</span>
+						</div>
+						<triplat-icon class="action" icon="remove-delete" hidden$="{{!_showAction(actionsEnabled, disabled)}}" on-tap="_handleRemove" tab-index="0"></triplat-icon>
+					</div>
+				</template>
+				<template is="dom-repeat" id="pendingItemsTemplate" items="{{discrepancyLogs}}">
+					<div class$="{{_determineStyle(item.discrepancyType_en_US)}}">
+						<div class="info">
+							<div hidden$="{{!imageEnabled}}">
+								<div hidden$="{{!peopleEnabled}}">
+									<triplat-icon class="placeholder" icon="{{placeholderIconName}}" hidden$="{{item.personImage}}"></triplat-icon>
+									<triplat-image src="{{item.personImage}}" width="30px" height="30px" sizing="contain" hidden$="{{!item.personImage}}"></triplat-image>
+								</div>
+								<div hidden$="{{peopleEnabled}}">
+									<triplat-icon class="placeholder" icon="{{placeholderIconName}}" hidden$="{{item.assetImage}}"></triplat-icon>
+									<triplat-image src="{{item.assetImage}}" width="30px" height="30px" sizing="contain" hidden$="{{!item.assetImage}}"></triplat-image>
+								</div>
+							</div>
+							<div class="name" hidden$="{{!peopleEnabled}}">
+								<span>{{item.lastName}}</span>, <span>{{item.firstName}}</span>
+							</div>
+							<span class="name" hidden$="{{peopleEnabled}}">{{item.assetName}}</span>
+						</div>
+						<triplat-icon class="action" icon="reset-revert" hidden$="{{!_showAction(actionsEnabled, disabled)}}" on-tap="_handleUndo" tab-index="0"></triplat-icon>
+					</div>
+				</template>
+			</div>
+		</iron-collapse>
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-space-details-accordion",
+
+		properties : {
+			label : String,
+			assignedItems : Array,
+			discrepancyLogs : Array,
+			count : {
+				type : Number,
+				value : 0
+			},
+			openByDefault : {
+				type : Boolean,
+				value : false
+			},
+			actionsEnabled : {
+				type : Boolean,
+				value : false
+			},
+			placeholderIconName : String,
+			imageEnabled : {
+				type : Boolean,
+				value : false
+			},
+			peopleEnabled : {
+				type : Boolean,
+				value : false
+			},
+			_pendingItemsTemplateLoaded : {
+				type : Boolean,
+				value : false
+			},
+
+			placeholderMessageLabel : String,
+			disabled : {
+				type : Boolean,
+				value : false
+			},
+
+			_showPlaceholder : {
+				type : Boolean,
+				value : false
+			}
+		},
+
+		observers : [
+			'_handleOpenByDefaultChange(openByDefault)',
+			'_handleCountChanged(count)'
+		],
+
+		_showAction : function(actionsEnabled, disabled) {
+			return actionsEnabled && !disabled;
+		},
+
+		_enableAccordionToggle : function(actionsEnabled, count) {
+			return actionsEnabled || count > 0;
+		},
+
+		_determineStyle : function(discrepancyType) {
+			if (this._isTypeAdd(discrepancyType)) {
+				return "item pending added";
+			} else {
+				return "item pending removed";
+			}
+		},
+
+		_isTypeAdd : function(discrepancyType) { 
+			return discrepancyType.indexOf("Add") != -1;
+		},
+
+		_setPendingItemsTemplateLoaded : function(e) {
+			// seems to always fire true, never false
+			this.set('_pendingItemsTemplateLoaded', e.returnValue);
+		},
+
+		_handleCountChanged : function(count) {
+			if (count <= 0) {
+				this.set('_showPlaceholder', true);
+			} else {
+				this.set('_showPlaceholder', false);
+			}
+		},
+
+		_handleOpenByDefaultChange : function(openByDefault) {
+			if (openByDefault) {
+				this.$.collapsible.show();
+			} else {
+				this.$.collapsible.hide();
+			}
+		},
+
+		_handleAdd : function() {
+			this.fire('add');
+		},
+
+		_handleRemove : function(e) {
+			var element = e.target || e.srcElement;
+     		var itemToRemove = this.$.assignedItemsTemplate.itemForElement(element);
+			this.fire('remove', itemToRemove);
+		},
+
+		_handleUndo : function(e) {
+			var element = e.target || e.srcElement;
+     		var itemToUndo = this.$.pendingItemsTemplate.itemForElement(element);
+     		this.fire('undo', itemToUndo);
+		},
+
+	});
+</script>

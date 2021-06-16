@@ -1,0 +1,331 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-button/paper-button.html">
+
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-debug/triplat-debug.html">
+<link rel="import" href="../triplat-signout-button/triplat-signout-button.html">
+<link rel="import" href="../triplat-loading-indicator/triplat-loading-indicator.html">
+<link rel="import" href="../triblock-responsive-layout/triblock-view-responsive-behavior.html">
+
+<link rel="import" href="../triblock-responsive-layout/triblock-view-responsive-behavior.html">
+<link rel="import" href="../triplat-auth-check/triplat-auth-check.html">
+
+<link rel="import" href="tribehav-room-reservation-util.html">
+<link rel="import" href="tricomp-page-toolbar.html">
+<link rel="import" href="tristyles-room-reservation-app.html">
+
+<dom-module id="tricomp-reservation-list">
+	<template>
+		<style include="shared-page-styles">
+
+			:host {
+				@apply(--layout-vertical);
+			}
+
+			.page-header {
+				background-color: var(--ibm-neutral-2);
+			}
+
+			.header-text {
+				font-weight: bold;
+			}
+
+			.action-bar {
+				@apply(--layout-horizontal);
+			}
+			:host([small-screen]) .action-bar {
+				@apply(--layout-center-center);
+				@apply(--layout-fixed-bottom);
+				padding: 10px 0;
+				background-color: var(--tri-footer-background-color);
+				color: var(--tri-footer-color);
+				z-index: 102;
+			}
+			
+			.list-header {
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+				@apply(--layout-self-center);
+				@apply(--layout-self-stretch);
+				border-bottom: 1px solid var(--ibm-gray-30);
+				background-color: white;
+				height: 44px;
+				padding: 10px 20px;
+			}
+			:host([small-screen]) .list-header {
+				@apply(--layout-center-justified);
+				padding-right: 0;
+				padding-left: 0;
+				border-bottom: 1px solid var(--ibm-gray-10);
+			}
+
+			.month {
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+				@apply(--layout-center-justified);
+				height: 100%;
+				padding: 0 10px;
+				font-size: 22px;
+				color: var(--tri-primary-color);
+			}
+
+			paper-icon-button {
+				width: 44px;
+				height: 44px;
+				padding: 10px;
+				color: var(--tri-primary-color);
+			}
+
+			.page-main {
+				background-color: var(--tri-body-background-color);
+			}
+
+			.page-wrap {
+				@apply(--layout-flex);
+				@apply(--layout-scroll);
+				min-height: 0;
+				background-color: var(--tri-primary-content-background-color);
+			}
+
+			.list {
+				@apply(--layout-flex);
+				@apply(--layout-vertical);
+				padding: 20px 30px;
+			}
+			:host([small-screen]) .list {
+				padding: 20px 15px;
+			}
+
+			.no-reservations-placeholder {
+				@apply(--layout-flex);
+				@apply(--layout-center-center);
+				@apply(--layout-vertical);
+				padding: 10px;
+			}
+			.no-reservations-placeholder > * {
+				text-align: center;
+				margin: 10px 0;
+			}
+			.no-reservations-placeholder-icon {
+				height: 32px;
+				width: 32px;
+			}
+
+		</style>
+
+		<triplat-ds id="reservationInstances" name="reservationInstances" data="{{reservationInstances}}" loading="{{reservationInstancesLoading}}" manual>
+		</triplat-ds>
+
+		<triplat-ds id="reservationsForPerson" name="reservationsForPerson" data="{{reservationsForPerson}}" loading="{{reservationsForPersonLoading}}">
+			<triplat-ds-instance instance-id="[[currentUser.person.data._id]]"></triplat-ds-instance>
+		</triplat-ds>
+
+		<triplat-loading-indicator show="[[_isBusy(isBusy, reservationInstancesLoading, reservationsForPersonLoading)]]"></triplat-loading-indicator>
+
+		<triplat-auth-check app-name="roomReservation"
+			auth="{{auth}}">
+		</triplat-auth-check>
+
+		<div class="page-header">
+			<div class="header-text tri-h2">My Reservations</div>
+			<div class="action-bar">
+				<paper-button footer$="[[smallScreen]]" on-tap="_handleNewReservation"
+				hidden="[[!auth.canCreate]]">New Reservation</paper-button>
+			</div>
+		</div>
+
+		<div class="list-header">
+			<paper-icon-button icon="ibm-glyphs:backward" disabled="{{_previousMonthIsPast}}" on-tap="_goToPreviousMonth"></paper-icon-button>
+			<div class="month">{{headerLabel}}</div>
+			<paper-icon-button icon="ibm-glyphs:forward" on-tap="_goToNextMonth"></paper-icon-button>
+		</div>
+
+		<div class="page-main">
+			<div class="page-wrap">
+				<div class="list">
+					<triapp-reservation-list id="reservationList"
+						model-and-view="roomReservation"
+						instance-id="-1"
+						count="{{reservationCount}}"
+						range-start="[[range.start]]"
+						range-end="[[range.end]]"
+						selected-month="[[selectedMonth]]"
+						initial-month="{{_initialMonth}}"
+						home-app="[[_homeApp]]"
+						list-view></triapp-reservation-list>
+				</div>
+			</div>
+		</div>
+
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-reservation-list",
+			
+			behaviors: [
+				TriRoomReservationUtilBehavior,
+				TriDateUtilities,
+				TriBlockViewResponsiveBehavior
+			],
+
+			properties: {
+				selectedMonth: String,
+				headerLabel: String,
+
+				selectedISOStartDT: {
+					type: String,
+					notify: false
+				},
+
+				selectedISOEndDT: {
+					type: String,
+					notify: false
+				},
+
+				_previousMonthIsPast: {
+					type: Boolean,
+					value: true
+				},
+				currentUser: Object,
+				favoriteRooms: Array,
+
+				_lang: String,
+
+				_initialMonth: Object	
+			},
+
+			observers: [
+				'_setInitialYearMonth(_initialMonth.*)'
+			],
+
+			_goToNextMonth: function() {
+				this._setSelectedMonthYear(1, this.currentUser._TimeZoneId);
+			},
+
+			_goToPreviousMonth: function() {
+				this._setSelectedMonthYear(-1, this.currentUser._TimeZoneId);
+			},
+
+			_setSelectedMonthYear: function(monthInterval, timezone) {
+				if (this.selectedISOStartDT && this.selectedISOEndDT) {
+					var startMo = moment.tz(this.selectedISOStartDT, timezone);
+					var endMo = moment.tz(this.selectedISOEndDT, timezone);
+
+					// can I just use add(-1) for previous?
+					if (monthInterval > 0) {
+						startMo = moment(startMo).add(monthInterval, "M");
+						endMo = moment(endMo).add(monthInterval, "M");
+					} else {
+						monthInterval = -monthInterval;
+						startMo = moment(startMo).subtract(monthInterval, "M");
+						endMo = moment(endMo).subtract(monthInterval, "M");
+					}
+
+					this._computePreviousMonthIsPast(startMo);
+
+					var monthNameMo = moment.tz(startMo, timezone);
+					monthNameMo.locale(this._lang);
+					var monthName = monthNameMo.format("MMMM");
+
+					var year = moment.tz(startMo, timezone).format("YYYY");
+					this.set('selectedMonth', monthName);
+
+					var startISO = startMo.format("YYYY-MM-DDTHH:mm:ss.SSSZ");
+
+					var endISO = endMo.format("YYYY-MM-DDTHH:mm:ss.SSSZ");
+					
+					this._setRange(startISO, endISO);
+					this._setHeaderLabel(startMo);
+				}
+			},
+
+			_computePreviousMonthIsPast: function(startMo) {
+				var tempPrevMonth = startMo.clone();
+				tempPrevMonth = tempPrevMonth.subtract(1, "M");
+				if (tempPrevMonth.isBefore(moment(), 'month')) {
+					this.set('_previousMonthIsPast', true);
+				} else {
+					this.set('_previousMonthIsPast', false);
+				}
+			},
+
+			_setInitialYearMonth: function(month) {
+				var mo = month.value;
+
+				var timezone = this.currentUser._TimeZoneId
+
+				var startMo = mo.startDate;
+				var startISOpreTZ = startMo.format("YYYY-MM-DDTHH:mm:ss.SSSZ");
+				var startISO = this.normalizeToTimezone(startISOpreTZ, timezone);
+
+				var endMo = mo.endDate;
+				var endISOpreTZ = endMo.format("YYYY-MM-DDTHH:mm:ss.SSSZ");
+				var endISO = this.normalizeToTimezone(endISOpreTZ, timezone);
+
+				this._setRange(startISO, endISO);
+				this._setHeaderLabel(startMo);
+			},
+
+			_setHeaderLabel: function(date) {
+				var translatedDate = moment(date);
+				translatedDate.locale(this._lang);
+				this.set('headerLabel', translatedDate.format("MMMM YYYY"));
+			},
+
+			_isBusy: function(isBusy, reservationInstancesLoading, reservationsForPersonLoading, currentUserLoading, favoriteRoomsLoading) {
+				return isBusy || reservationInstancesLoading || reservationsForPersonLoading || currentUserLoading || favoriteRoomsLoading;
+			},
+
+			_handleNewReservation: function(e) {
+				this.fire("navigate-reservation-new", e);
+			},
+
+			_refreshReservationList: function() {
+				this.debounce('_refreshReservationList', function () {
+					if (this.$.reservationList) {
+						this.$.reservationList.doRefresh();
+					}
+				});
+			},
+
+			created: function() {
+				// TODO: To be fixed
+				moment.locale("en");	
+				this._lang = document.querySelector('html').getAttribute("lang") || 'en';	
+			},
+
+			attached: function(){
+				Polymer.RenderStatus.afterNextRender(this, function(){
+					if(window.location.search === "?homeApp=workplaceServices"){
+						this._homeApp = "workplaceServices";
+					}
+				});
+			},
+
+			// override
+			_pageAttached : function() {
+				this._refreshReservationList();
+			},
+
+			_setRange: function(start, end) {
+				var range = new Object();
+
+				this.set('selectedISOStartDT', start);
+				this.set('selectedISOEndDT', end);
+
+				range.start = this.selectedISOStartDT;
+				range.end = this.selectedISOEndDT;
+
+				var oldRange = this.range;
+
+				this.set("range", range);
+			}
+
+		});
+	</script>
+</dom-module>

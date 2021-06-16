@@ -1,0 +1,89 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+<link rel="import" href="../paper-radio-group/paper-radio-group.html">
+<link rel="import" href="../paper-radio-button/paper-radio-button.html">
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<link rel="import" href="tristyles-room-reservation-app.html">
+
+<dom-module id="tricomp-room-criteria-when-basic">
+	<template>
+		<style include="shared-page-styles">
+
+			:host {
+				@apply(--layout-vertical);
+			}
+
+			.days-container {
+				@apply(--layout-horizontal);
+				@apply(--layout-justified);
+				@apply(--layout-center);
+				padding: 8px 0;
+			}
+
+			.days-radio-group {
+				@apply(--layout-horizontal);
+			}
+
+			.parts-of-day-radio-group {
+				@apply(--layout-vertical);
+				padding: 8px 0;
+			}
+
+			paper-radio-button {
+				--paper-radio-button-size: 24px;
+			}
+
+			.tri-link[disabled] {
+				cursor: default !important;
+				color: var(--tri-disabled-dark-color) !important;
+			}
+
+			.tri-link[disabled]:hover {
+				text-decoration: none !important;
+			}
+		</style>
+
+		<div class="days-container with-border">
+			<paper-radio-group class="days-radio-group" selected="{{day}}">
+				<paper-radio-button name="today" disabled="[[disabled]]">Today</paper-radio-button>
+				<paper-radio-button name="tomorrow" disabled="[[disabled]]">Tomorrow</paper-radio-button>
+			</paper-radio-group>
+			<div class="tri-link" on-tap="_handleAdvancedTap" disabled$="[[disabled]]">Advanced</div>
+		</div>
+
+		<paper-radio-group class="parts-of-day-radio-group" selected="{{partOfDay}}">
+			<paper-radio-button name="am" disabled="[[disabled]]">Morning</paper-radio-button>
+			<paper-radio-button name="pm" disabled="[[disabled]]">Afternoon</paper-radio-button>
+			<paper-radio-button name="all-day" disabled="[[disabled]]">All Day</paper-radio-button>
+		</paper-radio-group>
+	</template>
+	<script>
+		Polymer({
+			is: "tricomp-room-criteria-when-basic",
+
+			properties: {
+				day:  {
+					type: String,
+					notify: true
+				},
+
+				partOfDay:  {
+					type: String,
+					notify: true
+				},
+
+				disabled: {
+					type: Boolean,
+					value: false
+				},
+			},
+
+			_handleAdvancedTap: function(e) {
+				if (!this.disabled) {
+					this.fire("open-criteria-when-advanced");
+				}
+			}
+		});
+	</script>
+</dom-module>

@@ -1,0 +1,227 @@
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-selector/iron-selector.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+
+<link rel="import" href="tricomp-search-input.html">
+<link rel="import" href="tricomp-asset-item.html">
+
+<dom-module id="tricomp-asset-selector">
+
+	<style>
+
+		:host {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			border: 1px solid var(--tri-primary-content-accent-color);
+			background-color: var(--tri-body-background-color);
+		}
+
+		tricomp-search-input {
+			width: 500px;
+			height: 44px;
+			margin: 10px;
+		}
+		
+		iron-selector {
+			@apply(--layout-flex);
+			@apply(--layout-scroll);
+			flex-shrink: 0;
+			background-color: var(--tri-primary-content-background-color);
+		}
+
+		.iron-selected {
+			background-color: #C0E6FF;
+		}
+
+		tricomp-asset-item {	
+			flex-shrink: 0;
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			cursor: pointer;
+		}
+
+		tricomp-asset-item:last-of-type {
+			border-bottom: none;
+		}
+		
+		.accessibility {
+			display: none;
+		}
+	</style>
+
+	<template>
+		
+		<triplat-ds id="allAssetsDs" name="allAssets" data="{{_assets}}">
+			<triplat-query delay="500">
+				<triplat-query-scroll-page scroller="{{_scroller}}" size="50"></triplat-query-scroll-page>
+				<triplat-query-filter name="name" operator="contains" value="{{_searchTerms}}" ignore-if-blank></triplat-query-filter>
+         		<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="id" operator="contains" value="{{_searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="specClass" operator="contains" value="{{_searchTerms}}" ignore-if-blank></triplat-query-filter>
+         		<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="type" operator="contains" value="{{_searchTerms}}" ignore-if-blank></triplat-query-filter>
+         		<triplat-query-or></triplat-query-or>
+         		<triplat-query-filter name="organization" operator="contains" value="{{_searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="building" operator="contains" value="{{_searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="floor" operator="contains" value="{{_searchTerms}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-or></triplat-query-or>
+				<triplat-query-filter name="space" operator="contains" value="{{_searchTerms}}" ignore-if-blank></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<triplat-ds id="assetsDs" name="assets" data="{{_assignedAssets}}">
+			<triplat-ds-context name="mySpaceAssessments" context-id="{{assessmentId}}"></triplat-ds-context>
+			<triplat-ds-context name="spacesForAssessments" context-id="{{spaceId}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="assetDiscrepancyLogsDs" name="discrepancyLogs" filtered-data="{{_assetDiscrepancyLogs}}">
+			<triplat-ds-context name="mySpaceAssessments" context-id="{{assessmentId}}"></triplat-ds-context>
+			<triplat-ds-context name="assessmentLogs" context-id="{{logId}}"></triplat-ds-context>
+			<triplat-query>
+				<triplat-query-filter name="discrepancyType_en_US" operator="contains" value="Asset"></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<tricomp-search-input aria-labelledby="searchInput"
+			value="{{_searchTerms}}">
+		</tricomp-search-input>
+
+		<iron-selector id="assetSelector" selected-item="{{_selectedElement}}">
+			<template is="dom-repeat" id="listTemplate" items="{{_selectableAssets}}">
+				<tricomp-asset-item asset="{{item}}" tabindex="0" on-keypress="_handleKeyPress"></tricomp-asset-item>
+			</template>
+		</iron-selector>
+
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+
+		is: "tricomp-asset-selector",
+
+		properties: {
+			selected : { 
+				type : Object,
+				notify : true
+			},
+
+			assessmentId : Number,
+			spaceId : Number,
+			logId : Number,
+
+			_selectableAssets : Array,
+			_assets : Array,
+			_assignedAssets : Array,
+			_assetDiscrepancyLogs : Array,
+			
+			_selectedElement : Object,
+		},
+
+		observers : [
+			'_handleSelectedElementChanged(_selectedElement)',
+				'_handleAssetPropertyChanged(_assets.*)',
+    		'_handleAssetPropertyChanged(_assignedAssets)',
+    		'_handleAssetPropertyChanged(_assetDiscrepancyLogs)'
+		],
+
+		attached : function() {
+			this.set('_scroller', this.$.assetSelector);
+		},
+		
+		_handleSelectedElementChanged : function(selectedElement) {
+			if (selectedElement) {
+				var itemForElement = this.$.listTemplate.itemForElement(selectedElement);
+				this.set('selected', itemForElement);
+			} else {
+				this.set('selected', null);
+			}
+		},
+		
+		_handleAssetPropertyChanged : function(property) {
+			if (property) {
+				this._determineSelectableAssets();
+			}
+		},
+		
+		_determineSelectableAssets : function() {
+   			if (this._assets) {
+   				var selectableAssets = this._assets.slice();
+   				if (this._assignedAssets) {
+					selectableAssets = this._removeCurrentlyAssignedAssets(selectableAssets, this._assignedAssets);
+   					if (this._assetDiscrepancyLogs) {
+						selectableAssets = this._removePendingAssignedAssets(selectableAssets, this._assetDiscrepancyLogs);
+   					}
+   				}
+   				this.set('_selectableAssets', selectableAssets);
+   			}
+		},
+
+		_removeCurrentlyAssignedAssets: function(assets, assignedAssets) {
+			if (assets && assignedAssets) {
+				if (assets.length > 0 && assignedAssets.length > 0) {
+					for (var i=0; i<assignedAssets.length; i++) {
+						for (var j=0; j<assets.length; j++) {
+							if (assignedAssets[i]._id == assets[j]._id) {
+								assets.splice(j, 1);
+								break;
+							}
+						}
+					}
+				}
+			}
+			return assets;
+		},
+
+		_removePendingAssignedAssets: function(assets, discrepancyLogs) {
+			if (assets && discrepancyLogs) {
+				if (assets.length > 0 && discrepancyLogs.length > 0) {
+					for (var i=0; i<discrepancyLogs.length; i++) {
+						for (var j=0; j<assets.length; j++) {
+							if (discrepancyLogs[i].asset.id == assets[j]._id) {
+								assets.splice(j, 1);
+								break;
+							}
+						}
+					}
+				}
+			}
+			return assets;
+		},
+
+		_filter : function(searchTerms, assets) {
+			if (!searchTerms || searchTerms.length == 0) {
+				return assets;
+			}
+
+			var lowerAssetFilter = searchTerms.toLowerCase();
+			return assets.filter(function(asset) {
+				return (asset.name && asset.name.toLowerCase().indexOf(lowerAssetFilter) != -1)
+					|| asset.id && asset.id.toLowerCase().indexOf(lowerAssetFilter) != -1
+					|| asset.specClass && asset.specClass.toLowerCase().indexOf(lowerAssetFilter) != -1
+					|| asset.type && asset.type.toLowerCase().indexOf(lowerAssetFilter) != -1
+					|| asset.organization && asset.organization.toLowerCase().indexOf(lowerAssetFilter) != -1
+					|| asset.building && asset.building.toLowerCase().indexOf(lowerAssetFilter) != -1
+					|| asset.floor && asset.floor.toLowerCase().indexOf(lowerAssetFilter) != -1
+					|| asset.space && asset.space.toLowerCase().indexOf(lowerAssetFilter) != -1
+			});
+		},
+
+		reset : function() {
+			this.$.assetSelector.selected = -1;
+			this.set('_searchTerms', "");
+		}, 
+
+		_handleKeyPress: function(e) {
+			var keyCode = e.keyCode;
+
+			if (keyCode == 13) {
+				this.set("_selectedElement", e.target);
+			}
+		}
+	});
+</script>

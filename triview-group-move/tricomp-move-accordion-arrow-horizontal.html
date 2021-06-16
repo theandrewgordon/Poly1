@@ -1,0 +1,87 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+
+<dom-module id="tricomp-move-accordion-arrow-horizontal">
+	<style>
+		:host {
+			@apply(--layout);
+		}
+
+		iron-icon {
+			height: 32px;
+		}
+
+		.enabled {
+			color: var(--tri-primary-color);
+			cursor: pointer;
+		}
+
+		.disabled {
+			color: var(--tri-disabled-icon-button-color);
+			cursor: context-menu;
+		}
+		
+	</style>
+	<template>
+		<div id="container">
+			<iron-icon hidden$="{{opened}}" on-tap="_handleTap" icon="hardware:keyboard-arrow-right"></iron-icon>
+			<iron-icon hidden$="{{!opened}}" on-tap="_handleTap" icon="hardware:keyboard-arrow-left"></iron-icon>
+		</div>
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-move-accordion-arrow-horizontal",
+
+		properties : {
+			enabled : {
+				type : Boolean,
+				notify : true,
+				value : false
+			},
+			opened : {
+				type : Boolean, 
+				notify : true,
+				value : true
+			}
+		},
+
+		observers : [
+			'_handleEnabledChanged(enabled)'
+		],
+
+		_handleEnabledChanged : function(enabled) {
+			if (enabled) {
+				Polymer.dom(this.$.container).classList.add('enabled');
+				Polymer.dom(this.$.container).classList.remove('disabled');
+			} else {
+				Polymer.dom(this.$.container).classList.add('disabled');
+				Polymer.dom(this.$.container).classList.remove('enabled');
+				this.close();
+			}
+		},
+
+		_handleTap : function() {
+			if (this.enabled) {
+				this.toggle();
+			}
+
+		},
+
+		toggle : function() {
+			this.set('opened', !this.opened);
+		},
+
+		open : function() {
+			this.set('opened', true);
+		},
+
+		close : function() {
+			this.set('opened', false);
+		}
+
+	});
+</script>

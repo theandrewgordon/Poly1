@@ -1,0 +1,606 @@
+<link rel="import" href="../triplat-routing/triplat-routing.html">
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-icons/hardware-icons.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../iron-image/iron-image.html">
+<link rel="import" href="../iron-pages/iron-pages.html">
+<link rel="import" href="../paper-tabs/paper-tabs.html">
+<link rel="import" href="../paper-tabs/paper-tab.html">
+<link rel="import" href="../paper-radio-group/paper-radio-group.html">
+<link rel="import" href="../iron-pages/iron-pages.html">
+<link rel="import" href="../tri-loading-indicator/tri-loading-indicator.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+<link rel="import" href="../neon-animation/animations/slide-from-right-animation.html">
+<link rel="import" href="../neon-animation/animations/slide-right-animation.html">
+<link rel="import" href="../triblock-page-container-behavior/triblock-page-container-behavior.html">
+<link rel="import" href="../iron-localstorage/iron-localstorage.html">
+
+<link rel="import" href="tricomp-walkthru-behavior.html">
+
+<link rel="import" href="tricomp-assessment-header.html">
+<link rel="import" href="tricomp-walkthru-main.html">
+<link rel="import" href="tricomp-space-details-panel.html">
+
+<link rel="import" href="tricomp-person-discrepancy-dialog.html">
+<link rel="import" href="tricomp-asset-discrepancy-dialog.html">
+<link rel="import" href="tricomp-prompt.html">
+
+<dom-module id="tripage-walkthru">
+
+	<style>
+		:host {
+			@apply(--layout-fit);
+			@apply(--layout-vertical);
+			background-color: var(--tri-primary-content-background-color);
+		}
+
+		main {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+		}
+
+		tricomp-walkthru-main {
+			@apply(--layout-flex);
+		}
+
+		tricomp-space-details-panel {
+			margin-left: 0px;
+		}
+
+		@media (min-width: 1560px) {
+			tricomp-space-details-panel {
+				width: 400px;
+				-ms-overflow-style: none;
+			}
+		}
+
+		@media (max-width: 1559px) and (min-width: 1160px) {
+			tricomp-space-details-panel {
+				width: 375px;
+				-ms-overflow-style: none;
+			}
+		}
+
+		@media (max-width: 1159px) {
+			tricomp-space-details-panel {
+				width: 350px;
+				-ms-overflow-style: none;
+			}
+		}
+
+		#confirmationDialog {
+			@apply(--layout-vertical);
+		}
+
+		#confirmationDialog .button-container {
+			@apply(--layout-horizontal);
+			@apply(--layout-self-end);
+		}
+
+		#confirmationDialog paper-button {	
+			@apply(--tri-button);
+			margin-left: 20px;
+		}
+
+		#personDiscrepancyDialog, #assetDiscrepancyDialog {
+			position: absolute;
+			top: 0px;
+			left: 0px;
+			right: 0px;
+			bottom: 0px;
+		}
+
+		#personDiscrepancyDialog>tricomp-person-discrepancy-dialog, #assetDiscrepancyDialog>tricomp-asset-discrepancy-dialog {
+			@apply(--layout-fit);
+		}
+
+		tricomp-space-details-panel {
+			min-height: 0px;
+		}
+
+	</style>
+	<template>
+
+		<iron-localstorage id="discardChangesWarningMessageLocalStorage" name="discardChangesWarningMessagePreference" value="{{_hideDiscardChangesWarning}}"></iron-localstorage>
+		
+		<triplat-route id="tripageWalkthruWalkthruRoute" name="walkthruAssessment" params="{{assessmentParams}}"></triplat-route>
+		<triplat-route id="homeRoute" name="mySpaceAssessments"></triplat-route>
+
+ 		<triplat-ds id="assessmentDs" name="mySpaceAssessments" data="{{assessment}}">
+      		 <triplat-ds-instance instance-id="{{assessmentParams.assessmentId}}"></triplat-ds-instance>
+ 		</triplat-ds>
+		
+		<triplat-ds id="assessmentLogsDs" name="assessmentLogs" data="{{_assessmentLogs}}">
+     		<triplat-ds-context name="mySpaceAssessments" context-id="{{assessmentParams.assessmentId}}"></triplat-ds-context>
+ 		</triplat-ds>
+
+	 	<triplat-ds id="assessmentSpacesDs" name="spacesForAssessments" data="{{spacesForAssessment}}">
+			<triplat-ds-context name="mySpaceAssessments" context-id="{{assessmentParams.assessmentId}}"></triplat-ds-context>
+		</triplat-ds>
+		
+		<paper-dialog id="personDiscrepancyDialog"
+				entry-animation="slide-from-right-animation"
+				exit-animation="slide-right-animation"
+				aria-label="Person Discrepancy Dialog">
+			<tricomp-person-discrepancy-dialog 
+				id="personDiscrepancyComp"
+				assessment-id="{{assessmentParams.assessmentId}}"
+				space="{{_selectedSpace}}"
+				assessment-log="{{_selectedSpaceLog}}">
+			</tricomp-person-discrepancy-dialog>
+		</paper-dialog>
+
+		<paper-dialog id="assetDiscrepancyDialog"
+				entry-animation="slide-from-right-animation"
+				exit-animation="slide-right-animation"
+				aria-label="Asset Discrepancy Dialog">
+			<tricomp-asset-discrepancy-dialog
+				id="assetDiscrepancyComp"
+				assessment-id="{{assessmentParams.assessmentId}}"
+				space="{{_selectedSpace}}"
+				assessment-log="{{_selectedSpaceLog}}">
+			</tricomp-asset-discrepancy-dialog>
+		</paper-dialog>
+		
+		<paper-dialog id="confirmationDialog" aria-labelledby="confirmationDialog_h2">
+			<tricomp-prompt
+				id="confirmationDialogPrompt"
+				title-label="Warning"
+				message-label="{{_getConfirmationMessage()}}"
+				options="yes-no"
+				always-show>
+			</tricomp-prompt>
+		</paper-dialog>
+
+		<paper-dialog id="discardChangesWarningDialog" aria-label="Discard changes warning Dialog">
+			<tricomp-prompt
+				id="discardChangesWarningPrompt"
+				title-label="Warning"
+				message-label="{{_getDiscardChangesMessage()}}"
+				options="yes-no"
+				checked="{{_hideDiscardChangesWarning}}">
+			</tricomp-prompt>
+		</paper-dialog>
+		
+		<tricomp-assessment-header
+			id="header"
+			due-date="{{assessment.dueDate}}"
+			postal-code="{{assessment.postalZipCode}}"
+			country-code="{{assessment.countryCode}}"
+			completed="{{_assessmentLogs.length}}"
+			total="{{spacesForAssessment.length}}"
+			status="{{assessment.status}}"
+			progress="{{_calculateProgress(_assessmentLogs.length, spacesForAssessment.length, assessment.statusENUS)}}"
+			status-e-n="{{assessment.statusENUS}}"
+			creation-date="{{assessment.assessmentDate}}"
+			completion-date="{{assessment.completionDate}}"
+			description="{{assessment.description}}"
+			city="[[assessment.city]]"
+			building="[[assessment.building.value]]"
+			floor="[[assessment.floor.value]]"
+			on-back="_handleBack"
+			on-action="_openConfirmationDialog"
+			loading="{{_completePerformed}}">
+		</tricomp-assessment-header>
+
+		<main role="main" aria-label="Space Selection">
+			<tricomp-walkthru-main
+				id="spaceSelector"
+				floor-id="{{assessment.floor.id}}"
+				assessment-id="{{assessmentParams.assessmentId}}"
+				selected-space="{{_selectedSpace}}"
+				closed="{{closed}}">
+			</tricomp-walkthru-main>
+			<tricomp-space-details-panel
+				id="detailsPanel"
+				hidden$="{{closed}}"
+				assessment-id="{{assessmentParams.assessmentId}}"
+				selected-space="{{_selectedSpace}}"
+				assessment-log="{{_selectedSpaceLog}}">
+			</tricomp-space-details-panel>
+		</main>
+		
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tripage-walkthru",
+		
+		behaviors: [TriBlockPageContainerBehavior, TriCompWalkthruBehavior],
+		
+		properties: {
+
+			closed : Boolean,
+
+			space: {
+				type: Object,
+				notify: false,
+				readOnly: false,
+				value: {_id:""}
+			},
+
+			_selectedSpace : Object,
+			_selectedSpaceLog : Object,
+			
+			_assessmentLogs : {
+				type : Array,
+				observer : '_handleAssessmentLogsChanged'
+			},
+			
+			_isMarkDiscrepant : Boolean,
+			_isMarkNonDiscrepant : Boolean,
+			
+			_isPersonDiscrepancy : Boolean,
+			_isAssetDiscrepancy : Boolean,
+
+			_activatePerformed : Boolean,
+			_completePerformed : Boolean,
+
+			_logCommentsUpdated : Boolean,
+
+			_hideDiscardChangesWarning : Boolean
+		},
+
+		observers : [
+			'_handleSelectedSpaceChanged(_selectedSpace)'
+		],
+
+		listeners: {
+   			'assessmentDs.ds-update-complete' : '_handleAssessmentUpdated',
+   			'assessmentDs.ds-perform-action-complete' : '_handleAssessmentActionPerformed',
+
+			// add/remove people
+			'detailsPanel.add-person' : '_showAddPersonDialog',
+			'detailsPanel.remove-person' : '_showRemovePersonDialog',
+			'personDiscrepancyDialog.space-discrepant' : '_handleMarkSpaceDiscrepant',
+
+			// TODO
+			'personDiscrepancyDialog.space-non-discrepant' : '_handleMarkSpaceNonDiscrepant',
+			
+			// add/remove asset
+			'detailsPanel.add-asset' : '_showAddAssetDialog',
+			'detailsPanel.remove-asset' : '_showRemoveAssetDialog',
+			'assetDiscrepancyDialog.space-discrepant' : '_handleMarkSpaceDiscrepant',
+
+			// TODO
+			'assetDiscrepancyDialog.space-non-discrepant' : '_handleMarkSpaceNonDiscrepant',
+
+			'detailsPanel.space-discrepant' : '_handleMarkSpaceDiscrepant',
+			'detailsPanel.space-non-discrepant' : '_handleMarkSpaceNonDiscrepant',
+
+			'detailsPanel.assessment-log-deleted' : '_handleUnmarkSpace',
+
+			'detailsPanel.discard-changes' : '_openDiscardChangesWarningDialog',
+			'discardChangesWarningPrompt.yes' : '_handleDiscardChanges',
+			'discardChangesWarningPrompt.no' : '_closeDiscardChangesWarningDialog',
+			'discardChangesWarningPrompt.close' : '_closeDiscardChangesWarningDialog',
+
+
+			'confirmationDialogPrompt.yes' : '_completeAssessment',
+			'confirmationDialogPrompt.no' : '_closeConfirmationDialog',
+			'confirmationDialogPrompt.close' : '_closeConfirmationDialog',
+			
+			"personDiscrepancyDialog.discrepancy-log-created" : "_refreshAssessmentLogs",
+			"assetDiscrepancyDialog.discrepancy-log-created" : "_refreshAssessmentLogs",
+
+			'personDiscrepancyDialog.close' : '_closePersonDiscrepancyDialog',
+			'assetDiscrepancyDialog.close' : '_closeAssetDiscrepancyDialog'
+		},
+
+		_getDiscardChangesMessage : function() {
+			var __dictionary__discardChangesMessage = "Are you sure you want to delete all changes to this space?";
+			return __dictionary__discardChangesMessage;
+		},
+
+		_initializeDiscardChangesWarningMessageLocalStorage : function() {
+			this.set('_hideDiscardChangesWarning', false);
+		},
+
+		_handleDiscardChanges : function() {
+			this.$.detailsPanel._handleDiscardChanges();
+			this._closeDiscardChangesWarningDialog();
+		},
+
+		_openDiscardChangesWarningDialog : function() {
+			if (this._hideDiscardChangesWarning) {
+				this._handleDiscardChanges();
+			} else {
+				this.$.discardChangesWarningDialog.open();
+			}
+		},
+
+		_closeDiscardChangesWarningDialog : function() {
+			this.$.discardChangesWarningDialog.close();
+		},
+
+		_handleMarkSpaceDiscrepant : function(e) {
+			var space = e.detail;
+			if (space) {
+				this.$.spaceSelector.markDiscrepant(space);
+			}
+		},
+
+		_handleMarkSpaceNonDiscrepant : function(e) {
+			var space = e.detail;
+			if (space) {
+				this.$.spaceSelector.markNonDiscrepant(space);
+			}
+		},
+
+		_handleUnmarkSpace : function(e) {
+			var space = e.detail;
+			if (space) {
+				this.$.spaceSelector.unmarkSpace(space);
+			}
+		},
+
+		_handleSelectedSpaceChanged : function(selectedSpace) {
+			if (selectedSpace) {
+				this.set('_selectedSpaceLog', this._getLogFor(selectedSpace));
+			}
+		},
+
+		_handleAssessmentLogCommentsChanged : function(e) {
+			var comments = e.detail.comments;
+			if (comments !== undefined && comments !== null) {
+				this._markSpaceDiscrepant();
+			}
+		},
+
+		_completeAssessment : function() {
+			this.set('_completePerformed', true);
+			this.$.assessmentDs.updateRecord(this.$.tripageWalkthruWalkthruRoute.params.assessmentId, TriPlatDs.RefreshType.SERVER, "defaultActions", "complete");
+			this._closeConfirmationDialog();
+		},
+		
+   		_handleAssessmentUpdated : function() {
+			if (this._completePerformed) {
+				this.fire('assessment-completed');
+				this.set('_completePerformed', false);
+				this._handleBack();
+			}
+   		},
+
+		_handleAssessmentLogsChanged : function(newLogs, oldLogs) {
+			if (oldLogs && newLogs && oldLogs.length <= 0 && newLogs.length == 1) {
+				this.set('_activatePerformed', true);
+				this.$.assessmentDs.performAction(this.$.tripageWalkthruWalkthruRoute.params.assessmentId, TriPlatDs.RefreshType.SERVER, "defaultActions", "activate");
+			}
+			if (oldLogs && newLogs && oldLogs.length != newLogs.length) {
+				this.$.assessmentDs.performAction(this.assessmentParams.assessmentId, TriPlatDs.RefreshType.SERVER, "progressActions", "recalculateProgress");
+			}
+			this.set('_selectedSpaceLog', this._getLogFor(this._selectedSpace));
+		},
+
+		_handleAssessmentActionPerformed : function(e) {
+			if (this._activatePerformed) {
+				this.fire('assessment-in-progress');
+				this.set('_activatePerformed', false);
+			}
+		},
+		
+		_createAssessmentLog : function(isDiscrepant) {
+			var newLog = {
+				discrepantSpace : isDiscrepant,
+				description : this.$.detailsPanel.additionalComments,
+				space : { id : this._selectedSpace._id, value : "" },
+				spaceAssessment : { id : this.$.tripageWalkthruWalkthruRoute.params.assessmentId, value : "" }
+			};
+			this.$.assessmentLogsDs.createRecord(newLog, TriPlatDs.RefreshType.SERVER, "defaultActions", "create");
+		},
+		
+   		_handleAssessmentLogCreated : function() {
+			this.$.assessmentDs.performAction(this.assessmentParams.assessmentId, TriPlatDs.RefreshType.SERVER, "progressActions", "recalculateProgress");
+			
+			if (this._isMarkDiscrepant) {
+				if (this._isPersonDiscrepancy) {
+					this.$.personDiscrepancyComp.logId = this._getLogFor(this._selectedSpace)._id;
+					this.$.personDiscrepancyComp.createDiscrepancyLog();
+					this.set('_isPersonDiscrepancy', false);
+				} else if (this._isAssetDiscrepancy) {
+					this.$.assetDiscrepancyComp.logId = this._getLogFor(this._selectedSpace)._id;
+					this.$.assetDiscrepancyComp.createDiscrepancyLog();
+					this.set('_isAssetDiscrepancy', false);
+				}
+			}
+			this._handleSpaceMarked();
+   		},
+
+		_updateAssessmentLog : function(logForSpace, isDiscrepant) {
+			logForSpace.discrepantSpace = isDiscrepant;
+			logForSpace.description = this.$.detailsPanel.additionalComments;
+			this.$.assessmentLogsDs.updateRecord(logForSpace._id, TriPlatDs.RefreshType.SERVER, "defaultActions", "update");
+		},
+
+   		_handleAssessmentLogUpdated : function() {
+			if (this._logCommentsUpdated) {
+				this.fire('assessment-log-updated');
+				this.set('_logCommentsUpdated', false);
+			}
+			this._handleSpaceMarked();
+   		},
+
+		_deleteAssessmentLog : function(e) {
+			var log = e.detail;
+			if (log) {
+				// space should be a locator field
+				this.$.spaceSelector.unmarkSpace({ _id : log.space.id});
+				this.$.assessmentLogsDs.deleteRecord(log._id, TriPlatDs.RefreshType.SERVER, "defaultActions", "delete");
+			}
+		},
+		
+		_handleDiscrepancyLogDeleted : function(e) {
+			var log = e.detail;
+			// TODO: logDiscrepancyCount == 0 is what should be here,
+			// but log has old data
+			if (log) {
+				if (log.discrepancyCount) {
+					if (log.discrepancyCount == 1) {
+						this._markSpaceNonDiscrepant();
+					}
+				} else {
+					this._markSpaceNonDiscrepant();
+				}
+			}
+		},
+
+		_handleBack: function() {
+			this.$.homeRoute.navigate();
+		},
+
+		_calculateProgress: function(completedSpacesLength, spacesLength, status) {
+			var progress = 0;
+			if (completedSpacesLength > 0 && spacesLength > 0) {
+				progress = completedSpacesLength / spacesLength;
+			}
+			
+			if (progress == 0) {
+				this.$.header.disableButton();
+				this.$.detailsPanel.readOnly = false;
+			} else if (progress == 1 && status === "Completed") {
+				this.$.header.disableButton();
+				this.$.detailsPanel.readOnly = true;
+			} else if (progress == 1 && status === "History") {
+				this.$.header.disableButton();
+				this.$.detailsPanel.readOnly = true;
+				this.set('closed', true);
+				this.$.spaceSelector.closed = true;
+			} else if (progress == 1) {
+				this.$.header.enableButton();
+				this.$.detailsPanel.readOnly = false;
+			} else if (progress > 0) {
+				this.$.header.disableButton();
+				this.$.detailsPanel.readOnly = false;
+			}
+			return progress;
+		},
+
+		_handleCreatePersonDiscrepancyLog : function() {
+			this.set('_isPersonDiscrepancy', true);
+			this._markSpaceDiscrepant();
+		},
+
+		_handleCreateAssetDiscrepancyLog : function() {
+			this.set('_isAssetDiscrepancy', true);
+			this._markSpaceDiscrepant();
+		},
+
+		_handleSpaceMarked : function() {
+			if (this._isMarkDiscrepant) {
+				this.fire('space-marked-discrepant');
+				this.set('_isMarkDiscrepant', false);
+			} else if (this._isMarkNonDiscrepant) {
+				this.fire('space-marked-non-discrepant');
+				this.set('_isMarkNonDiscrepant', false);
+			}
+		},
+
+		// TODO: create datasource similar to assigned people to populate this
+		_getLogFor : function(space) {
+			if (this._assessmentLogs) {
+				if (space) {
+					var logsForSpace = this._assessmentLogs.filter(function(log) {
+		      			return String(log.space.id).indexOf(space._id) != -1;
+		      		});
+
+		      		if (logsForSpace.length == 1) {
+		      			return logsForSpace[0];
+		      		} else if (logsForSpace.length <= 0) { 
+		      			return null;
+		      		} else {
+		      			console.error("Found more than 1 log for " + space.space + ": " + logsForSpace);
+		      		}
+				}
+			}
+		},
+
+		_showAddPersonDialog : function() {
+			var logForSelectedSpace = this._getLogFor(this._selectedSpace);
+			this.$.personDiscrepancyComp.logId = logForSelectedSpace ? logForSelectedSpace._id : 0;
+			this.$.personDiscrepancyComp.reset();
+			this.$.personDiscrepancyComp.showAddPage();
+			this.$.personDiscrepancyComp.discrepancyType = "Add Person";
+			this.$.personDiscrepancyDialog.open();
+		},
+
+		_showRemovePersonDialog : function(e) {
+			var logForSelectedSpace = this._getLogFor(this._selectedSpace);
+			this.$.personDiscrepancyComp.logId = logForSelectedSpace ? logForSelectedSpace._id : 0;
+			this.$.personDiscrepancyComp.reset();
+			this.$.personDiscrepancyComp.showRemovePage();
+			this.$.personDiscrepancyComp.discrepancyType = "Remove Person";
+			this.$.personDiscrepancyComp.selected = e.detail;
+			this.$.personDiscrepancyDialog.open();
+		},
+
+		_closePersonDiscrepancyDialog : function() {
+			this.$.personDiscrepancyDialog.close();
+		},
+
+		_showAddAssetDialog : function() {
+			var logForSelectedSpace = this._getLogFor(this._selectedSpace);
+			this.$.assetDiscrepancyComp.logId = logForSelectedSpace ? logForSelectedSpace._id : 0;
+			this.$.assetDiscrepancyComp.reset();
+			this.$.assetDiscrepancyComp.showAddPage();
+			this.$.assetDiscrepancyComp.discrepancyType = "Add Asset";
+			this.$.assetDiscrepancyDialog.open();
+		},
+
+		_showRemoveAssetDialog : function(e) {
+			var logForSelectedSpace = this._getLogFor(this._selectedSpace);
+			this.$.assetDiscrepancyComp.logId = logForSelectedSpace ? logForSelectedSpace._id : 0;
+			this.$.assetDiscrepancyComp.reset();
+			this.$.assetDiscrepancyComp.showRemovePage();
+			this.$.assetDiscrepancyComp.discrepancyType = "Remove Asset";
+			this.$.assetDiscrepancyComp.selected = e.detail;
+			this.$.assetDiscrepancyDialog.open();
+		},
+
+		_closeAssetDiscrepancyDialog : function() {
+			this.$.assetDiscrepancyDialog.close();
+		},
+
+		_openConfirmationDialog : function() {
+
+			this.$.confirmationDialog.open();
+		},
+
+		_getConfirmationMessage : function() {
+			var __dictionary__confirmationMessage = "You will no longer be able to make changes to this assessment after this process. Would you like to continue?";
+			return __dictionary__confirmationMessage;
+		},
+
+		_closeConfirmationDialog : function() {
+			this.$.confirmationDialog.close();
+		},
+		
+   		_refreshAssessmentLogs : function() {
+			this.$.spaceSelector.refreshAllLogs();
+   		},
+
+		_pageAttached : function() {
+			this.$.spaceSelector.updateView();
+		},
+
+		_pageDetached : function() {
+			this.reset();
+		},
+		
+      	reset : function() {
+      		if (this._selectedSpace) {
+      			this.set('_selectedSpace', null);
+      		}
+      		if (this._lastSelectedSpace) {
+      			this.set('_lastSelectedSpace', null);
+      		}
+      		this.set('closed', false);
+      		this.$.spaceSelector.reset();
+      		this.$.detailsPanel.reset();
+      	},
+
+      	
+	});
+</script>

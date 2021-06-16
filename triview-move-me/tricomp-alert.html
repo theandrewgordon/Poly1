@@ -1,0 +1,198 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../paper-toast/paper-toast.html">
+
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+
+<dom-module id="tricomp-alert">
+	<template>
+		<style>
+			#toast {
+				padding: 0px;				
+				font-size:14px;
+				--paper-toast-color: var(--tri-primary-content-color);
+				max-width: 200px;
+				min-width: 100px;
+		    	@apply(--layout-horizontal);
+			}
+
+			:host([type="success"]) #toast {
+				--paper-toast-background-color: var(--tri-success-color);
+			}
+
+			:host([type="warning"]) #toast {
+				--paper-toast-background-color: var(--tri-warning-color);
+			}
+
+			:host([type="major-warning"]) #toast {
+				--paper-toast-background-color: var(--tri-major-warning-color);
+			}
+
+			:host([type="error"]) #toast {
+				--paper-toast-background-color: var(--tri-error-color);
+			}
+
+			:host([type="info"]) #toast {
+				--paper-toast-background-color: var(--tri-info-color);
+			}
+
+			.icon-container {
+				padding: 6px;
+				@apply(--layout-vertical);
+		    	@apply(--layout-center);
+			}
+
+			.icon {
+				padding: 0px;
+		    	width: 22px;
+                height: 22px;
+                margin-left: 0px;
+                color: white;
+			}
+
+			.message-container {
+				padding: 6px;
+				background-color: rgba(255,255,255,0.8);
+				min-width: 100px;
+				@apply(--layout-flex);
+				@apply(--layout-vertical);
+			}
+
+			.title {
+				font-weight: bold;
+				font-size: 18px;
+			}
+
+			.message {
+				@apply(--layout-flex);
+			}
+		</style>
+
+		<paper-toast id="toast" duration="[[duration]]" fit-into=[[fitInto]] 
+				horizontal-align="[[horizontalAlign]]" opened="{{opened}}">
+			<div class="icon-container">
+				<triplat-icon class="icon" icon="[[_getIcon(type)]]"></triplat-icon>
+			</div>
+			<div class="message-container">
+				<template is="dom-if" if="[[title]]">
+					<span class="title">[[title]]</span>
+				</template>
+				<span class="message">[[message]]</span>
+			</div>
+		</paper-toast>
+	</template>
+</dom-module>
+<script>
+
+    Polymer({
+		is: "tricomp-alert",
+
+		properties : {
+			/**
+			 * The types of the altert.
+			 * The valid values are:
+			 *  - success
+			 *  - warning
+			 *  - major-warning
+			 *  - error
+			 *  - info
+			 */
+			type: {
+				type: String,
+				reflectToAttribute: true,
+				value: "info"
+			},
+
+			/**
+             * The element to fit `this` into.
+             */
+            fitInto: {
+            	type: Object,
+            	value: window
+            },
+
+			/**
+			 * The duration in milliseconds to show the alert.
+			 * Set to `0`, a negative number, or `Infinity`, to disable the
+			 * alert auto-closing.
+			 */
+			duration: {
+				type: Number,
+				value: 3000
+			},
+
+			/**
+             * The orientation against which to align the alert content
+             * horizontally relative to `positionTarget`.
+             */
+            horizontalAlign: {
+            	type: String,
+            	value: 'left'
+            },
+
+			/**
+           	 * The message to display in the alert.
+             */
+        	message: {
+            	type: String,
+            	value: ''
+          	},
+
+          	/**
+           	 * The title to display in the alert.
+             */
+        	title: {
+            	type: String,
+            	value: ''
+          	},
+
+          	/**
+           	 * True if the alert is currently displayed.
+             */
+        	opened: {
+            	type: Boolean,
+            	value: false,
+            	notify: true
+          	},
+
+          	/**
+           	 * The icon to display in the alert.
+             */
+          	_icon: {
+            	type: String
+          	}
+
+        },
+
+        open: function() {
+        	this.$.toast.open();
+        },
+
+        close: function() {
+        	this.$.toast.close();
+        },
+
+        _getIcon: function(type) {
+        	var icon = "status-info";
+        	switch (type) {
+				case "success":
+					icon = "status-success";
+					break;
+				case "warning":
+					icon = "status-warning";
+					break;
+				case "major-warning":
+					icon = "status-warning-major";
+					break;
+				case "error":
+					icon = "status-error";
+					break;
+				case "info":
+					icon = "status-info";
+			}
+			return icon;
+        }
+    });
+
+</script>
+

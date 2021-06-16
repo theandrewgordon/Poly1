@@ -1,0 +1,78 @@
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../paper-input/paper-textarea.html">
+<link rel="import" href="../paper-button/paper-button.html">
+
+<dom-module id="tricomp-discrepancy-comment">
+
+	<style>
+		:host {
+			@apply(--layout-horizontal);
+		}
+
+		paper-textarea {
+			@apply(--layout-flex);
+			margin-right: 10px;
+		}
+
+		paper-button {
+			@apply(--layout-vertical);
+			@apply(--layout-center-justified);
+			@apply(--tri-active-button);
+			@apply(--layout-self-center);
+			height: 44px;
+			font-size: 14px;
+			font-weight: bold;
+			padding-left: 18px;
+			padding-right: 18px;
+		}
+
+		paper-button[disabled] {
+			@apply(--tri-disabled-button);
+		}
+
+		.accessibility {
+               display: none;
+        }
+        
+	</style>
+
+	<template>
+		<paper-textarea
+			id="discrepancyComment"
+			label="Additional Comments"
+			aria-labelledby="commentText"
+			value="{{comment}}"
+			rows="2"
+			max-rows="3"
+			always-float-label>
+		</paper-textarea>
+		<paper-button on-tap="_handleActionTap" disabled="{{disabled}}">Done</paper-button>
+
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-discrepancy-comment",
+
+		properties: {
+			comment : {
+				type : String,
+				notify : true
+			}, 
+			disabled : {
+				type : Boolean,
+				value : false
+			}
+		},
+
+		_handleActionTap : function() {
+			this.fire('action-tapped');
+		},
+
+		reset: function() {
+			this.set('comment', "");
+		},
+
+	});
+</script>

@@ -1,0 +1,5835 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2020 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<!-- TRIRIGA Platform Components -->
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-ds/triplat-ds-context.html">
+<link rel="import" href="../triplat-debug/triplat-debug.html">
+<link rel="import" href="../triplat-routing/triplat-routing.html">
+<link rel="import" href="../triplat-graphic/triplat-graphic.html">
+<link rel="import" href="../triplat-graphic/triplat-graphic-zoomable.html">
+<link rel="import" href="../triplat-graphic/triplat-graphic-pin.html">
+<link rel="import" href="../triplat-graphic/triplat-graphic-highlight-group.html">
+<link rel="import" href="../triplat-graphic/triplat-graphic-utilities-behavior.html">
+<link rel="import" href="../triplat-graphic-legend/triplat-graphic-legend.html">
+<link rel="import" href="../triplat-query/triplat-query.html">
+<link rel="import" href="../triplat-ds-search-input/triplat-ds-search-input.html">
+<link rel="import" href="../triplat-date-picker/triplat-date-picker.html">
+<link rel="import" href="../triplat-icon/ibm-icons.html">
+<link rel="import" href="../triplat-calendar-container/triplat-calendar-container.html">
+<link rel="import" href="../triplat-loading-indicator/triplat-loading-indicator.html">
+
+<!-- TRIRIGA Block Components -->
+<link rel="import" href="../triblock-page-container-behavior/triblock-page-container-behavior.html">
+<link rel="import" href="../triblock-open-page/triblock-open-page.html">
+<link rel="import" href="../triblock-tabs/triblock-tabs.html">
+
+<!-- Polymer Paper Components -->
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../paper-dialog/paper-dialog.html">
+<link rel="import" href="../paper-dialog-scrollable/paper-dialog-scrollable.html">
+<link rel="import" href="../paper-styles/paper-styles.html">
+<link rel="import" href="../paper-toast/paper-toast.html">
+<link rel="import" href="../paper-radio-button/paper-radio-button.html">
+<link rel="import" href="../paper-spinner/paper-spinner.html">
+<link rel="import" href="../paper-tooltip/paper-tooltip.html">
+
+<!-- Polymer Iron Components -->
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-icons/hardware-icons.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../iron-icons/communication-icons.html">
+<link rel="import" href="../iron-collapse/iron-collapse.html">
+<link rel="import" href="../iron-selector/iron-selector.html">
+<link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
+
+<!-- Local Components -->
+<link rel="import" href="tricomp-space-list.html">
+<link rel="import" href="tricomp-groupmove-detail-header.html">
+<link rel="import" href="tricomp-array-comparator.html">
+<link rel="import" href="tricomp-move-details-accordion.html">
+<link rel="import" href="tricomp-collapse-section.html">
+<link rel="import" href="tricomp-alert.html">
+
+<dom-module id="tripage-groupmove-where">
+	<style>
+		/*=========================================
+		 * Table of Contents
+		 *-----------------------------
+		 * Host
+		 * Elements
+		 * Buttons
+		 * Container - General
+		 * Container - tricomp-collapse-section
+		 * Container - floorcontainer
+		 * Container - tab
+		 * Container - Search Input
+		 * Container - scrollable-area
+		 * Container - line-item-container
+		 * Container - space-container
+		 * Container - container-date
+		 * Container - container-collapse-action
+		 * Container - container-search
+		 * Container - container-table
+		 * Container - container-loading
+		 * Container Calendar
+		 * Paper Dialog
+		 		* Dialog Msg
+		 * Paper Tabs
+		 * Paper Toast
+		 * Paper Checkbox
+		 * Triplat Graphic
+		 *=========================================*/
+
+		/* Host */
+		:host {
+			/*=========================================
+			 * Paper Checkbox
+			 *=========================================*/
+			--paper-checkbox-size: 25px;
+			--paper-checkbox-unchecked-color: var(--tri-primary-color);
+			--paper-checkbox-ink-size: 40px;
+
+			/*=========================================
+			 * Tricomp Collapse Section
+			 *=========================================*/
+			--tricomp-collapse-section-collapsable-flex: 2;
+			--tricomp-collapse-section-static-flex: 1;
+		}
+		@media(min-width: 768px) {
+			:host {
+				/*=========================================
+				 * Tricomp Collapse Section
+				 *=========================================*/
+				--tricomp-collapse-section-collapsable-flex: 1;
+				--tricomp-collapse-section-static-flex: 2;
+			}
+		}
+
+		:zhost * {
+			border-width: 1px;
+			border-style: dashed;
+		}
+		/* End Host */
+
+
+		/* Elements */
+		h1 {
+			text-align: left;
+		}
+
+		h2 {
+			text-align: center;
+		}
+
+		section {
+			padding: 15px;
+		}
+
+		paper-toast {
+			left: 100px;
+			right: auto;
+		}
+		/* End Elements */
+
+
+		/* Buttons */
+		.buttons section {
+			@apply(--layout-flex);
+			padding: 10px 5px;
+		}
+
+		.button {
+			@apply(--layout-horizontal);
+			@apply(--layout-center-center);
+		}
+
+		.button-label {
+			padding-left: 10px;
+		}
+
+		.list-button:hover {
+			font-weight: bold;
+		}
+
+		.search-button {
+		}
+
+		paper-button{
+			height: 44px;
+		}
+
+		.dialog-msg-buttons paper-button {
+			font-weight: 400 !important;
+		}
+
+		.btn-cancel {
+			background-color: var(--tri-header-color) !important;
+			color: var(--tri-primary-color) !important;
+			transition: 0.2s;
+		}
+			.btn-cancel:hover {
+				background-color: var(--tri-primary-light-color) !important;
+			}
+
+		.btn-menu {
+			position: relative;
+			flex: 1;
+			flex-direction: row !important;
+			height: auto;
+			min-width: initial;
+			margin: 0;
+			padding-top: 17px !important;
+    		padding-left: 24px !important;
+			align-items: flex-start !important;
+    	justify-content: flex-start !important;
+			background-color: transparent !important;
+			color: var(--tri-secondary-icon-button-hover-color) !important;
+			transition: 0.2s;
+		}
+			.btn-menu:hover {
+				background-color: var(--tri-primary-content-accent-color) !important;
+			}
+			.btn-menu triplat-icon {
+				padding-top: 6px;
+
+				--triplat-icon-width: 30px;
+				--triplat-icon-height: 35px;
+			}
+			.btn-menu .btn-inner {
+				display: inline-block;;
+			}
+				.btn-menu:hover .btn-inner {
+					display: none;
+				}
+			.btn-menu .btn-inner-hover {
+				display: none;
+			}
+				.btn-menu:hover .btn-inner-hover {
+					display: inline-block;
+				}
+			.btn-menu span {
+				font-size: 10px;
+				color: var(--tri-primary-content-color);
+			}
+
+		.btn-inner triplat-icon {
+			--triplat-icon-fill-color: var(--tri-primary-color);
+			--triplat-icon-stroke-color: var(--tri-primary-color);
+		}
+		.btn-inner-hover triplat-icon {
+			--triplat-icon-fill-color: var(--tri-info-color);
+			--triplat-icon-stroke-color: var(--tri-info-color);
+		}
+		/* End Buttons */
+
+
+		/* Container - General */
+		.content {
+			margin-left: 0px;
+			margin-right: 0px;
+			margin-bottom: 0px;
+		}
+
+		.main-container {
+			@apply(--layout-flex);
+			@apply(--layout);
+			@apply(--layout-horizontal);
+			background-color: var(--tri-header-color);
+			overflow: auto;
+		}
+		@media (max-width: 767px) {
+			.main-container {
+				flex-wrap: wrap;
+			}
+		}
+		/* End Container - General */
+
+
+		/* Container - tricomp-collapse-section */
+		.tricomp-collapse-section-collapsable,
+		.tricomp-collapse-section-static {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+		}
+
+		.tricomp-collapse-section-collapsable {
+			max-width: 100%;
+		}
+		/* End Container - tricomp-collapse-section */
+
+
+		/* Container - floorcontainer */
+		.main {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+		}
+
+		.box-floor-header {
+			padding: 10px;
+			background-color: var(--tri-body-background-color);
+			font-size: 0.9em;
+			font-weight: 300;
+		}
+			.box-floor-header > span {
+				padding: 0 10px;
+				border-right: 1px solid var(--tri-primary-content-label-color);
+			}
+			.box-floor-header > span:last-child {
+				border-right: 0;
+			}
+				.box-floor-header > span > span {
+					color: var(--tri-primary-content-label-color);
+				}
+
+		.floorcontainer {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+
+			/*margin: 5px;*/
+			min-height: 0;
+			user-select: none;
+			-moz-user-select: none;
+			-webkit-user-select: none;
+			-ms-user-select: none;
+		}
+
+		.floorcontainer-graphic {
+			@apply(--layout-flex-8);
+			@apply(--layout-horizontal);
+			position: relative;
+		}
+
+		.floorplan-load {
+			@apply(--layout-fit);
+			@apply(--layout-center-center);
+			display: flex;
+			background: rgba(255,255,255,0.4);
+			z-index: 99;
+		}
+
+		.floorcontainer-list {
+			@apply(--layout-flex-4);
+			@apply(--layout-relative);
+			@apply(--layout-vertical);
+			margin: 5px;
+			min-height: 0;
+			user-select: none;
+			-moz-user-select: none;
+			-webkit-user-select: none;
+			-ms-user-select: none;
+		}
+
+		.floorcontainer-load {
+			display: flex;
+			flex: 1;
+			justify-content: center;
+			align-items: center;
+		}
+
+		.no-events {
+			pointer-events: none;
+		}
+		/* End Container - floorcontainer */
+
+
+		/* Container - tab */
+		iron-selector.tabs-container {
+			@apply(--layout-horizontal);
+			color: var(--tri-primary-color);
+		}
+
+		.tab {
+			@apply(--layout-horizontal);
+			@apply(--layout-end);
+			/*height: 37px;*/
+			cursor: pointer;
+			z-index: 6;
+			user-select: none;
+			-moz-user-select: none;
+			-webkit-user-select: none;
+			-ms-user-select: none;
+			padding-left: 5px;
+		}
+
+		@media (max-width: 900px) {
+			.tab {
+				padding-left: 0px;
+			}
+
+			.tab div span {
+				display: none;
+				padding-right: 20px;
+			}
+
+			.tab div iron-icon {
+				padding: 0px 10px;
+			}
+		}
+
+		.tab div {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+		}
+
+		.tab div span {
+			padding-left: 5px;
+			padding-right: 20px;
+		}
+
+		.tab.iron-selected {
+			position: relative;
+			color: var(--tri-primary-color);
+			font-weight: 700;
+			cursor: context-menu;
+		}
+
+		.tab iron-icon {
+			width: 24px;
+		}
+		.tab iron-icon.icon-arrow {
+			width: 15px;
+    	margin-left: -3px;
+			visibility: hidden;
+		}
+
+		.tab.iron-selected iron-icon.icon-arrow {
+			visibility: hidden;;
+		}
+		/* End Container - tab */
+
+
+		/* Container - Search Input */
+		.search-input-container {
+			@apply(--layout-flex);
+			@apply(--layout-start-justified);
+			/*margin: 0 20px;*/
+			min-width: 0;
+		}
+
+		.search-input {
+			@apply(--layout-flex);
+
+			--triplat-ds-search-input: {
+				background-color: var(--tri-primary-content-background-color);
+				border-bottom-color: var(--tri-primary-color);
+				border-bottom-width: 2px;
+				color: var(--tri-primary-content-label-color);
+				font-family: var(--tri-font-family);
+				font-weight: normal;
+				padding-left: 0px;
+				padding-right: 0px;
+			}
+
+			--triplat-ds-search-input-input: {
+				color: var(--tri-primary-content-color);
+				font-family: var(--tri-font-family);
+				font-weight: normal;
+				font-size: 14px;
+				user-select: none;
+				-moz-user-select: none;
+				-webkit-user-select: none;
+				-ms-user-select: none;
+			}
+
+			--triplat-ds-search-input-search-icon: {
+				color: var(--tri-primary-content-label-color);
+				padding-left: 0px;
+				padding-right: 22px;
+			}
+
+			--triplat-ds-search-input-clear-icon {
+				color: var(--tri-primary-content-label-color);
+				padding-right: 0px;
+				align-items: flex-end;
+				justify-content: flex-end;
+			}
+		}
+		/* End Container - Search Input */
+
+
+		/* Container - scrollable-area */
+		.scrollable-area {
+			@apply(--layout-flex);
+			overflow: auto;
+		}
+		/* End Container - scrollable-area */
+
+
+		/* Container - line-item-container */
+		.line-item-container {
+			@apply(--layout-flex-2);
+			@apply(--layout);
+			@apply(--layout-vertical);
+			flex-basis: 33.33333333%;
+			/*margin: 1px;*/
+			border-right: 1px solid var(--tri-primary-content-accent-color);
+		}
+		@media (max-width: 991px) {
+			.line-item-container {
+				@apply(--layout-flex-1);
+				flex-basis: 41.66666667%;
+			}
+		}
+		@media (max-width: 767px) {
+			.line-item-container {
+				@apply(--layout-flex-1);
+				flex-basis: 100%;
+			}
+		}
+
+		.line-item-header {
+		 	@apply(--layout-center-center);
+		}
+
+		.line-item-header-button > div {
+			display: flex;
+		}
+		/* End Container - line-item-container */
+
+
+		/* Container - space-container */
+		.space-container {
+			@apply(--layout-flex-4);
+			@apply(--layout);
+			@apply(--layout-vertical);
+			flex-basis: 66.66666667%;
+			max-width: 100%;
+		}
+		@media (max-width: 991px) {
+			.space-container {
+				@apply(--layout-flex-1);
+				flex-basis: 58.33333333%;
+			}
+		}
+		@media (max-width: 767px) {
+			.space-container {
+				@apply(--layout-flex-1);
+				flex-basis: 100%;
+			}
+		}
+
+		.location {
+			@apply(--layout-horizontal);
+			user-select: none;
+			-moz-user-select: none;
+			-webkit-user-select: none;
+			-ms-user-select: none;
+		}
+
+		.header {
+			@apply(--layout-horizontal);
+			flex-direction: row;
+			align-items: center;
+      padding: 0.5em 0.6em;
+			background-color: var(--tri-primary-content-accent-color);
+		}
+			.header-left {
+				@apply(--layout-horizontal);
+				flex: 3;
+				justify-content: flex-start;
+			}
+				.header-left p {
+					margin: 0;
+					font-size: 0.9em;
+					font-weight: 300;
+					color: var(--tri-primary-color-100);
+				}
+			.header-right {
+				@apply(--layout-horizontal);
+				justify-content: flex-end;
+			}
+
+		.text-date {
+			color: var(--tri-primary-content-label-color);
+		}
+
+		.link-blue {
+			font-weight: 300;
+			color: var(--tri-primary-color-40);
+			cursor: pointer;
+			transition: 0.4s;
+		}
+			.header-left div:first-child .link-blue {
+				font-size: 0.9em;
+			}
+			@media(min-width: 415px) {
+				.header-left div:first-child .link-blue {
+					margin-left: 1em;
+				}
+			}
+			.link-blue:hover {
+				color: var(--tri-primary-color-70);
+			}
+
+		.title {
+			font-weight: normal;
+		}
+
+		.heading-description {
+			margin-right: 10px;
+			overflow-x: auto;
+		}
+		/* End Container - space-container */
+
+
+		/* Container - container-date */
+		.container-date {
+			padding: 0 0.6em;
+			width: 80%;
+		}
+		@media (min-width: 768px) {
+			.container-date {
+				width: 40%;
+			}
+		}
+		@media (min-width: 992px) {
+			.container-date {
+				width: 25%;
+			}
+		}
+
+		.box-date-picker {
+			position: relative;
+		}
+			.box-date-picker:after {
+				content: " ";
+				position: absolute;
+				top: 40%;
+				right: 0;
+				bottom: 0;
+				left: 0;
+				z-index: 2;
+			}
+		/* End Container - container-date */
+
+
+		/* Container - container-collapse-action */
+		.container-collapse-action {
+			position: fixed;
+			right: 0;
+			bottom: 0;
+			left: 0;
+			z-index: 9999;
+		}
+
+		.container-action-button {
+			@apply(--layout-horizontal);
+			@apply(--layout-center-center);
+			@apply(--layout-wrap);
+			background-color: var(--tri-footer-background-color);
+			color: var(--tri-header-color);
+			padding: 5px;
+		}
+
+		.container-action-button > * {
+			margin: 5px;
+		}
+
+		.actionbar-selected {
+			font-family: var(--tri-font-family);
+			font-size: 14px;
+			color: var(--tri-primary-light-color);
+			opacity: 1;
+			padding-left: 0px;
+			padding-right: 0px;
+		}
+
+		.actionbar-12px{
+			width: 12px;
+		}
+
+		.actionbar-link {
+			background-color: var(--ibm-cool-gray-50) !important;
+			border-color: var(--ibm-cool-gray-50) !important;
+			color: var(--ibm-blue-20) !important;
+			font-family: "Helvetica Neue", Roman, Helvetica, Arial, Roboto;
+			font-size: 14px;
+			padding-left: 0px;
+			padding-right: 0px;
+		}
+
+		.actionbar-link:hover{
+			text-decoration: underline;
+		}
+
+		.actionbar-pipe {
+			border-width: 1px;
+			border-style: solid;
+			border-color: var(--ibm-gray-30);
+			height: 20px;
+		}
+		/* End Container - container-collapse-action */
+
+
+		/* Container - container-search */
+		.container-search {
+			@apply(--layout-vertical);
+			flex: 1;
+			padding: 0px 20px 15px 20px;
+			background-color: var(--tri-header-color);
+		}
+			.container-search h3 {
+				margin: 5px 0px 10px 0px;
+				font-weight: 300;
+			}
+			.container-search .search-input {
+				flex: initial;
+			}
+
+		.search-results {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+		}
+		/* End Container - container-search */
+
+
+		/* Container - container-table */
+		.container-table {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-center-justified);
+			overflow-y: auto;
+		}
+			.container-table * {
+				font-weight: 300!important;
+			}
+			.container-table div[tri-thead] div[tri-th] {
+				font-size: 1.2em;
+			}
+			.container-table div[tri-thead] div[tri-th]::before {
+				border-left: 0px !important;
+			}
+			.container-table div[tri-tbody] {
+				flex: none !important;
+			}
+
+		.table-floor {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-scroll);
+			min-height: 0;
+			min-width: 0;
+			background-color: var(--tri-primary-content-background-color);
+		}
+			.table-floor div[tri-tbody] div[tri-td] {
+				min-height: 20px;
+				height: auto !important;
+				justify-content: center;
+				font-size: 1.1em;
+			}
+
+		.inbox-table-inner {
+			@apply(--layout-flex);
+			box-sizing: border-box;
+			width: 100%;
+			min-width: 1021px; /* 100px/col * 10 cols + 21px scrollbar = 1021px... had to set this for scrolling to work properly */
+      border-bottom-color: var(--tri-primary-content-label-color);
+  		border-bottom-width: 1px;
+    }
+
+		.table-header {
+			min-height: 40px !important;
+			border-bottom-color: var(--tri-primary-content-label-color) !important;
+			border-bottom-width: 1px !important;
+			border-left-color: var(--ibm-gray-20) !important;
+			border-left-width: 1px !important;
+		}
+
+		.col-floor-checkbox {
+			width: 100px;
+			flex-shrink: 1;
+		}
+			.col-floor-checkbox paper-checkbox {
+				--paper-checkbox-size: 20px;
+			}
+
+		.table-row {
+			font-weight: bold;
+      font-size: 14px;
+			font-family: var(--tri-font-family);
+      color: var(--ibm-gray-100);
+		}
+
+		.table-row-collapsed {
+			@apply(--layout-horizontal);
+			@apply(--layout-flex);
+
+			-ms-flex-align: center;
+			-webkit-align-items: center;
+			align-items: center;
+		}
+			.table-row-collapsed div[tri-td] {
+				min-height: 45px;
+				height: 100% !important;
+				word-break: initial;
+				word-wrap: break-word;
+			}
+		iron-collapse .table-row-collapsed {
+			align-items: flex-start !important;
+		}
+
+			.table-row-collapse p {
+				margin: 0;
+			}
+			.table-row-collapse div[tri-td] {
+				align-items: flex-start !important;
+			}
+
+		.box-floor-text p {
+			font-size: 0.9em;
+    	font-weight: 400 !important;
+		}
+
+		.box-floor-list paper-checkbox {
+			--paper-checkbox-size: 20px;
+		}
+		/* End Container - container-table */
+
+
+		/* Container - container-loading */
+    .container-loading {
+			position: absolute;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			left: 0;
+			z-index: 99;
+			background: white;
+		}
+			.container-loading > div {
+				display: flex;
+				height: 100%;
+				width: 100%;
+				align-items: center;
+				justify-content: center;
+			}
+    /* End Container - container-loading */
+
+
+		/* Container Calendar */
+		#moveCalendarContainer {
+			position: relative;
+		}
+
+		.calendar-mask {
+			position: absolute;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			left: 0;
+			z-index: 9;
+		}
+		/* End Container Calendar */
+
+
+		/* Paper Dialog */
+		paper-dialog#search {
+			top: 0px !important;
+		}
+
+		paper-dialog.search {
+			@apply(--layout-center);
+			@apply(--layout-flex);
+			position: fixed;
+			width: 50%;
+			top: 220px;
+			margin-left: 20px;
+			font-size:16px;
+		}
+
+		paper-dialog.selection {
+			@apply(--layout-center);
+			@apply(--layout-flex);
+			position: fixed;
+			width: 40%;
+			top: 220px;
+			margin-left: 20px;
+			font-size:16px;
+		}
+
+				/* Dialog Msg */
+				.dialog-msg {
+					max-width: 370px;
+			    border: 0.3em solid var(--ibm-gray-20);
+				}
+					.dialog-msg p {
+						font-size: 14px;
+					}
+
+				.dialog-msg-title {
+					margin-bottom: 1em;
+					font-size: 22px;
+					color: var(--tri-danger-color);
+					font-weight: 500;
+				}
+
+				.dialog-msg-buttons {
+					justify-content: space-around;
+					padding: 24px;
+				}
+					.dialog-msg-buttons paper-button {
+						padding: 5px 24px!important;
+					}
+				/* End Dialog Msg */
+		/* End Paper Dialog */
+
+
+		/* Paper Checkbox */
+		paper-checkbox {
+			--paper-checkbox-label-spacing: 10px;
+			--paper-checkbox-size: 22px;
+		}
+
+		.paper-checkbox {
+		 	margin: 7px;
+		 	padding: 7px;
+		}
+		/* End Paper Checkbox */
+
+
+		/* Paper Tabs */
+		.tabs-floors paper-tab {
+			margin-left: 1px;
+			background-color: var(--tri-primary-color-20);
+	    font-weight: 400;
+			color: var(--tri-header-color);
+			opacity: 1 !important;
+			transition: 0.4s;
+	  }
+			.tabs-floors paper-tab::after {
+				content: " ";
+				position: absolute;
+				right: 0;
+				bottom: 0;
+				left: 0;
+				display: inline-block;
+				height: 3px;
+				background-color: var(--tri-primary-color-20);
+				transition: 0.4s;
+			}
+			.tabs-floors paper-tab:nth-child(2) {
+				margin-left: 0;
+			}
+			.tabs-floors paper-tab:hover {
+				background-color: var(--tri-primary-color);
+			}
+				.tabs-floors paper-tab:hover::after {
+			    background-color: var(--tri-primary-color-20);
+				}
+			.tabs-floors paper-tab.iron-selected {
+		    background-color: var(--tri-primary-color);
+				font-weight: 400;
+		  }
+				.tabs-floors paper-tab.iron-selected::after {
+					background-color: var(--tri-primary-dark-color);
+				}
+		/* End Paper Tabs */
+
+
+		/* Paper Toast */
+		.toast-error {
+			position: relative !important;
+			top: 0 !important;
+			left: 0 !important;
+			background-color: var(--tri-error-color);
+		}
+		/* End Paper Toast */
+
+
+		/* Triplat Graphic */
+		triplat-graphic {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			height: inherit;
+
+			--triplat-graphic-interactive-selectable: {
+				cursor: pointer;
+			}
+
+			--triplat-graphic-interactive-selected: {
+		    cursor: pointer;
+ 			}
+
+			--triplat-graphic-highlight-1: {
+		    stroke: red;
+		    stroke-width: 5;
+			}
+
+			/* floorplan highlight group  */
+			--triplat-graphic-highlight-group-1: {
+      	fill-opacity: 1;
+      }
+
+			/* dragdrop change */
+			--triplat-graphic-interactive-drop-enter: {
+				stroke: var(--tri-major-warning-icon-button-hover-color);
+				stroke-width: 4;
+				stroke-endpath: square;
+				fill-opacity: 0;
+				vector-effect: non-scaling-stroke;
+            }
+
+    	--triplat-graphic-interactive-drop-done: {
+		    stroke-width: 0;
+			}
+
+		--triplat-graphic-pin-tooltip-container: {
+				z-index: 102;
+			}
+		}
+
+		triplat-graphic-legend {
+			--triplat-graphic-legend-min-width: 235px;
+
+			--triplat-graphic-legend-bar: {
+				background-color: var(--tri-primary-content-accent-color);
+			}
+		}
+		@media(min-width: 768px) {
+			triplat-graphic-legend {
+				--triplat-graphic-legend-min-width: 265px;
+			}
+		}
+		@media(min-width: 992px) {
+			triplat-graphic-legend {
+				--triplat-graphic-legend-min-width: 300px;
+			}
+		}
+
+		:host {
+			--triplat-graphic-legend-criterion: {
+				height: auto;
+			};
+		}
+
+		:host-context([dir="ltr"]) {
+			--triplat-graphic-legend-show-by-availability: {
+				padding-left: 27px !important;
+			};
+		}
+
+		:host-context([dir="rtl"]) {
+			--triplat-graphic-legend-show-by-availability: {
+				padding-right: 14px !important;
+			};
+		}
+
+		triplat-graphic-legend-show-by {
+		}
+
+		triplat-graphic-legend-filter-by {
+		}
+
+		triplat-graphic-legend-pin {
+			--triplat-graphic-legend-criterion-text: {
+				width: 90px;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+		}
+		/* End Triplat Graphic */
+
+
+		/* Unused Classes - Classes from tripage-request-where-to-detail-group */
+		.action {
+			@apply(--layout);
+			@apply(--layout-center-center);
+			padding-left: 20px;
+			min-width: 124px;
+			border-left: 1px solid var(--tri-separator-color);
+		}
+
+		.city {
+			width: 30%;
+		}
+
+		.value {
+			width: 125px;
+		}
+
+		.status {
+			@apply(--layout-vertical);
+			@apply(--layout-self-center);
+			font-size: 14px;
+			color: var(--tri-secondary-color);
+		}
+
+		.box-floor-list paper-checkbox {
+			--paper-checkbox-label-spacing: 0px;
+			--paper-checkbox-unchecked-background-color: var(--tri-header-color);
+		}
+
+		.locationColumn{
+			width: 200px;
+		}
+
+		.collapsedRow-border{
+			border-bottom: 1px solid var(--tri-header-color);
+		}
+
+		.collapsable-floor-td{
+			padding-top: 0px;
+			padding-bottom: 0px;
+		}
+
+		.box-floor-list {
+			width:100% !important;
+			display:flex;
+			flex-direction: column;
+		}
+
+		.collapsable-floor-content{
+			width:100%;
+			border-top: 1px solid var(--tri-header-color);
+			padding-bottom:5px;
+			padding-top:5px;
+		}
+		.collapsable-floor-content span {
+			margin-left: 5px;
+		}
+		.collapsable-floor-content:nth-child(0n+1) {
+			border-top: none;
+		}
+
+		.collapsable-checkbox{
+			width: 100px;
+		}
+		.floor-tds {
+			width:calc(100% - 300px);
+		}
+
+		.search-header-message{
+			font-family: var(--tri-font-family);
+			font-size: 14px;
+			display: block;
+		    -webkit-margin-before: 1em;
+		    -webkit-margin-after: 1em;
+		    -webkit-margin-start: 0px;
+		    -webkit-margin-end: 0px;
+		}
+		triplat-ds-search-input{
+			--triplat-ds-search-input-dropdown-header:{
+				font-size:14px;
+			};
+		}
+
+		triplat-date-picker {
+			--paper-input-container-label-floating:{
+  				font-size:14px;
+  				webkit-transform: translateY(-75%) scale(1);
+     			transform: translateY(-75%) scale(1);
+  			};
+		}
+		/* End Unused Classes */
+	</style>
+
+	<template>
+		<!-- Routes Definition -->
+		<triplat-route
+				id="openRequestRoute"
+				name="openRequest"></triplat-route>
+		<triplat-route
+				on-route-active="_handleRoutePageActive"
+				id="whereRoute"
+				name="whereRouteGroupMove"
+				params="{{openRequestWhereUrlParams}}"></triplat-route>
+
+		<triplat-route id="searchRoute" name="searchRouteGroupMove"></triplat-route>
+
+		<!-- DataSources -->
+		<triplat-ds name="currentUser" data="{{currentUser}}"></triplat-ds>
+
+		<triplat-ds
+				name="applicationSettings"
+				data="{{applicationSettings}}"
+				on-ds-get-complete="_handleApplicationSettingsGetComplete">
+		</triplat-ds>
+
+		<triplat-ds
+				name="myMoveRequests"
+				data="{{openRequest}}"
+				id="moveRequestModel"
+				loading="{{myMoveRequestsLoading}}"
+				on-ds-get-complete="_handleMyMoveRequestsGetComplete"
+				on-ds-update-complete="_handleMyMoveRequestsUpdateComplete"
+				on-ds-perform-action-complete="_handleMyMoveRequestsActionComplete">
+			<triplat-ds-instance instance-id="{{openRequestWhereUrlParams.reqId}}"></triplat-ds-instance>
+		</triplat-ds>
+
+		<triplat-ds id="lookupBuilding" name="lookupBuilding" filtered-data="{{buildingSearch}}" loading="{{floorSearchLoading}}">
+			<triplat-query append-filters="{{appendBuildingFilters}}"></triplat-query>
+		</triplat-ds>
+
+		<triplat-ds id="buildingFloors" name="buildingFloors" data="{{buildingFloors}}" loading="{{floorSearchLoading}}">
+			<triplat-ds-context name="lookupBuilding" context-id="{{_selectedBuilding._id}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds name="moveLineItems" data="{{moveLineItems}}" loading="{{moveLineItemsLoading}}" id="moveLineItems" on-ds-get-complete="_handleMLIDSGetComplete" on-ds-perform-action-complete="_handlePerformActionComplete">
+			<triplat-ds-context name="myMoveRequests" context-id="{{openRequestWhereUrlParams.reqId}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds name="moveToSpace" data="{{moveToSpace}}" loading="{{moveToSpaceLoading}}">
+			<triplat-ds-context name="myMoveRequests" context-id="{{openRequestWhereUrlParams.reqId}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds
+				name="moveToFloors"
+				data="{{moveToFloor}}"
+				loading="{{moveToFloorLoading}}"
+				id="moveToFloorDS"
+				on-ds-get-complete="_handleMoveToFloorGetComplete">
+			<triplat-ds-context name="myMoveRequests" context-id="{{openRequestWhereUrlParams.reqId}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds
+				name="moveToBuilding"
+				data="{{moveToBuilding}}"
+				loading="{{moveToBuildingLoading}}"
+				id="moveToBuildingDS"
+				on-ds-get-complete="_handleMoveToBuildingGetComplete"
+				on-ds-add-complete="_handleBuildingAdd">
+			<triplat-ds-context name="myMoveRequests" context-id="{{openRequestWhereUrlParams.reqId}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds name="requestedBy" data="{{requestedBy}}" loading="{{requestedBygLoading}}" id="requestedBy">
+			<triplat-ds-context name="myMoveRequests" context-id="{{openRequestWhereUrlParams.reqId}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds name="moveRequest" data="{{moveRequest}}" loading="{{moveRequestLoading}}" id="moveRequest">
+			<triplat-ds-context name="myMoveRequests" context-id="{{openRequestWhereUrlParams.reqId}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="selectedPerson" name="selectedPerson" data="{{selectedPerson}}">
+			<triplat-ds-instance instance-id="{{_selectedLineItem.personRecordId}}"></triplat-ds-instance>
+		</triplat-ds>
+
+		<triplat-ds
+				id="moveToSpacesEntitlements"
+				name="moveToSpacesEntitlements"
+				data="{{moveToSpacesEntitlements}}"
+				filtered-data="{{filteredMoveToSpacesEntitlements}}"
+				loading="{{moveToSpacesEntitlementsLoading}}"
+				on-ds-get-complete="_handleMoveToSpacesEntitlementsGetComplete"
+				force-server-filtering>
+				<triplat-ds-context
+					name="selectedPerson"
+					context-id="{{selectedPerson._id}}"></triplat-ds-context>
+ 			<triplat-query>
+				<triplat-query-filter name="floorID" operator="equals" value="{{_selectedFloorObj._id}}" ignore-if-blank></triplat-query-filter>
+				<triplat-query-sort name="space"></triplat-query-sort>
+			</triplat-query>
+		</triplat-ds>
+
+		<triplat-ds
+				name="moveToSpaces"
+				data="{{moveToSpaces}}"
+				filtered-data="{{filteredSpaces}}"
+				loading="{{moveToSpacesLoading}}"
+				id="moveToSpaces"
+				on-ds-get-complete="_handleMoveToSpacesGetComplete">
+			<triplat-ds-context name="moveToFloor" context-id="{{_selectedFloorObj._id}}"></triplat-ds-context>
+			<triplat-query append-filters="{{appendSpaceFilters}}"></triplat-query>
+		</triplat-ds>
+
+ 		<triplat-ds name="assignedSpaces" data="{{assignedSpaces}}" id="assignedSpaces" loading="{{assignedSpacesLoading}}" on-ds-add-complete="_handleAddTempSpaceComplete" on-ds-add-error="_handleAddTempSpaceError">
+			<triplat-ds-context name="myMoveRequests" context-id="{{openRequestWhereUrlParams.reqId}}"></triplat-ds-context>
+			<triplat-ds-context name="moveLineItems" context-id="{{currentMLI}}"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds name="moveToSpacesAssets" data="{{moveToSpacesAssets}}" filtered-data="{{filteredSpacesAssets}}" loading="{{moveToSpacesAssetsLoading}}" id="moveToSpacesAssets" on-ds-get-complete="_handleMoveToSpacesAssetsGetComplete" >
+			<triplat-ds-context name="moveToFloor" context-id="{{_selectedFloorObj._id}}"></triplat-ds-context>
+			<triplat-query append-filters="{{appendSpaceAssetFilters}}"></triplat-query>
+		</triplat-ds>
+
+		<triplat-ds name="moveToSpacesAssets" data="{{moveToSpaceHighlight}}" loading="{{moveToSpaceHighlightLoading}}" on-ds-get-complete="_handleMoveToSpaceHighlightGetComplete">
+			<triplat-ds-context name="moveToFloor" context-id="{{_selectedFloorObj._id}}"></triplat-ds-context>
+			<triplat-ds-instance instance-id="{{_roomToHighligth}}"></triplat-ds-instance>
+		</triplat-ds>
+
+		<!-- dragdrop change -->
+		<triplat-ds id="spaceLabelStyleDs" name="spaceLabelStyle" data="{{spaceLabelStyle}}"></triplat-ds>
+
+		<!-- Auxiliary Move to Spaces: Used just to get the spaces for the current floors of the request -->
+		<triplat-ds
+				name="moveToSpacesAux"
+				data="{{moveToSpacesAux}}"
+				id="moveToSpacesAux"
+				on-ds-get-complete="_handleMoveToSpacesAuxGetComplete">
+			<triplat-ds-context name="moveToFloor" context-id="{{_temporaryFloor._id}}"></triplat-ds-context>
+		</triplat-ds>
+
+
+		<!-- Query: Filter Availaible Spaces -->
+		<triplat-query data="{{moveToSpaces}}" filtered-data-out="{{filteredSpacesAvailable}}">
+			<triplat-query-filter name="adjustedRemainingVacant" operator="greater than or equals" value="1" ignore-if-blank></triplat-query-filter>
+			<triplat-query-and></triplat-query-and>
+			<triplat-query-filter name="earliestAvailableDate" operator="less than or equals" value="{{openRequest.moveDate}}" ignore-if-blank></triplat-query-filter>
+			<triplat-query-sort name="space"></triplat-query-sort>
+		</triplat-query>
+
+		<!-- Query: Filter Availaible Spaces based on the new move date selected -->
+		<triplat-query data="{{_temporaryFloorsSpaces}}" filtered-data-out="{{filteredNewDateSpacesAvailable}}">
+			<triplat-query-filter name="adjustedRemainingVacant" operator="greater than or equals" value="1" ignore-if-blank></triplat-query-filter>
+			<triplat-query-and></triplat-query-and>
+			<triplat-query-filter name="earliestAvailableDate" operator="less than or equals" value="{{_newMoveDate}}" ignore-if-blank></triplat-query-filter>
+			<triplat-query-sort name="space"></triplat-query-sort>
+		</triplat-query>
+
+
+		<!-- Comparator: Used to add 'selected' attribute to the MLIs object -->
+		<tricomp-array-comparator
+				source="{{moveLineItems}}"
+				compare-to="{{_selectedRequests}}"
+				compare-to-match-field="_id"
+				match-flag="selected"
+				result="{{moveLineItemsFiltered}}">
+		</tricomp-array-comparator>
+		<!-- End Comparator -->
+
+		<!-- Comparator: Used to add 'selected' attribute to the MLIs object -->
+		<tricomp-array-comparator
+				source="{{filteredListSpaces}}"
+				compare-to="{{_availableSpaces}}"
+				compare-to-match-field="_id"
+				match-flag="available"
+				result="{{_availableSpacesFinal}}">
+		</tricomp-array-comparator>
+		<!-- End Comparator -->
+
+
+		<div class="content">
+			<div id="loadContainer" class="container-loading" hidden$="{{!_startupMoveToFloor}}">
+	      <div>
+	        <paper-spinner active></paper-spinner>
+	      </div><!-- end div -->
+	    </div><!-- end .container-loading -->
+
+			<tricomp-collapse-section id="collapseSection" on-opened-changed="_handleGraphicSizeChanged">
+				<div class="tricomp-collapse-section-collapsable">
+					<div class="line-item-container">
+						<div class="line-item-header line-item-header-button">
+							<div>
+								<paper-button class="btn-menu" on-tap="_toggleCloseMLI" noink>
+									<div class="btn-inner">
+										<triplat-icon
+								      class="placeholder"
+								      icon="bulletlist"></triplat-icon>
+									</div><!-- end .btn-inner -->
+									<div id="btn-collapse" class="btn-inner-hover">
+										<triplat-icon
+								      class="placeholder"
+								      icon="bulletlist"></triplat-icon>
+									</div><!-- end .btn-inner-hover -->
+
+									<span>{{_currentCount}}</span>
+								</paper-button>
+
+								<paper-tooltip for="btn-collapse" position="right" animation-delay="0">Click to hide items</paper-tooltip>
+							</div><!-- end div -->
+						</div><!-- end .line-item-header -->
+
+						<div class="scrollable-area">
+							<div>
+								<tricomp-move-details-accordion
+									id="peopleAccordion"
+									label="People"
+									type="People"
+									count="{{_currentPeopleCount}}"
+									assigned-count="{{_currentPeopleAssignedCount}}"
+									checkbox-enabled="{{_checkboxEnabled}}"
+									move-line-items="{{_computedFilteredPersonList(moveLineItemsFiltered)}}"
+									last-line-item-selected="{{lastLineItemSelected}}"
+									last-line-item-assigned="{{lastLineItemAssigned}}"
+									placeholder-icon-name="user"
+									placeholder-message-label="No people assigned"
+									is-completed="{{_completedRequest}}"
+									open-drawer="{{_peopleOpened}}"
+									open-by-default
+									actions-enabled
+									people-enabled
+									image-enabled
+									accordion-people>
+								</tricomp-move-details-accordion>
+							</div><!-- end div -->
+
+							<div>
+								<tricomp-move-details-accordion
+									id="assetAccordion"
+									label="Assets"
+									type="Assets"
+									count="{{_currentAssetCount}}"
+									assigned-count="{{_currentAssetAssignedCount}}"
+									checkbox-enabled="{{_checkboxEnabled}}"
+									move-line-items="{{_computedFilteredAssetList(moveLineItemsFiltered)}}"
+									last-line-item-selected="{{lastLineItemSelected}}"
+									last-line-item-assigned="{{lastLineItemAssigned}}"
+									placeholder-icon-name="ibm:assets"
+									placeholder-message-label="No assets assigned"
+									is-completed="{{_completedRequest}}"
+									open-drawer="{{_assetOpened}}"
+									open-by-default
+									actions-enabled
+									assets-enabled
+									image-enabled
+									accordion-assets>
+								</tricomp-move-details-accordion>
+							</div><!-- end div -->
+
+							<div>
+								<tricomp-move-details-accordion
+									id="equipmentAccordion"
+									label="Equipment"
+									type="Equipment"
+									count="{{_currentEquipmentCount}}"
+									assigned-count="{{_currentEquipmentAssignedCount}}"
+									checkbox-enabled="{{_checkboxEnabled}}"
+									move-line-items="{{_computedFilteredEquipmentList(moveLineItemsFiltered)}}"
+									last-line-item-selected="{{lastLineItemSelected}}"
+									last-line-item-assigned="{{lastLineItemAssigned}}"
+									placeholder-icon-name="ibm:equipment"
+									placeholder-message-label="No equipment assigned"
+									is-completed="{{_completedRequest}}"
+									open-drawer="{{_equipmentOpened}}"
+									open-by-default
+									actions-enabled
+									equipment-enabled
+									image-enabled
+									accordion-equipment>
+								</tricomp-move-details-accordion>
+							</div><!-- end div -->
+
+							<div>
+								<tricomp-move-details-accordion
+									id="roomAccordion"
+									label="Rooms"
+									type="Rooms"
+									count="{{_currentRoomCount}}"
+									assigned-count="{{_currentRoomAssignedCount}}"
+									checkbox-enabled="{{_checkboxEnabled}}"
+									move-line-items="{{_computedFilteredRoomList(moveLineItemsFiltered)}}"
+									last-line-item-selected="{{lastLineItemSelected}}"
+									last-line-item-assigned="{{lastLineItemAssigned}}"
+									placeholder-icon-name="ibm:room-function"
+									placeholder-message-label="No rooms assigned"
+									is-completed="{{_completedRequest}}"
+									open-drawer="{{_roomOpened}}"
+									open-by-default
+									actions-enabled
+									rooms-enabled
+									image-enabled
+									accordion-rooms>
+								</tricomp-move-details-accordion>
+							</div><!-- end div -->
+
+							<div class="line-item-header">
+								<div>
+									<paper-checkbox class="paper-checkbox" id="unassignedCheckBox" on-tap="refreshItemList"><span>Show only unassigned</span>(<span>{{_unassignedCount}}</span>)</paper-checkbox>
+								</div><!-- end div -->
+							</div><!-- end .line-item-header -->
+						</div><!-- end .scrollable-area -->
+					</div><!-- end .line-item-container -->
+				</div><!-- end .tricomp-collapse-section-collapsable -->
+
+				<div class="tricomp-collapse-section-static">
+					<tricomp-groupmove-detail-header
+							id="header"
+							header-text-label="Move"
+							request$="{{openRequestWhereUrlParams.reqId}}"></tricomp-groupmove-detail-header>
+
+					<div class="container-search" hidden$="{{!_statusSearchSpace}}">
+						<span class="search-header-message">Pick your move to location.</span>
+
+						<triplat-ds-search-input
+							id="searchBuildingField"
+							class="search-input"
+							placeholder="Search location by building name, city or address"
+							search-icon-precede="true"
+							aliases="{{aliasesBuilding}}"
+							append-filters="{{appendBuildingFilters}}"
+							max-header-children="4"
+							value="{{valueBuilding}}">
+						</triplat-ds-search-input>
+
+						<div class="search-results" hidden$="{{_hideFloorBuildingContainer}}">
+							<div id="tableBuildingsContainer" class="container-table">
+								<div table-container class="table-floor">
+									<div tri-fixed-table clickable-rows class="inbox-table-inner">
+										<div tri-thead class="table-header">
+											<div tri-tr>
+												<div class="col-floor-checkbox">
+													<div tri-th></div>
+												</div><!-- end tri-tr -->
+
+												<div>
+													<div tri-th class="sort-column-header" data-column="moveDate">
+														<span tri-th-label class="sortColumnLabel">Building Name</span>
+													</div><!-- end tri-th -->
+												</div><!-- end div -->
+
+												<div>
+													<div tri-th class="sort-column-header" data-column="moveDate">
+														<span tri-th-label class="sortColumnLabel"></span>
+													</div><!-- end tri-th -->
+												</div><!-- end div -->
+											</div><!-- end tri-tr -->
+										</div><!-- end tri-thead -->
+
+										<div tri-tbody>
+											<template
+													is="dom-repeat"
+													id="buildingTableTemplate"
+													items="{{buildingSearchSelected}}"
+													observe="selected">
+
+												<div tri-tr class="table-row" id$="{{_computeRowId(item._id)}}" selected$="{{item.selected}}">
+													<div class="inbox-table-inner">
+														<div class="table-row-collapsed">
+															<div class="col-floor-checkbox" id="colIcons">
+	                              <div tri-td>
+	                                <paper-radio-button name="buidingList" class="inbox-checkbox" checked="{{item.selected}}" on-tap="_handleCheckboxBuildingSelect"></paper-checkbox>
+																</div><!-- end tri-td -->
+															</div><!-- end .col-floor-checkbox -->
+
+															<div>
+																<div tri-td>
+																	<div class="td-content-text">{{item.building}}</div>
+																</div><!-- end tri-td -->
+															</div><!-- end div -->
+
+															<div>
+																<div tri-td>
+																	<div class="td-content-floor"></div>
+																</div><!-- end tri-td -->
+															</div><!-- end div -->
+	                         	</div><!-- end .table-row-collapsed -->
+
+	                       		<iron-collapse class="table-row-collapse" id="inboxcollapse" opened="{{item.isExpanded}}" hidden$="{{!item.isExpanded}}">
+															<div class="table-row-collapsed collapsedRow-border">
+																	<div class="col-floor-checkbox collapsable-checkbox" id="colIcons">
+			                              								<div tri-td>
+																		</div><!-- end tri-td -->
+																	</div><!-- end .col-floor-checkbox -->
+
+																	<div class="locationColumn">
+																		<div tri-td></div>
+																	</div>
+
+																	<div>
+																		<div tri-td class="floor-td-text">
+																			<div class="td-content-text box-floor-text"><p>Select floor(s)<p></div>
+																		</div><!-- end tri-td -->
+																	</div><!-- end div -->
+			                         	</div><!-- end .table-row-collapsed -->
+
+			                         							<div class="table-row-collapsed">
+																	<div class="col-floor-checkbox collapsable-checkbox" id="colIcons">
+			                              <div tri-td>
+																		</div><!-- end tri-td -->
+																	</div><!-- end .col-floor-checkbox -->
+																	<div class="locationColumn">
+																		<div tri-td></div>
+																	</div>
+
+																	<div class="floor-tds">
+																		<div tri-td class="collapsable-floor-td">
+																			<div class="td-content-floor box-floor-list">
+
+																				<template
+																						is="dom-repeat"
+																						items="{{buildingFloorSearchSelected}}"
+																						observe="selected"
+																						hidden$="{{_loadingFloors}}">
+																					<div class="collapsable-floor-content">
+																						<p class="computedRow" selected$="{{item.selected}}">
+																							<paper-checkbox checked="{{item.selected}}" on-tap="_handleCheckboxFloorSelect"></paper-checkbox>
+																							<span>{{item.floor}}</span>
+																						</p>
+																					</div>
+																				</template>
+
+																				<div class="floor-td-text" hidden$="{{_loadingFloors}}">
+																					<p hidden$="{{_hasFloors(buildingFloorSearchSelected)}}">No floors found.</p>
+																				</div>
+
+
+
+																				<paper-spinner active hidden$="{{!_loadingFloors}}"></paper-spinner>
+																			</div>
+																		</div><!-- end tri-td -->
+																	</div><!-- end div -->
+			                         	</div><!-- end .table-row-collapsed -->
+															</iron-collapse>
+													</div><!-- end .inbox-table-inner -->
+											  </div><!-- end tri-tr -->
+											</template>
+										</div><!-- end tri-tbody -->
+									</div><!-- end tri-fixed-table -->
+								</div><!-- end table-container -->
+
+								<div card-container class="inbox-card-container"></div>
+							</div><!-- end .container-table -->
+						</div><!-- end .search-results -->
+
+						<paper-toast id="toastBuildingError" class="toast-error" duration="5000" text="It is not possible to select more than one building."></paper-toast>
+					</div><!-- end .container-search -->
+
+					<div class="main-container" hidden$="{{_statusSearchSpace}}">
+						<div class="space-container">
+							<triblock-tabs id="floorTabs" refresh-delay="700">
+								<template is="dom-repeat" items="{{moveToFloor}}" id="boxFloorTemplate">
+									<triblock-tab id="[[item._id]]" label$="{{item.name}}" tap-handler="_handleSelectedFloor" floor$="{{item}}" class="box-selected-test"></triblock-tab>
+								</template>
+							</triblock-tabs>
+
+							<div class="location">
+
+							</div><!-- end .location -->
+
+							<div class="container-date">
+								<div class="box-date-picker" on-tap="_calendarDialog">
+									<triplat-date-picker
+										label="Requested Move Date"
+										value="{{openRequest.moveDate}}"
+										display-format="{{currentUser._DateFormat}}"
+										disallow-past-dates></triplat-date-picker>
+								</div><!-- end .box-date-picker -->
+							</div><!-- end .container-date -->
+
+							<div class="header">
+								<div class="header-left">
+									<div>
+										{{moveToBuilding.name}} <span class="link-blue" on-tap="_changeLocation" hidden$="{{_completedRequest}}" tabindex="0" on-keypress="_changeLocation">Change</span>
+									</div><!-- end div -->
+								</div><!-- end .header-left -->
+
+								<div class="header-right" hidden$="{{_completedRequest}}">
+						    	<iron-selector class="tabs-container" hidden$="{{_hideTabs}}" selected="{{_selectedTab}}">
+										<div class="tab">
+											<triplat-icon id="floorplanViewIcon" icon="floorplan"></triplat-icon>
+											<!-- <span>Floor Plan</span> -->
+											<iron-icon class="icon-arrow" icon="hardware:keyboard-arrow-down"></iron-icon>
+										</div><!-- end .tab -->
+										<div class="tab">
+											<triplat-icon id="listViewIcon" icon="list-view"></triplat-icon>
+											<!-- <span>List</span> -->
+											<iron-icon class="icon-arrow" icon="hardware:keyboard-arrow-down"></iron-icon>
+										</div><!-- end .tab -->
+										<paper-tooltip for="floorplanViewIcon" position="bottom" animation-delay="0" offset="5">View as floor plan</paper-tooltip>
+										<paper-tooltip for="listViewIcon" position="bottom" animation-delay="0" offset="5">View as list</paper-tooltip>
+								</iron-selector><!-- end .tabs-container -->
+								</div><!-- end .header-right -->
+							</div><!-- end .header -->
+
+							<div>
+								<div class="box-floor-header" hidden$="{{_hideSearch}}">
+									<div class="search-input-container" hidden$="{{_hideSearch}}">
+										<triplat-ds-search-input
+											id="searchSpaceField"
+											class="search-input"
+											placeholder="Search"
+											search-icon-precede="true"
+											data="{{selectableSpaces}}"
+											aliases="{{aliases}}"
+											append-filters="{{appendSpaceFilters}}"
+											max-header-children="4"
+											value="{{_currentFilter}}">
+										</triplat-ds-search-input>
+
+										<triplat-ds-search-input
+											id="searchSpaceAssetsField"
+											class="search-input"
+											placeholder="Search"
+											search-icon-precede="true"
+											data="{{selectableSpaces}}"
+											aliases="{{aliases}}"
+											append-filters="{{appendSpaceAssetFilters}}"
+											max-header-children="4"
+											value="{{_currentFilter}}">
+										</triplat-ds-search-input>
+									</div><!-- end .search-input-container -->
+								</div><!-- end .box-floor-header -->
+							</div><!-- end div -->
+
+	      			<iron-pages id="spacesIronPages" class="main" selected="{{_selectedTab}}">
+								<div class="floorcontainer" hidden$="{{_computeIsEmpty(_selectedFloorObj._id)}}">
+									<div class="floorplan-load" hidden$="[[!_computeMoveToSpacesLoading(moveToSpacesLoading, moveToSpacesEntitlementsLoading)]]">
+										<paper-spinner active></paper-spinner>
+									</div>
+
+									<div class="floorcontainer-graphic">
+										<triplat-graphic
+												id="floorplandetail"
+												record-id="{{_selectedFloorObj._id}}"
+												svg-loaded="{{svgLoaded}}"
+												drawing-id-loading="{{drawingIdLoading}}">
+
+											<triplat-graphic-zoomable cached></triplat-graphic-zoomable>
+
+											<triplat-graphic-label id="graphicLabel" label-id="{{spaceLabelStyleId}}"></triplat-graphic-label>
+
+											<triplat-graphic-selectable
+													selectable="{{_availableSpaces}}"
+													selected="{{selectedSpaces}}"
+													enabled="{{!_completedRequest}}"
+													multi>
+											</triplat-graphic-selectable>
+
+											<triplat-graphic-highlight
+													class-number="1"
+													highlighted="{{_spaceToHighlight}}"
+													highlight-layer="INTERACTIVE">
+											</triplat-graphic-highlight>
+
+											<triplat-graphic-highlight-group
+													legend-spaces="{{_legendSpaces}}"
+													highlight-layer="ATTACHED">
+											</triplat-graphic-highlight-group>
+
+										    <triplat-graphic-pin pins="[[_computedPersonPinsList(moveLineItems)]]"
+									                icon="pin-person" enabled="[[_peoplePinsEnabled]]" selected="{{_selectedPersonPin}}">
+											</triplat-graphic-pin>
+
+											<triplat-graphic-pin pins="[[_computedAssetPinsList(moveLineItems)]]"
+									                icon="pin-asset" enabled="[[_assetPinsEnabled]]" selected="{{_selectedAssetPin}}">
+											</triplat-graphic-pin>
+
+											<triplat-graphic-pin pins="[[_computedEquipmentPinsList(moveLineItems)]]"
+									                icon="pin-equipment" enabled="[[_equipmentPinsEnabled]]"
+									                selected="{{_selectedEquipmentPin}}">
+											</triplat-graphic-pin>
+
+											<triplat-graphic-pin pins="[[_computedRoomPinsList(moveLineItems)]]"
+									                icon="pin-room-function" enabled="[[_roomPinsEnabled]]" selected="{{_selectedRoomPin}}">
+											</triplat-graphic-pin>
+
+											<triplat-graphic-drag-drop
+													accept-selector="iron-icon[id^='dip-'],iron-icon[id^='dia-'],iron-icon[id^='die-'],iron-icon[id^='dir-']"
+													drop-spaces="{{_availableSpaces}}"
+													space-selected="{{selectedSpaces}}">
+											</triplat-graphic-drag-drop>
+										</triplat-graphic>
+									</div><!-- end .floorcontainer-graphic -->
+
+									<div class="layout vertical">
+										<triplat-graphic-legend id="graphicLegend"
+												spaces="[[highlightGroupSpaces]]"
+												available-spaces="[[_availableSpaces]]"
+												legend-spaces="{{_legendSpaces}}"
+												show-by-selected="[[_legendLabels.organization]]"
+												filter-by-selected="[[_legendLabels.spaceClass]]"
+												on-opened-changed="_handleGraphicSizeChanged">
+
+											<triplat-graphic-legend-pin label="People" icon="pin-person"
+										            checked="{{_peoplePinsEnabled}}">
+											</triplat-graphic-legend-pin>
+
+											<triplat-graphic-legend-pin label="Asset" icon="pin-asset"
+										            checked="{{_assetPinsEnabled}}">
+											</triplat-graphic-legend-pin>
+
+											<triplat-graphic-legend-pin label="Equipment" icon="pin-equipment"
+										            checked="{{_equipmentPinsEnabled}}">
+											</triplat-graphic-legend-pin>
+
+											<triplat-graphic-legend-pin label="Room" icon="pin-room-function"
+										            checked="{{_roomPinsEnabled}}">
+											</triplat-graphic-legend-pin>
+
+											<triplat-graphic-legend-show-by id="showByOrg"
+													attribute="chargedToOrg"
+							        				color-by="orgColor"
+										    		label="[[_legendLabels.organization]]"
+													show-empty-criterion
+													empty-criterion-text="[[_legendLabels.noOrg]]"
+													mask-unavailable-spaces
+													show-all-checked>
+											</triplat-graphic-legend-show-by>
+
+											<triplat-graphic-legend-show-by id="showBySpaceClass"
+													attribute="spaceClass"
+							        				color-by="spaceClassColor"
+										    		label="[[_legendLabels.spaceClass]]"
+													show-empty-criterion
+													empty-criterion-text="[[_legendLabels.noSpaceClass]]"
+													mask-unavailable-spaces
+													show-all-checked>
+											</triplat-graphic-legend-show-by>
+
+											<triplat-graphic-legend-filter-by id="filterBySpaceClass"
+													attribute="spaceClass"
+											    	label="[[_legendLabels.spaceClass]]"
+													selected-criterions="{{_selectedClasses}}"
+													show-empty-criterion
+													empty-criterion-text="[[_legendLabels.noSpaceClass]]"
+													filter-all-checked>
+											</triplat-graphic-legend-filter-by>
+
+											<template is="dom-if" if="{{_showEntitleFilter}}">
+												<triplat-graphic-legend-filter-by spaces="[[filteredMoveToSpacesEntitlements]]"
+														label="Entitlements"
+														space-id-attribute-name="_id"
+														filter-all-checked>
+												</triplat-graphic-legend-filter-by>
+											</template>
+										</triplat-graphic-legend>
+									</div><!-- end .layout.vertical -->
+								</div><!-- end .floorcontainer -->
+
+								<div class="floorcontainer-list">
+									<div class="floorplan-load" hidden$="[[!_computeMoveToSpacesLoading(moveToSpacesLoading, moveToSpacesEntitlementsLoading)]]">
+										<paper-spinner active></paper-spinner>
+									</div>
+
+									<template is="dom-if" if="[[!_completedRequest]]">
+										<tricomp-space-list
+											spaces="[[_availableSpacesFinal]]"
+											selected-space="{{currentSpace}}"
+											on-space-selected="_handleSelectedSpaceList"></tricomp-space-list>
+									</template>
+
+									<template is="dom-if" if="[[_completedRequest]]">
+										<tricomp-space-list
+											spaces="{{filteredListSpaces}}"
+											selected-space="{{currentSpace}}"
+											read-only></tricomp-space-list>
+									</template>
+								</div><!-- end .floorcontainer-list -->
+							</iron-pages><!-- end #spacesIronPages -->
+						</div><!-- end .space-container -->
+
+						<paper-dialog id="itemRequiredDialog" class="dialog-msg" modal>
+							<h4 class="dialog-msg-title">Warning</h4>
+							<p>Select a required move line item, such as a person or asset.</p>
+
+							<div class="dialog-msg-buttons buttons">
+								<paper-button noink dialog-dismiss>Ok</paper-button>
+							</div><!-- end .buttons -->
+		  			</paper-dialog><!-- end .dialog-msg -->
+
+						<paper-dialog id="invalidSelectionDialog" class="dialog-msg" modal>
+							<h4 class="dialog-msg-title">Warning</h4>
+							<p>Selected space already assigned.</p>
+
+							<div class="dialog-msg-buttons buttons">
+								<paper-button noink dialog-dismiss>Ok</paper-button>
+							</div><!-- end .buttons -->
+		  			</paper-dialog><!-- end .dialog-msg -->
+
+						<paper-dialog id="calendarDialog" modal>
+							<paper-dialog-scrollable id="moveCalendarContainer">
+								<div class="calendar-mask" hidden$="{{!_completedRequest}}"> </div>
+
+								<triplat-calendar-container
+									id="calendar"
+									header="true"
+									no-fixed-position
+									value="{{_newMoveDate}}"
+									disallow-past-dates>
+								</triplat-calendar-container>
+							</paper-dialog-scrollable><!-- end paper-dialog-scrollable -->
+
+							<div class="buttons">
+								<paper-button noink dialog-dismiss on-tap="_handleChangeMoveDate" autofocus hidden$="{{_completedRequest}}">Ok</paper-button>
+								<paper-button secondary noink on-tap="_handleCancelChangeMoveDate" dialog-dismiss autofocus hidden$="{{_completedRequest}}">Cancel</paper-button>
+
+								<paper-button noink dialog-dismiss autofocus hidden$="{{!_completedRequest}}">Back</paper-button>
+							</div><!-- end .buttons -->
+		  			</paper-dialog><!-- end #invalidSelectionDialog -->
+
+						<tricomp-alert id="removeSpaceCompleteToast" type="success" title="Success" duration="2500"></tricomp-alert>
+						<tricomp-alert id="addSpaceCompleteToast" type="success" title="Success" duration="2500"></tricomp-alert>
+					</div><!-- end .main-container -->
+				</div><!-- end .tricomp-collapse-section-static -->
+			</tricomp-collapse-section>
+		</div><!-- end .content -->
+
+		<tricomp-alert id="addAllToast" type="info" title="Adding items" duration="-1"></tricomp-alert>
+		<tricomp-alert id="addAllCompleteToast" type="success" title="Success" text="Finished adding items" duration="2500"></tricomp-alert>
+		<tricomp-alert id="addAllTimeoutToast" type="info" text="Operation taking a long time. Still running in background" duration="2500"></tricomp-alert>
+
+		<iron-collapse id="actionButtonsCollapse" class="container-collapse-action" hidden="[[_hideRemoveLineItemActionBar(_completedRequest)]]" on-opened-changed="_handleGraphicSizeChanged">
+			<div class="container-action-button">
+				<!-- <paper-button noink class="actionbar-button" on-tap="_handleRemoveLineItemDialog">Remove Item</paper-button> -->
+
+				<div class="actionbar-selected"><span>{{_selectedRequests.length}}</span>&nbsp; SELECTED</div>
+				<div class="actionbar-12px"></div>
+				<!-- <paper-button class="actionbar-link" on-tap="_handleCancelSelectionsTap">Deselect All</paper-button> -->
+				<paper-button footer on-tap="_handleRemoveLineItemDialog" disabled$="{{_completedRequest}}" noink>Remove Item</paper-button>
+			</div><!-- end .container-action-button -->
+		</iron-collapse>
+
+		<iron-collapse id="searchBuildingCollapse" class="container-collapse-action" hidden$="{{!_statusSearchSpace}}">
+			<div class="container-action-button">
+				<paper-button noink footer on-tap="_addBuildingFloor" disabled$="{{_actionBtnDisabled}}">Done</paper-button>
+				<paper-button noink footer on-tap="_changeLocationCancel" hidden$="{{!moveToBuilding.name}}">Cancel</paper-button>
+			</div><!-- end .container-action-button -->
+		</iron-collapse>
+
+		<paper-dialog id="deleteMLIDialog" modal>
+			<p>Remove line items?</p>
+
+			<div class="buttons">
+				<paper-button noink dialog-dismiss on-tap="_handleRemoveLineItem">Remove</paper-button>
+				<paper-button secondary  noink dialog-dismiss>Cancel</paper-button>
+			</div><!-- end .buttons -->
+		</paper-dialog>
+
+		<paper-dialog id="dialogRemoveSpace" class="dialog-msg" modal>
+			<h4 class="dialog-msg-title">Warning</h4>
+			<p>The building/floor you are removing has associated move assignments. If you continue, these assignments can no longer be applied. Tap <b>Continue</b> to remove these assignments. Or tap <b>Cancel</b> to keep this building/floor and remove a different building/floor.</p>
+
+			<div class="dialog-msg-buttons buttons">
+				<paper-button noink dialog-dismiss on-tap="_removeSpaceAssignments">Continue</paper-button>
+				<paper-button secondary noink dialog-dismiss>Cancel</paper-button>
+			</div><!-- end .buttons -->
+		</paper-dialog>
+
+		<paper-dialog id="dialogNewDateRemoveSpace" class="dialog-msg" modal>
+			<h4 class="dialog-msg-title">Warning</h4>
+			<p>The date you selected has unavailable spaces that conflict with certain space assignment. If you continue, these assignments can no longer be applied. Tap <b>Continue</b> to remove these assignments. Or tap <b>Cancel</b> to keep this date and remove the assignments manually.</p>
+
+			<div class="dialog-msg-buttons buttons">
+				<paper-button noink dialog-dismiss on-tap="_removeNewDateSpaceAssignments">Continue</paper-button>
+				<paper-button secondary noink on-tap="_handleCancelChangeMoveDate" dialog-dismiss>Cancel</paper-button>
+			</div><!-- end .buttons -->
+		</paper-dialog>
+
+		<paper-dialog id="dialogWarningSpaceNotAvailable" class="dialog-msg" modal>
+			<h4 class="dialog-msg-title">Warning</h4>
+			<p>Sorry this space is not available.</p>
+
+			<div class="dialog-msg-buttons buttons">
+				<paper-button noink dialog-dismiss>Continue</paper-button>
+			</div><!-- end .buttons -->
+		</paper-dialog>
+
+	</template>
+</dom-module>
+
+<script>
+	LEGEND_DEBOUNCE_DELAY = 300;
+
+	Polymer({
+		is: "tripage-groupmove-where",
+
+		behaviors: [
+			TriBlockPageContainerBehavior,
+			Polymer.IronResizableBehavior,
+			TriPlatGraphicUtilitiesBehavior
+		],
+
+		properties: {
+
+			aliases: {
+				type: Object,
+				value: function() {
+					var __dictionary__id = "[Id]";
+					var __dictionary__space = "[Name]";
+					var __dictionary__spaceClass = "[Type]";
+					var __dictionary__occupancyStatus = "[Occupancy]";
+					var __dictionary__chargedToOrg = "[Charged To Organization]";
+					var _aliases = {};
+
+          _aliases["id"] = {alias: __dictionary__id, datasource: "moveToSpacesLookupID"};
+					_aliases["space"] = {alias: __dictionary__space, datasource: "moveToSpacesLookupName"};
+					_aliases["spaceClass"] = {alias: __dictionary__spaceClass, datasource: "moveToSpacesLookupType"};
+					_aliases["occupancyStatus"] = {alias: __dictionary__occupancyStatus, datasource: "moveToSpacesLookupOccupancy"};
+					_aliases["chargedToOrg"] = {alias: __dictionary__chargedToOrg, datasource: "moveToSpacesLookupChargedToOrg"};
+
+
+					return _aliases;
+				}
+			},
+
+			//=========================================================
+			// Property aliasesBuilding
+			//------------------------------------------
+			// Objective: Aliases used in the building search
+			//=========================================================
+			aliasesBuilding: {
+				type: Object,
+				value: function() {
+					var __dictionary__building = "[Building]";
+					var __dictionary__city = "[City]";
+					var __dictionary__address = "[Address]";
+					var __dictionary__property = "[Property]";
+					var _aliasesBuilding = {};
+
+					_aliasesBuilding["building"] = {alias: __dictionary__building, datasource: "lookupBuildingName"};
+					_aliasesBuilding["city"] = {alias: __dictionary__city, datasource: "lookupBuildingCity"};
+					_aliasesBuilding["address"] = {alias: __dictionary__address, datasource: "lookupBuildingAddress"};
+					_aliasesBuilding["property"] = {alias: __dictionary__property, datasource: "lookupBuildingProperty"};
+
+					return _aliasesBuilding;
+				}
+			},
+
+			_accordionSelector : Object,
+
+			_accordionTemplate : Object,
+
+			_assetOpened : {
+				type : Boolean,
+				value : false
+			},
+
+			assetSelected : {
+				type: Boolean,
+				value: false
+			},
+
+			_checkboxEnabled: {
+				type: Boolean,
+				value: false,
+				notify: true,
+			},
+
+			_completedRequest:{
+				type: Boolean,
+				value: false,
+				computed: "_isCompleteRequest(openRequest.status)"
+			},
+
+			_currentAssetAssignedCount: {
+				type: Number,
+				value: 0,
+			},
+
+			_currentAssetCount: {
+				type: Number,
+				value: 0,
+			},
+
+			_currentAssignedCount: {
+				type: Number,
+				value: 0,
+			},
+
+			_currentCount: {
+				type: Number,
+				value: 0,
+			},
+
+			_currentEquipmentAssignedCount: {
+				type: Number,
+				value: 0,
+			},
+
+			_currentEquipmentCount: {
+				type: Number,
+				value: 0,
+			},
+
+			_currentFilter: {
+				type: String,
+				notify: true,
+			},
+
+			currentMLI : {
+				type : Number,
+				value : "",
+			},
+
+			_currentPeopleAssignedCount: {
+				type: Number,
+				value: 0,
+			},
+
+			_currentPeopleCount: {
+				type: Number,
+				value: 0,
+			},
+
+			_currentRoomAssignedCount: {
+				type: Number,
+				value: 0,
+			},
+
+			_currentRoomCount: {
+				type: Number,
+				value: 0,
+			},
+
+			currentSpace: {
+				type: Object,
+				notify: false,
+			},
+
+			currentSpaceHighlight: {
+				type: Object,
+				value: [],
+				notify: true,
+			},
+
+			_displayLoadingIndicator: {
+				type: Boolean,
+				value: true,
+			},
+
+			_equipmentOpened : {
+				type : Boolean,
+				value : false
+			},
+
+			equipmentSelected : {
+				type: Boolean,
+				value: false
+			},
+
+			filteredListSpaces : {
+				type : Array,
+				notify : true,
+			},
+
+			findFloor: {
+				type: Object,
+				value: {
+					_id: null,
+					Floor: "",
+				}
+			},
+
+			_fixDelete: {
+				type: Boolean,
+				value: false,
+			},
+
+			_hideSearch : {
+				type: Boolean,
+				value: false
+			},
+
+			_hideTabs : {
+				type: Boolean,
+				value: false
+			},
+
+			highlightGroupSpaces : {
+				type : Array,
+				notify : true,
+			},
+
+			_initMLI: {
+				type: Boolean,
+				value: false,
+			},
+
+			_initSpaces: {
+				type: Boolean,
+				value: false,
+			},
+
+			lastLineItemSelected: {
+				type: Object,
+				value: "",
+			},
+
+			mliRecords : {
+				type : Array,
+				notify : true,
+			},
+
+			moveLineItems: {
+				type: Array,
+				notify: true,
+			},
+
+			moveToSpace: {
+				type: Object,
+				notify: false,
+				readOnly: false,
+				observer: '_handleSelectedSpaceChange',
+			},
+
+			spaceLabelStyleId : Number,
+
+			_peopleOpened : {
+				type : Boolean,
+				value : true
+			},
+
+			personSelected : {
+				type: Boolean,
+				value: true
+			},
+
+			progress: {
+				type: Number,
+				value: 0,
+			},
+
+			_removeOld: {
+				type: Boolean,
+				value: false,
+			},
+
+			_removeIcon: {
+				type: Boolean,
+				value: false,
+			},
+
+			_roomOpened : {
+				type : Boolean,
+				value : false
+			},
+
+			roomSelected : {
+				type: Boolean,
+				value: false
+			},
+
+			selectableSpaces : {
+				type : Array,
+				notify : true,
+			},
+
+			_selectedElement: {
+				type: Object,
+				observer: "_handleSelectedElement"
+			},
+
+			_selectedLineItem: Object,
+
+			selectedSpaces : {
+				type : Array,
+				notify : true,
+			},
+
+			_selectedTab : {
+				type : Number,
+				value : 0,
+				observer: '_handleSelectedTabChange',
+			},
+
+			_skip: {
+				type: Boolean,
+				value: false,
+			},
+
+			_toastDisplayed : {
+				type : Boolean,
+				value : false
+			},
+
+			_refreshInterval: {
+				type : Number,
+				value : 8000
+			},
+			_maxNumberRefresh: {
+				type : Number,
+				value : 30
+			},
+			_currentNumberRefresh: {
+				type : Number,
+				value : 0
+			},
+
+			//=========================================================
+			// Property _startup
+			//------------------------------------------
+			// Objective: Determine if the page is starting up
+			//=========================================================
+			_startup : {
+				type : Boolean,
+				value : true
+			},
+
+			_unassignedCount: {
+				type: Number,
+				value: 0,
+			},
+
+			//=========================================================
+			// Property _statusSearchSpace
+			//------------------------------------------
+			// Objective: Determine when to show the Search Building Container
+			//=========================================================
+			_statusSearchSpace : {
+				type: Boolean,
+				value: true
+			},
+
+			//=========================================================
+			// Property _hideFloorBuildingContainer
+			//------------------------------------------
+			// Objective: Determine when to show the Floor List of a Building
+			//=========================================================
+			_hideFloorBuildingContainer : {
+				type: Boolean,
+				value: true
+			},
+
+			//=========================================================
+			// Property _selectedBuildings
+			//------------------------------------------
+			// Objective: Array of the selected buildings
+			//=========================================================
+			_selectedBuildings : {
+				type: Array,
+				value: []
+			},
+
+			//=========================================================
+			// Property _selectedBuilding
+			//------------------------------------------
+			// Objective: Object of the selected building
+			//=========================================================
+			_selectedBuilding : {
+				type: Object,
+				value: function() { return {}; }
+			},
+
+			//=========================================================
+			// Property _finalBuilding
+			//------------------------------------------
+			// Objective: Building that is about to be added to the request
+			// Necessary because _selectedBuilding is clean after the button click - assynchronous actions are called after
+			//=========================================================
+			_finalBuilding : {
+				type: Object,
+				value: function() { return {}; }
+			},
+
+			//=========================================================
+			// Property _selectedFloors
+			//------------------------------------------
+			// Objective: Contain the array of floors selected
+			//=========================================================
+			_selectedFloors: {
+				type: Array,
+				value: []
+			},
+
+			//=========================================================
+			// Property _selectedFloorObj
+			//------------------------------------------
+			// Objective: Contain the selected floor object to assign space
+			//=========================================================
+			_selectedFloorObj: {
+				type: Object,
+				observer: "handleSelectedFloorObjChanged"
+			},
+
+			//=========================================================
+			// Property _finalFloors
+			//------------------------------------------
+			// Objective: Floors that are about to be added to the request
+			// Necessary because _selectedFloors is clean after the button click - assynchronous actions are called after
+			//=========================================================
+			_finalFloors : {
+				type: Array,
+				value: []
+			},
+
+			//=========================================================
+			// Property _startupMoveToFloor
+			//------------------------------------------
+			// Objective: Determine if the moveToFloor was startup
+			//=========================================================
+			_startupMoveToFloor: {
+				type: Boolean,
+				value: true
+			},
+
+			//=========================================================
+			// Property _actionBtnDisabled
+			//------------------------------------------
+			// Objective: Determine the status of the action button - should be disabled until a checkbox is clicked
+			//=========================================================
+			_actionBtnDisabled: {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _loadingFloors
+			//------------------------------------------
+			// Objective: Determine when to show a loading when search for floors
+			//=========================================================
+			_loadingFloors: {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _statusChangeLocation
+			//------------------------------------------
+			// Objective: Status control when to change location
+			//=========================================================
+			_statusChangeLocation: {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _spaceAssignmentsToRemove
+			//------------------------------------------
+			// Objective: Array of MLI to remove the space assignments
+			//=========================================================
+			_spaceAssignmentsToRemove: {
+				type: Array,
+				value: []
+			},
+
+			//=========================================================
+			// Property _hasSpaces
+			//------------------------------------------
+			// Objective: Indicate if has spaces
+			//=========================================================
+			_hasSpaces: {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _loadingFloorPlan
+			//------------------------------------------
+			// Objective: Indicate when to show the loading floor plan spinner
+			//=========================================================
+			_loadingFloorPlan: {
+				type: Boolean,
+				value: true
+			},
+
+			//=========================================================
+			// Property _availableSpaces
+			//------------------------------------------
+			// Objective: Hold available spaces
+			//=========================================================
+			_availableSpaces : {
+				type : Array,
+				notify : true,
+			},
+
+
+			//=========================================================
+			// Property _peoplePinsEnabled
+			//------------------------------------------
+			// Objective: Indicate if the people pins are enabled or not.
+			//=========================================================
+			_peoplePinsEnabled: {
+				type: Boolean,
+				value: true
+			},
+
+			//=========================================================
+			// Property _selectedPersonPin
+			//------------------------------------------
+			// Objective: The selected person pin in the graphic.
+			//=========================================================
+			_selectedPersonPin: {
+				type:Object,
+				observer: "_handleSelectedPersonPinChanged"
+			},
+
+			//=========================================================
+			// Property _assetPinsEnabled
+			//------------------------------------------
+			// Objective: Indicate if the asset pins are enabled or not.
+			//=========================================================
+			_assetPinsEnabled: {
+				type: Boolean,
+				value: true
+			},
+
+			//=========================================================
+			// Property _selectedAssetPin
+			//------------------------------------------
+			// Objective: The selected asset pin in the graphic.
+			//=========================================================
+			_selectedAssetPin: {
+				type:Object,
+				observer: "_handleSelectedAssetPinChanged"
+			},
+
+			//=========================================================
+			// Property _equipmentPinsEnabled
+			//------------------------------------------
+			// Objective: Indicate if the equipment pins are enabled or not.
+			//=========================================================
+			_equipmentPinsEnabled: {
+				type: Boolean,
+				value: true
+			},
+
+			//=========================================================
+			// Property _selectedEquipmentPin
+			//------------------------------------------
+			// Objective: The selected equipment pin in the graphic.
+			//=========================================================
+			_selectedEquipmentPin: {
+				type:Object,
+				observer: "_handleSelectedEquipmentPinChanged"
+			},
+
+			//=========================================================
+			// Property _roomPinsEnabled
+			//------------------------------------------
+			// Objective: Indicate if the room pins are enabled or not.
+			//=========================================================
+			_roomPinsEnabled: {
+				type: Boolean,
+				value: true
+			},
+
+			//=========================================================
+			// Property _selectedRoomPin
+			//------------------------------------------
+			// Objective: The selected room pin in the graphic.
+			//=========================================================
+			_selectedRoomPin: {
+				type:Object,
+				observer: "_handleSelectedRoomPinChanged"
+			},
+
+			//=========================================================
+			// Property _applicationSettingsLoaded
+			//------------------------------------------
+			// Objective: Indicate when the Application Settings are loaded
+			//=========================================================
+			_applicationSettingsLoaded: {
+				type: Boolean
+			},
+
+			//=========================================================
+			// Property _restrictEntitlements
+			//------------------------------------------
+			// Objective: Indicate when to restrict entitlements
+			//=========================================================
+			_restrictEntitlements: {
+				type: Boolean
+			},
+
+			//=========================================================
+			// Property _showEntitleFilter
+			//------------------------------------------
+			// Objective: Determine when to show the entitlements filter
+			//=========================================================
+			_showEntitleFilter: {
+				type: Boolean
+			},
+
+			//=========================================================
+			// Property _lastLineItemSelected
+			//------------------------------------------
+			// Objective: Indicate the last line item that was selected
+			// Created because sometimes even when deselecting a MLI the selected line item method is called.
+			//=========================================================
+			_lastLineItemSelected: {
+				type: String,
+				value: ""
+			},
+
+			//=========================================================
+			// Property _lastTabSelected
+			//------------------------------------------
+			// Objective: Indicate the last floor tab that was selected
+			//=========================================================
+			_lastTabSelected: {
+				type: String,
+				value: ""
+			},
+
+			//=========================================================
+			// Property _newMoveDate
+			//------------------------------------------
+			// Objective: New move date selected from the calendar
+			//=========================================================
+			_newMoveDate: {
+				type: String,
+				value: ""
+			},
+
+			//=========================================================
+			// Property _statusChangeMoveDate
+			//------------------------------------------
+			// Objective: Indicate when to change move date
+			//=========================================================
+			_statusChangeMoveDate: {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _temporaryFloor
+			//------------------------------------------
+			// Objective: Hold a floor obj temporary
+			//=========================================================
+			_temporaryFloor: {
+				type: Object
+			},
+
+			//=========================================================
+			// Property _temporaryFloorsSpaces
+			//------------------------------------------
+			// Objective: Hold the array of spaces for the current floors
+			//=========================================================
+			_temporaryFloorsSpaces: {
+				type: Array,
+				value: []
+			},
+
+			//=========================================================
+			// Property _temporaryFloorsSpacesControl
+			//------------------------------------------
+			// Objective: Control when to load the array of all spaces
+			//=========================================================
+			_temporaryFloorsSpacesControl: {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _temporaryFloorsSpacesControlNumber
+			//------------------------------------------
+			// Objective: Control the number of floors
+			//=========================================================
+			_temporaryFloorsSpacesControlNumber: {
+				type: Number,
+				value: 0
+			},
+
+			//=========================================================
+			// Property _moveToFloorLoaded
+			//------------------------------------------
+			// Objective: Control if the moveToFloor DS was loaded 1 time
+			//=========================================================
+			_moveToFloorLoaded: {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _moveToAllSpaces
+			//------------------------------------------
+			// Objective: Array of all spaces
+			//=========================================================
+			_moveToAllSpaces: {
+				type: Array,
+				value: []
+			},
+
+			//=========================================================
+			// Property _selectedRequests
+			//------------------------------------------
+			// Objective: Array of MLI checkbox selected
+			//=========================================================
+			_selectedRequests: {
+				type: Array,
+				value: []
+			},
+
+			//=========================================================
+			// Property _refreshGraphic
+			//------------------------------------------
+			// Objective: Indicate when to refresh the Graphic component
+			//=========================================================
+			_refreshGraphic: {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _invalidDate
+			//------------------------------------------
+			// Objective: Indicate when the request move date is invalid
+			//=========================================================
+			_invalidDate: {
+				type: Boolean,
+				value: false
+			},
+
+			//=========================================================
+			// Property _roomToHighligth
+			//------------------------------------------
+			// Objective: String ID of the room to be highlighted in the graphic
+			//=========================================================
+			_roomToHighligth: {
+				type: String,
+				value: ""
+			},
+
+			//=========================================================
+			// Property _spaceToHighlight
+			//------------------------------------------
+			// Objective: Object of the space to be highlighted in the graphic
+			//=========================================================
+			_spaceToHighlight: {
+				type: Object
+			},
+
+			//=========================================================
+			// Property tempRequest
+			//------------------------------------------
+			// Objective: Hold a temporary request
+			//=========================================================
+			tempRequest: {
+				type: Object,
+				value: function() { return {}; }
+			},
+
+			appendSpaceFilters: {
+				type: Array,
+				value: []
+			},
+
+			appendSpaceAssetFilters: {
+				type: Array,
+				value: []
+			},
+
+			//=========================================================
+			// Property _legendLabels
+			//------------------------------------------
+			// Objective: Map of translated labels for the graphic legend.
+			//=========================================================
+			_legendLabels: {
+				type: Object,
+				value: function() {
+					var __dictionary__organization = "Organization";
+					var __dictionary__spaceClass = "Space Class";
+					var __dictionary__noOrg = "No Org";
+					var __dictionary__noSpaceClass = "No Space Class";
+
+					var _labels = {};
+					_labels["organization"] = __dictionary__organization;
+                    _labels["spaceClass"] = __dictionary__spaceClass;
+                    _labels["noOrg"] = __dictionary__noOrg;
+                    _labels["noSpaceClass"] = __dictionary__noSpaceClass;
+
+					return _labels;
+				}
+			},
+
+			_selectedFloorId: {
+				type: Number,
+				value: 0,
+				computed: "_computeSelectedFloorId(_selectedFloorObj._id)",
+				observer: "_observeSelectedFloorId"
+			}
+		},
+
+		observers: [
+			'_onChangeFindFloor(findFloor)',
+			'_setGraphicTab(svgLoaded)',
+			'_handleSelectedSpaceFloorPlan(selectedSpaces.splices)',
+			'_handleSelectableSpacesChange(selectableSpaces)',
+			'_handleFilteredSpacesChange(filteredSpaces)',
+			'_handleFilteredSpacesAssetsChange(filteredSpacesAssets)',
+			'_handleBuildingSearch(buildingSearch)',
+			'_handleFloorsResults(buildingFloorSearchSelected)',
+			"_handleSelectedRequestsLengthChange(_selectedRequests.length)",
+			"_setBuildingFloorSearchSelected(buildingFloors, _selectedFloors)",
+			"_setBuildingSearchSelected(_selectedBuildings.*)"
+		],
+
+		listeners: {
+			'peopleAccordion.initialize' : '_handleInitialize',
+			'peopleAccordion.select' : '_handleSelectedLineItem',
+			'peopleAccordion.deselect' : '_handleDeselectLineItem',
+			'peopleAccordion.remove' : '_handleRemove',
+			'peopleAccordion.selectLineCheckbox' : '_selectLineCheckbox',
+			'peopleAccordion.deselectLineCheckbox' : '_deselectLineCheckbox',
+			'assetAccordion.initialize' : '_handleInitialize',
+			'assetAccordion.select' : '_handleSelectedLineItem',
+			'assetAccordion.deselect' : '_handleDeselectLineItem',
+			'assetAccordion.remove' : '_handleRemove',
+			'assetAccordion.selectLineCheckbox' : '_selectLineCheckbox',
+			'assetAccordion.deselectLineCheckbox' : '_deselectLineCheckbox',
+			'equipmentAccordion.initialize' : '_handleInitialize',
+			'equipmentAccordion.select' : '_handleSelectedLineItem',
+			'equipmentAccordion.deselect' : '_handleDeselectLineItem',
+			'equipmentAccordion.remove' : '_handleRemove',
+			'equipmentAccordion.selectLineCheckbox' : '_selectLineCheckbox',
+			'equipmentAccordion.deselectLineCheckbox' : '_deselectLineCheckbox',
+			'roomAccordion.initialize' : '_handleInitialize',
+			'roomAccordion.select' : '_handleSelectedLineItem',
+			'roomAccordion.deselect' : '_handleDeselectLineItem',
+			'roomAccordion.remove' : '_handleRemove',
+			'roomAccordion.selectLineCheckbox' : '_selectLineCheckbox',
+			'roomAccordion.deselectLineCheckbox' : '_deselectLineCheckbox',
+			'drop' : '_dropHandler',
+			"spaceLabelStyleDs.ds-get-complete" : "_handlePeopleLabelStyle",
+			//-- --//
+			"header.reset": "_handleReset",
+			"header.toggleCollapse": "_toggleExpandMLI",
+			"header.invalid-date": "_handleInvalidDate",
+		},
+
+		_handleFilteredSpacesChange: function(spaces) {
+			// If Statement: Check if the floor has spaces
+			if (spaces) {
+				// If Statement: Check if the array of floors has spaces
+				if (spaces.length > 0) {
+					// Has Spaces
+					this.set("_hasSpaces", true);
+					// Hide Loading
+					this.set("_loadingFloorPlan", false);
+				} else {
+					// No Spaces
+					this.set("_hasSpaces", false);
+					// Hide Loading
+					this.set("_loadingFloorPlan", false);
+				}// end if
+			} else {
+				// No Spaces
+				this.set("_hasSpaces", false);
+				// Show Loading - When change floor
+				if (spaces) {
+					if (this._selectedFloorObj._id == spaces[0].floorID) {
+						this.set("_loadingFloorPlan", true);
+					}// end if
+				}// end if
+			}// end if
+
+			this.set("filteredListSpaces", spaces);
+
+			if (!this.appendSpaceFilters.length > 0) {
+				this.$.searchSpaceField.clearSearch();
+				this.$.searchSpaceAssetsField.clearSearch();
+			}// end if
+		},
+
+		_handleFilteredSpacesAssetsChange: function(spaces) {
+			this.set("filteredListSpaces", spaces);
+
+			if (!this.appendSpaceAssetFilters.length > 0) {
+				this.$.searchSpaceField.clearSearch();
+				this.$.searchSpaceAssetsField.clearSearch();
+			}// end if
+		},
+
+	    addTempSpace: function (space) {
+	    	this._displayLoadingIndicator = false;
+	    	this.$.assignedSpaces.addRecord(space, TriPlatDs.RefreshType.BOTH);
+	    },
+
+    _clearMoveToLocation: function (mli) {
+    	this._displayLoadingIndicator = false;
+
+			// If Statement: Check if there's a selected line item
+			if (this._selectedLineItem) {
+				this._selectedLineItem.toSpace = null;
+			}// end if
+
+    	this.$.moveLineItems.performAction(mli, TriPlatDs.RefreshType.BOTH, "defaultActions", "clearMoveToLocation");
+    	var __dictionary__removeSpaceCompleteToastMessage = "Space assignment removed.";
+    	this.$.removeSpaceCompleteToast.message = __dictionary__removeSpaceCompleteToastMessage;
+			this.$.removeSpaceCompleteToast.open();
+			this.set("_refreshGraphic", true);
+    },
+
+		_computeIsEmpty: function(recordId) {
+			if (recordId && recordId != "" && recordId != 0) {
+				return false;
+			}// end if
+
+			return true;
+		},
+
+		_computedFilteredAssetList: function(unFilteredData) {
+		 	if (unFilteredData) {
+				var filteredData = unFilteredData.filter(function(record) {
+					if ((record.moveType == "Asset") && ((record.moveWith == null)||(record.moveWith == record.itemName))) {
+					   	return true;
+					}// end if
+
+					return false;
+				});
+
+				return filteredData;
+			}// end if
+		},
+
+		_computedAssetPinsList: function(unFilteredData) {
+	 		var assetPinsList = [];
+	 		var filteredAssetList = this._computedFilteredAssetList(unFilteredData);
+	 		for (var i = 0; filteredAssetList && i < filteredAssetList.length; i++) {
+	 			assetPinsList[i] = this._createAssetPin(filteredAssetList[i]);
+	 		}
+	 		return assetPinsList;
+	 	},
+
+		_createAssetPin: function(moveLineItem) {
+			return this._createPin(moveLineItem, "assetName");
+		},
+
+	 	_createPin: function(moveLineItem, labelAttrName) {
+	 		var pin = null;
+	 		if (moveLineItem) {
+	 			pin = {};
+	 			pin.originalMLI = moveLineItem;
+	 			var label = this.get(labelAttrName,moveLineItem);
+	        	if (!label) {
+	        		label = "";
+	        	}
+	 			pin.label = label;
+	 			if (moveLineItem.toSpaceId) {
+	 				pin._id = moveLineItem.toSpaceId;
+	 				pin.space = moveLineItem.toSpace;
+	 			} else {
+	 				pin._id = moveLineItem.roomRecordId;
+	 				pin.space = moveLineItem.fromSpace;
+	 			}
+	 		}
+	 		return pin;
+	 	},
+
+		_computedFilteredEquipmentList: function(unFilteredData) {
+		 	if (unFilteredData) {
+				var filteredData = unFilteredData.filter(function(record) {
+					if ((record.moveType == "Equipment") && ((record.moveWith == null)||(record.moveWith == record.itemName))) {
+					   	return true;
+					}// end if
+
+					return false;
+				});
+
+				return filteredData;
+			}// end if
+		 },
+
+		 _computedEquipmentPinsList: function(unFilteredData) {
+	 		var equipmentPinsList = [];
+	 		var filteredEquipmentList = this._computedFilteredEquipmentList(unFilteredData);
+	 		for (var i = 0; filteredEquipmentList && i < filteredEquipmentList.length; i++) {
+	 			equipmentPinsList[i] = this._createEquipmentPin(filteredEquipmentList[i]);
+	 		}
+	 		return equipmentPinsList;
+	 	},
+
+	 	_createEquipmentPin: function(moveLineItem) {
+	 		return this._createPin(moveLineItem, "equipmentName");
+	 	},
+
+		_computedFilteredItemsList: function(unFilteredData) {
+		 	if (unFilteredData) {
+				var filteredData = unFilteredData.filter(function(record) {
+					if ((record.moveType == "Person") && ((record.moveWith == null)||(record.moveWith == record.itemName))) {
+					   	return true;
+					}// end if
+					if ((record.moveType == "Asset") && ((record.moveWith == null)||(record.moveWith == record.itemName))) {
+					   	return true;
+					}
+					else if ((record.moveType == "Equipment") && ((record.moveWith == null)||(record.moveWith == record.itemName))) {
+					   	return true;
+					}
+					else if (record.moveType == "Room Function") {
+					   	return true;
+					}// end if
+
+					return false;
+				});
+
+				return filteredData;
+			}// end if
+		},
+
+    _computedFilteredPersonList: function(unFilteredData) {
+   		if (unFilteredData) {
+				var filteredData = unFilteredData.filter(function(record) {
+					if (record.moveType == "Person") {
+						return true;
+					}// end if
+
+					return false;
+				}.bind(this));
+
+				this._currentPeopleCount = filteredData.length;
+
+				return filteredData;
+			}// end if
+	 	},
+
+	 	_computedPersonPinsList: function(unFilteredData) {
+	 		var personPinsList = [];
+	 		var filteredPersonList = this._computedFilteredPersonList(unFilteredData);
+	 		for (var i = 0; filteredPersonList && i < filteredPersonList.length; i++) {
+	 			personPinsList[i] = this._createPersonPin(filteredPersonList[i]);
+	 		}
+	 		return personPinsList;
+	 	},
+
+	 	_createPersonPin: function(moveLineItem) {
+	 		return this._createPin(moveLineItem, "personName");
+	 	},
+
+		_computedFilteredRoomList: function(unFilteredData) {
+		 	if (unFilteredData) {
+				var filteredData = unFilteredData.filter(function(record) {
+					if (record.moveType == "Room Function") {
+					   	return true;
+					}// end if
+
+					return false;
+				});
+
+				return filteredData;
+			}// end if
+		},
+
+		_computedRoomPinsList: function(unFilteredData) {
+	 		var roomPinsList = [];
+	 		var filteredRoomList = this._computedFilteredRoomList(unFilteredData);
+	 		for (var i = 0; filteredRoomList && i < filteredRoomList.length; i++) {
+	 			roomPinsList[i] = this._createRoomPin(filteredRoomList[i]);
+	 		}
+	 		return roomPinsList;
+	 	},
+
+		_createRoomPin: function(moveLineItem) {
+			return this._createPin(moveLineItem, "fromSpace");
+		},
+
+		_decrementAssignedCount: function (mli) {
+			if (mli.moveType == 'Person') {
+				this._currentPeopleAssignedCount--;
+			}
+			else if (mli.moveType == 'Asset') {
+				this._currentAssetAssignedCount--;
+			}
+			else if (mli.moveType == 'Equipment')  {
+				this._currentEquipmentAssignedCount--;
+			}
+			else if (mli.moveType == 'Room Function') {
+				this._currentRoomAssignedCount--;
+			}// end if
+
+			this._currentAssignedCount--;
+			this.set("_currentAssignedCount", this._currentAssignedCount);
+			var progress =  this._currentAssignedCount / this._currentCount;
+			this.set("progress", progress);
+		},
+
+		_dropHandler: function(e) {
+			var dragTarget = e.detail.dragTarget;
+			var dropTarget = e.detail.dropTarget;
+			var itemId = dragTarget.getAttribute("data-info");
+
+			if (dropTarget) {
+				var dropInfo = dropTarget.space;
+			} else {
+				this.$.dialogWarningSpaceNotAvailable.open();
+			}// end if
+		},
+
+		_findSpace: function(spaces) {
+			for (var i = 0; i < spaces.length; i++) {
+		 		if ((this._selectedLineItem.toBuilding == spaces[i].building) &&
+					(this._selectedLineItem.toFloor == spaces[i].floor) &&
+					(this._selectedLineItem.toSpace == spaces[i].space)) {
+					this.set("currentSpaceHighlight", spaces[i]);
+					this.set("currentSpace", spaces[i]);
+
+					break;
+		 		}// end if
+			}// end for
+		},
+
+		_getSpaceCount: function(selectedLineItem) {
+			var spaceCount = 0;
+			//var assetMLIs = this._computedFilteredAssetRoomList(this.moveLineItems);
+			var MLIs = this._computedFilteredItemsList(this.moveLineItems);
+
+			// Current MLI
+			var selectedLineItem = selectedLineItem;
+
+			for (var i = 0; i < MLIs.length; i++) {
+				if ((selectedLineItem.toBuilding == MLIs[i].toBuilding) &&
+					(selectedLineItem.toFloor == MLIs[i].toFloor) &&
+					(selectedLineItem.toSpace == MLIs[i].toSpace)) {
+					spaceCount++;
+				}// end if
+			}// end for
+
+			return spaceCount;
+		},
+
+    _handleAddTempSpaceComplete: function () {
+    	this.$.moveLineItems.performAction(this.currentMLI, TriPlatDs.RefreshType.BOTH, "defaultActions", "updateLocation");
+
+    	this.set("currentSpaceHighlight", null);
+			this.set("currentSpace", null);
+			this.set("_refreshGraphic", true);
+    },
+
+   	_handleAddTempSpaceError: function () {
+    	// console.log("_handleAddTempSpaceError...");
+   	},
+
+		_handleDeselectLineItem: function(e) {
+			this._selectedLineItem = null;
+			this._selectedPersonPin = null;
+			this._selectedAssetPin = null;
+			this._selectedEquipmentPin = null;
+			this._selectedRoomPin = null;
+			this.currentMLI = null;
+			this.set("currentSpaceHighlight", null);
+			this.set("currentSpace", null);
+			sessionStorage.clear();
+			this.set("_lastLineItemSelected", "");
+
+			// Search Field: Hide Search for Space People
+			this.$.searchSpaceField.hidden = true;
+			// Search Field: Show Search for Space Assets
+			this.$.searchSpaceAssetsField.hidden = false;
+			// Search Field: Clear Search Field for Space People
+			this.$.searchSpaceField.clearSearch();
+			// Search Field: Clear Search Field for Space Assets
+			this.$.searchSpaceAssetsField.clearSearch();
+
+			// Set spaces to be assets spaces
+			// This is needed to show all spaces when deselecting a person MLI
+			this.set("selectableSpaces", this.moveToSpacesAssets);
+			this.set("filteredListSpaces", this.filteredSpacesAssets);
+
+			this.debounce(
+					"refreshLegend",
+					this.updateHighlightGroupSpaces.bind(this, this.moveToSpacesAssets),
+					LEGEND_DEBOUNCE_DELAY
+			);
+
+			// Remove Graphic Hightlight
+			this.set("_roomToHighligth", "");
+
+			this.debounce(
+					"refreshAvailableSpace",
+					function() {
+						// If Statement: Check if the request move date is invalid
+						if (this._invalidDate) {
+							this.set("_availableSpaces", []);
+						} else {
+							this.set("_availableSpaces", this.moveToSpacesAssets);
+						}// end if
+					},
+					LEGEND_DEBOUNCE_DELAY
+			);
+
+			// If Statement: Check if entitlements is not enabled
+			if (!this._restrictEntitlements) {
+				this.set("_showEntitleFilter", false);
+			}// end if
+		},
+
+		_handleInitialize: function(e) {
+			// Clear current selection
+			if (this._accordionSelector) {
+				this._accordionSelector.selected = null;
+				this._accordionTemplate.render();
+			}// end if
+
+			var referrence = e;
+			this._accordionSelector = e.detail.selectorMoveLineItems;
+			this._accordionTemplate = e.detail.moveItemsTemplate;
+		},
+
+		_handleItemRequiredDialogOpen: function(e) {
+			this.$.itemRequiredDialog.open();
+		},
+
+		_handleInvalidSelectionDialogOpen: function(e) {
+			this.$.invalidSelectionDialog.open();
+		},
+
+		//=========================================================
+		// Function _handleMLIDSGetComplete
+		//------------------------------------------
+		// Objective: Initialize the MLI process - Function called when moveLineItems DS get complete
+		//=========================================================
+		_handleMLIDSGetComplete: function() {
+			this._initMLI = false;
+			this.set("mliRecords", []);
+			this.set("currentSpace", null);
+			this.set("_selectedTab", 0);
+			this._updateCount();
+			this.set("_initMLI", true);
+			this._handlingSelectedPersonPinChanged = false;
+			this._handlingSelectedAssetPinChanged = false;
+			this._handlingSelectedEquipmentPinChanged = false;
+			this._handlingSelectedRoomPinChanged = false;
+			this._handlingSelectedMLI = false;
+
+			this.refreshLineItemList();
+
+
+			// If Statement: call startup process after the request is loaded
+			if (this.openRequest) {
+				this._startup = true;
+				this._handleStartupProcess();
+			} else {
+				this.$.moveLineItems.refresh();
+			}// end if
+
+
+			// If Statement: Check if there's MLI
+			if (this.moveLineItems) {
+				if(this.moveLineItems.length==0){
+					this._currentCount = 0;
+					this.$.header._isSubmitValid();
+				}
+				// Set MLI Count
+				this.$.header._setMLICount(this._currentCount);
+			}// end if
+		},
+
+		_handleMoveToFloorGetComplete: function(e) {
+			// Set the first box-floor as Selected
+			if (!this._moveToFloorLoaded) {
+				this.set("_moveToFloorLoaded", true);
+
+				this._setBoxFloorSelected();
+			}// end if
+
+			// If Statement: Temporary floor control
+			if (!this._temporaryFloorsSpacesControl) {
+				this.set("_temporaryFloorsSpacesControl", true);
+				this._temporaryFloorsSpacesControlNumber++;
+
+				this.set("_temporaryFloor", this.moveToFloor[0]);
+			}// end if
+
+
+			// If Statement: Hide or show the building search on startup
+			if (this._startupMoveToFloor) {
+				// If Statement: Check if there is a building assigned to the request
+				if (this.moveToFloor.length > 0) {
+					if (this.moveToFloor[0].building) {
+						// Hide the building search
+						this._statusSearchSpace = false;
+
+						// Open MLI collapsable section
+						this._toggleExpandMLI();
+					} else {
+						// Show the building search
+						this._statusSearchSpace = true;
+
+						// Close MLI collapsable section
+						this._toggleCloseMLI();
+					}// end if
+
+					// Move to Floor initialize - startup false
+					this._startupMoveToFloor = false;
+				} else {
+					// If Statement: Check if tempRequest is equal to the current request, which means that a temporary building and floor was added
+					if (this.tempRequest.id == this.openRequestWhereUrlParams.reqId) {
+						// Async: Necessary because openRequest could be load after the Floors
+						this.async(function() {
+							// If Statement: Check if it's a real request or a precreated request
+							if (this.openRequest._id) {
+								// Add / Update Data
+								this._addBuildingFloorData();
+							} else {
+								// Add a temporary building and floor
+								this._addBuildingFloorTemp();
+							}// end if
+
+							// Move to Floor initialize - startup false
+							this._startupMoveToFloor = false;
+						} , 500);
+					} else {
+						// Show the building search
+						this._statusSearchSpace = true;
+
+						// Close MLI collapsable section
+						this._toggleCloseMLI();
+
+						// Move to Floor initialize - startup false
+						this._startupMoveToFloor = false;
+					}// end if
+				}// end if
+			}// end if
+		},
+
+		//=========================================================
+		// Function _handleMoveToSpacesAssetsGetComplete
+		//------------------------------------------
+		// Objective: Call when moveToSpacesAssets get completed
+		//=========================================================
+		_handleMoveToSpacesAssetsGetComplete: function() {
+			// Populate graphic spaces for Assets and Rooms
+			var finalSpaceAssets = this._mergeSpaceDuplicates(this.moveToSpacesAssets);
+			this.set("moveToSpacesAssets", finalSpaceAssets);
+			this._populateSelectedSpaces(this.moveToSpacesAssets, this.filteredSpacesAssets, this.filteredSpacesAssets);
+
+			// If Statement: Check if there's a selected line item
+			if (this._selectedLineItem) {
+				if (this._selectedLineItem.moveType == "Person") {
+					this._populateSelectedSpaces(this.moveToSpaces, this.filteredSpaces, this.filteredSpacesAvailable);
+				}// end if
+			}// end if
+		},
+
+		//=========================================================
+		// Function _handleMoveToSpaceHighlightGetComplete
+		//------------------------------------------
+		// Objective: Call when moveToSpaceHighlight get completed
+		//=========================================================
+		_handleMoveToSpaceHighlightGetComplete: function() {
+			// If Statement: Check if a room MLI is selected
+			if (this._roomToHighligth != "") {
+				this.set("_spaceToHighlight", this.moveToSpaceHighlight);
+			} else {
+				this.set("_spaceToHighlight", {});
+			}// end if
+		},
+
+		//=========================================================
+		// Function _handleMoveToSpacesEntitlementsGetComplete
+		//------------------------------------------
+		// Objective: Call when moveToSpaces with entitlements get completed
+		//=========================================================
+		_handleMoveToSpacesEntitlementsGetComplete: function() {
+			// If Statement: Check if the entitlement restriction is activate
+			if (this._restrictEntitlements) {
+				this.set("moveToSpaces", this.filteredMoveToSpacesEntitlements);
+
+				// Populate graphic spaces for People
+				this._populateSelectedSpaces(this.moveToSpaces, this.filteredSpaces, this.filteredSpacesAvailable);
+
+				if (this._selectedLineItem) {
+					if (this._selectedLineItem.moveType != "Person") {
+						this._populateSelectedSpaces(this.moveToSpacesAssets, this.filteredSpacesAssets, this.filteredSpacesAssets);
+					}// end if
+				}// end if
+			} else {
+				// Populate graphic spaces for People
+				this._populateSelectedSpaces(this.moveToSpaces, this.filteredSpaces, this.filteredSpacesAvailable);
+
+				if (this._selectedLineItem) {
+					if (this._selectedLineItem.moveType != "Person") {
+						this._populateSelectedSpaces(this.moveToSpacesAssets, this.filteredSpacesAssets, this.filteredSpacesAssets);
+					}// end if
+				}// end if
+			}// end if
+		},
+
+		_handleMoveToSpacesGetComplete: function() {
+			// Set all spaces for the floor
+			var finalSpaces = this._mergeSpaceDuplicates(this.moveToSpaces);
+			this.set("moveToSpaces", finalSpaces);
+			this.set("_moveToAllSpaces", this.moveToSpaces);
+			
+			// If Statement: Check if there's a selected line item
+			if (this._selectedLineItem) {
+				if (this._selectedLineItem.moveType != "Person") {
+					this._populateSelectedSpaces(this.moveToSpacesAssets, this.filteredSpacesAssets, this.filteredSpacesAssets);
+				} else {
+					// Populate graphic spaces for People
+					this._populateSelectedSpaces(this.moveToSpaces, this.filteredSpaces, this.filteredSpacesAvailable);
+				}// end if
+			} else {
+				this._populateSelectedSpaces(this.moveToSpacesAssets, this.filteredSpacesAssets, this.filteredSpacesAssets);
+			}// end if
+
+			
+		},
+
+		_mergeSpaceDuplicates: function (arr) {
+			let spaces_new = arr.map(spaces => spaces);
+			const spaceHash = {};
+			spaces_new.forEach(space => {
+				let occupantObj = {_id: space.occupantId, occupant: space.occupant, occupantEmail: space.occupantEmail, occupantOrg: space.occupantOrg, occupantTitle: space.occupantTitle}
+				let chargedToOrgObj = {_id: space.chargedToOrgId, chargedToOrg: space.chargedToOrg, orgColor: space.orgColor}
+				if (!spaceHash[space._id]) {
+					spaceHash[space._id] = Object.assign({}, space, {occupants:[occupantObj], chargedToOrgs: [chargedToOrgObj]});
+				} else {
+					let foundOccupantIndex =  spaceHash[space._id].occupants.findIndex(function(occupant) {
+						return occupant._id == occupantObj._id;
+					})
+					if (foundOccupantIndex == -1) {
+						spaceHash[space._id].occupants.push(occupantObj);
+					}
+					let foundChargedToOrgIndex = spaceHash[space._id].chargedToOrgs.findIndex(function(chargedToOrg) {
+						return chargedToOrg._id == chargedToOrgObj._id;
+					})
+					if (foundChargedToOrgIndex == -1) {
+						spaceHash[space._id].chargedToOrgs.push(chargedToOrgObj);
+					}
+				}
+			})
+			const keys = Object.keys(spaceHash);
+			let finalSpaces = [];
+			for (let key of keys) {
+				finalSpaces.push(spaceHash[key])
+			}
+			finalSpaces.forEach(space => {
+				if (space.chargedToOrgs.length > 1) {
+					space.chargedToOrgs.sort((a,b) => {
+						let paramFirst = a.chargedToOrg.toLowerCase();
+						let paramNext = b.chargedToOrg.toLowerCase();
+						return (paramFirst < paramNext) ? -1 : (paramFirst > paramNext) ? 1 : 0;
+					})
+				}
+				let computedChargedToOrg = (space.chargedToOrgs && space.chargedToOrgs.length > 0) ? space.chargedToOrgs[0].chargedToOrg : "";
+				space.computedChargedToOrg = computedChargedToOrg;
+				if (space.occupants.length > 1) {
+					space.occupants.sort((a,b) => {
+						let paramFirst = a.occupant.toLowerCase();
+						let paramNext = b.occupant.toLowerCase();
+						return (paramFirst < paramNext) ? -1 : (paramFirst > paramNext) ? 1 : 0;
+					})
+				}
+			})
+			return finalSpaces;
+		},
+
+		_handleMoveToSpacesAuxGetComplete: function() {
+			this._temporaryFloorsSpaces = this._temporaryFloorsSpaces.concat(this.moveToSpacesAux);
+
+			var indexNumber = this._temporaryFloorsSpacesControlNumber;
+			// If Statement: Check if there's more floors for the request
+			if ( this.moveToFloor[indexNumber] ) {
+				this.set("_temporaryFloor", this.moveToFloor[indexNumber]);
+			}// end if
+
+			this._temporaryFloorsSpacesControlNumber++;
+		},
+
+		//=========================================================
+		// Function _handleMyMoveRequestsGetComplete
+		//------------------------------------------
+		// Objective: Callback for MyMoveRequests DS Get complete
+		//=========================================================
+		_handleMyMoveRequestsGetComplete: function() {
+			// console.log("myMoveRequests complete!");
+			this._checkToastMessage();
+			this.$.header._isSubmitValid();
+
+			// Collapsable Action Bar: Initially hides the bar
+			if (this.$.searchBuildingCollapse.opened) this._handleHideBarBuilding();
+
+			// Set the _newMoveDate to be equal to the current move date
+			this.set("_newMoveDate", this.openRequest.moveDate);
+		},
+
+		//=========================================================
+		// Function _handleMyMoveRequestsUpdateComplete
+		//------------------------------------------
+		// Objective: Callback for MyMoveRequests DS Update complete
+		//=========================================================
+		_handleMyMoveRequestsUpdateComplete: function() {
+			// console.log("myMoveRequests update!");
+
+			// Refresh myMoveRequests DS
+			this.$.moveRequestModel.refresh();
+
+			// If Statement: Check if the update action is resulting from change move date
+			if (this._statusChangeMoveDate) {
+				// Update MLI date
+				this.$.moveRequestModel.performAction(this.openRequest._id,TriPlatDs.RefreshType.CLIENT, "actionGroup", "updateMliDate");
+			}// end
+		},
+
+		//=========================================================
+		// Function _handleMyMoveRequestsActionComplete
+		//------------------------------------------
+		// Objective: Callback for MyMoveRequests DS Action complete
+		//=========================================================
+		_handleMyMoveRequestsActionComplete: function() {
+			// If Statement: Check if the update action is resulting from change move date
+			if (this._statusChangeMoveDate) {
+				// Set status change move date to false
+				this.set("_statusChangeMoveDate", false);
+				// Set _invalidDate to false
+				this.set("_invalidDate", false);
+
+				// Refresh moveToSpaces DS
+				this.$.moveToSpaces.refresh();
+				this.$.moveToSpacesEntitlements.refresh();
+				this.$.moveToSpacesAux.refresh();
+			}// end
+		},
+
+		_handlePeopleLabelStyle : function() {
+			if (this.spaceLabelStyle) {
+				var labelStyleId = parseInt(this.spaceLabelStyle[0]._id);
+				this.set("spaceLabelStyleId", labelStyleId);
+			} else {
+				this.set("spaceLabelStyleId", null);
+			}// end if
+		},
+
+    _handlePerformActionComplete: function () {
+			this._displayLoadingIndicator = true;
+			this.set("currentSpaceHighlight", null);
+			this.set("currentSpace", null);
+
+			if (this.moveLineItems && this._selectedLineItem) {
+				var found = false;
+				for (var i = 0; i < this.moveLineItems.length && !found; i++) {
+					if (this.moveLineItems[i]._id == this._selectedLineItem._id) {
+						this.set("_lastLineItemSelected", "");
+						var newItem = [];
+						newItem.startup = false;
+						newItem.detail = this.moveLineItems[i];
+						this._handleSelectedLineItem(newItem);
+						found = true;
+					}// end if
+				}// end for
+			}// end if
+
+			if (this._refreshGraphic) {
+				this.set("_refreshGraphic", false);
+
+				this.$.moveToSpaces.refresh();
+				this.$.moveToSpacesEntitlements.refresh();
+				this.$.moveToSpacesAux.refresh();
+			}// end if
+    },
+
+		_handleRemove: function(e) {
+
+			// Current MLI
+			var selectedLineItem = e.detail;
+
+			var spaceFound = false;
+			var spaces = null;
+			var spaceCount = 0;
+
+			spaces = this.selectedSpaces;
+
+			spaceCount = this._getSpaceCount(selectedLineItem);
+
+			// Find and remove from old space
+			for (var j = 0; j < spaces.length; j++) {
+				if ((selectedLineItem.toBuilding == spaces[j].building) &&
+				(selectedLineItem.toFloor == spaces[j].floor) &&
+				(selectedLineItem.toSpace == spaces[j].space)) {
+					spaceFound = true;
+					this._skip = true;
+
+					if (spaceCount == 1) {
+						this.splice('selectedSpaces', j, 1);
+					}// end if
+
+					this._clearMoveToLocation(selectedLineItem._id);
+					this._unassignedCount++;
+					this._decrementAssignedCount(selectedLineItem);
+					this._skip = false;
+					break;
+				}// end if
+			}// end for
+
+			if (!spaceFound) {
+				this._clearMoveToLocation(selectedLineItem._id);
+				this._unassignedCount++;
+				this._decrementAssignedCount(selectedLineItem);
+				var e = [];
+			}// end if
+
+			this.refreshLineItemList();
+		},
+
+		//=========================================================
+		// Function _handleRoutePageActive
+		//------------------------------------------
+		// Objective: Handle with the change of routes
+		//=========================================================
+		_handleRoutePageActive: function(e) {
+			// If Statement: check if the current route (where) is active
+			if (e.detail.active) {
+				// Header Component: Update the header's 'isNew' property
+				this.$.header._isNewRequest();
+
+				// Fire: Where page is open
+				this.fire('whereActive');
+
+				// Refresh LookupBuilding DS
+				this.$.lookupBuilding.refresh();
+			} else {
+				this._onNavigateCleanup();
+			}// end if
+		},
+
+	 	// Save Request
+		_handleSaveRequest: function() {
+			if (!this._completedRequest) {
+				this.$.moveRequestModel.updateRecord(this.openRequest._id, TriPlatDs.RefreshType.CLIENT, "defaultActions", "updateWherePage");
+				this.refresh();
+			}// end if
+		},
+
+	 	// Set Fields based on Floor Selection
+		_handleSelectedElement: function(selectedElement) {
+			if (!selectedElement) {
+				return;
+			}// end if
+
+			var selectedPerson = this.$.movePeopleTemplate.itemForElement(selectedElement);
+		},
+
+		_handleSelectedLineItem: function(e) {
+			this._selectedLineItem = e.detail;
+
+			// If Statement: Checks if the last MLI selected is the same of the current selected MLI
+			if ( this._lastLineItemSelected != this._selectedLineItem._id ) {
+				// Set the _lastLineItemSelected to be the current MLI
+				this.set("_lastLineItemSelected", this._selectedLineItem._id);
+
+				this.currentMLI = this._selectedLineItem._id;
+				this.set("currentSpaceHighlight", null);
+				this.set("currentSpace", null);
+
+
+				this._setBuildingFloor();
+
+
+				if (this._selectedLineItem) {
+					sessionStorage.setItem("requestId", this.openRequestWhereUrlParams.reqId);
+					sessionStorage.setItem("selectedLineItem", this._selectedLineItem._id);
+					sessionStorage.setItem("moveType", this._selectedLineItem.moveType);
+				}// end if
+
+				if (this._selectedLineItem.moveType == "Person") {
+					// Search Field: Show Search for Space People
+					this.$.searchSpaceField.hidden = false;
+					// Search Field: Hide Search for Space Assets
+					this.$.searchSpaceAssetsField.hidden = true;
+					// Search Field: Clear Search Field for Space People
+					this.$.searchSpaceField.clearSearch();
+					// Search Field: Clear Search Field for Space Assets
+					this.$.searchSpaceAssetsField.clearSearch();
+
+					this.set("selectableSpaces", this.moveToSpaces);
+					this.set("filteredListSpaces", this.filteredSpaces);
+
+					this.debounce(
+							"refreshLegend",
+							this.updateHighlightGroupSpaces.bind(this, this.moveToSpaces),
+							LEGEND_DEBOUNCE_DELAY
+					);
+
+					this.debounce(
+							"refreshAvailableSpace",
+							function() {
+								// If Statement: Check if the request move date is invalid
+								if (this._invalidDate) {
+									this.set("_availableSpaces", []);
+								} else {
+									this.set("_availableSpaces", this.filteredSpacesAvailable);
+								}// end if
+							},
+							LEGEND_DEBOUNCE_DELAY
+					);
+
+					// If Statement: Check if entitlements is not enabled
+					if (!this._restrictEntitlements) {
+						this.set("_showEntitleFilter", true);
+					}// end if
+				} else {
+					// Search Field: Hide Search for Space People
+					this.$.searchSpaceField.hidden = true;
+					// Search Field: Show Search for Space Assets
+					this.$.searchSpaceAssetsField.hidden = false;
+					// Search Field: Clear Search Field for Space People
+					this.$.searchSpaceField.clearSearch();
+					// Search Field: Clear Search Field for Space Assets
+					this.$.searchSpaceAssetsField.clearSearch();
+
+					this.set("selectableSpaces", this.moveToSpacesAssets);
+					this.set("filteredListSpaces", this.filteredSpacesAssets);
+
+					// When the MLI is not a Person the spaces class filter must be selected
+					this._selectSpaceClassFilter = true;
+					this.debounce(
+							"refreshLegend",
+							this.updateHighlightGroupSpaces.bind(this, this.moveToSpacesAssets),
+							LEGEND_DEBOUNCE_DELAY
+					);
+
+					this.debounce(
+							"refreshAvailableSpace",
+							function() {
+								// If Statement: Check if the request move date is invalid
+								if (this._invalidDate) {
+									this.set("_availableSpaces", []);
+								} else {
+									this.set("_availableSpaces", this.moveToSpacesAssets);
+								}// end if
+							},
+							LEGEND_DEBOUNCE_DELAY
+					);
+
+					// If Statement: Check if entitlements is not enabled
+					if (!this._restrictEntitlements) {
+						this.set("_showEntitleFilter", false);
+					}// end if
+
+					// If Statement: Check if the the MLI is a room
+					if (this._selectedLineItem.moveType == "Room Function") {
+						this.set("_roomToHighligth", this._selectedLineItem.roomRecordId);
+					} else {
+						this.set("_roomToHighligth", "");
+					}// end if
+				}// end if
+
+				// If Statement: Check if the MLI selected is assigned to a space
+				if (this._selectedLineItem.toSpace != null) {
+					// If Statement: Check if the current floor displayed is the same of the MLI selected
+					if ((this._selectedFloorObj.building == this._selectedLineItem.toBuilding) &&
+						(this._selectedFloorObj.name == this._selectedLineItem.toFloor)) {
+						this._handleSelectedLineItemAndSpaces();
+					} else {
+						this._setBuildingFloor();
+					}// end if
+				} else {
+					this._handleSelectedLineItemAndSpaces();
+				}// end if
+
+				// this.refresh();
+				this.$.assignedSpaces.refresh();
+			} else {
+				this.set("_lastLineItemSelected", "");
+			}// end if
+		},
+
+		//=========================================================
+		// Function _handleSelectedLineItemAndSpaces
+		//------------------------------------------
+		// Objective: It was part of the method _handleSelectedLineItem
+		// They were separeted to control the floor plan change when a MLI is selected
+		// When a MLI is assigned to a floor that is not the current floor display, the assigned floor should open
+		//=========================================================
+		_handleSelectedLineItemAndSpaces: function() {
+			if (this._selectedLineItem.moveType == "Person") {
+				this._populateSelectedSpaces(this.moveToSpaces, this.filteredSpaces, this.filteredSpacesAvailable);
+				this.set("assetSelected", false);
+				this.set("equipmentSelected", false);
+				this.set("personSelected", true);
+				this.set("roomSelected", false);
+
+				if (this._selectedLineItem.toSpace != null) {
+					this._findSpace(this.selectedSpaces);
+				}// end if
+
+				if (!this._handlingSelectedPersonPinChanged && !this._handlingSelectedMLI) {
+					this._handlingSelectedMLI = true;
+					this._selectedPersonPin = null;
+					this._selectedAssetPin = null;
+					this._selectedEquipmentPin = null;
+					this._selectedRoomPin = null;
+					this._selectedPersonPin = this._createPersonPin(this._selectedLineItem);
+					this._handlingSelectedMLI = false;
+				}
+			}
+			else if (this._selectedLineItem.moveType == "Asset") {
+				this._populateSelectedSpaces(this.moveToSpacesAssets, this.filteredSpacesAssets, this.filteredSpacesAssets);
+				this.set("assetSelected", true);
+				this.set("equipmentSelected", false);
+				this.set("personSelected", false);
+				this.set("roomSelected", false);
+
+				if (this._selectedLineItem.toSpace != null) {
+					this._findSpace(this.selectedSpaces);
+				}// end if
+
+				if (!this._handlingSelectedAssetPinChanged && !this._handlingSelectedMLI) {
+					this._handlingSelectedMLI = true;
+					this._selectedPersonPin = null;
+					this._selectedAssetPin = null;
+					this._selectedEquipmentPin = null;
+					this._selectedRoomPin = null;
+					this._selectedAssetPin = this._createAssetPin(this._selectedLineItem);
+					this._handlingSelectedMLI = false;
+				}
+			}
+			else if (this._selectedLineItem.moveType == "Equipment") {
+				this._populateSelectedSpaces(this.moveToSpacesAssets, this.filteredSpacesAssets, this.filteredSpacesAssets);
+				this.set("assetSelected", false);
+				this.set("equipmentSelected", true);
+				this.set("personSelected", false);
+				this.set("roomSelected", false);
+
+				if (this._selectedLineItem.toSpace != null) {
+					this._findSpace(this.selectedSpaces);
+				}// end if
+				if (!this._handlingSelectedEquipmentPinChanged && !this._handlingSelectedMLI) {
+					this._handlingSelectedMLI = true;
+					this._selectedPersonPin = null;
+					this._selectedAssetPin = null;
+					this._selectedEquipmentPin = null;
+					this._selectedRoomPin = null;
+					this._selectedEquipmentPin = this._createEquipmentPin(this._selectedLineItem);
+					this._handlingSelectedMLI = false;
+				}
+			}
+			else if (this._selectedLineItem.moveType == "Room Function") {
+				this._populateSelectedSpaces(this.moveToSpacesAssets, this.filteredSpacesAssets, this.filteredSpacesAssets);
+				this.set("assetSelected", false);
+				this.set("equipmentSelected", false);
+				this.set("personSelected", false);
+				this.set("roomSelected", true);
+
+				if (this._selectedLineItem.toSpace != null) {
+					this._findSpace(this.selectedSpaces);
+				}// end if
+
+				if (!this._handlingSelectedRoomPinChanged && !this._handlingSelectedMLI) {
+					this._handlingSelectedMLI = true;
+					this._selectedPersonPin = null;
+					this._selectedAssetPin = null;
+					this._selectedEquipmentPin = null;
+					this._selectedRoomPin = null;
+					this._selectedRoomPin = this._createRoomPin(this._selectedLineItem);
+					this._handlingSelectedMLI = false;
+				}
+			}
+			else {
+				// console.log("Unknown moveType for MLI...")
+			}// end if
+		},
+
+		// Set highlight group spaces based on Selectable Spaces change
+		_handleSelectableSpacesChange : function(spaces) {
+			this.debounce(
+					"refreshLegend",
+					this.updateHighlightGroupSpaces.bind(this, spaces ? spaces : []),
+					LEGEND_DEBOUNCE_DELAY
+			);
+		},
+
+		// Set Fields based on Space Selection
+		_handleSelectedSpaceChange : function(moveToSpace) {
+		 	if (!moveToSpace) {
+		 		this.set("openRequest.toSpace", "");
+		 	} else	{
+		 		this.set("openRequest.toSpace", moveToSpace.space);
+		 	}// end if
+		},
+
+		// Handle Graphic space selection
+		_handleSelectedSpaceFloorPlan : function(spaces) {
+			if ((!spaces) || (!this._initMLI) || (!this._initSpaces) || (this._fixDelete) || (this._skip) ) {
+		 		// Skip - no action required
+			}
+			else if((this._selectedLineItem)&&((this._selectedLineItem.status=="Completed")|| (this._completedRequest))) {
+
+				if(spaces.indexSplices[0].addedCount>0 ) {
+					var index = spaces.indexSplices[0].index;
+					this._fixDelete = true;
+					this.splice('selectedSpaces', index,1);
+					this._fixDelete = false;
+				} else {
+					var removedSpace = spaces.indexSplices[0].removed[0];
+					this._fixDelete = true;
+					this.push('selectedSpaces', removedSpace);
+					this._fixDelete = false;
+				}// end if
+		 	} else {
+		 		var len = spaces.indexSplices.length;
+		 		var addedCount = spaces.indexSplices[0].addedCount;
+
+		 		// Space Added
+		 		if (addedCount > 0) {
+		 			var index = spaces.indexSplices[0].index;
+					var toBuilding = spaces.indexSplices[0].object[index].building;
+					var toFloor = spaces.indexSplices[0].object[index].floor;
+					var toSpace = spaces.indexSplices[0].object[index].space;
+					var toLocation = spaces.indexSplices[0].object[index].hierarchyPath;
+					var space = spaces.indexSplices[0].object[index];
+
+					// If Statement: Check if there's a MLI selected
+		 			if (this._selectedLineItem) {
+						// If Statement: Check if the old location and the new location are the same
+						if (toLocation == this._selectedLineItem.toLocation) {
+							// Skip - no action required
+						} else {
+			 				var oldToBuilding = this._selectedLineItem.toBuilding;
+			 				var oldToFloor = this._selectedLineItem.toFloor;
+			 				var oldToSpace = this._selectedLineItem.toSpace;
+			 				var oldToLocation = this._selectedLineItem.toLocation;
+			 				var oldMoveType = this._selectedLineItem.moveType;
+							var spaceCount = 0;
+
+							// Add new space to MLI
+			 				this.currentMLI = this._selectedLineItem._id;
+			 				this.addTempSpace(space);
+			 				this._unassignedCount--;
+			 				this._incrementAssignedCount(this._selectedLineItem);
+
+							if (oldToSpace != null) {
+		 						// Find and remove old space if only one person\asset\equipment\room is assigned
+		 						var spaceCount = this._getSpaceCount(this._selectedLineItem);
+								if (spaceCount == 1) {
+
+			 						var found = false;
+					 				for (var j = 0; j < this.selectedSpaces.length; j++) {
+					 					if ((oldToBuilding == this.selectedSpaces[j].building) &&
+											(oldToFloor == this.selectedSpaces[j].floor) &&
+											(oldToSpace == this.selectedSpaces[j].space)) {
+
+					 						found = true;
+					 						this._removeOld = true;
+					 						this.splice('selectedSpaces', j, 1);
+					 						this._removeOld = false;
+					 						break;
+					 					}// end if
+									}// end for
+
+									if ((!found) && (oldToBuilding != null)) {
+										var oldToBuildingFloor = oldToBuilding + oldToFloor;
+										var newToBuildingFloor = toBuilding + toFloor
+
+										if (oldToBuildingFloor != newToBuildingFloor) {
+											found = true;
+											this._unassignedCount++;
+											this._decrementAssignedCount(this._selectedLineItem);
+										}// end if
+									}// end if
+
+									if (found) {
+									var __dictionary__addSpaceCompleteToastMessageChanged = "Space assignment changed.";
+			    					this.$.addSpaceCompleteToast.message = __dictionary__addSpaceCompleteToastMessageChanged;
+										this.$.addSpaceCompleteToast.open();
+									} else {
+										var __dictionary__addSpaceCompleteToastMessageAdded ="Space assignment added.";
+										this.$.addSpaceCompleteToast.message = __dictionary__addSpaceCompleteToastMessageAdded;
+										this.$.addSpaceCompleteToast.open();
+									}// end if
+								} else {
+									this._unassignedCount++;
+									this._decrementAssignedCount(this._selectedLineItem);
+									var __dictionary__addSpaceCompleteToastMessageChanged = "Space assignment changed.";
+									this.$.addSpaceCompleteToast.message = __dictionary__addSpaceCompleteToastMessageChanged;
+									this.$.addSpaceCompleteToast.open();
+								}// end if
+							} else {
+								var __dictionary__addSpaceCompleteToastMessageAdded ="Space assignment added.";
+								this.$.addSpaceCompleteToast.message = __dictionary__addSpaceCompleteToastMessageAdded;
+								this.$.addSpaceCompleteToast.open();
+							}// end if
+
+							this.$.graphicLabel.refreshLabel();
+							this.refreshLineItemList();
+						}// end if
+		 			} else {
+		 				this._handleItemRequiredDialogOpen();
+		 				this._fixDelete = true;
+		 				this.splice('selectedSpaces', index, 1);
+		 				this._fixDelete = false;
+
+						this.$.graphicLabel.refreshLabel();
+						this.refreshLineItemList();
+		 			}// end if
+		 		}
+
+		 		// Space Removed
+		 		else {
+		 			if (this._selectedLineItem) {
+		 				if ((!this._removeIcon) && (!this._removeOld)) {
+			 				// Add back deleted space because multiple people, assets, equipment or rooms can be assigned to a single space
+			 				var space = spaces.indexSplices[0].removed[0];
+							this._fixDelete = true;
+							this.push('selectedSpaces', space);
+							this._fixDelete = false;
+
+							// Check to see if selected space matches current assigned space
+							if ((this._selectedLineItem.toBuilding == space.building) &&
+								(this._selectedLineItem.toFloor == space.floor) &&
+								(this._selectedLineItem.toSpace == space.space))
+								{
+	 							this._handleInvalidSelectionDialogOpen();
+							} else {
+				 				var spaceCount = this._getSpaceCount(this._selectedLineItem);
+				 				var found = false;
+				 				var tempSelectedLineItem = this._selectedLineItem;
+
+			 					// Remove old space if it exists
+				 				for (var j = 0; j < this.selectedSpaces.length; j++) {
+									if ((this._selectedLineItem.toBuilding == this.selectedSpaces[j].building) &&
+									(this._selectedLineItem.toFloor == this.selectedSpaces[j].floor) &&
+									(this._selectedLineItem.toSpace == this.selectedSpaces[j].space))
+									{
+										found = true;
+
+										this._removeIcon = true;
+										this.splice('selectedSpaces', j, 1);
+										this._removeIcon = false;
+										break;
+									}// end if
+								}// end for
+
+								// Update MLI
+								this.addTempSpace(space);
+
+								if (found) {
+									var __dictionary__addSpaceCompleteToastMessageAdded ="Space assignment added.";
+									this.$.addSpaceCompleteToast.message = __dictionary__addSpaceCompleteToastMessageAdded;
+									this.$.addSpaceCompleteToast.open();
+									this._unassignedCount--;
+									this._incrementAssignedCount(tempSelectedLineItem);
+								} else {
+									var __dictionary__addSpaceCompleteToastMessageAdded ="Space assignment added.";
+									this.$.addSpaceCompleteToast.message = __dictionary__addSpaceCompleteToastMessageAdded;
+									this.$.addSpaceCompleteToast.open();
+									this._unassignedCount--;
+								    this._incrementAssignedCount(this._selectedLineItem);
+								}// end if
+							}// end if
+						} else {
+							this._unassignedCount++;
+							this._decrementAssignedCount(this._selectedLineItem);
+						}// end if
+					} else {
+						var space = spaces.indexSplices[0].removed[0];
+						this._fixDelete = true;
+						this.push('selectedSpaces', space);
+						this._fixDelete = false;
+		 				this._handleItemRequiredDialogOpen();
+					}// end if
+
+					this.$.graphicLabel.refreshLabel();
+					this.refreshLineItemList();
+		 		}// end if
+
+		 	}
+		},
+
+		_handleSelectedSpaceList: function(e) {
+			// If Statement: Check if there's a line item selected
+			if (this._selectedLineItem) {
+				var spaces = null;
+
+				// If Statement: Check if there's a move type for the selected line item
+				if (this._selectedLineItem.moveType) {
+					spaces = this.selectedSpaces;
+				}// end if
+
+				var selection = e.detail;
+				var spaceExists = false;
+
+				// If Person space already selected, display error message
+				// If Asset, Equipment or Room space aready exists, add space
+				for (var i = 0; i < spaces.length; i++) {
+					if (selection._id == spaces[i]._id) {
+						spaceExists = true;
+
+						if (this._selectedLineItem.toSpace == null) {
+							this.$.addSpaceCompleteToast.message = "Space assignment added.";
+							this._unassignedCount--;
+						} else if((this._selectedLineItem.toFloor != spaces[i].floor) || (this._selectedLineItem.toSpace != spaces[i].space) || (this._selectedLineItem.toBuilding != spaces[i].building)) {
+							this.$.addSpaceCompleteToast.message = "Space assignment changed.";
+						} else {
+							break;
+						}// end if
+
+						this.$.addSpaceCompleteToast.open();
+						this.addTempSpace(spaces[i]);
+
+						break;
+					}// end if
+				}// end for
+
+				if (!spaceExists) {
+					if (this._selectedLineItem.moveType) {
+						this.push('selectedSpaces', selection);
+					}// end if
+				}// end if
+			} else {
+				this._handleItemRequiredDialogOpen();
+			}// end if
+		},
+
+		_handleSelectedTabChange: function() {
+			if (this._selectedTab == 0 || this._completedRequest) {
+				this._hideSearch = true;
+			}
+			else {
+				this._hideSearch = false;
+			}
+			this.refresh();
+		},
+
+		//=========================================================
+		// Function _handleStartupProcess
+		//------------------------------------------
+		// Objective: Startup process
+		//=========================================================
+		_handleStartupProcess: function () {
+			// Workaround: When Request is in preCreate state toFloor doesn't exist
+			var requestToFloor = null;
+			if (this.openRequest) {
+				if (this.openRequest.toFloor) {
+					requestToFloor = this.openRequest.toFloor.value;
+				}// end if
+			}// end if
+
+			if (this.moveLineItems && (this.openRequest == null || requestToFloor == null || this.moveToSpaces || this._restrictEntitlements) && this._startup) {
+				this._startup = false;
+				var id = sessionStorage.getItem("selectedLineItem");
+				var moveType = sessionStorage.getItem("moveType");
+				var requestId = sessionStorage.getItem("requestId");
+
+				// Variable that indicate if the sessionStorage is valid
+				var validSessionStorage = false;
+
+				// Check if the session MLI is in the list of MLIs
+					// Required when delete MLIs
+				var MLIs = this.moveLineItems;
+				// If Statement: Check if there's MLIs
+				if (MLIs) {
+					// For: Iterate through the array of MLIs
+					for (var i = 0; i < MLIs.length; i++) {
+						// If Statement: Check if the sessionStorage data exists in the MLI list
+						if (id == MLIs[i]._id && moveType == MLIs[i].moveType) {
+							validSessionStorage = true;
+							break;
+						}// end if
+					}// end for
+				}// end if
+
+				// If Statement: Check if there's a sessionStorage
+				if ((id) && (moveType) && (requestId == this.openRequestWhereUrlParams.reqId)) {
+					// If Statement: Check if sessionStorage is valid
+					if (validSessionStorage) {
+						setTimeout(function() {
+	            this._locateSelectedLineItem(id, moveType);
+	          }.bind(this), 500);
+					} else {
+						setTimeout(function() {
+	            this._selectFirstLineItem();
+	          }.bind(this), 500);
+					}// end if
+				} else {
+					setTimeout(function() {
+            this._selectFirstLineItem();
+          }.bind(this), 500);
+				}// end if
+			}// end if
+  	},
+
+		_incrementAssignedCount: function (mli) {
+			if (mli.moveType == 'Person') {
+				this._currentPeopleAssignedCount++;
+			}
+			else if (mli.moveType == 'Asset') {
+				this._currentAssetAssignedCount++;
+			}
+			else if (mli.moveType == 'Equipment')  {
+				this._currentEquipmentAssignedCount++;
+			}
+			else if (mli.moveType == 'Room Function') {
+				this._currentRoomAssignedCount++;
+			}
+			this._currentAssignedCount++;
+			this.set("_currentAssignedCount", this._currentAssignedCount);
+			var progress =  this._currentAssignedCount / this._currentCount;
+			this.set("progress", progress);
+		},
+
+		_isCompleteRequest: function(val) {
+			return  (val == "Completed" || val=="Routing In Progress" || val=="Issued" || val=="Review In Progress");
+		},
+
+  	_locateSelectedLineItem: function(id, moveType) {
+			var selector = null;
+
+			this.set("_peopleOpened", false);
+			this.set("_assetOpened", false);
+			this.set("_equipmentOpened", false);
+			this.set("_roomOpened", false);
+
+  		if (moveType == "Person") {
+  			selector = this.$.peopleAccordion.$.selectorMoveLineItems;
+				this.set("_peopleOpened", true);
+				this._accordionSelector = this.$.peopleAccordion.$.selectorMoveLineItems;
+				this._accordionTemplate = this.$.peopleAccordion.$.moveItemsTemplate;
+			}
+			else if (moveType == "Asset") {
+				selector = this.$.assetAccordion.$.selectorMoveLineItems;
+				this.set("_assetOpened", true);
+				this._accordionSelector = this.$.assetAccordion.$.selectorMoveLineItems;
+				this._accordionTemplate = this.$.assetAccordion.$.moveItemsTemplate;
+			}
+			else if (moveType == "Equipment") {
+				selector = this.$.equipmentAccordion.$.selectorMoveLineItems;
+				this.set("_equipmentOpened", true);
+				this._accordionSelector = this.$.equipmentAccordion.$.selectorMoveLineItems;
+				this._accordionTemplate = this.$.equipmentAccordion.$.moveItemsTemplate;
+			}
+			else if (moveType == "Room Function") {
+				selector = this.$.roomAccordion.$.selectorMoveLineItems;
+				this.set("_roomOpened", true);
+				this._accordionSelector = this.$.roomAccordion.$.selectorMoveLineItems;
+				this._accordionTemplate = this.$.roomAccordion.$.moveItemsTemplate;
+			}// end if
+
+			for (var i = 0; i < selector.items.length; i++) {
+				if ((selector.items[i]._templateInstance.item._id == id) &&
+					(selector.items[i].hidden == false)) {
+					selector.selected = i;
+					var newItem = [];
+					newItem.startup = true;
+					newItem.detail = selector.items[i]._templateInstance.item;
+					this._handleSelectedLineItem(newItem);
+					break;
+				}// end if
+			}// end for
+		},
+
+		_onChangeFindFloor: function(value) {
+			if (value && value._id != null) {
+				this.set("openRequest.toBuilding.value", value.Building);
+				this.set("openRequest.toFloor.value", value.Floor);
+				this.set("openRequest.toFloor.id", value._id);
+				this.set("openRequest.toSpace", "");
+				this.set("moveToSpace", null);
+				this.set("_selectedFloorObj._id", value._id);
+				this._handleSaveRequest();
+			}
+		},
+
+		//=========================================================
+		// Function _onNavigateCleanup
+		//------------------------------------------
+		// Objective: Clean the page variables when leaving the route
+		//=========================================================
+		_onNavigateCleanup: function() {
+			this.$.searchBuildingField.clearSearch();
+
+			this.$.searchSpaceField.clearSearch();
+			this.$.searchSpaceAssetsField.clearSearch();
+
+			this.set("appendBuildingFilters", []);
+			this.set("personSelected", true);
+			this.set("assetSelected", false);
+			this.set("equipmentSelected", false);
+			this.set("roomSelected", false);
+			this.set("_assetOpened", false);
+			this.set("_equipmentOpened", false);
+			this.set("_peopleOpened", true);
+			this.set("_roomOpened", false);
+			this.set("currentSpaceHighlight", null);
+			this.set("currentSpace", null);
+			this.set("_startup", true);
+			this.set("_statusSearchSpace", true);
+			this.set("_hideFloorBuildingContainer", true);
+			this.set("_selectedFloorObj", {});
+			this.set("_startupMoveToFloor", true);
+			this.set("valueBuilding", "");
+			this.set("lastLineItemSelected", null);
+			this.set("lastLineItemAssigned", null);
+			this.set("_lastLineItemSelected", "");
+			this.set("_lastTabSelected", "");
+			this.set("_temporaryFloor", {});
+			this.set("_temporaryFloorsSpaces", []);
+			this.set("_temporaryFloorsSpacesControl", false);
+			this.set("_temporaryFloorsSpacesControlNumber", 0);
+			this.set("_moveToFloorLoaded", false);
+			this.set("_moveToAllSpaces", []);
+			this.set("_selectedRequests", []);
+			this.set("_statusChangeMoveDate", false);
+			this.set("_invalidDate", false);
+			this.set("_roomToHighligth", "");
+			this.set("_spaceToHighlight", {});
+
+			this._clearSelectedBuildingData();
+			this._clearSelectedFloors();
+
+			if (this._accordionSelector) {
+				this._accordionSelector.selected = null;
+			}// end if
+			this._selectedPersonPin = null;
+			this._selectedAssetPin = null;
+			this._selectedEquipmentPin = null;
+			this._selectedRoomPin = null;
+
+			this._handleCancelSelectionsTap();
+
+		},
+
+		_onNavigateTo: function() {
+			// DO NOT DELETE, this empty method required for graphic refresh timing issue.
+		},
+
+		_populateSelectedSpaces: function(spaces, filteredSpaces, filteredSpacesAvailable) {
+			// Populate graphic spaces
+			this._setGraphicTab();
+			this.set("selectableSpaces", spaces);
+
+			this.debounce(
+					"refreshLegend",
+					this.updateHighlightGroupSpaces.bind(this, spaces),
+					LEGEND_DEBOUNCE_DELAY
+			);
+
+			this.set("filteredListSpaces", filteredSpaces);
+
+			this.debounce(
+					"refreshAvailableSpace",
+					function() {
+						// If Statement: Check if the request move date is invalid
+						if (this._invalidDate) {
+							this.set("_availableSpaces", []);
+						} else {
+							this.set("_availableSpaces", filteredSpacesAvailable);
+						}// end if
+					},
+					LEGEND_DEBOUNCE_DELAY
+			);
+
+			this.set("selectedSpaces", []);
+			this._initSpaces = false;
+
+			if (this.moveLineItems) {
+				for (var i = 0; i < this.moveLineItems.length; i++) {
+					if (spaces && this.moveLineItems[i].toSpace != null) {
+						for (var j = 0; j < spaces.length; j++) {
+							if ((spaces[j].building == this.moveLineItems[i].toBuilding) &&
+								(spaces[j].floor == this.moveLineItems[i].toFloor) &&
+								(spaces[j].space == this.moveLineItems[i].toSpace) &&
+								(this.moveLineItems[i].parentItemName == null))
+							{
+								this.push('selectedSpaces', spaces[j]);
+								break;
+							}// end if
+						}//end for
+					}// end if
+				}// end for
+			}// end if
+
+			this.set("_initSpaces", true);
+
+			if (this._selectedLineItem != null) {
+				this._findSpace(this.selectedSpaces);
+			}// end if
+
+			this._handleStartupProcess();
+		},
+
+		refreshLineItemList: function(item) {
+			this.set("_selectedLineItem", null);
+			this.set("lastLineItemSelected", null);
+			this.set("lastLineItemAssigned", null);
+			this.set("_lastLineItemSelected", "");
+			this._selectedPersonPin = null;
+			this._selectedAssetPin = null;
+			this._selectedEquipmentPin = null;
+			this._selectedRoomPin = null;
+
+			if (this._accordionSelector) {
+				this._accordionSelector.selected = null;
+				this._accordionTemplate.render();
+			}// end if
+		},
+
+		refreshItemList: function(item) {
+			if (this.$.unassignedCheckBox.active) {
+				this.set("_checkboxEnabled", true);
+			}
+			else {
+				this.set("_checkboxEnabled", false);
+			}
+		},
+
+		_selectFirstLineItem: function() {
+			var selector = null;
+			this.set("_peopleOpened", true);
+			this.set("_assetOpened", true);
+			this.set("_equipmentOpened", true);
+			this.set("_roomOpened", true);
+			this.set("_peopleOpened", false);
+			this.set("_assetOpened", false);
+			this.set("_equipmentOpened", false);
+			this.set("_roomOpened", false);
+
+			var count = this.$.peopleAccordion.$.selectorMoveLineItems.items.length;
+			var position = 0;
+
+			if (count > 0) {
+				this.set("_peopleOpened", true);
+				selector = this.$.peopleAccordion.$.selectorMoveLineItems;
+				this._accordionSelector = this.$.peopleAccordion.$.selectorMoveLineItems;
+				this._accordionTemplate = this.$.peopleAccordion.$.moveItemsTemplate;
+			}// end if
+
+			if (count == 0) {
+				count = this.$.assetAccordion.$.selectorMoveLineItems.items.length;
+				if (count > 0) {
+					this.set("_assetOpened", true);
+					selector = this.$.assetAccordion.$.selectorMoveLineItems;
+					this._accordionSelector = this.$.assetAccordion.$.selectorMoveLineItems;
+					this._accordionTemplate = this.$.assetAccordion.$.moveItemsTemplate;
+					position = ((selector.items.length / 4) * 1);
+				}// end if
+			}// end if
+
+			if (count == 0) {
+				count = this.$.equipmentAccordion.$.selectorMoveLineItems.items.length;
+				if (count > 0) {
+					this.set("_equipmentOpened", true);
+					selector = this.$.equipmentAccordion.$.selectorMoveLineItems;
+					this._accordionSelector = this.$.equipmentAccordion.$.selectorMoveLineItems;
+					this._accordionTemplate = this.$.equipmentAccordion.$.moveItemsTemplate;
+					position = ((selector.items.length / 4) * 2);
+				}// end if
+			}// end if
+
+			if (count == 0) {
+				count = this.$.roomAccordion.$.selectorMoveLineItems.items.length;
+				if (count > 0) {
+					this.set("_roomOpened", true);
+					selector = this.$.roomAccordion.$.selectorMoveLineItems;
+					this._accordionSelector = this.$.roomAccordion.$.selectorMoveLineItems;
+					this._accordionTemplate = this.$.roomAccordion.$.moveItemsTemplate;
+					position = ((selector.items.length / 4) * 3);
+				}// end if
+			}// end if
+
+			if (selector) {
+				selector.selected = position;
+				var newItem = [];
+				newItem.startup = true;
+				newItem.detail = selector.items[0]._templateInstance.item;
+				this._handleSelectedLineItem(newItem);
+			}// end if
+		},
+
+		//=========================================================
+		// Function _setBuildingFloor
+		//------------------------------------------
+		// Objective: Select the floor that the MLI is assigned to
+		//=========================================================
+		_setBuildingFloor: function() {
+			this._setSelectedFloorTab(this._selectedLineItem.toFloorId);
+		},
+
+		_setGraphicTab: function() {
+			if (this._hasGraphic == true) {
+				this.set("_selectedTab", 0);
+				this._hideTabs = false;
+			} else {
+				this._hideTabs = true;
+				this.set("_selectedTab", 1);
+			}// end if
+		},
+
+		ready: function() {
+			// set the initial sort column
+			this.set("sortField", "firstName");
+			this.set("sortDescending", false);
+		},
+
+		refresh: function() {
+			this.$.floorplandetail.refreshViewBox();
+			this.$.graphicLabel.refreshLabel();
+		},
+
+		_updateCount: function () {
+
+			this._unassignedCount = 0;
+			this._currentCount = 0;
+			this._currentPeopleCount = 0;
+			this._currentAssetCount = 0;
+			this._currentEquipmentCount = 0;
+			this._currentRoomCount = 0;
+			this._currentPeopleAssignedCount = 0;
+			this._currentAssetAssignedCount = 0;
+			this._currentEquipmentAssignedCount = 0;
+			this._currentRoomAssignedCount = 0;
+
+			for (i=0; i < this.moveLineItems.length; i++)
+			{
+				if (this.moveLineItems[i].moveType == 'Person') {
+					this._currentPeopleCount++;
+					if (this.moveLineItems[i].toSpace == null) {
+						this._unassignedCount++;
+					}
+					else {
+						this._currentPeopleAssignedCount++;
+					}
+					var id = this.moveLineItems[i]._id;
+					this.push("mliRecords", id);
+				}
+				if ((this.moveLineItems[i].moveType == 'Asset') &&  ((this.moveLineItems[i].moveWith == null)||(this.moveLineItems[i].moveWith == this.moveLineItems[i].itemName))) {
+					this._currentAssetCount++;
+					if (this.moveLineItems[i].toSpace == null) {
+						this._unassignedCount++;
+					}
+					else {
+						this._currentAssetAssignedCount++;
+					}
+
+					var id = this.moveLineItems[i]._id;
+					this.push("mliRecords", id);
+				}
+				if ((this.moveLineItems[i].moveType == 'Equipment') &&  ((this.moveLineItems[i].moveWith == null)||(this.moveLineItems[i].moveWith == this.moveLineItems[i].itemName))) {
+					this._currentEquipmentCount++;
+					if (this.moveLineItems[i].toSpace == null) {
+						this._unassignedCount++;
+					}
+					else {
+						this._currentEquipmentAssignedCount++;
+					}
+
+					var id = this.moveLineItems[i]._id;
+					this.push("mliRecords", id);
+				}
+				if ((this.moveLineItems[i].moveType == 'Room Function') &&  ((this.moveLineItems[i].moveWith == null)||(this.moveLineItems[i].moveWith == this.moveLineItems[i].itemName))) {
+					this._currentRoomCount++;
+					if (this.moveLineItems[i].toSpace == null) {
+						this._unassignedCount++;
+					}
+					else {
+						this._currentRoomAssignedCount++;
+					}
+
+					var id = this.moveLineItems[i]._id;
+					this.push("mliRecords", id);
+				}
+			}
+			this.set("_currentCount", this._currentPeopleCount + this._currentAssetCount + this._currentEquipmentCount + this._currentRoomCount);
+			this.set("_currentAssignedCount", this._currentPeopleAssignedCount + this._currentAssetAssignedCount + this._currentEquipmentAssignedCount + this._currentRoomAssignedCount);
+
+			if(this._currentCount!=0){
+				var progress =  this._currentAssignedCount / this._currentCount;
+				this.set("progress", progress);
+			}
+			else{
+				this.set("progress", 0);
+			}
+
+		},
+
+		//=========================================================
+		// Function _calendarDialog
+		//------------------------------------------
+		// Objective: Open the calendar dialog
+		//=========================================================
+		_calendarDialog: function() {
+			this.$.calendarDialog.open();
+		},
+
+		//=========================================================
+		// Function _validateBuildingAssigned
+		//------------------------------------------
+		// Objective: Check if there were a space assignment in the previous building
+		// Used when changing the building
+		//=========================================================
+		_validateBuildingAssigned: function( newBuilding ) {
+			// Variables
+			var newBuilding = newBuilding;
+			var MLI = this.moveLineItems;
+
+			// Clean the array of MLI
+			this._spaceAssignmentsToRemove = [];
+
+			// For: Iterate through the array of MLIs
+			for (var i = 0; i < MLI.length; i++) {
+				// If Statement: Check if there's a toBuilding
+				if (MLI[i].toBuilding) {
+					// If Statement: Check if the toBuilding is different from the new selected building
+					if (MLI[i].toBuilding != newBuilding.building) {
+
+						// Push the MLI to the array
+						this._spaceAssignmentsToRemove.push(MLI[i]);
+					}// end if
+				}// end if
+			}// end for
+
+			// If Statement: Check if there's MLIs to remove Space Assignments
+			if (this._spaceAssignmentsToRemove.length > 0) {
+				return true;
+			} else {
+				return false;
+			}// end if
+		},
+
+		//=========================================================
+		// Function _validateFloorsAssigned
+		//------------------------------------------
+		// Objective: Check if there were a space assignment in the previous floor
+		// Used when changing the floor
+		//=========================================================
+		_validateFloorsAssigned: function(newFloors) {
+			// Variables
+			var newFloors = newFloors;
+			var MLI = this.moveLineItems;
+			var floorCompatible = null;
+
+			// Clean the array of MLI
+			this._spaceAssignmentsToRemove = [];
+
+			// For: Iterate through the array of MLIs
+			for (var i = 0; i < MLI.length; i++) {
+				floorCompatible = null;
+
+				// If Statement: Check if there's a toFloor
+				if (MLI[i].toFloor) {
+					// For: Iterate through the array of floors selected
+					for (var aux = 0; aux < newFloors.length; aux++) {
+						// If Statement: Check if the toFloor is equal to the new selected floor
+						if (MLI[i].toFloor == newFloors[aux].floor) {
+							floorCompatible = MLI[i];
+
+						}// end if
+					}// end for
+
+					// If Statement: Check if there's a conflict between selected floors and toFloor
+					if (!floorCompatible) {
+						// console.log("FLOOR CONFLICT");
+						// console.log(MLI[i]);
+
+						// Push the MLI to the array
+						this._spaceAssignmentsToRemove.push(MLI[i]);
+					}// end if
+				}// end if
+			}// end for
+
+			// If Statement: Check if there's MLIs to remove Space Assignments
+			if (this._spaceAssignmentsToRemove.length > 0) {
+				return true;
+			} else {
+				return false;
+			}// end if
+		},
+
+		//=========================================================
+		// Function _removeSpaceAssignments
+		//------------------------------------------
+		// Objective: Remove space assignments for a location
+		//=========================================================
+		_removeSpaceAssignments: function() {
+			var mliArray = this._spaceAssignmentsToRemove;
+			var mliIDs = [];
+
+			// For: Iterate through the array of MLIs
+			for (var i = 0; i < mliArray.length; i++) {
+				// Push: Add the MLI IDs
+				mliIDs.push( mliArray[i]._id );
+			}// end for
+
+			// Show loading
+			this._startupMoveToFloor = true;
+
+			// Call action to clear multiple move to location
+			this.$.moveRequest.performAction(
+				this.moveRequest._id, TriPlatDs.RefreshType.BOTH,
+				"groupMoveRequest", "clearMultipleMoveToLocation", {varMLIs: mliIDs}).then(
+						function() {
+							this.$.moveLineItems.refresh();
+
+							// Add / Update Data
+							this._addBuildingFloorData();
+						}.bind(this)
+			);
+		},
+
+		//=========================================================
+		// Function _removeNewDateSpaceAssignments
+		//------------------------------------------
+		// Objective: Remove space assignments with date conflicts
+		//=========================================================
+		_removeNewDateSpaceAssignments: function() {
+			var mliArray = this._spaceAssignmentsToRemove;
+			var mliIDs = [];
+
+			// For: Iterate through the array of MLIs
+			for (var i = 0; i < mliArray.length; i++) {
+				// Push: Add the MLI IDs
+				mliIDs.push( mliArray[i]._id );
+			}// end for
+
+			// Show loading
+			this._startupMoveToFloor = true;
+
+			// Call action to clear multiple move to location
+			this.$.moveRequest.performAction(
+				this.moveRequest._id, TriPlatDs.RefreshType.BOTH,
+				"groupMoveRequest", "clearMultipleMoveToLocation", {varMLIs: mliIDs}).then(
+						function() {
+							this.$.moveLineItems.refresh();
+
+							// Set the request move date to be the equal to _newMoveDate
+							this.set("openRequest.moveDate", this._newMoveDate);
+							// Set status change move date to true
+							this.set("_statusChangeMoveDate", true);
+							// Update the Request DS
+							this.$.moveRequestModel.updateRecord(this.openRequest._id, TriPlatDs.RefreshType.BOTH);
+							// this.$.moveRequestModel.performAction(this.openRequest._id,TriPlatDs.RefreshType.CLIENT, "actionGroup", "updateMliDate");
+
+							// Hide loading
+							this._startupMoveToFloor = false;
+						}.bind(this)
+			);
+		},
+
+		//=========================================================
+		// Function _addBuildingFloor
+		//------------------------------------------
+		// Objective: Add Building and Floor action - Call validation
+		//=========================================================
+		_addBuildingFloor: function() {
+			// Add building and one floor to the request
+			if (this._selectedBuilding && this._finalBuilding &&
+						this._selectedBuilding._id && this._finalBuilding._id &&
+						this._selectedBuilding._id !== this._finalBuilding._id) {
+				this._resetLegendAndButtons();
+			}// end if
+
+			this._finalBuilding = this._selectedBuilding;
+			this._finalFloors = this._selectedFloors;
+
+			// If Statement: Check if it's a real request or a precreated request
+			if (this.openRequest._id) {
+				// If Statement: Validation - check if the new building selected is different from the current building
+				if ( this._validateBuildingAssigned(this._finalBuilding) ) {
+					// Call confirmation Dialog
+					this.$.dialogRemoveSpace.open();
+				} else {
+					// If Statement: Validation - check if the new floors selected is different from the current floors
+					if ( this._validateFloorsAssigned(this._finalFloors) ) {
+						// Call confirmation Dialog
+						this.$.dialogRemoveSpace.open();
+					} else {
+						// Add / Update Data
+						this._addBuildingFloorData();
+					}// end if
+				}// end if
+			} else {
+				// Set temporary variables
+				this.set("tempRequest.id", this.openRequestWhereUrlParams.reqId);
+
+				// Add a temporary building and floor
+				this._addBuildingFloorTemp();
+			}// end if
+			this.$.floorTabs.refreshTabs();
+		},
+
+		//=========================================================
+		// Function _addBuildingFloorData
+		//------------------------------------------
+		// Objective: Add Building and Floor to a Request
+		//=========================================================
+		_addBuildingFloorData: function() {
+			// Set Building and Floor for an empty request
+				// Necessary when the user doesn't add MLI
+			this.openRequest.toBuilding = (this.openRequest.toBuilding) ? this.openRequest.toBuilding : {};
+			this.openRequest.toFloor = (this.openRequest.toFloor) ? this.openRequest.toFloor : {};
+				// MoveRequest
+			this.moveRequest.toBuilding = (this.moveRequest.toBuilding) ? this.moveRequest.toBuilding : {};
+			this.moveRequest.toFloor = (this.moveRequest.toFloor) ? this.moveRequest.toFloor : {};
+
+			// Change the Building and Floor of openRequest
+				// MyMoveRequests
+			this.openRequest.toBuilding.id = this._finalBuilding._id;
+			this.openRequest.toBuilding.value = this._finalBuilding.building;
+			this.openRequest.toFloor.id = this._finalFloors[0]._id;
+			this.openRequest.toFloor.value = this._finalFloors[0].floor;
+				// MoveRequest
+			this.moveRequest.toBuilding.id = this._finalBuilding._id;
+			this.moveRequest.toBuilding.value = this._finalBuilding.building;
+			this.moveRequest.toFloor.id = this._finalFloors[0]._id;
+			this.moveRequest.toFloor.value = this._finalFloors[0].floor;
+
+			// Reset property
+			this.set("_moveToFloorLoaded", false);
+
+			// Add and/or remove floors from/to `moveToFloor`.
+			this._addRemoveMoveToFloor().then(function() { 
+				this._clearSelectedFloors();
+				this.$.moveToFloorDS.refresh();
+			}.bind(this));
+			// Add and/or remove building from/to `moveToBuilding`.
+			this._addRemoveMoveToBuilding().then(function() {
+				this._clearSelectedBuildingData();
+			}.bind(this));
+
+			// Update Record
+				// Note: The call for add Building and Floor is in the callback of the Remove Record of each DS
+			this.$.moveRequestModel.updateRecord(this.openRequest._id, TriPlatDs.RefreshType.BOTH);
+			this.$.moveRequest.updateRecord(this.moveRequest._id, TriPlatDs.RefreshType.BOTH);
+
+			// Refresh Data Sources
+				// Note: The call for refresh the DS is in the callback of each DS
+
+			// Show loading
+			this._startupMoveToFloor = true;
+
+			// Clean Search
+			this.set("valueBuilding", "");
+			this.$.searchBuildingField.clearSearch();
+
+			// Search Collapse display
+			this._handleHideBarBuilding();
+
+			// Hide the Search Container
+			this.set("_statusSearchSpace", false);
+		},
+
+		/**
+		 * Add floors to `moveToFloor` and/or remove floors from `moveToFloor`.
+		 */
+		_addRemoveMoveToFloor: function() {
+			// Check if there are floors to remove.
+			var floorsToRemove = [];
+			this.moveToFloor.forEach(function(floor) {
+				var finalFloorIndex = this._finalFloors.findIndex(function(finalFloor) { return finalFloor._id == floor._id; }.bind(this));
+				if (finalFloorIndex < 0) floorsToRemove.push(floor);
+			}.bind(this));
+
+			// Check if there are floors to add.
+			var floorsToAdd = [];
+			this._finalFloors.forEach(function(finalFloor) {
+				var floorIndex = this.moveToFloor.findIndex(function(floor) { return floor._id == finalFloor._id; }.bind(this));
+				if (floorIndex < 0) floorsToAdd.push(finalFloor);
+			}.bind(this));
+
+			if (floorsToRemove.length > 0 && floorsToAdd.length > 0) {
+				return this._removeFloorsFromMoveToFloor(floorsToRemove)
+					.then(function() {
+						return this._addFloorsToMoveToFloor(floorsToAdd);
+					}.bind(this));
+			} else if (floorsToRemove.length > 0 && floorsToAdd.length == 0) {
+				return this._removeFloorsFromMoveToFloor(floorsToRemove);
+			} else if (floorsToRemove.length == 0 && floorsToAdd.length > 0) {
+				return this._addFloorsToMoveToFloor(floorsToAdd);
+			}
+		},
+
+		/**
+		 * Remove floors from `moveToFloor`.
+		 */
+		_removeFloorsFromMoveToFloor: function(floorsToRemove) {
+			return this.$.moveToFloorDS.removeRecord(floorsToRemove, TriPlatDs.RefreshType.NONE);
+		},
+
+		/**
+		 * Add floors to `moveToFloor`.
+		 */
+		_addFloorsToMoveToFloor: function(floorsToAdd) {
+			return this.$.moveToFloorDS.addRecord(floorsToAdd, TriPlatDs.RefreshType.NONE);
+		},
+
+		/**
+		 * Add a building to `moveToBuilding` and/or remove a building from `moveToBuilding`.
+		 */
+		_addRemoveMoveToBuilding: function() {
+			// Don't change anything if current building (moveToBuilding) is the selected building (_finalBuilding).
+			if (this.moveToBuilding && this._finalBuilding && this.moveToBuilding._id == this._finalBuilding._id) return Promise.resolve();
+
+			if (!this.moveToBuilding || !this.moveToBuilding._id || this.moveToBuilding._id == "") {
+				return this._addBuildingToMoveToBuilding(this._finalBuilding);
+			} else {
+				return this.removeBuildingFromMoveToBuilding(this.moveToBuilding)
+					.then(function() {
+						return this._addBuildingToMoveToBuilding(this._finalBuilding);
+					}.bind(this));
+			}// end if
+		},
+
+		/**
+		 * Remove a building from `moveToBuilding`.
+		 */
+		removeBuildingFromMoveToBuilding: function(buildingToRemove) {
+			return this.$.moveToBuildingDS.removeRecord(buildingToRemove, TriPlatDs.RefreshType.NONE);
+		},
+
+		/**
+		 * Add a building to `moveToBuilding`.
+		 */
+		_addBuildingToMoveToBuilding: function(buildingToAdd) {
+			return this.$.moveToBuildingDS.addRecord(buildingToAdd, TriPlatDs.RefreshType.NONE);
+		},
+
+		//=========================================================
+		// Function _addBuildingFloorTemp
+		//------------------------------------------
+		// Objective: Add Building and Floor temporary
+		//=========================================================
+		_addBuildingFloorTemp: function() {
+			// Search Field: Hide Search for Space People
+			this.$.searchSpaceField.hidden = true;
+			// Search Field: Show Search for Space Assets
+			this.$.searchSpaceAssetsField.hidden = false;
+
+			// Set moveToFloor
+			// If Statement: Check if the moveToFloor array has items inside
+			var tempMoveToFloor = this.moveToFloor;
+			if (tempMoveToFloor.length > 0) {
+				this.splice('moveToFloor', 0, tempMoveToFloor.length);
+			}// end if
+
+			// Sort the floors
+			this._finalFloors.sort(this._sortArrayObj("level"));
+
+			// For: Iterate through the array of floors
+			for (var i = 0; i < this._finalFloors.length; i++) {
+				// Var: current floor of the loop
+				var currentFloor = this._finalFloors[i];
+				// Var: Obj of the floor
+				var floorObj = {
+					_id: currentFloor._id,
+					building: currentFloor.building,
+					floorLevel: currentFloor.level,
+					id: currentFloor.id,
+					name: currentFloor.floor
+				};
+
+				// Push the floor into the array of floors
+				this.push("moveToFloor", floorObj);
+			}// end for
+
+			// Set moveToBuilding
+			this.set("moveToBuilding", {});
+			// Var: current uilding
+			var currentBuilding = this._finalBuilding;
+			// Var: Obj of the building
+			var buildingObj = {
+				_id: currentBuilding._id,
+				name: currentBuilding.building
+			};
+			this.set("moveToBuilding", buildingObj);
+
+
+			// Clear the selected buildings data.
+			this._clearSelectedBuildingData();
+			// Clear the selected floors.
+			this._clearSelectedFloors();
+
+
+			// Show loading
+			this._startupMoveToFloor = true;
+
+			// Clean Search
+			this.set("valueBuilding", "");
+			this.$.searchBuildingField.clearSearch();
+
+			// Search Collapse display
+			this._handleHideBarBuilding();
+
+			// Hide the Search Container
+			this.set("_statusSearchSpace", false);
+
+			// Set First floor as selected
+			this._setBoxFloorSelected();
+
+			// Hide loading
+			this._startupMoveToFloor = false;
+		},
+
+		//=========================================================
+		// Function _sortArrayObj
+		//------------------------------------------
+		// Objective: Sort an array of objects
+		//=========================================================
+		_sortArrayObj: function(property) {
+			var sortOrder = 1;
+
+			if (property[0] === "-") {
+				sortOrder = -1;
+				property = property.substr(1);
+			}// end if
+
+			return function (a,b) {
+				var result = (a[property] < b[property]) ? -1 : (a[property] > b[property]) ? 1 : 0;
+				return result * sortOrder;
+			}
+		},
+
+		//=========================================================
+		// Function _handleBuildingAdd
+		//------------------------------------------
+		// Objective: Callback for Add Building
+		//=========================================================
+		_handleBuildingAdd: function() {
+			// Refresh Building DS after add
+			this.$.moveToBuildingDS.refresh();
+		},
+
+		//=========================================================
+		// Function _handleBuildingSearch
+		//------------------------------------------
+		// Objective: Handle the search for a buiding
+		//=========================================================
+		_handleBuildingSearch: function(buildings) {
+			// If Statement to set the status of _hideFloorBuildingContainer
+			this._hideFloorBuildingContainer = !this.appendBuildingFilters || this.appendBuildingFilters.length == 0;
+
+			// Set Status to false
+			this._statusChangeLocation = false;
+
+			// Clear the selected floors.
+			this._clearSelectedFloors();
+			// Clear the selected buildings data.
+			this._clearSelectedBuildingData();
+
+			// If Statement: check if the building search returns a value
+			if (this.appendBuildingFilters[0]) {
+				// Set the _selectedBuildings as the array of buildings returning from the search
+				this.set("_selectedBuildings", buildings);
+
+				// If Statement: auto select a building when the search return 1 building
+				if (this._selectedBuildings.length == 1) {
+					// Select radio
+					this._selectedBuildings[0].selected = true;
+					// Expand the collapsable
+					this._selectedBuildings[0].isExpanded = true;
+
+					// Clear the list of floors
+					this.buildingFloorSearchSelected = [];
+					// Loading
+					this._loadingFloors = true;
+
+					// Set a Selected Building
+					this.set("_selectedBuilding", this._selectedBuildings[0]);
+				}// end if
+			}// end if
+		},
+
+		//=========================================================
+		// Function _handleCheckboxBuildingSelect
+		//------------------------------------------
+		// Objective: Called when a checkbox of the building list is clicked
+		//=========================================================
+		_handleCheckboxBuildingSelect: function(e) {
+			e.stopPropagation();
+
+			if (this._selectedFloors.length > 0) {
+				// console.log("Floors Previously Selected");
+				this._selectedFloors = [];
+			}// end if
+
+			// Hide actionbar: when change the building with a floor selected
+			if (!this.moveToBuilding.name) {
+				// Search Collapse display
+				this._handleHideBarBuilding();
+			} else {
+				// Disable action button
+				this._actionBtnDisabled = true;
+			}// end if
+
+
+			// Handle with Radio Buttons
+			// First: Uncheck all radio buttons
+			var allRadios = Polymer.dom(this.root).querySelectorAll("paper-radio-button");
+			for (var i = 0; i < allRadios.length; i++) {
+				allRadios[i].checked = false;
+
+				// Handle with collapsable rows
+				// Collapse all rows first
+				var oneRadio = allRadios[i];
+				var modelRadio = this.$.buildingTableTemplate.modelForElement(oneRadio);
+				modelRadio.set('item.isExpanded', false);
+			}// end for
+
+			// Second: Check the selected radio button
+			var selectedRadio = e.currentTarget;
+			selectedRadio.checked = true;
+
+
+			// Selected Building
+			var building = e.model.item;
+
+			// If Statement: Check if the current selected building was equal to the previous selected building
+			if (building.building != this._selectedBuilding.building) {
+				// Clean the list of floors
+				this.buildingFloorSearchSelected = [];
+					// Loading
+					this._loadingFloors = true;
+			}// end if
+
+			if (building) {
+				if (building.selected) {
+					// Set a Selected Building
+					this.set("_selectedBuilding", building);
+					// Expand the row when the radio button is selected
+					e.model.set('item.isExpanded', true);
+				} else {
+					// Set Selected Building to empty
+					this.set("_selectedBuilding", {});
+					// Collapse the row
+					e.model.set('item.isExpanded', false);
+				}// end if
+			}// end if
+		},
+
+		//=========================================================
+		// Function _handleCheckboxFloorSelect
+		//------------------------------------------
+		// Objective: Called when a checkbox of the floors list is clicked
+		//=========================================================
+		_handleCheckboxFloorSelect: function(e) {
+			e.stopPropagation();
+
+			// Set Status to false
+			this._statusChangeLocation = false;
+
+			// Update selected Floors array
+			var floor = e.model.item;
+			if (floor) {
+				if (floor.selected) {
+					this.push("_selectedFloors", floor);
+				} else {
+					this._removeSelectedFloor(floor);
+				}// end if
+			}// end if
+
+			// Show the actionbar when 1 or more floors are selected
+			if (this._selectedFloors.length > 0) {
+				// Search Collapse display
+				this._handleShowBarBuilding();
+				// Disable action button
+				this._actionBtnDisabled = false;
+			} else {
+				// Collapse actionbar only when there's no building assign
+				if (!this.moveToBuilding.name) {
+					// Search Collapse display
+					this._handleHideBarBuilding();
+				} else {
+					// Disable action button
+					this._actionBtnDisabled = true;
+				}// end if
+			}// end if
+		},
+
+		//=========================================================
+		// Function _removeSelectedFloor
+		//------------------------------------------
+		// Objective: Remove selected floor from the array of floors
+		//=========================================================
+		_removeSelectedFloor: function(selectedItem) {
+			// Variables
+			var selectedItemId = selectedItem._id;
+			var i = 0;
+			var found = false;
+
+			// Loop to remove the selected item
+			while (!found && i < this._selectedFloors.length) {
+				var curItemId = this._selectedFloors[i]._id;
+
+				if (selectedItemId == curItemId) {
+					found = true;
+					this.splice("_selectedFloors", i, 1);
+				}// end if
+				i++;
+			}// end while
+		},
+
+		//=========================================================
+		// Function _computeRowId
+		//------------------------------------------
+		// Objective: Handle a row ID
+		//=========================================================
+		_computeRowId: function(id) {
+			if (id) return "row"+id;
+			return "";
+		},
+
+		//=========================================================
+		// Function _handleRemoveLineItemDialog
+		//------------------------------------------
+		// Objective: Open the Remove Line Item Dialog
+		//=========================================================
+		_handleRemoveLineItemDialog: function() {
+			this.$.deleteMLIDialog.open();
+		},
+
+		//=========================================================
+		// Function _handleRemoveLineItem
+		//------------------------------------------
+		// Objective: Remove a Line Item
+		//=========================================================
+		_handleRemoveLineItem: function(e) {
+			// Variables
+			var selectedRequests = this._selectedRequests;
+			var selectedRequestItems = [];
+			var moveType = null;
+
+			for (var i=0; i < selectedRequests.length; i++) {
+				var selectedRequest = selectedRequests[i];
+				moveType = selectedRequest.moveType;
+
+				if ((this._selectedLineItem) && (selectedRequest._id == this._selectedLineItem._id)) {
+					this._locateSelectedLineItem(this._selectedLineItem._id, moveType);
+				}// end if
+
+				this._clearSessionData(selectedRequest._id, moveType, this.openRequest._id);
+			}// end for
+
+			this.$.moveRequest.performAction(
+				this.moveRequest._id, TriPlatDs.RefreshType.BOTH,
+				"groupMoveRequest", "deleteMultipleMLIs", {varMLIs: selectedRequests}).then(
+						function() {
+							this.$.moveLineItems.refresh();
+						}.bind(this)
+			);
+
+			// remove all selections
+			this.$.peopleAccordion._removeAllSelections();
+			this.$.assetAccordion._removeAllSelections();
+			this.$.equipmentAccordion._removeAllSelections();
+			this.$.roomAccordion._removeAllSelections();
+
+			this.set("_selectedRequests", []);
+		},
+
+		//=========================================================
+		// Function _clearSessionData
+		//------------------------------------------
+		// Objective: Clear session data
+		//=========================================================
+		_clearSessionData: function(selectedId, selectedMoveType, selectedRequestId) {
+			var id = sessionStorage.getItem("selectedLineItem");
+			var moveType = sessionStorage.getItem("moveType");
+			var requestId = sessionStorage.getItem("requestId");
+
+			if ((id == selectedId) && (moveType == selectedMoveType) && (requestId == selectedRequestId)) {
+				sessionStorage.clear();
+			}// end if
+		},
+
+		//=========================================================
+		// Function _changeLocation
+		//------------------------------------------
+		// Objective: Handle change location
+		//=========================================================
+		_changeLocation: function(e) {
+			if(e.type ==  "keypress" && !(e.which == 13 || e.keyCode == 13)){
+				return 0;
+			}
+			this.set("_statusSearchSpace", true);
+			// Disable action button
+			this._actionBtnDisabled = true;
+			// Search Collapse display
+			this._handleShowBarBuilding();
+
+			// Change Location
+			this._statusChangeLocation = true;
+
+			// Workaround for Building
+				// Temporary variable to hold the current Building
+				var selectedBuilding = {};
+				selectedBuilding._id = this.moveToBuilding._id;
+				selectedBuilding.building = this.moveToBuilding.name;
+
+				// Temporary variable to hold the array with the current Building
+				var selectedBuildings = [];
+				selectedBuildings.push(selectedBuilding);
+
+				// Set _selectedBuildings
+				this.set("_selectedBuildings", selectedBuildings);
+				// Select radio
+				this._selectedBuildings[0].selected = true;
+				// Expand the collapsable
+				this._selectedBuildings[0].isExpanded = true;
+
+				// Clean the list of floors
+				this.buildingFloorSearchSelected = [];
+					// Loading Floors active
+					this._loadingFloors = true;
+
+				// Set a Selected Building
+				this.set("_selectedBuilding", this._selectedBuildings[0]);
+
+			// Show the container of buildings results
+			this._hideFloorBuildingContainer = false;
+		},
+
+		//=========================================================
+		// Function _changeLocationCancel
+		//------------------------------------------
+		// Objective: Handle change location cancel
+		//=========================================================
+		_changeLocationCancel: function() {
+			this.set("_statusSearchSpace", false);
+			// Search Collapse display
+			this._handleHideBarBuilding();
+
+			// Clean Search
+			this.set("valueBuilding", "");
+			this.$.searchBuildingField.clearSearch();
+
+			// Clear the selected buildings data.
+			this._clearSelectedBuildingData();
+			// Clear the selected floors.
+			this._clearSelectedFloors();
+
+			// Change Location
+			this._statusChangeLocation = true;
+		},
+
+		//=========================================================
+		// Function _handleSelectedFloor
+		//------------------------------------------
+		// Objective: Handle the current floor selected
+		//=========================================================
+		_handleSelectedFloor: function(e) {
+			this.set('_selectedFloorObj', JSON.parse(e.getAttribute('floor')));
+
+			this.set("_lastTabSelected", this._selectedFloorObj._id);
+		},
+
+		handleSelectedFloorObjChanged: function(newValue, oldValue) {
+			if (newValue && oldValue && newValue._id !== oldValue._id) {
+				this._preserveLegend();
+			}
+		},
+
+		//=========================================================
+		// Function _preserveLegend
+		//------------------------------------------
+		// Objective: Preserve the legend configuration between
+		// floors.
+		//=========================================================
+		_preserveLegend: function() {
+			if (this.$.showByOrg.checked && this.$.showByOrg._showAll) {
+				this.$.showByOrg.selectedCriterions = null;
+			}
+			if (this.$.showBySpaceClass.checked && this.$.showBySpaceClass._showAll) {
+				this.$.showBySpaceClass.selectedCriterions = null;
+			}
+			if (this.$.filterBySpaceClass.checked && this.$.filterBySpaceClass._showAll) {
+				this.$.filterBySpaceClass.selectedCriterions = null;
+			}
+		},
+
+		//=========================================================
+		// Function _resetLegendAndButtons
+		//------------------------------------------
+		// Objective: Reset the graphic legend and buttonto its
+		// initial state.
+		//=========================================================
+		_resetLegendAndButtons: function() {
+			this.$.showByOrg.selectedCriterions = null;
+			this.$.showBySpaceClass.selectedCriterions = null;
+			this.$.filterBySpaceClass.selectedCriterions = null;
+			this.$.graphicLegend.showBySelected = this._legendLabels.organization;
+			this.$.graphicLegend.filterBySelected = this._legendLabels.spaceClass;
+			this._peoplePinsEnabled = true;
+			this._assetPinsEnabled = true;
+			this._equipmentPinsEnabled = true;
+			this._roomPinsEnabled = true;
+		},
+
+		//=========================================================
+		// Function _handleChangeMoveDate
+		//------------------------------------------
+		// Objective: Change the request move date
+		//=========================================================
+		_handleChangeMoveDate: function() {
+			// If Statement: Validate if the new date is valid - no conflicts with the current space assignments
+			if ( this._validateChangeMoveDate() ) {
+				// Set the request move date to be the equal to _newMoveDate
+				this.set("openRequest.moveDate", this._newMoveDate);
+
+				// Set Move Request proposed move date
+				this.set("moveRequest.proposedMoveDate", this._newMoveDate);
+
+				// Set status change move date to true
+				this.set("_statusChangeMoveDate", true);
+				// Update MyMoveRequestsRequest DS
+				this.$.moveRequestModel.updateRecord(this.openRequest._id, TriPlatDs.RefreshType.BOTH);
+				// Update MoveRequest DS
+				this.$.moveRequest.updateRecord(this.moveRequest._id, TriPlatDs.RefreshType.BOTH);
+			} else {
+				this.$.dialogNewDateRemoveSpace.open();
+			}// end if
+		},
+
+		//=========================================================
+		// Function _handleCancelChangeMoveDate
+		//------------------------------------------
+		// Objective: Cancel change the request move date
+		//=========================================================
+		_handleCancelChangeMoveDate: function() {
+			// Set the _newMoveDate to be equal to the current move date
+			this.set("_newMoveDate", this.openRequest.moveDate);
+		},
+
+		//=========================================================
+		// Function _validateChangeMoveDate
+		//------------------------------------------
+		// Objective: Validation to check the new date and the move date of the space assigments
+		//=========================================================
+		_validateChangeMoveDate: function() {
+			// Clean the array of MLI
+			this._spaceAssignmentsToRemove = [];
+
+			var newDateSpaces = this.filteredNewDateSpacesAvailable;
+			// var moveLineItems = this.moveLineItems;
+			var isNotValid = false;
+
+			// For: Irerate through the array of MLIs - to check if they all match with space assignments
+			for (var aux = 0; aux < this.moveLineItems.length; aux++) {
+				if (this.moveLineItems[aux].moveType == "Person") {
+					// For: Irerate through the array of spaces
+					for (var i = 0; i < newDateSpaces.length; i++) {
+						// If Statement: Check if the building and floor match - if don't the validation shoul no be apply - Workaround because moveToSpaces only have spaces for 1 floor, the current selected floor
+						  // If Statement: Check if MLI has a space assigned
+						  if (this.moveLineItems[aux].toSpaceId != null) {
+						    // If Statement: Check if the space id is equal to the MLI to space id
+						    if (newDateSpaces[i]._id == this.moveLineItems[aux].toSpaceId) {
+						      break;
+						    } else if (i == (newDateSpaces.length - 1)) {
+						      isNotValid = true;
+
+						      this.moveLineItems[aux].dateConflict = true;
+
+									// Push the MLI to the array
+									this._spaceAssignmentsToRemove.push(this.moveLineItems[aux]);
+						    }// end if
+						  }// end if
+						// }// end if
+					}// end for
+				}// end if
+			}// end for
+
+
+			// If Statement: Check if the new date is valid
+			if (isNotValid) {
+				// False means that it is not valid - there are inconsistencies
+				return false;
+			} else {
+				// False means that it is valid
+				return true;
+			}// end if
+		},
+
+		//=========================================================
+		// Function _handleFloorsResults
+		//------------------------------------------
+		// Objective: Hide the floor loading and show the list of floors - Called when the search for floors returns a result
+		//=========================================================
+		_handleFloorsResults: function(buildingFloors) {
+			// If Statement: Check if change location was click
+			if (this._statusChangeLocation) {
+				// If Statement: Check if there's a moveToFloor
+				if (this.moveToFloor) {
+					// If Statement: Check if there's a floor in the array
+					if (this.moveToFloor.length > 0) {
+						// For: Iterate through array moveToFloor
+						for (var i = 0; i < this.moveToFloor.length; i++) {
+							// For: Iterate through array buildingFloorSearchSelected
+							for (var aux = 0; aux < this.buildingFloorSearchSelected.length; aux++) {
+								// If Statement: Check the current floors
+								if ( this.moveToFloor[i]._id == this.buildingFloorSearchSelected[aux]._id ) {
+									this.buildingFloorSearchSelected[aux].selected = true;
+
+									this._selectedFloors.push(this.buildingFloorSearchSelected[aux]);
+								}// end if
+							}// end for
+						}// end for
+					}// end if
+				}// end if
+			}// end if
+
+			// Loading
+			this._loadingFloors = false;
+		},
+
+		//=========================================================
+		// Function _setBoxFloorSelected
+		//------------------------------------------
+		// Objective: Set the first floor as selected
+		//=========================================================
+		_setBoxFloorSelected: function() {
+			// If Statement: Check if there is a building assigned to the request
+			if (this.moveToFloor.length > 0) {
+				if (this.moveToFloor[0].building) {
+					// Set a floor plan
+					if ( this.moveToFloor.length > 0 ) {
+						this.set("_selectedFloorObj", this.moveToFloor[0]);
+
+						// Select the first floor
+						this._setSelectedFloorTab(this.moveToFloor[0]._id);
+					}// end if
+				}// end if
+			}// end if
+		},
+
+		//=========================================================
+		// Function _hasFloors
+		//------------------------------------------
+		// Objective: Used to check if the building selected has floors
+		//=========================================================
+		_hasFloors: function(floorArray) {
+			return floorArray.length > 0;
+		},
+
+		//=========================================================
+		// Function _toggleCloseMLI
+		//------------------------------------------
+		// Objective: Close the MLI container
+		//=========================================================
+		_toggleCloseMLI: function() {
+		  this.$.collapseSection._collapseHide();
+
+			// Show the collapse button
+			this.$.header._isCollapseBtnVisible();
+		},
+
+		//=========================================================
+		// Function _toggleExpandMLI
+		//------------------------------------------
+		// Objective: Expand the MLI container
+		//=========================================================
+		_toggleExpandMLI: function() {
+		  this.$.collapseSection._collapseShow();
+
+			// Hide the collapse button
+			this.$.header._isCollapseBtnHidden();
+		},
+
+		_handleReset: function() {
+			this.fire("reset");
+		},
+
+		//=========================================================
+		// Function _handleGraphicLegendOpenedChanged
+		//------------------------------------------
+		// Objective: When the graphic size is changed, notify
+		// the resize so that the pins can resize themselves.
+		// The iron-collapse takes 300 ms to close or open, because of the
+		// animation transition, so this method will notify the resize only
+		// after the animation is done.
+		//=========================================================
+		_handleGraphicSizeChanged: function() {
+			this.async(this.notifyResize, 350);
+		},
+
+		_handleSelectedPersonPinChanged: function(newValue, oldValue) {
+			if (this._handlingSelectedPersonPinChanged || this._handlingSelectedMLI) {
+				return;
+			}
+			this._handlingSelectedPersonPinChanged = true;
+			if (newValue) {
+				if(!oldValue || oldValue.originalMLI._id !== newValue.originalMLI._id) {
+					// If new value is not null and different from old value, select the new item.
+					this.$.peopleAccordion.selectMoveLineItem(newValue.originalMLI);
+				}
+			} else {
+				// if (oldValue) {
+				// 	// If new value is null and oldvalue is not null, deselect the current item.
+				// 	this.$.peopleAccordion.selectMoveLineItem();
+				// }
+			}
+			this._handlingSelectedPersonPinChanged = false;
+		},
+
+		_handleSelectedAssetPinChanged: function(newValue, oldValue) {
+			if (this._handlingSelectedAssetPinChanged || this._handlingSelectedMLI) {
+				return;
+			}
+			this._handlingSelectedAssetPinChanged = true;
+			if (newValue) {
+				if(!oldValue || oldValue.originalMLI._id !== newValue.originalMLI._id) {
+					// If new value is not null and different from old value, select the new item.
+					this.$.assetAccordion.selectMoveLineItem(newValue.originalMLI);
+				}
+			} else {
+				// if (oldValue) {
+				// 	// If new value is null and oldvalue is not null, deselect the current item.
+				// 	this.$.assetAccordion.selectMoveLineItem();
+				// }
+			}
+			this._handlingSelectedAssetPinChanged = false;
+		},
+
+		_handleSelectedEquipmentPinChanged: function(newValue, oldValue) {
+			if (this._handlingSelectedEquipmentPinChanged || this._handlingSelectedMLI) {
+				return;
+			}
+			this._handlingSelectedEquipmentPinChanged = true;
+			if (newValue) {
+				if(!oldValue || oldValue.originalMLI._id !== newValue.originalMLI._id) {
+					// If new value is not null and different from old value, select the new item.
+					this.$.equipmentAccordion.selectMoveLineItem(newValue.originalMLI);
+				}
+			} else {
+				// if (oldValue) {
+				// 	// If new value is null and oldvalue is not null, deselect the current item.
+				// 	this.$.equipmentAccordion.selectMoveLineItem();
+				// }
+			}
+			this._handlingSelectedEquipmentPinChanged = false;
+		},
+
+		_handleSelectedRoomPinChanged: function(newValue, oldValue) {
+			if (this._handlingSelectedRoomPinChanged || this._handlingSelectedMLI) {
+				return;
+			}
+			this._handlingSelectedRoomPinChanged = true;
+			if (newValue) {
+				if(!oldValue || oldValue.originalMLI._id !== newValue.originalMLI._id) {
+					// If new value is not null and different from old value, select the new item.
+					this.$.roomAccordion.selectMoveLineItem(newValue.originalMLI);
+				}
+			} else {
+				// if (oldValue) {
+				// 	// If new value is null and oldvalue is not null, deselect the current item.
+				// 	this.$.roomAccordion.selectMoveLineItem();
+				// }
+			}
+			this._handlingSelectedRoomPinChanged = false;
+		},
+
+		_handleApplicationSettingsGetComplete: function() {
+			// Control when the settings are loaded
+			this.set("_applicationSettingsLoaded", true);
+		},
+
+		_handleMoveToBuildingGetComplete: function() {
+			// If Statement: Check if the Application Settings are loaded
+			if (this._applicationSettingsLoaded) {
+				// If Statement: Check if the Restrict Entitlementof the Application  is active
+				if (this.applicationSettings.restrictEntitlements) {
+					this.set("_restrictEntitlements", true);
+					this.set("_showEntitleFilter", false);
+				} else {
+					// If Statement: Check if the Restrict Entitlement of the Building is active
+					if (this.moveToBuilding.restrictEntitlements) {
+						this.set("_restrictEntitlements", true);
+						this.set("_showEntitleFilter", false);
+					} else {
+						this.set("_restrictEntitlements", false);
+						this.set("_showEntitleFilter", true);
+					}// end if
+				}//end if
+			} else {
+				// Refresh moveToBuilding DS if the Application Settings are not loaded
+				this.$.moveToBuildingDS.refresh();
+			}// end if
+		},
+
+		//=========================================================
+		// Function _hideRemoveLineItemActionBar
+		//------------------------------------------
+		// Objective: Determine when to show or hide the remove line item action bar
+		//=========================================================
+		_hideRemoveLineItemActionBar: function(statusSearchSpace, completedRequest) {
+			return (statusSearchSpace || completedRequest);
+		},
+
+		//=========================================================
+		// Function _computeMoveToSpacesLoading
+		//------------------------------------------
+		// Objective: Compute MoveToSpaces loading - moveToSpaces and moveToSpacesEntitlements
+		//=========================================================
+		_computeMoveToSpacesLoading: function(spaces, spacesEntitle) {
+			return (spaces || spacesEntitle);
+		},
+
+		//=========================================================
+		// Function _selectLineCheckbox
+		//------------------------------------------
+		// Objective: Handle select line item checkbox
+		//=========================================================
+		_selectLineCheckbox: function(e) {
+			this.push("_selectedRequests", e.detail);
+		},
+
+		//=========================================================
+		// Function _deselectLineCheckbox
+		//------------------------------------------
+		// Objective: Handle deselect line item checkbox
+		//=========================================================
+		_deselectLineCheckbox: function(e) {
+			var selectedItemId = e.detail._id;
+			var i = 0;
+			var found = false;
+
+			while (!found && i < this._selectedRequests.length) {
+				var curItemId = this._selectedRequests[i]._id;
+
+				if (selectedItemId == curItemId) {
+					found = true;
+					this.splice("_selectedRequests", i, 1);
+				}// end if
+				i++;
+			}// end while
+		},
+
+		//=========================================================
+		// Function _handleSelectedRequestsLengthChange
+		//------------------------------------------
+		// Objective: Control when to show and hide actionbar
+		//=========================================================
+		_handleSelectedRequestsLengthChange: function(numSelected) {
+			if (this.$.actionButtonsCollapse.opened && numSelected == 0) this._handleHideBarLineItem();
+			if (!this.$.actionButtonsCollapse.opened && numSelected > 0) this._handleShowBarLineItem();
+		},
+
+		//=========================================================
+		// Function _handleCancelSelectionsTap
+		//------------------------------------------
+		// Objective: Remove all selections
+		//=========================================================
+		_handleCancelSelectionsTap: function() {
+			// remove all selections
+			this.$.peopleAccordion._removeAllSelections();
+			this.$.assetAccordion._removeAllSelections();
+			this.$.equipmentAccordion._removeAllSelections();
+			this.$.roomAccordion._removeAllSelections();
+		},
+
+		//=========================================================
+		// Function _handle-Show/Hide-Bar-Type
+		//------------------------------------------
+		// Objective: Handle the conflict between the actionbars: MLI selection actionbar and Floors selection actionbar
+		//=========================================================
+		_handleShowBarLineItem: function() {
+			// Shows the MLI actionbar and hides the Building actionbar
+			if (!this.$.actionButtonsCollapse.opened) this.$.actionButtonsCollapse.show();
+			if (this.$.searchBuildingCollapse.opened) this.$.searchBuildingCollapse.hide();
+		},
+		_handleHideBarLineItem: function() {
+			if (this.$.actionButtonsCollapse.opened) this.$.actionButtonsCollapse.hide();
+
+			if (this._selectedFloors.length > 0 && this._statusSearchSpace) {
+				if (!this.$.searchBuildingCollapse.opened) this.$.searchBuildingCollapse.show();
+			}// end if
+		},
+		_handleShowBarBuilding: function() {
+			// Shows the Building actionbar and hides the MLI actionbar
+			if (!this.$.searchBuildingCollapse.opened) this.$.searchBuildingCollapse.show();
+			if (this.$.actionButtonsCollapse.opened) this.$.actionButtonsCollapse.hide();
+		},
+		_handleHideBarBuilding: function() {
+			if (this.$.searchBuildingCollapse.opened) this.$.searchBuildingCollapse.hide();
+
+			// If Statement: Check if there's a MLI checkbox selected
+			if (this._selectedRequests.length > 0) {
+				if (!this.$.actionButtonsCollapse.opened) this.$.actionButtonsCollapse.show();
+			}// end if
+		},
+
+		//=========================================================
+		// Function _handleInvalidDate
+		//------------------------------------------
+		// Objective: Handle invalid date - set property _invalidDate to true
+		//=========================================================
+		_handleInvalidDate: function() {
+			// Set _invalidDate to true
+			this.set("_invalidDate", true);
+		},
+
+		_initToastMessage: function(){
+			this._toastDisplayed = false;
+			this.$.addAllToast.close();
+			this.$.addAllCompleteToast.close();
+			this.$.addAllTimeoutToast.close();
+			this._currentNumberRefresh = 0;
+		},
+
+		_checkToastMessage: function(){
+			if(this._currentNumberRefresh>this._maxNumberRefresh){
+				this._currentNumberRefresh = 0;
+				this.$.addAllToast.close();
+				this.$.addAllTimeoutToast.open();
+				this._toastDisplayed = false;
+				return true;
+			}
+			if(this.openRequest.workflowCount>0){
+				if(!this._toastDisplayed){
+					this.$.addAllToast.open();
+					this._toastDisplayed = true;
+				}
+				this._currentNumberRefresh = this._currentNumberRefresh + 1;
+				this.$.moveLineItems.refresh();
+				setTimeout(function() {
+						this.$.moveRequestModel.refresh();
+						}.bind(this), this._refreshInterval);
+			}
+			else if(this._toastDisplayed){
+				this.$.addAllToast.close();
+				this.$.addAllCompleteToast.open();
+				this._toastDisplayed = false;
+				this._currentNumberRefresh = 0;
+				this.$.moveLineItems.refresh();
+			}
+		},
+
+		updateHighlightGroupSpaces: function(spaces) {
+			this.set("highlightGroupSpaces", spaces);
+
+			if (this._selectSpaceClassFilter) {
+				this.$.graphicLegend.filterBySelected = this._legendLabels.spaceClass;
+				this.$.filterBySpaceClass.setFilterAll(true);
+				this._selectSpaceClassFilter = false;
+			}
+
+			this.toggleAttribute("hidden", true, this.$.graphicLegend);
+			this.toggleAttribute("hidden", false, this.$.graphicLegend);
+		},
+
+		_setSelectedFloorTab: function(floorRecordId) {
+			this.async(function() {
+				this.$.floorTabs.selected = floorRecordId;
+			}.bind(this), 100);
+		},
+
+		/**
+		 * Set the `buildingFloorSearchSelected` array - this is basically the `buildingFloors` with selected data (used to set 'checked' for the floors checkboxes).
+		 */
+		_setBuildingFloorSearchSelected: function(buildingFloors, selectedFloors) {
+			if (!buildingFloors) {
+				this.buildingFloorSearchSelected = [];
+			} else {
+				var buildingFloorsWithSelectedData = [].concat(buildingFloors);
+				buildingFloorsWithSelectedData.forEach(function (floor) {
+					var floorIndex = selectedFloors.findIndex(selectedFloor => selectedFloor._id == floor._id);
+					floor.selected = floorIndex > -1;
+				}.bind(this));
+				this.buildingFloorSearchSelected = buildingFloorsWithSelectedData;
+			}// end if
+		},
+
+		/**
+		 * Set the `buildingSearchSelected` array - this is basically the `selectedBuildings` with 'selected' and 'isExpanded' fields.
+		 */
+		_setBuildingSearchSelected: function(selectedBuildingsChange) {
+			var selectedBuildings = [].concat(selectedBuildingsChange.base);
+			if (selectedBuildings.length > 0) {
+				selectedBuildings.forEach(function (building) {
+					building.selected = false;
+					building.isExpanded = false;
+				}.bind(this));
+			}// end if
+			this.buildingSearchSelected = selectedBuildings;
+		},
+
+		/**
+		 * Clear the `_selectedBuildings` array and the `_selectedBuilding` object.
+		 */
+		_clearSelectedBuildingData: function() {
+			// Clear the array of buildings
+			this.set("_selectedBuildings", []);
+			// Clear selected building
+			this.set("_selectedBuilding", {});
+		},
+
+		/**
+		 * Clear the `_selectedFloors` array.
+		 */
+		_clearSelectedFloors: function() {
+			this.set("_selectedFloors", []);
+		},
+
+		/**
+		 * Compute the value of `_selectedFloorId`.
+		 */
+		_computeSelectedFloorId: function(selectedFloorId) {
+			return !selectedFloorId ? 0 : +selectedFloorId;
+		},
+
+		/**
+		 * Observe the value of `_selectedFloorId`.
+		 */
+		_observeSelectedFloorId: function(newValue, oldValue) {
+			this.debounce("_observeSelectedFloorId", function() {
+				if (!newValue || newValue === 0) {
+					this._hasGraphic = false;
+				} else if (newValue && newValue > 0 && newValue !== oldValue) {
+					this.hasGraphic(newValue)
+						.then(function(response) {
+							this._hasGraphic = response;
+						}.bind(this));
+				}
+			}.bind(this), 100);
+		}
+	});
+</script>

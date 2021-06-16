@@ -1,0 +1,94 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<script>
+    MoveRequestBehavior = {
+
+    	properties: {
+			isBusy: {
+				type: Boolean,
+				notify: true,
+				value: false
+			},
+		},
+      
+		listeners: {
+		},
+	
+		_generateRandomIDValue: function() {
+			return "" + Math.random();
+		},
+
+		_computeImageUrl: function(img, baseUrl) {
+            if (!img) {
+                return "";
+            }
+            var url = baseUrl + img;
+
+            return url;
+        },
+
+		_setBusy: function() {
+			this.set("isBusy", true);
+		},
+
+		_clearBusy: function() {
+			this.set("isBusy", false);
+		},
+
+		_isBusy: function() {
+			return this.isBusy;
+		},
+
+		_handleNavigateSummary: function(e) {
+			this.fire("navigate-summary-page");
+		},
+
+		_handleNavigateHome: function(e) {
+			this.fire("navigate-home");
+		},
+
+		_handleNavigateStart: function(e) {
+			this.fire("navigate-start", e);
+		},
+
+		_handleStartOver: function(e) {
+			this.fire("start-over", e);
+		},
+
+		_getUserInterfaceID: function() {
+			// console.log("_getUserInterfaceID");
+			var returnValue = null;
+
+			returnValue = this._generateRandomIDValue();
+
+			return returnValue;
+		},
+
+		_roundArea: function(area) {
+			return Math.round(area);
+		},
+
+		_matchesOrgSpecified: function(item) {
+			if (item.multiple)
+				return true;
+			if (!item.other) {
+				return true;
+			}
+			else {
+				return false;
+			}
+		},
+
+		_matchesOrgOther: function(item) {
+			if (item.multiple)
+				return true;
+			if (item.other) {
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
+		
+    };
+</script>

@@ -1,0 +1,54 @@
+<dom-module id="tricomp-selectable-space">
+
+	<style>
+
+		:host {
+			@apply(--layout);
+			background-color: #ffffff;
+		}
+
+		.content {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			margin: 0px 20px;
+			padding: 20px;
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+		}
+
+		.id {
+			@apply(--layout-flex-2);
+		}
+
+		.name {
+			@apply(--layout-flex-3);
+		}
+
+		.type {
+			@apply(--layout-flex-3);
+		}
+
+		.occupancy {
+			@apply(--layout-flex-2);
+		}
+	</style>
+
+	<template>
+		<div id="tricompSelectableSpaceDiv" class="content" hidden$="{{isFilterResult}}">
+			<span class="id"><label>ID: </label><span class="value">{{space.id}}</span></span>
+			<span class="name"><label>Name: </label><span class="value">{{space.space}}</span></span>
+			<span class="type"><label>Type: </label><span class="value">{{space.spaceClass}}</span></span>
+			<span class="occupancy"><label>Occupancy: </label><span class="value">{{space.occupancyStatus}}</span></span>
+		</div>
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tricomp-selectable-space",
+
+		properties : {
+			space : Object
+		}
+		
+    });
+</script>

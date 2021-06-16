@@ -1,0 +1,70 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+<!-- This is a lazy-loaded component, DO NOT add imports here, add them to its corresponding -imports.html file. -->
+<dom-module id="tricomp-portal-item-requests">
+	<template>
+		<style>
+			:host {
+				padding: 5px 0 39px 0;
+				background-color: var(--ibm-neutral-2);
+			}
+
+			.container {
+				padding: 0px;
+				height: 100%;
+				max-width: 100%;
+			}
+
+			#request {
+				width: 100%;
+				height: 100%;
+				--triblock-tabs-background-color:var(--ibm-neutral-2);
+				--triblock-tab-background-color:var(--ibm-neutral-2);
+			}
+			
+		</style>
+
+		<div class="container">
+			<triapp-request-list
+					id="request"
+					model-and-view="triWorkplaceServices"
+					instance-id="-1"
+					current-user="[[currentUser]]"
+					count="{{requestCount}}"
+					maximized="[[maximized]]"
+					home-app="[[homeApp]]">
+			</triapp-request-list>
+		</div>
+	</template>
+	<script>
+		Polymer({
+			is: "tricomp-portal-item-requests",
+
+			properties:{
+				maximized: {
+					type: Boolean,
+					value: false
+				}
+			},
+
+			behaviors: [TriPortalItemBehavior,
+						TriLazyLoadingBehavior],
+
+			attached: function() {
+				Polymer.RenderStatus.afterNextRender(this, function() {
+					this.async(function() {
+						this._loadApp();
+					});
+				});
+			},
+
+			_loadApp: function() {
+				this.loadResource(this.$.request, '../triapp-request-list/triapp-request-list.html').then(function() {
+				});
+			},
+
+			doRefresh: function() {
+				this.$.request.doRefresh();
+			}
+		});
+	</script>
+</dom-module>

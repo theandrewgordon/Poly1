@@ -1,0 +1,89 @@
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+<link rel="import" href="../triblock-responsive-layout/triblock-view-responsive-behavior.html">
+
+<dom-module id="tricomp-urgent-call">
+
+	<style>
+		.main-container {
+			@apply(--layout-horizontal);
+			@apply(--layout-flex);
+			@apply(--layout-center);
+		}
+
+		.icon-container {
+			margin-right: 15px;
+		}
+		triplat-icon {
+			height: 44px;
+			width: 44px;
+			--triplat-icon-height: 44px;
+			--triplat-icon-width: 44px;
+			--triplat-icon-fill-color: var(--tri-danger-color);
+			--triplat-icon-stroke-color: var(--tri-danger-color);
+		}
+		:host([small-screen]) triplat-icon {
+			height: 22px;
+			width: 22px;
+		}
+
+       .text-container {
+			@apply(--layout-vertical);
+			font-size: 18px;
+			color: var(--tri-primary-color-100);
+		}
+		:host([small-screen]) .text-container {
+			font-size: 14px;
+		}
+
+		.phone-text {
+			@apply(--layout-horizontal);
+			@apply(--layout-end);
+			white-space: nowrap;
+		}
+		.phone {
+			font-size: 1.2em;
+			font-weight: bold;
+		}
+	</style>
+
+	<template>
+		<div class="main-container">
+			<div class="icon-container">
+				<triplat-icon noink icon="[[icon]]"></triplat-icon>
+			</div>
+
+            <div class="text-container">
+				<div class="title">
+				   <span aria-label$="[[title]]">[[title]]</span>
+				</div>
+                <div class="phone-text">
+				   <span> Call</span>
+				   <span> &nbsp;</span>
+				   <div class="phone">
+				       <span><a href="tel:[[number]]" aria-label$="[[_computePhoneTextLabel(number)]]">[[number]]</a></span>
+				   </div>
+			    </div>
+	        </div>
+		</div>
+	</template>
+	<script>
+		Polymer({
+			is: "tricomp-urgent-call",
+
+			behaviors: [TriBlockViewResponsiveBehavior],
+
+			properties: {
+			},
+
+			observers: [
+			],
+
+			listeners: {
+			},
+			_computePhoneTextLabel:function(number){
+				var __dictionary__urgentCall = "For any urgent request call"; 
+				return __dictionary__urgentCall + " " + number; 
+			}
+		});
+	</script>
+</dom-module>

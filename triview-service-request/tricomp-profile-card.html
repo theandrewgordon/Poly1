@@ -1,0 +1,65 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-image/triplat-image.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+<link rel="import" href="../triblock-responsive-layout/triblock-responsive-layout.html">
+<link rel="import" href="../triplat-word-highlight/triplat-word-highlight.html">
+<link rel="import" href="../triblock-search-popup/triblock-image-info-card.html">
+
+<dom-module id="tricomp-profile-card">
+	<template include="iron-flex iron-flex-alignment iron-flex-factors iron-positioning">
+		<style>
+			.detail * {
+				margin: 0;
+				font-size: 14px;
+			}
+
+			.detail h3 {
+				font-weight: 400;
+			}
+		</style>
+
+		<triblock-image-info-card class="detail" data="[[data]]" placeholder-icon="ibm:user" image-width="[[imageWidth]]" image-height="[[imageHeight]]" circular-image>
+			<template is="dom-if" if="[[!custom]]">
+				<h3><span is="triplat-word-highlight" value="[[data.name]]" search-value="[[searchValue]]"></span></h3>
+				<template is="dom-if" if="[[data.title]]"><p>[[data.title]]</p></template>
+				<template is="dom-if" if="[[data.organization]]"><p>[[data.organization]]</p></template>
+			</template>
+
+			<template is="dom-if" if="[[custom]]">
+				<content></content>
+			</template>
+
+		</triblock-image-info-card>
+
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-profile-card",
+
+			properties: {
+				data: Object,
+
+				imageHeight: {
+					type: Number,
+					value: 50
+				},
+
+				imageWidth: {
+					type: Number,
+					value: 50
+				},
+
+				searchValue: String,
+
+				custom: {
+					type: Boolean,
+					value: false
+				}
+			},
+
+		});
+	</script>
+</dom-module>
+

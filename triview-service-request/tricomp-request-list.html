@@ -1,0 +1,63 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triblock-table/triblock-table.html">
+
+<dom-module id="tricomp-request-list">
+	<template>
+		<style>
+			:host {
+				@apply(--layout-vertical);
+			}
+
+			triblock-table {
+				@apply(--layout-flex);
+			}
+
+			triblock-table-column {
+				flex: 1;
+			}
+		</style>
+		
+		<triblock-table id="requestsTable" data="{{requests}}" route="listPage" fixed-header>
+			<triblock-table-column title="Record ID" property="_id"></triblock-table-column>
+			<triblock-table-column title="ID" property="requestID"></triblock-table-column>
+			<triblock-table-column title="Type" property="requestType">
+				<template>
+					[[item.requestType.value]]
+				</template>
+			</triblock-table-column>
+			<triblock-table-column title="Status" property="status"></triblock-table-column>
+		</triblock-table>	
+
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-request-list",
+			properties: {
+				requests: Array,
+			},
+
+			observers: [
+			],
+
+			listeners: {
+				'requestsTable.row-tap': '_onRowTap'
+			},
+
+			attached: function() {
+				Polymer.RenderStatus.afterNextRender(this, function(){
+					if (this.requests) {
+						console.log(this.requests.length);
+					}
+				});
+			},
+
+			_onRowTap: function(e) {
+				this.fire("request-open", {"item": e.detail.item}); //TODO see if passing e would be the same
+			}
+
+
+		});
+	</script>
+</dom-module>

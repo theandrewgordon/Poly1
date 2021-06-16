@@ -1,0 +1,314 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017-2019 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<script>
+	TriRoomReservationUtilBehavior = {
+
+		properties: {
+			_meetingSpaceId: Number,
+			_workspaceId: Number,
+			_hasBookedRooms: {
+				type: Boolean,
+				value: false,
+				computed: "_computeHasBookedRooms(reservationLocations)"
+			}
+		},
+
+		listeners: {
+			"room-types-changed" : "_onRoomTypesChanged"
+		},
+
+		_onRoomTypesChanged: function(e) {
+			if (e.detail.roomTypes && e.detail.roomTypes.length > 0) {
+				e.detail.roomTypes.forEach(function(roomType) {
+					if (roomType.internalValue == "Meeting Space") {
+						this.set("_meetingSpaceId", roomType._id);
+					} else if (roomType.internalValue == "Workspace") {
+						this.set("_workspaceId", roomType._id);
+					}
+				}.bind(this));
+			}
+		},
+
+		_computeArrayItem: function(change, index, path) {
+			return this.get(path, change.base[index])
+		},
+
+		_isRoomTypeMeetingSpace: function(roomType, meetingSpaceId) {
+			return roomType && roomType.id == meetingSpaceId;
+		},
+
+		_isRoomTypeWorkspace: function(roomType, workspaceId) {
+			return roomType && roomType.id == workspaceId;
+		},
+
+		_isStartAndEndTimesValid: function(start, end) {
+			var mo = moment();
+			var startMo = moment(start);
+			var endMo = moment(end);
+			return startMo.isBefore(endMo);
+		},
+
+		_isAllDayStartAndEndDatesValid: function(start, end) {
+			var mo = moment();
+			var startMo = moment(start);
+			var endMo = moment(end);
+			return startMo.isBefore(endMo, 'day') || startMo.isSame(endMo, 'day');
+		},
+
+		_computeEmailAddressLink: function(email) {
+			return "mailto:" + email;
+		},
+
+		_computeTelephoneLink: function(phoneNumber) {
+			return "tel:" + phoneNumber;
+		},
+
+		_generateRandomIDValue: function() {
+			return "" + Math.random();
+		},
+
+		_isRoomServiceAvailable: function(value) {
+			return value && (value == true || value == "Yes");
+		},
+
+		_isAvailable: function(item) {
+			return Boolean(item && item._availCount && item._availCount > 0);
+		},
+
+		_isRecurring: function(item) {
+			return Boolean(item && item._maxOccurrenceCount && item._maxOccurrenceCount > 1);
+		},
+
+		_isNoEndRecurringCutoff: function(item, reservationManager, currentTime) {
+			if (item && reservationManager && currentTime) {
+				return this._isRecurring(item) && reservationManager.eventQueryEndDateTime == null && item.cutoffDuration > 0;
+			} else {
+				return false;
+			}
+		},
+
+		_isEndCutoff: function(item, reservationManager, currentTime, timezone, cutoffDateTime) {
+			if (item && reservationManager && currentTime) {
+				if (reservationManager.eventQueryEndDateTime && item.cutoffDuration && item.cutoffDuration > 0) {
+					var endMo = moment(reservationManager.eventQueryEndDateTime).tz(timezone);
+					var cutoffDateTimeMo = moment(cutoffDateTime).tz(timezone);
+					return endMo.isAfter(cutoffDateTimeMo, "day") || endMo.isSame(cutoffDateTimeMo, "day");
+				} else {
+					return false;
+				}
+			} else {
+				return false;
+			}
+		},
+
+		_isRecurringMeeting: function(reservationManager) {
+			return Boolean(reservationManager && reservationManager.recurrenceRule && reservationManager.recurrenceRule.length > 0);
+		},
+
+		_isWaitListable: function(item) {
+			return !this._isAvailable(item) && !this._isRecurring(item);
+		},
+
+		_isOdd: function(index) {
+			return index % 2 == 1;
+		},
+
+		_randomYesNo: function(index) {
+			var rdm = Math.round(Math.random()) == 0 ? "Yes" : "No";
+			return rdm;
+		},
+
+		_randomTrueFalse: function(index) {
+			var rdm = Math.round(Math.random()) == 0;
+			return rdm;
+		},
+
+		_computeRoomLoc: function(building, floor) {
+			return building + (floor ? " / " + floor : "");
+		},
+
+		_computeRoomGeo: function(city, state, country) {
+			return (city ? city : "") + (state ? " / " + state : "") + (country ? " / " + country : "");
+		},
+
+		_logExchangeResponse: function(exchangeResponse) {
+			if (exchangeResponse && exchangeResponse.responseCode) {
+				try {
+					var responseCode = Number(exchangeResponse.responseCode);
+					var message = exchangeResponse.messageContent;
+
+					// 200-Success, 300-Info, 400-Warning, 500-Error
+					if (responseCode == 300) {
+						console.log("*** INFO: " + message);
+					} else if (responseCode == 400) {
+						console.log("*** WARN: " + message);
+					} else if (responseCode == 500) {
+						console.log("*** ERROR: " + message);
+					}
+
+				} catch(err) {
+					console.log("*** ERROR: " + err.message);
+				}
+			}
+		},
+
+		_computeImageUrl: function(img, baseUrl) {
+			if (!img) {
+					return "";
+			}
+			return baseUrl + img;
+		},
+
+		_handleNavigateSummary: function(e) {
+			this.fire("navigate-summary-page");
+		},
+
+		_handleNavigateHome: function(validated) {
+			this.fire("navigate-home", {validated: validated});
+		},
+
+		_showDiscardChanges: function(isOutlookEmbedded, reservationManager) {
+			return !this._isReadOnlyOutlook(isOutlookEmbedded, reservationManager) && !isOutlookEmbedded && this._isExistingReservation(reservationManager);
+		},
+
+		_showAddAnotherRoom: function(isOutlookEmbedded, reservationManager) {
+			return !this._isReadOnlyOutlook(isOutlookEmbedded, reservationManager);
+		},
+
+		_showSubmit: function(isOutlookEmbedded, reservationManager) {
+			return !this._isReadOnlyOutlook(isOutlookEmbedded, reservationManager) && !this._isExistingReservation(reservationManager);
+		},
+
+		_showSave: function(isOutlookEmbedded, reservationManager) {
+			return !this._isReadOnlyOutlook(isOutlookEmbedded, reservationManager) && this._isExistingReservation(reservationManager);
+		},
+
+		_showDone: function(isOutlookEmbedded, reservationManager) {
+			return true;
+		},
+
+		_showDelete: function(isOutlookEmbedded, reservationManager) {
+			return !this._isReadOnlyOutlook(isOutlookEmbedded, reservationManager) && !isOutlookEmbedded;
+		},
+
+		_showList: function(isOutlookEmbedded) {
+			return !isOutlookEmbedded;
+		},
+
+		_showImage: function(applicationSettings) {
+			if (applicationSettings) return !applicationSettings.disableImages;
+			return false;
+		},
+
+		_positionDoneToolbarRight: function(isOutlookEmbedded, reservationManager) {
+			return !this._isReadOnlyOutlook(isOutlookEmbedded, reservationManager);
+		},
+
+		_readonlySubject: function(isOutlookEmbedded, reservationManager) {
+			return this._isReadOnlyOutlook(isOutlookEmbedded, reservationManager);
+		},
+
+		// determine if this is an outlook reservation being opened outside an outlook embedded scenario
+		_isOutsideOutlook: function(isOutlookEmbedded, reservationManager) {
+			return (!isOutlookEmbedded && this._isOutlookMeeting(reservationManager));
+		},
+
+		// determine if this should be read-only due to the fact that
+		// this is an outlook meeting being opened outside of outlook
+		_isReadOnlyOutlook: function(isOutlookEmbedded, reservationManager) {
+			var rtn = this._isOutsideOutlook(isOutlookEmbedded, reservationManager);
+			return rtn;
+		},
+
+		// determine if this should be read-only (like trying to edit from non-outlook embedded scenarios)
+		_isOutlookMeeting: function(reservationManager) {
+			var rtn = reservationManager != null && (reservationManager.iCalUID != null && reservationManager.iCalUID.length > 0);
+			return rtn;
+		},
+
+		_isExistingReservation: function(reservationManager) {
+			return reservationManager != null && (reservationManager.reservation != null && reservationManager.reservation.id);
+		},
+
+		// Handlers from Summary Page
+		//
+		_computeDoneEnabled: function(startTime, endTime, allDay, startDate, endDate, reservationLocations, isOutlookEmbedded, reservationManager) {
+			var doneEnabled = false;
+
+			if (!this._isReadOnlyOutlook(isOutlookEmbedded, reservationManager) && reservationLocations.base.length == 0) {
+					if (allDay) {
+							doneEnabled = startDate && endDate ? this._isAllDayStartAndEndDatesValid(startDate, endDate) : doneEnabled;
+					} else {
+							doneEnabled = startTime && endTime ? this._isStartAndEndTimesValid(startTime, endTime) : doneEnabled;
+					}
+			} else if (this._isReadOnlyOutlook && reservationLocations.base.length >= 0) {
+				doneEnabled = true;
+			}
+		return doneEnabled;
+		},
+
+		_doCancel: function(e) {
+			this.fire("action-cancel");
+		},
+
+		_handleCheckIn: function(e) {
+			this.fire("action-checkin");
+		},
+
+		_handleCheckOut: function(e) {
+			this.fire("action-checkout");
+		},
+
+		_handleEarlyEnd: function(e) {
+			this.fire("action-earlyend");
+		},
+
+		_handleStart: function(e) {
+			if (this.reservationManagerInstance.cancellationAutoDateTime) {
+				console.log("this meeting has an auto-cancellation policy - skipping auto start");
+			} else {
+				this.set("reservationManagerInstance.actualStart", new Date());
+			}
+		},
+
+		_handleEnd: function(e) {			
+			this.set("reservationManagerInstance.actualEnd", new Date());
+		},
+
+		_handleAutoCancel: function(e) {
+			if (this.reservationManagerInstance.cancellationAutoDateTime) {
+				this.set("reservationManagerInstance.actualStart", "-1");
+				this.set("reservationManagerInstance.actualEnd", "-1");
+			}
+		},
+
+		_handleNavigateInstructions: function(e) {
+			this.fire("navigate-summary-instructions");
+		},
+
+		_computeHasBookedRooms: function(reservationLocations) {
+			return reservationLocations != null && reservationLocations.length > 0;
+		},
+
+		_hasNonExpiredResources: function(reservationLocations) {
+			var currentDate = moment();
+			var hasNonExpiredResources = false;
+			for (var i = 0; i < reservationLocations.length && !hasNonExpiredResources; i++) {
+				var bookedLocation = reservationLocations[i];
+				if (bookedLocation.holdTimeDeadline != null) {
+					hasNonExpiredResources = currentDate.isBefore(moment(bookedLocation.holdTimeDeadline));
+				} else {
+					hasNonExpiredResources = true;
+				}
+			}
+			return hasNonExpiredResources;
+		},
+
+		_isReservationRequestedForCurrentUserPerson: function() {
+			var currentUserPersonId = this.currentUser && this.currentUser.person && this.currentUser.person.data && this.currentUser.person.data._id;
+			var reservationRequestedForId = this.reservationManager && this.reservationManager.requestedForName && this.reservationManager.requestedForName.id;
+			return currentUserPersonId == reservationRequestedForId;
+		}
+
+	};
+</script>

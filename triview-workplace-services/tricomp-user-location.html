@@ -1,0 +1,57 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triblock-responsive-layout/triblock-view-responsive-behavior.html">
+<link rel="import" href="../triapp-location-context/triapp-location-context.html">
+
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+
+<dom-module id="tricomp-user-location">
+	<template>
+		<style>
+			:host {
+				flex: 1;
+			}
+
+		</style>
+
+		<triapp-location-context
+			id="userLocation"
+			on-location-changed="_onBuildingChanged"		
+			image-height="[[_computePhotoSize(smallScreen)]]"	
+			image-width="[[_computePhotoSize(smallScreen)]]">
+		</triapp-location-context>
+
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-user-location",
+
+			behaviors: [TriBlockViewResponsiveBehavior],
+
+			properties: {
+				building: {
+					type: Object
+				},
+			},
+		
+			listeners: {
+			},
+
+			attached: function() {
+			},
+
+			_onBuildingChanged: function(e) {
+				if (e && e.detail && e.detail.building) {
+					this.fire("building-id-changed", {buildingId: e.detail.building._id});
+				}
+			},
+
+			_computePhotoSize: function(smallScreen) {
+				return smallScreen ? 64 : 82;  
+			}
+
+		});
+	</script>
+</dom-module>

@@ -1,0 +1,342 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-debug/triplat-debug.html">
+<link rel="import" href="../triplat-date-picker/triplat-date-picker.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+
+<link rel="import" href="../tricore-url/tricore-url.html">
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icons/hardware-icons.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+
+<dom-module id="tricomp-groupmove-myrequests-card">
+
+	<style>
+
+		.info-container {
+			@apply(--layout-vertical);
+			@apply(--layout-flex);
+			padding-bottom: 3px;
+			padding-top: 5px;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			width:70%;
+		}
+
+		.info-line {
+			@apply(--layout-horizontal);
+			text-align: left;
+			font-size: 14px;
+			font-weight: normal;
+			font-family: var(--tri-font-family);
+			color: var(--ibm-cool-gray-70) !important;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			max-width: 300px;
+		}
+
+		.info-line-bold {
+			@apply(--layout-horizontal);
+			text-align: left;
+			font-size: 14px;
+			font-weight: bold;
+			font-family: var(--tri-font-family);
+			color: var(--ibm-cool-gray-70) !important;
+			overflow-x: hidden;
+		}
+
+			/*=========================================
+			 * Fix for Defect 222688
+			 *-----------------------------
+			 * Details: button-container is a flex box, which means that it prioritizes the box proportion instead of width of its child elements
+			 * Workaround: set a min-width that matches with the child elements width
+			 *=========================================*/
+			/*min-width: 40px;*/
+			/*=========================================
+			 * End of the Fix
+			 *=========================================*/
+		/*}  */
+
+		.icon-container {
+			@apply(--layout-vertical);
+			@apply(--layout-center-center);
+
+		}
+
+		/*=========================================
+		 * Fix for Defect 222688
+		 *-----------------------------
+		 * Details: Described above
+		 *=========================================*/
+		/*.button-container .checkbox::shadow #checkboxContainer {
+			padding-left: 0px;
+		}*/
+		/*=========================================
+		 * End of the Fix
+		 *=========================================*/
+
+
+		.content {
+			font-size: 14px;
+			font-weight: bold;
+			background-color: white;
+			border: 1px solid var(--tri-primary-content-accent-color);
+			color: var(--tri-primary-content-color);
+			cursor: pointer;
+			margin: 0px 0px 20px 20px;
+			@apply(--tri-inbox-card);
+			@apply(--layout-horizontal);
+			border: 3px solid var(--tri-primary-color-60);
+		}
+
+        .upper-main-content[selected] {
+			background-color: var(--tri-primary-color-10);
+		}
+
+		.text-bold{
+		    font-size: 14px;
+			font-weight: bold;
+			@apply(--layout-left);
+			vertical-align: middle;
+			font-family: var(--tri-font-family);
+			color: var(--ibm-cool-gray-70) !important;
+		}
+
+		.text-normal{
+			font-size: 14px;
+			font-weight: normal;
+		}
+
+		.header-container {
+			@apply(--layout-vertical);
+			@apply(--layout-center-justified);
+			align: left;
+			vertical-align: middle;
+			margin-left: 8px;
+            overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			width: 80%;
+
+		}
+
+		.icon-container {
+			@apply(--layout-vertical);
+			@apply(--layout-start);
+		}
+
+        .first-icon-container{
+			@apply(--layout-vertical);
+			@apply(--layout-start);
+		}
+
+		.request-class-icon {
+			--iron-icon-height: 32px;
+			--iron-icon-width: 32px;
+		}
+
+		.main-content {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			padding: 20px;
+			overflow-x: hidden;
+			white-space: nowrap;
+		}
+
+		.upper-main-content {
+			@apply(--layout-horizontal);
+			border-bottom: 1px solid var(--tri-primary-content-accent-color);
+			padding-bottom: 3px;
+		}
+
+		.lower-main-content {
+			@apply(--layout-horizontal);
+			padding-top: 3px;
+
+		}
+
+	    .bottom-main-content {
+			@apply(--layout-horizontal);
+			padding-top: 10px;
+		}
+
+		.info-blank-line{
+			height: 10px;
+		}
+
+        
+		.status-container{
+			width: 70px ;
+            min-width: 70px !important;
+            flex-shrink: 1;
+			text-align: right;
+			white-space: normal;
+
+		}
+
+        .centralized-content{
+           @apply(--layout-center-justified);
+        }
+
+		.mli-icon {
+            color: var(--tri-secondary-color);
+			width: 24px;
+			height: 24px;
+			padding-left: 5px;
+		}
+
+		.mli-total{
+			font-size: 16px;
+			font-weight: normal;
+			padding-left: 10px;
+			padding-right: 10px;
+			font-family: var(--tri-font-family);
+			color: var(--tri-primary-content-color);
+			vertical-align: middle;
+			@apply(--layout-vertical);
+			@apply(--layout-center-justified);
+		}
+
+	</style>
+
+	<template>
+
+		<tricore-url id="urlGen"></tricore-url>
+
+		<triplat-ds name="currentUser" data="{{currentUser}}" loading="{{currentUserLoading}}"></triplat-ds>
+ 
+        <div class="content" id="content" on-tap="_handleCardTap" read$="{{read}}" unread$="{{!read}}" selected$="{{selected}}">
+			<div class="main-content">
+
+				<!-- upper content -->
+				<div class="upper-main-content" id="upper-content" selected$="{{selected}}">
+
+					<div class="icon-container">
+						<triplat-icon class="request-class-icon" icon="collaborate-group"></triplat-icon>
+					</div>
+
+					<div class="header-container">
+						<div class="text-bold"><span>{{requestId}}</span></div>
+					</div>
+
+				</div>
+
+                <!-- Dates, etc -->
+				<div class="lower-main-content">
+					<div class="info-container">
+
+					    <div class="info-line-bold">{{requestedFor.value}}</div>
+						<div class="info-blank-line"> <span>&nbsp;</span></div>
+                        <div class="info-line">Target Building:</div>
+						<div class="info-line">
+							<div class="info-line-bold">{{moveToBuilding}}</div> 
+						</div>
+						<div class="info-blank-line"> <span>&nbsp;</span></div>
+
+						<div class="info-line">Requested move date:</div>
+						<div class="info-line">
+						<triplat-date-picker class="info-line-bold" readonly display-format="{{currentUser._DateFormat}}" value="{{moveDate}}"></triplat-date-picker>
+						</div>
+
+					</div>
+					<div class="status-container">
+                        <div> {{status}}</div>
+                    </div>
+		        </div> 
+
+                <!-- MLIs -->
+				<div class="bottom-main-content">
+
+					<div class="first-icon-container">
+						<triplat-icon class="mli-icon" icon="ibm:user"></triplat-icon>
+                    </div>
+					<div class="mli-total">{{mliPersonCount}}</div>
+
+					<div class="icon-container">
+						<triplat-icon  class="mli-icon" icon="ibm:assets"></triplat-icon>
+					</div>
+					<div class="mli-total">{{mliAssetsCount}}</div>
+
+					<div class="icon-container">
+						<triplat-icon  class="mli-icon" icon="ibm:equipment"></triplat-icon>
+					</div>
+					<div class="mli-total">{{mliEquipmentCount}}</div>
+
+					<div class="icon-container">
+						<triplat-icon  class="mli-icon" icon="ibm:room-function"></triplat-icon>
+					</div>
+					<div class="mli-total">{{mliRoomCount}}</div>
+
+				</div>
+                <!-- MLIs End -->
+
+			</div>
+
+		</div>
+
+	</template>
+
+</dom-module>
+
+<script>
+	Polymer({
+
+		is: "tricomp-groupmove-myrequests-card",
+
+
+		properties: {
+			selected: {
+				type: Boolean,
+				value: false,
+				notify: true,
+				reflectToAttribute: true
+			},
+			requestId: String,
+			requestClass: String,
+			requestedFor: String,
+			role: String,
+			moveToBuilding: String,
+			moveDate: String,
+
+			mliPersonCount: Number,
+            mliAssetsCount:  {
+				type : Number,
+				value : 0
+			},
+			mliEquipmentCount:  {
+				type : Number,
+				value : 0
+			},
+			mliRoomCount:  {
+				type : Number,
+				value : 0
+			},
+
+		},
+
+		_computeSmartObjectURL: function(specId) {
+			if (!specId)
+				return "";
+
+			var url = this.$.urlGen.getUrl("/WebProcess.srv?objectId=750000&actionId=750011&specId=" + specId);
+
+			return url;
+		},
+
+		_handleCardTap: function() {
+			this.fire("card-tap");
+		},
+
+		_isEmptyString: function(val) {
+			return !val || val == "";
+		},
+
+		_calculateTotal: function(room, assets, equipment, person){
+		   return  room + assets + equipment + person;
+		},
+
+	});
+</script>

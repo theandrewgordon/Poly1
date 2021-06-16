@@ -1,0 +1,192 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+
+<link rel="import" href="../triplat-date-utilities/triplat-date-utilities.html">
+<link rel="import" href="../triblock-table/triblock-table.html">
+<link rel="import" href="../triblock-responsive-layout/triblock-view-responsive-behavior.html">
+<link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
+
+<link rel="import" href="../triapp-reservation-list/tribehav-reservation-utilities.html">
+
+<link rel="import" href="tribehav-room-reservation-util.html">
+<link rel="import" href="tristyles-room-reservation-app.html">
+
+
+<dom-module id="tricomp-exceptions-table">
+	<style include="shared-page-styles">
+
+		.section-header {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			padding: 10px 20px;
+		}
+
+		.section-title-container {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-baseline);
+			@apply(--layout-wrap);
+		}
+
+		.section-title {
+			padding: 0 10px;
+			font-weight: 500;
+			font-size: 18px;
+			line-height: 44px;
+		}
+
+		.section-header-links-container {
+			@apply(--layout-flex);
+			@apply(--layout-horizontal);
+			@apply(--layout-baseline);
+			@apply(--layout-wrap);
+		}
+		.section-header-links-container > * {
+			padding: 0 10px;
+		}
+
+		.exceptions-table {
+			@apply(--layout-flex);
+			overflow-y: auto;
+			padding: 0px 20px;
+
+			--triblock-table-font-size: 16px;
+			--triblock-table-header-color: var(--ibm-blue-50);
+		}
+
+		.exceptions-table-date-column {
+			--triblock-table-column-fixed-width: 140px;
+		}
+
+		.exceptions-table-action-buttons-column {
+			--triblock-table-column-fixed-width: 64px;
+		}
+
+		paper-icon-button {
+			flex-shrink: 0;
+			height: 44px;
+			width: 44px;
+			padding: 6px;
+		}
+
+		.auto-assign-icon {
+			color: var(--tri-warning-color);
+			padding-right: 5px;
+			flex-shrink: 0;
+		}
+		.auto-assign-label-container {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+		}
+
+	</style>
+
+	<template>
+        <div class="section-header">
+            <div class="section-title-container">
+                <div class="section-title">Schedule</div>
+                <div class="section-header-links-container">
+                    <div class="link" on-tap="_handleAutoAssignAll">Auto-assign All</div>
+                    <div class="link" on-tap="_handleClearAllAssignments">Clear All Assignments</div>
+                </div>
+            </div>
+        </div>
+
+        <triblock-table class="exceptions-table" data="{{exceptionOccurrences}}" disable-row-hover-styling>
+            <triblock-table-column title="Scheduled Date" class="exceptions-table-date-column">
+                <template>
+                    <div hidden$="[[!item.exceptionDateTime]]">[[item.formattedDate]]</div>
+                </template>
+            </triblock-table-column>
+
+            <triblock-table-column title="Booked Room">
+                <template>
+                    <div hidden$="[[!item.alternateResource]]">[[item.alternateResource]]</div>
+                    <div hidden$="[[item.alternateResource]]" class="link auto-assign-label-container">
+                        <iron-icon icon="ibm:warning" class="auto-assign-icon"></iron-icon>
+                        <span class="" on-tap="_handleAutoAssign">Auto-assign</span>
+                    </div>
+                </template>
+            </triblock-table-column>
+
+            <triblock-table-column class="exceptions-table-action-buttons-column" merge-with-previous-column>
+                <template>
+                    <paper-icon-button danger 
+                        hidden$="[[!item.alternateResourceRecordId]]" 
+                        icon="ibm:remove-delete" 
+                        on-tap="_handleClearAssignment">Delete</paper-icon-button>
+                    <paper-icon-button primary 
+                        hidden$="[[item.alternateResourceRecordId]]" 
+                        icon="ibm:search" 
+                        on-tap="_handleSearch">Search</paper-icon-button>
+                </template>
+            </triblock-table-column>
+        </triblock-table>
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-exceptions-table",
+
+			behaviors: [
+				TriReservationUtilitiesBehavior,
+				TriRoomReservationUtilBehavior,
+				TriDateUtilities,
+				TriBlockViewResponsiveBehavior,
+				Polymer.IronResizableBehavior
+			],
+
+			properties: {
+				exceptionOccurrences: Object
+			},
+
+			observers: [
+				"_observeExceptionOccurrences(exceptionOccurrences)"
+			],
+
+			_handleClearAssignment: function(e) {
+				var item = e.model.item;
+				if (item) {
+					var occurrenceId = item._id;
+
+					this.fire("action-exception-clear-assignment", {'occurrenceId': occurrenceId});
+				}
+			},
+
+			_handleClearAllAssignments: function(e) {
+				this.fire("action-exception-clear-assignment-all");
+			},
+
+			_handleSearch: function(e) {
+				var item = e.model.item;
+
+				this.fire("search-room", {'item': item});
+			},
+
+			_handleAutoAssign: function(e) {
+				var item = e.model.item;
+				if (item) {
+					var occurrenceId = item._id;
+
+					this.fire("action-exception-auto-assign", {'occurrenceId': occurrenceId});
+				}
+			},
+
+			_handleAutoAssignAll: function(e) {
+				this.fire("action-exception-auto-assign-all");
+			},
+
+			_observeExceptionOccurrences: function() {
+				this.debounce(
+					"tableChanged",
+					function() {
+						this.notifyResize();
+					},
+					500
+				);
+			}
+
+		});
+	</script>
+</dom-module>

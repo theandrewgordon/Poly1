@@ -1,0 +1,459 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+<link rel="import" href="../triplat-debug/triplat-debug.html">
+<link rel="import" href="../triplat-routing/triplat-routing.html">
+<link rel="import" href="../triblock-page-container-behavior/triblock-page-container-behavior.html">
+<link rel="import" href="../triplat-date-utilities/triplat-date-utilities.html">
+
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../triplat-icon/triplat-icon.html">
+<link rel="import" href="../triblock-tabs/triblock-tabs.html">
+
+<link rel="import" href="../triplat-loading-indicator/triplat-loading-indicator.html">
+
+<link rel="import" href="move-request-behavior.html">
+<link rel="import" href="move-request-page-behavior.html">
+
+<link rel="import" href="tricomp-page-header.html">
+<link rel="import" href="tricomp-request-item-group.html">
+
+
+<dom-module id="tripage-request-list">
+
+	<link rel="import" type="css" href="shared.css">
+
+	<style>
+
+		:host {
+			@apply(--layout-vertical);
+		}
+
+		.action-container {
+			@apply(--layout-horizontal);
+			@apply(--layout-end-justified);
+		}
+
+		.list {
+			@apply(--layout-vertical);
+			@apply(--layout-flex);
+		}
+
+		.no-requests-placeholder {
+			@apply(--layout-flex);
+			@apply(--layout-center-center);
+			@apply(--layout-vertical);
+			padding: 10px;
+		}
+		.no-requests-placeholder > * {
+			text-align: center;
+			margin: 10px 0;
+		}
+		.no-requests-placeholder-icon {
+			height: 32px;
+			width: 32px;
+		}
+
+		paper-icon-button {
+			width: 24px;
+			height: 24px;
+			padding: 0px;
+			margin: 10px;
+		}
+
+		.calendar-icon {
+			border-left: 2px solid rgb(255, 255, 255, 0.4);
+		}
+
+		paper-button {	
+			@apply(--tri-button);
+			font-size: 1.1em;
+		}
+
+		paper-button[disabled] {
+			@apply(--tri-disabled-button);
+
+		}
+
+		.header-container {
+			@apply(--layout-horizontal);
+			@apply(--layout-justified);
+			background-color: var(--ibm-neutral-2);
+			padding: 18px 20px 18px 20px;
+		}
+
+		.month {
+			@apply(--layout-flex);
+			@apply(--layout-vertical);
+			@apply(--layout-center);
+		}
+
+		iron-pages {
+			@apply(--layout-flex);
+			@apply(--layout-relative);
+			@apply(--layout-vertical);
+			padding-top: 10px;
+			height: 600px;
+			min-height: 0;
+			overflow: auto;
+		}
+
+		.iron-pages-large {
+			background-color: var(--ibm-neutral-2);
+		}
+
+		triblock-tabs {
+			--triblock-tabs-background-color:var(--ibm-neutral-2);
+			--triblock-tab-background-color:var(--ibm-neutral-2);
+		}
+
+		.page-main-large triblock-tabs {
+			@apply(--layout-flex); 
+		}
+
+		
+		requestsList::-moz-focus-outer {
+		    border: 0;
+		    }  
+
+		requestsListLarge::-moz-focus-outer {
+		    border: 0;
+		    } 	
+		requestsList::-moz-focus-inner {
+		    border: 0;
+		    }  
+
+		requestsListLarge::-moz-focus-inner {
+		    border: 0;
+		    } 	
+
+	    #requestsList{
+	    	margin-bottom: 60px;
+	    }
+		
+	</style>
+
+	<template>
+
+		<triplat-ds id="currentUser" name="currentUser" data="{{currentUser}}"></triplat-ds>
+
+		<triplat-ds id="myMoveRequests" name="myIndividualMoveRequests" data="{{myMoveRequests}}" loading="{{myMoveRequestsLoading}}" >
+		</triplat-ds>
+
+		<triplat-route id="requestListRoute" name="requestListRouteMoveRequest"></triplat-route>
+
+		<triplat-loading-indicator show="[[_isBusy(isBusy, myMoveRequestsLoading)]]"></triplat-loading-indicator>
+
+		<template is="dom-if" if="[[!screenLarge]]"> 
+
+		<div class="page-main">
+
+			<triblock-tabs selected="{{_selectedTab}}" hide-scroll-buttons fit-container>
+				<triblock-tab id="0" label="In Progress"></triblock-tab>
+				<triblock-tab id="1" label="History"></triblock-tab>
+			</triblock-tabs>
+
+			<iron-pages id="requestsIronPages" class="main" selected="{{_selectedTab}}">
+
+				<div id="activeRequestsListSmall">
+
+					<template is="dom-if" if="[[_activeRequests(myMoveRequests)]]">
+						<div id="requestsList" class="list" border-width="2px">
+							<template is="dom-repeat" items="{{requestsGroup}}">
+								<tricomp-request-item-group 
+									group="{{item}}"
+									screen-large="{{screenLarge}}">
+								</tricomp-request-item-group>
+							</template>
+						</div>
+					</template> 
+
+					<template is="dom-if" if="[[!_activeRequests(myMoveRequests)]]">
+						<div class="no-requests-placeholder" tabindex="0" hidden$="{{systemUser}}">
+							<iron-icon class="no-requests-placeholder-icon" icon="ibm:status-info" info></iron-icon>
+							<div>You do not have any Move Requests in progress.</div>
+							<div>To create a new request, tap the "New" button at the bottom of the screen.</div>
+						</div>
+						<div class="no-requests-placeholder" hidden$="{{!systemUser}}">
+							<iron-icon class="no-requests-placeholder-icon" icon="ibm:status-info" info></iron-icon>
+							<div>System user cannot create a Move Request.</div>
+						</div>
+					</template>
+				</div>
+
+				<div id="completedRequestsListSmall">
+
+					<template is="dom-if" if="[[_completedRequests(myMoveRequests)]]">
+						<div class="list" >
+							<template is="dom-repeat" items="{{requestsGroup}}">
+								<tricomp-request-item-group 
+									group="{{item}}" 
+									screen-large={{screenLarge}}>
+								</tricomp-request-item-group>
+							</template>
+						</div>
+					</template>
+
+					<template is="dom-if" if="[[!_completedRequests(myMoveRequests)]]">
+						<div class="no-requests-placeholder" hidden$="{{systemUser}}">
+							<iron-icon class="no-requests-placeholder-icon" icon="ibm:status-info" info></iron-icon>
+							<div>You do not have any completed Move Requests.</div>
+							<div>To create a new request, tap the "New" button at the bottom of the screen.</div>
+						</div>
+						<div class="no-requests-placeholder" hidden$="{{!systemUser}}">
+							<iron-icon class="no-requests-placeholder-icon" icon="ibm:status-info" info></iron-icon>
+							<div>System user cannot create a Move Request.</div>
+						</div>
+					</template>
+				</div>
+
+			</iron-pages>
+
+		</div>
+
+		</template>
+
+		<template is="dom-if" if="[[screenLarge]]"> 
+
+		<div class="page-main-large">
+
+			<div class="header-container">
+				<triblock-tabs selected="{{_selectedTab}}" hide-scroll-buttons>
+					<triblock-tab id="0" label="In Progress"></triblock-tab>
+					<triblock-tab id="1" label="History"></triblock-tab>
+				</triblock-tabs>
+				<div class="action-container">
+					<paper-button autofocus on-tap="_handleRefresh" disabled$="{{systemUser}}" noink>Refresh</paper-button>
+					<paper-button autofocus on-tap="_handleNewRequest" disabled$="{{systemUser}}" noink>New Request</paper-button>
+				</div>
+			</div>
+
+			<iron-pages id="requestsIronPages" class="main iron-pages-large" selected="{{_selectedTab}}">
+
+				<div id="activeRequestsListLarge">
+
+					<template is="dom-if" if="[[_activeRequests(myMoveRequests)]]">
+						<div id="requestsListLarge" class="list">
+							<template is="dom-repeat" items="{{requestsGroup}}">
+								<tricomp-request-item-group 
+									group="{{item}}"
+									screen-large={{screenLarge}}>
+								</tricomp-request-item-group>
+							</template>
+						</div>
+					</template>
+
+					<template is="dom-if" if="[[!_activeRequests(myMoveRequests)]]">
+						<div class="no-requests-placeholder" hidden$="{{systemUser}}">
+							<div tabindex="0">
+								<iron-icon class="no-requests-placeholder-icon" icon="ibm:status-info" info></iron-icon>
+								<div>You do not have any Move Requests in progress.</div>
+								<div>To create a request, tap the "New Request" button at the top of the screen.</div>
+							</div>
+						</div>
+						<div class="no-requests-placeholder" hidden$="{{!systemUser}}">
+							<iron-icon class="no-requests-placeholder-icon" icon="ibm:status-info" info></iron-icon>
+							<div>System user cannot create a Move Request.</div>
+						</div>
+					</template>
+				</div>
+
+				<div id="completedRequestsListLarge">
+
+					<template is="dom-if" if="[[_completedRequests(myMoveRequests)]]">
+						<div class="list" >
+							<template is="dom-repeat" items="{{requestsGroup}}">
+								<tricomp-request-item-group 
+									group="{{item}}"
+									screen-large={{screenLarge}}>
+								</tricomp-request-item-group>
+							</template>
+						</div>
+					</template>
+
+					<template is="dom-if" if="[[!_completedRequests(myMoveRequests)]]">
+						<div class="no-requests-placeholder" hidden$="{{systemUser}}">
+							<div tabindex="0">
+								<iron-icon class="no-requests-placeholder-icon" icon="ibm:status-info" info></iron-icon>
+								<div>You do not have any completed Move Requests.</div>
+								<div>To create a request, tap the "New Request" button at the top of the screen.</div>
+							</div>
+						</div>
+						<div class="no-requests-placeholder" hidden$="{{!systemUser}}">
+							<iron-icon class="no-requests-placeholder-icon" icon="ibm:status-info" info></iron-icon>
+							<div>System user cannot create a Move Request.</div>
+						</div>
+					</template>
+				</div>
+
+			</iron-pages>
+
+		</div>
+
+		</template>		
+		
+		<tricomp-page-toolbar hidden="{{screenLarge}}">
+			<tricomp-page-toolbar-button label="Refresh" icon="ibm:refresh-redo" toolbar-left disabled$="{{systemUser}}" on-tap="_handleRefresh"></tricomp-page-toolbar-button>
+			<tricomp-page-toolbar-button label="New" icon="ibm:add-new" toolbar-right disabled$="{{systemUser}}" on-tap="_handleNewRequest"></tricomp-page-toolbar-button>
+		</tricomp-page-toolbar>
+
+	</template>
+</dom-module>
+<script>
+	Polymer({
+
+		is: "tripage-request-list",
+		behaviors: [MoveRequestBehavior, MoveRequestPageBehavior, TriDateUtilities],
+
+		properties: {
+			selectedItem: Object,
+
+			requestsGroup: Array,
+
+			_selectedTab: {
+				type: Number,
+				value: 0
+			},
+
+			requestStatus: {
+				type: String,
+				value: ""
+			},
+			firstPass: {
+				type: Boolean,
+				value: true
+			},
+			systemUser: {
+				type: Boolean,
+				value: false
+			}
+
+      	},
+
+		listeners: {
+			"requestListRoute.route-active": "_handleRouteActive",
+		},
+
+		observers: [
+			'_handleMyMoveRequests(myMoveRequests, currentUser._TimeZoneId, requestStatus)',
+			"_handleSelectedTab(_selectedTab)",
+		],
+
+		_handleMyMoveRequests: function(myMoveRequests, timezone, requestStatus) {
+			if (this.currentUser.fullName == "System System") {
+				this.set("systemUser", true);
+				return;
+			}
+			if (myMoveRequests && myMoveRequests.length > 0 && timezone) {
+				var requestDataGroups = [];
+				var tempRequestDataGroup = [];
+				var mo = moment().tz(timezone);
+
+				for (var i = 0; i < myMoveRequests.length; i++) {
+
+					var request = myMoveRequests[i];
+					//console.log("Request Status: ", request.status);
+					if ((request.status == "Issued") || (request.status == "Revision In Progress"))
+						request.delete = true;
+					else
+						request.delete = false;
+					
+					if (requestStatus == "Completed") {
+						if (request.status != "Completed") {
+							continue;
+						}
+					}
+					else {
+						if (request.status == "Completed") {
+							continue;
+						}
+					}
+
+					tempRequestDataGroup.push(request);
+
+				}
+
+				if (tempRequestDataGroup.length > 0) {
+					requestDataGroups.push(tempRequestDataGroup);
+				}
+
+				this.set("requestsGroup", requestDataGroups);
+			}
+
+			if ((this.firstPass) && (!this._activeRequests(myMoveRequests))) {
+				this.firstPass = false;
+				var e = null; 
+				this._handleNewRequest(e);
+				this.fire('list-criteria-redirect');
+			}
+		},
+
+		_activeRequests: function(myMoveRequests) {
+			var activeRequests = false;
+			for (var i = 0; i < myMoveRequests.length; i++) {
+				var request = myMoveRequests[i];
+				if ((request.status == "Issued") || (request.status == "Draft") || (request.status == "Review In Progress") || (request.status == "Revision In Progress")) {
+					activeRequests = true;
+					break;
+				}
+			}
+			return activeRequests;
+		},
+
+		_completedRequests: function(myMoveRequests) {
+			var completedRequests = false;
+			for (var i = 0; i < myMoveRequests.length; i++) {
+				var request = myMoveRequests[i];
+				if (request.status == "Completed") {
+					completedRequests = true;
+					break;
+				}
+			}
+			return completedRequests;
+		},
+
+		_isBusy: function(isBusy, myMoveRequestsLoading) {
+			return isBusy || myMoveRequestsLoading;
+		},
+
+		_handleRefresh: function(e) {
+			this._refreshRequestList();
+		},
+
+		_handleNewRequest: function(e) {
+			this.fire("navigate-request-new", e);
+		},
+
+		_refreshRequestList: function() {
+			if (!this._isPageActive)
+				return;
+
+			if (this.$.myMoveRequests) {
+				this.$.myMoveRequests.refresh();
+			}
+
+		},
+ 
+		_pageAttached : function() {
+
+			this._refreshRequestList();
+			moment.locale("en");
+		},
+
+		_handleSelectedTab: function (selectedTab) {
+			if (selectedTab == 1) {
+				this.set("requestStatus", "Completed");
+			}
+			else {
+				this.set("requestStatus", "");
+			}
+
+		},
+
+		setFirstPass: function (flag) {
+			this.firstPass = flag;
+		},
+
+	});
+</script>

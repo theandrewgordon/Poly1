@@ -1,0 +1,327 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017-2019 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<!-- This is a lazy-loaded component, DO NOT add imports here, add them to its corresponding -imports.html file. -->
+<dom-module id="tripage-summary">
+	<template>
+		<style include="shared-page-styles">
+			:host {
+				@apply(--layout-vertical);
+			}
+
+			.page-header {
+				background-color: var(--ibm-neutral-2);
+			}
+
+			:host([small-screen]) .page-header{
+				background-color: var(--tri-header-color);
+				padding: 5px 10px 5px 10px;
+			}
+			
+
+			:host(:not([small-screen])) .request-page-left-panel {
+				@apply(--layout-flex-4);
+			}
+
+			:host(:not([small-screen])) .request-page-right-panel {
+				@apply(--layout-flex-8);
+			}
+
+			.action-bar {
+				@apply(--layout-horizontal);
+			}
+
+			:host([small-screen]) .action-bar {
+				background-color: var(--tri-footer-background-color);
+				color: var(--tri-footer-color);
+				width: 100%;
+				padding: 5px;
+				@apply(--layout-center-center);
+				@apply(--layout-fixed-bottom);
+				z-index: 102;
+			}
+
+			.updating-request {
+				padding: 6px;
+			}
+
+			.request-page-left-panel {
+				@apply(--layout-vertical);
+				flex-shrink: 0;
+			}
+
+			.request-page-right-panel {
+				padding: 17px 0 0 20px;
+				background-color: var(--tri-primary-content-background-color);
+				@apply(--layout-vertical);
+			}
+
+			:host(:not(small-screen)) .request-page-right-panel {
+				border-left: 1px solid var(--ibm-gray-10);
+			}
+
+			:host([small-screen-width]) .request-page-right-panel  {
+				@apply(--layout-flex-none);
+			}
+
+			:host([small-screen-width]) .request-page-left-panel  {
+				@apply(--layout-flex-none);
+			}
+			
+			:host([small-screen]) .request-page-right-panel {
+				flex-shrink: 0;
+				border-top: 1px solid var(--ibm-gray-10);
+			}
+
+			:host([small-screen]) .request-page-right-panel {
+				flex-shrink: 0;
+				border-top: 1px solid var(--ibm-gray-10);
+			}
+
+			:host(:not([small-screen])) .comments {
+				@apply(--layout-flex);
+			}
+
+			.header {
+				font-weight: lighter;
+			}
+
+			.action-bar-height {
+				height: 55px;
+			}
+
+			:host(:not([small-screen-width])) #reservationHeader {
+				@apply(--layout-flex);
+			}
+		</style>
+
+		<triplat-route id="reservationSummaryRoute" name="reservationSummary" params="{{pageParams}}" on-route-active="_handleRouteActive" active="{{_active}}"></triplat-route>
+
+		<div class="page-header">
+			<div class="header-text tri-h2" hidden$="[[smallScreen]]" aria-label="Reservation Summary">Reservation Summary</div>
+			<div class="action-bar">
+				<paper-button on-tap="_handleCancel" danger-outline$="[[!smallScreen]]" footer-danger$="[[smallScreen]]" hidden$="[[_isReadOnlyOutlook(isOutlookEmbedded, reservationManager)]]">Cancel</paper-button>
+				<paper-button on-tap="_handleSubmit" footer$="{{smallScreen}}" hidden$="[[!_isCreate]]">{{buttonLabelCreate}}</paper-button>
+				<paper-button on-tap="_handleSubmit" footer$="{{smallScreen}}" hidden$="[[_isCreate]]">{{buttonLabelUpdate}}</paper-button>
+			</div>
+		</div>
+
+		<triblock-responsive-layout id="responsiveLayout">
+			<div class="request-page-left-panel">
+				<tricomp-reservation-summary
+					id="reservationHeader"
+					is-outlook-embedded="[[isOutlookEmbedded]]"
+					current-user="[[currentUser]]"
+					application-settings="[[applicationSettings]]"
+					favorite-rooms="{{favoriteRooms}}"
+					reservation-manager="{{reservationManager}}"
+					reservation-locations="{{reservationLocations}}"
+					food-orders="{{foodOrders}}"
+					equipment-orders="{{equipmentOrders}}"
+					exception-occurrences="{{exceptionOccurrences}}"
+					rm="[[rm]]"
+					spec-id="[[specId]]"
+					active="[[_active]]"
+					has-booked-rooms="[[_hasBookedRooms]]"
+					hide-items>
+				</tricomp-reservation-summary>
+			</div>
+			<div class="request-page-right-panel">
+				<div class="tri-h3 header">Booked Rooms</div>
+				<tricomp-reservation-summary
+					id="reservationItems"
+					is-outlook-embedded="[[isOutlookEmbedded]]"
+					current-user="[[currentUser]]"
+					application-settings="[[applicationSettings]]"
+					favorite-rooms="{{favoriteRooms}}"
+					reservation-manager="{{reservationManager}}"
+					reservation-locations="{{reservationLocations}}"
+					food-orders="{{foodOrders}}"
+					equipment-orders="{{equipmentOrders}}"
+					exception-occurrences="{{exceptionOccurrences}}"
+					rm="[[rm]]"
+					spec-id="[[specId]]"
+					hide-summary
+					recurrence="[[recurrence]]">
+				</tricomp-reservation-summary>
+			</div>
+		</triblock-responsive-layout>
+
+		<paper-dialog id="cancelReservationDialog" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
+			<p>Are you sure you want to cancel this reservation?</p>
+			<div class="buttons">
+				<paper-button secondary dialog-dismiss>No</paper-button>
+				<paper-button dialog-confirm autofocus>Yes</paper-button>
+			</div>
+		</paper-dialog>
+
+		<paper-dialog id="cancelSeriesDialog" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
+			<p>
+				Are you sure you want to cancel this reservation series?<br /> 
+				<span class="warning-text">Warning:</span> This will remove all occurrences and exceptions.
+			</p>
+			<div class="buttons">
+				<paper-button secondary dialog-dismiss>No</paper-button>
+				<paper-button dialog-confirm autofocus>Yes</paper-button>
+			</div>
+		</paper-dialog>
+
+		<paper-dialog id="noRoomDialog" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
+			<p>You need to add a room to this reservation.</p>
+			<div class="buttons">
+				<paper-button dialog-confirm autofocus>Close</paper-button>
+			</div>
+		</paper-dialog>
+		<div class="action-bar-height"></div>
+	</template>
+	<script>
+		Polymer({
+
+			is: "tripage-summary",
+
+			behaviors: [
+				TriRoomReservationUtilBehavior,
+				TriBlockViewResponsiveBehavior,
+				TriValidationBehavior
+			],
+
+			properties: {
+				isOutlookEmbedded: Boolean,
+				currentUser: Object,
+				applicationSettings: Object,
+				favoriteRooms: Array,
+				reservationManager: Object,
+				reservationLocations: Array,
+				exceptionOccurrences: Array,
+				reservationLocation: Object,
+				foodOrders: Array,
+				equipmentOrders: Array,
+				rm: Object,
+				specId: String,
+
+				active: {
+					type: Boolean,
+					value: false
+				},
+
+				recurrence: Object,
+
+				buttonLabelCreate: {
+					type: String,
+					value: function(){
+						var __dictionary__buttonLabelCreate = "Create Reservation";
+						return __dictionary__buttonLabelCreate;
+					}
+				},
+
+				_unsavedChangesOnBrowserBackFn: {
+					type: Object,
+					value: function() {
+						return this._showUnsavedChangesPopup.bind(this);
+					}
+				},
+
+				addAnotherRoomActive: {
+					type: Boolean,
+					value: false
+				},
+				
+				buttonLabelUpdate: {
+					type: String,
+					value: function(){
+						var __dictionary__buttonLabelUpdate = "Update Reservation";
+						return __dictionary__buttonLabelUpdate;
+					}
+				},
+
+				_isCreate: {
+					type: Boolean,
+					value: true
+				}
+			},
+
+			listeners: {
+				"cancelReservationDialog.iron-overlay-closed": "_handleCancelDialogClose",
+				'cancelSeriesDialog.iron-overlay-closed': '_handleCancelDialogClose',
+
+				'navigate-room-results-dramatic': '_handleAddAnotherRoom'
+			},
+
+			_handleRouteActive: function(e) {
+				if (e.detail.active) {
+					var isRequestedForCurrentUser = this._isReservationRequestedForCurrentUserPerson();
+					if (!isRequestedForCurrentUser) {
+						this.fire("navigate-reservation-not-found");
+						return;
+					}
+
+					if (this.addAnotherRoomActive) {
+						this.set('addAnotherRoomActive', false);
+					}
+					this._stateLocation = location.href;
+					this._stateTitle = document.title;
+					this.async(function() {
+						window.addEventListener('popstate', this._unsavedChangesOnBrowserBackFn);
+						if (!this.specId) {
+							this.fire('navigate-init', this.pageParams);
+						} else {
+							this.$.reservationHeader._pageAttached();
+							this.$.reservationItems._pageAttached();
+						}
+
+						if (this.reservationManager && this.reservationManager.reservation.id) {
+							this._isCreate = false;
+						} else {
+							this._isCreate = true;
+						}
+					});
+				} else {
+					this.cleanupUnsavedChangesDialogProcesses();
+				}
+			},
+
+			_handleSubmit: function(e) {
+				if (!this._hasNonExpiredResources(this.reservationLocations)) {
+					this.$.noRoomDialog.open();
+				} else if (!this._isRoomTypeWorkspace(this.reservationManager.searchRoomType, this._workspaceId) && (!this.reservationManager.reservationSubject || this.reservationManager.reservationSubject == "")) {
+					// Display error message and bring focus back to Subject field
+					this.$.reservationHeader._showMissingSubjectMessage = true;
+				} else {
+					this.$.reservationHeader._showMissingSubjectMessage = false;
+					this.cleanupUnsavedChangesDialogProcesses();
+					this.fire("action-submit");
+				}
+			},
+
+			_handleCancel: function(e) {
+				if (this._isRecurringMeeting(this.reservationManager)) {
+					this.$.cancelSeriesDialog.open();
+				} else {
+					this.$.cancelReservationDialog.open();
+				}
+			},
+
+			_handleCancelDialogClose: function(e, detail) {
+				if (detail && detail.confirmed) {
+					this.cleanupUnsavedChangesDialogProcesses();
+					this._doCancel();
+				}
+			},
+
+			_showUnsavedChangesPopup: function(e) {
+				window.history.pushState(null, this._stateTitle, this._stateLocation);
+				this.fire('show-unsaved-changes-dialog');
+			},
+
+			_handleAddAnotherRoom: function(e) {
+				window.removeEventListener('popstate', this._unsavedChangesOnBrowserBackFn);
+				this.set('addAnotherRoomActive', true);
+			},
+
+			cleanupUnsavedChangesDialogProcesses: function() {
+				window.removeEventListener('popstate', this._unsavedChangesOnBrowserBackFn);
+				this.set('addAnotherRoomActive', false);
+			}
+
+		});
+	</script>
+</dom-module>

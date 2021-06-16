@@ -1,0 +1,989 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+<link rel="import" href="../triplat-datetime-picker/triplat-datetime-picker.html">
+<link rel="import" href="../triplat-date-picker/triplat-date-picker.html">
+
+<link rel="import" href="../triplat-duration/triplat-duration.html">
+
+<link rel="import" href="../triplat-ds/triplat-ds.html">
+
+<link rel="import" href="../paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../paper-radio-button/paper-radio-button.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-radio-group/paper-radio-group.html">
+<link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../paper-listbox/paper-listbox.html">
+<link rel="import" href="../paper-item/paper-item.html">
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<link rel="import" href="tribehav-room-reservation-util.html">
+<link rel="import" href="../triapp-reservation-list/tribehav-reservation-utilities.html">
+
+<link rel="import" href="tricomp-incremental-number-input.html">
+<link rel="import" href="tricomp-page-toolbar.html">
+<link rel="import" href="tristyles-room-reservation-app.html">
+
+<link rel="import" href="../triblock-responsive-layout/triblock-responsive-layout.html">
+<link rel="import" href="../triblock-responsive-layout/triblock-view-responsive-behavior.html">
+
+<dom-module id="tricomp-recurrence">
+	<template>
+		<style include="shared-page-styles">
+
+			:host {
+				@apply(--layout-vertical);
+				@apply(--layout-flex);
+			}
+
+			triblock-responsive-layout {
+				overflow: auto;
+			}
+
+			.dropdown-monthly-day-of-week {
+				@apply(--layout-flex);
+				margin-left: 10px;
+				max-width: 150px;
+				min-width: 90px;
+			}
+			.dropdown-monthly-week-of-month {
+				@apply(--layout-flex);
+				margin-left: 10px;
+				max-width: 150px;
+				min-width: 90px;
+			}
+			.dropdown-yearly-month {
+				@apply(--layout-flex);
+				margin-left: 10px;
+				max-width: 150px;
+				min-width: 90px;
+			}
+			.dropdown-yearly-day-of-week {
+				@apply(--layout-flex);
+				margin-left: 10px;
+				max-width: 150px;
+				min-width: 90px;
+			}
+			.dropdown-yearly-week-of-month {
+				@apply(--layout-flex);
+				margin-left: 10px;
+				max-width: 150px;
+				min-width: 90px;
+			}
+
+			paper-radio-button {
+				--paper-radio-button-size: 24px;
+				--paper-radio-button-label-spacing: 6px;
+				padding: 16px;
+			}
+
+			section {
+				@apply(--layout-vertical);
+				margin-left: 10px;
+			}
+			section:first-child {
+				padding: 5px 0px 5px;
+			}
+			section:not(:first-child) {
+				border-top: 1px solid var(--tri-primary-content-accent-color);
+				padding: 5px 10px 5px 0;
+			}
+
+			tricomp-incremental-number-input {
+				padding-top: 0;
+			}
+
+			.checkbox-container {
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+				@apply(--layout-start-justified);
+				@apply(--layout-wrap);
+			}
+			.checkbox-container > * {
+				padding: 12px;
+			}
+
+			.duration-input {
+				padding: 8px 10px 8px 0;
+				--triplat-duration-width: 100%;
+				--paper-input-container: {
+					padding: 0;
+				};
+
+				flex: 1 1 250px;
+				-webkit-flex: 1 1 250px; /* fix to address https://bugs.webkit.org/show_bug.cgi?id=136041 */
+			}
+
+			.inline-date-picker {
+				padding: 10px;
+				--paper-input-container: {
+					padding: 0;
+				};
+			}
+
+			#recurrenceMonthlyDayOfMonth {
+				display: none;
+			}
+			#recurrenceMonthlyDayOfMonth[show] {
+				display: flex;
+			}
+
+			#recurrenceMonthlyDayOfWeek {
+				display: none;
+			}
+			#recurrenceMonthlyDayOfWeek[show] {
+				display: flex;
+			}
+
+			#recurrenceYearlyDayOfMonth {
+				display: none;
+			}
+			#recurrenceYearlyDayOfMonth[show] {
+				display: flex;
+			}
+
+			#recurrenceYearlyDayOfWeek {
+				display: none;
+			}
+			#recurrenceYearlyDayOfWeek[show] {
+				display: flex;
+			}
+
+			.row-container {
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+				@apply(--layout-wrap);
+			}
+			.row-baseline-container {
+				@apply(--layout-horizontal);
+				@apply(--layout-baseline);
+				@apply(--layout-wrap);
+			}
+			.row-container > :not(:first-child), .row-baseline-container > :not(:first-child) {
+				margin-left: 10px;
+			}
+
+			.section-title {
+				font-size: 22px;
+				padding-bottom: 10px;
+			}
+
+			.start-end-rule-checkbox {
+				align-self: flex-start;
+				padding: 10px 0;
+			}
+
+			.start-end-datetime-picker {
+				padding: 8px 10px 8px 0;
+				--triplat-date-picker-width: 100%;
+				--paper-input-container: {
+					padding: 0;
+				};
+
+				flex: 1 1 250px;
+				-webkit-flex: 1 1 250px; /* fix to address https://bugs.webkit.org/show_bug.cgi?id=136041 */
+			}
+
+			.sub-section > :not(:first-child) {
+				padding-top: 10px;
+			}
+			.sub-section > :not(:last-child) {
+				padding-bottom: 10px;
+			}
+
+			.time-options-container {
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+				@apply(--layout-wrap);
+			}
+
+			paper-radio-group {
+				@apply(--layout);
+				@apply(--layout-vertical);
+			}
+
+			#recurrenceEndOptions {
+				@apply(--layout-horizontal);
+			}
+
+		</style>
+
+		<triplat-ds id="recurrence" name="recurrence" data="{{recurrence}}" 
+				loading="{{_recurrenceDSLoading}}" manual>
+			<triplat-ds-context name="myReservationManagers" context-id="[[specId]]"></triplat-ds-context>
+		</triplat-ds>
+
+		<triblock-responsive-layout>
+			<div id="recurrence-left-panel" hidden$="[[_hideContent]]">
+				<section>
+
+					<paper-checkbox
+						id="allDayToggleButton"
+						class="start-end-rule-checkbox"
+						checked="{{recurrence.allDay}}"
+						noink>All day event</paper-checkbox>
+
+					<div class="time-options-container">
+						<triplat-datetime-picker
+							id="startDateTime"
+							class="start-end-datetime-picker"
+							label="First Meeting"
+							null-date-invalid
+							hidden$="[[recurrence.allDay]]"
+							time-zone="{{currentUser._TimeZoneId}}"
+							display-format="{{currentUser._DateTimeFormat}}"
+							value="{{recurrence.startDateTime}}">
+						</triplat-datetime-picker>
+
+						<triplat-date-picker
+							id="startDate"
+							class="start-end-datetime-picker"
+							label="First Meeting"
+							null-date-invalid
+							hidden$="[[!recurrence.allDay]]"
+							display-format="{{currentUser._DateFormat}}"
+							value="{{recurrence.startDate}}">
+						</triplat-date-picker>
+
+						<triplat-duration
+							id="duration"
+							class="duration-input"
+							value="{{recurrence.duration}}" 
+							label="Duration" 
+							hidden$="[[recurrence.allDay]]"
+							display-tokens="h:m">
+						</triplat-duration>
+
+						<triplat-duration
+							id="allDayDuration"
+							class="duration-input"
+							value="{{recurrence.duration}}" 
+							label="Duration" 
+							hidden$="[[!recurrence.allDay]]"
+							readonly
+							display-tokens="d">
+						</triplat-duration>
+
+						<triplat-datetime-picker
+							id="endDateTime"
+							readonly
+							class="start-end-datetime-picker"
+							label="End"
+							null-date-invalid
+							hidden$="[[recurrence.allDay]]"
+							time-zone="{{currentUser._TimeZoneId}}"
+							display-format="{{currentUser._DateTimeFormat}}"
+							value="{{recurrence.endDateTime}}">
+						</triplat-datetime-picker>
+
+						<triplat-date-picker
+							id="endDate"
+							readonly
+							class="start-end-datetime-picker"
+							label="End"
+							null-date-invalid
+							hidden$="[[!recurrence.allDay]]"
+							display-format="{{currentUser._DateFormat}}"
+							value="{{recurrence.endDate}}">
+						</triplat-date-picker>
+					</div>
+
+				</section>
+
+				<section>
+
+					<div class="section-title">Recurrence Type</div>
+
+					<paper-radio-group id="recurrencePatternType" selected="{{recurrence.recurrencePatternType}}">
+						<paper-radio-button name="DAILY">Daily</paper-radio-button>
+						<paper-radio-button name="WEEKLY">Weekly</paper-radio-button>
+						<paper-radio-button name="MONTHLY">Monthly</paper-radio-button>
+						<paper-radio-button name="YEARLY">Yearly</paper-radio-button>
+					</paper-radio-group>
+
+				</section>
+			</div>
+			<div id="recurrence-right-panel" hidden$="[[_hideContent]]">
+				<section hidden$="{{!_isDailyRecurrence(recurrence.recurrencePatternType)}}">
+
+					<div class="section-title">Daily Recurrence</div>
+
+					<div class="sub-section">
+						<paper-radio-group id="recurrenceDailyOptions" selected="{{recurrence.recurrenceDailyOptions}}">
+							<paper-radio-button name="Every [x] day(s)">Every <b>[[_computeCountDisplayValue(recurrence.dailyRecurrenceDays)]]</b> day(s)</paper-radio-button>
+							<paper-radio-button name="Every weekday">Every weekday</paper-radio-button>
+							<paper-radio-button name="Every weekend day">Every weekend day</paper-radio-button>
+						</paper-radio-group>
+
+						<div class="row-container" hidden$="{{!_isDailyEveryXDays(recurrence.recurrenceDailyOptions)}}">
+							<span>Recur every</span>
+							<tricomp-incremental-number-input
+								id="dailyRecurrenceDays"
+								min="1"
+								invalid="{{dailyRecurrenceDaysInvalid}}"
+								value="{{recurrence.dailyRecurrenceDays}}">
+							</tricomp-incremental-number-input>
+							<span>day(s)</span>
+						</div>
+					</div>
+
+				</section>
+
+				<section hidden$="{{!_isWeeklyRecurrence(recurrence.recurrencePatternType)}}">
+
+					<div class="section-title">Weekly Recurrence</div>
+
+					<div class="sub-section">
+						<div class="checkbox-container">
+							<paper-checkbox checked="{{recurrence.weeklySunday}}" name="Sunday">Sunday</paper-checkbox>
+							<paper-checkbox checked="{{recurrence.weeklyMonday}}" name="Monday">Monday</paper-checkbox>
+							<paper-checkbox checked="{{recurrence.weeklyTuesday}}" name="Tuesday">Tuesday</paper-checkbox>
+							<paper-checkbox checked="{{recurrence.weeklyWednesday}}" name="Wednesday">Wednesday</paper-checkbox>
+							<paper-checkbox checked="{{recurrence.weeklyThursday}}" name="Thursday">Thursday</paper-checkbox>
+							<paper-checkbox checked="{{recurrence.weeklyFriday}}" name="Friday">Friday</paper-checkbox>
+							<paper-checkbox checked="{{recurrence.weeklySaturday}}" name="Saturday">Saturday</paper-checkbox>
+						</div>
+
+						<div class="row-container">
+							<span>Recur every</span>
+							<tricomp-incremental-number-input
+								id="weeklyRecurrenceWeeks"
+								min="1"
+								invalid="{{weeklyRecurrenceWeeksInvalid}}"
+								value="{{recurrence.weeklyRecurrenceWeeks}}">
+							</tricomp-incremental-number-input>
+							<span>week(s)</span>
+						</div>
+					</div>
+
+				</section>
+
+				<section hidden$="{{!_isMonthlyRecurrence(recurrence.recurrencePatternType)}}">
+
+					<div class="sub-section">
+						<div class="section-title">Monthly Recurrence</div>
+
+						<div class="row-container">
+							<span>Recur every</span>
+							<tricomp-incremental-number-input
+								id="monthlyRecurrenceMonths"
+								min="1"
+								invalid="{{monthlyRecurrenceMonthsInvalid}}"
+								value="{{recurrence.monthlyRecurrenceMonths}}">
+							</tricomp-incremental-number-input>
+							<span>month(s)</span>
+						</div>
+
+						<div class="row-container">
+							<span>On</span>
+							<paper-dropdown-menu class="dropdown-monthly-week-of-month" no-label-float no-animations>
+								<paper-listbox class="dropdown-content" attr-for-selected="data-val" selected="{{_selectedMonthlyWeekOfMonth}}" on-iron-select="_onRecurrenceMonthlyWeekOfMonthChange">
+									<paper-item data-val="DAY">Day</paper-item>
+									<paper-item data-val="First">First</paper-item>
+									<paper-item data-val="Second">Second</paper-item>
+									<paper-item data-val="Third">Third</paper-item>
+									<paper-item data-val="Fourth">Fourth</paper-item>
+									<paper-item data-val="Last">Last</paper-item>
+								</paper-listbox>
+							</paper-dropdown-menu>
+							<paper-dropdown-menu class="dropdown-monthly-day-of-week" id="recurrenceMonthlyDayOfWeek" no-animations no-label-float show$="{{_showMonthlyTheFirstMondayOfEveryXMonthsOptions(_selectedMonthlyWeekOfMonth)}}">
+								<paper-listbox class="dropdown-content" attr-for-selected="data-val" selected="{{recurrence.monthlyDayOfWeek}}">
+									<paper-item data-val="day">Day</paper-item>
+									<paper-item data-val="weekday">Weekday</paper-item>
+									<paper-item data-val="weekend day">Weekend day</paper-item>
+									<paper-item data-val="Sunday">Sunday</paper-item>
+									<paper-item data-val="Monday">Monday</paper-item>
+									<paper-item data-val="Tuesday">Tuesday</paper-item>
+									<paper-item data-val="Wednesday">Wednesday</paper-item>
+									<paper-item data-val="Thursday">Thursday</paper-item>
+									<paper-item data-val="Friday">Friday</paper-item>
+									<paper-item data-val="Saturday">Saturday</paper-item>
+								</paper-listbox>
+							</paper-dropdown-menu>
+							<tricomp-incremental-number-input
+								id="recurrenceMonthlyDayOfMonth"
+								min="1"
+								max="31"
+								invalid="{{monthlyDayOfMonthInvalid}}"
+								show$="{{_showMonthlyDayXOfEveryXMonthsOptions(_selectedMonthlyWeekOfMonth)}}"
+								value="{{recurrence.monthlyDayOfMonth}}">
+							</tricomp-incremental-number-input>
+						</div>
+					</div>
+
+				</section>
+
+				<section hidden$="{{!_isYearlyRecurrence(recurrence.recurrencePatternType)}}">
+
+					<div class="sub-section">
+						<div class="section-title">Yearly Recurrence</div>
+
+						<div class="row-baseline-container">
+							<span>Recur every</span>
+							<paper-dropdown-menu class="dropdown-yearly-month" no-label-float no-animations selected-item-label="{{recurrence.yearlyMonth}}">
+								<paper-listbox class="dropdown-content">
+									<paper-item>January</paper-item>
+									<paper-item>February</paper-item>
+									<paper-item>March</paper-item>
+									<paper-item>April</paper-item>
+									<paper-item>May</paper-item>
+									<paper-item>June</paper-item>
+									<paper-item>July</paper-item>
+									<paper-item>August</paper-item>
+									<paper-item>September</paper-item>
+									<paper-item>October</paper-item>
+									<paper-item>November</paper-item>
+									<paper-item>December</paper-item>
+								</paper-listbox>
+							</paper-dropdown-menu>
+						</div>
+
+						<div class="row-container">
+							<span>On</span>
+							<paper-dropdown-menu class="dropdown-yearly-week-of-month" no-label-float no-animations>
+								<paper-listbox class="dropdown-content" attr-for-selected="data-val" selected="{{_selectedYearlyWeekOfMonth}}" on-iron-select="_onRecurrenceYearlyWeekOfMonthChange">
+									<paper-item data-val="DAY">Day</paper-item>
+									<paper-item data-val="First">First</paper-item>
+									<paper-item data-val="Second">Second</paper-item>
+									<paper-item data-val="Third">Third</paper-item>
+									<paper-item data-val="Fourth">Fourth</paper-item>
+									<paper-item data-val="Last">Last</paper-item>
+								</paper-listbox>
+							</paper-dropdown-menu>
+							<paper-dropdown-menu class="dropdown-yearly-day-of-week" id="recurrenceYearlyDayOfWeek" no-label-float no-animations show$="{{_showYearlyTheFirstMondayOfMayOptions(_selectedYearlyWeekOfMonth)}}">
+								<paper-listbox class="dropdown-content" attr-for-selected="data-val" selected="{{recurrence.yearlyDayOfWeek}}">
+									<paper-item data-val="day">Day</paper-item>
+									<paper-item data-val="weekday">Weekday</paper-item>
+									<paper-item data-val="weekend day">Weekend day</paper-item>
+									<paper-item data-val="Sunday">Sunday</paper-item>
+									<paper-item data-val="Monday">Monday</paper-item>
+									<paper-item data-val="Tuesday">Tuesday</paper-item>
+									<paper-item data-val="Wednesday">Wednesday</paper-item>
+									<paper-item data-val="Thursday">Thursday</paper-item>
+									<paper-item data-val="Friday">Friday</paper-item>
+									<paper-item data-val="Saturday">Saturday</paper-item>
+								</paper-listbox>
+							</paper-dropdown-menu>
+							<tricomp-incremental-number-input
+								id="recurrenceYearlyDayOfMonth"
+								min="1"
+								max="31"
+								invalid="{{yearlyDayOfMonthInvalid}}"
+								show$="{{_showYearlyEveryMayXOptions(_selectedYearlyWeekOfMonth)}}"
+								value="{{recurrence.yearlyDayOfMonth}}">
+							</tricomp-incremental-number-input>
+						</div>
+					</div>
+
+				</section>
+
+				<section>
+
+					<div class="section-title">Recurrence End</div>
+
+					<div class="sub-section">
+						<paper-radio-group id="recurrenceEndOptions" selected="{{recurrence.recurrenceEndOptions}}">
+							<paper-radio-button name="End After">End after</paper-radio-button>
+							<paper-radio-button name="End Date">End date</paper-radio-button>
+							<paper-radio-button name="No End Date">No end</paper-radio-button>
+						</paper-radio-group>
+
+						<!-- This container is necessary for sub-section padding to work. -->
+						<div>
+							<div class="row-container" hidden$="{{!_isEndAfter(recurrence.recurrenceEndOptions)}}">
+								<span>End after</span>
+								<tricomp-incremental-number-input
+									id="endNoOfOccurrencesBeforeEnd"
+									min="1"
+									invalid="{{endNoOfOccurrencesBeforeEndInvalid}}"
+									value="{{recurrence.endNoOfOccurrencesBeforeEnd}}">
+								</tricomp-incremental-number-input>
+								<span>occurrences</span>
+							</div>
+
+							<div class="row-container" hidden$="{{!_isEndDate(recurrence.recurrenceEndOptions)}}">
+								<span>Recur until</span>
+								<triplat-date-picker
+									no-label-float
+									id="endEndDate"
+									class="inline-date-picker"
+									display-format="{{currentUser._DateFormat}}"
+									value="{{recurrence.endEndDate}}">
+								</triplat-date-picker>
+							</div>
+						</div>
+					</div>
+
+				</section>
+			</div>
+		</triblock-responsive-layout>
+		<tricomp-page-toolbar small-screen-width="[[smallScreenWidth]]">
+			<paper-button danger-outline$="[[!smallScreeWidth]]" footer-danger$="[[smallScreenWidth]]" on-tap="_handleClear">Cancel</paper-button>
+			<paper-button footer$="[[smallScreenWidth]]" disabled="[[disableDoneButton]]" on-tap="_handleDone">Done</paper-button>
+		</tricomp-page-toolbar>
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-recurrence",
+			behaviors: [
+				TriReservationUtilitiesBehavior,
+				TriRoomReservationUtilBehavior,
+				TriBlockViewResponsiveBehavior
+			],
+
+			properties: {
+				reservationManager: Object,
+				recurrence: Object,
+
+				preCreateComplete: {
+					type: Boolean,
+					value: false
+				},
+
+				rm: {
+					type: Object
+				},
+
+				backEventName: String,
+
+				disableDoneButton: {
+					type: Boolean,
+					computed: "_computeDisableDoneButton(dailyRecurrenceDaysInvalid, weeklyRecurrenceWeeksInvalid, _selectedMonthlyWeekOfMonth, monthlyDayOfMonthInvalid, monthlyRecurrenceMonthsInvalid, monthlyDayOfWeekInvalid, _selectedYearlyWeekOfMonth, yearlyDayOfMonthInvalid, recurrence.yearlyMonth, recurrence.yearlyDayOfWeek, endNoOfOccurrencesBeforeEndInvalid, recurrence.recurrencePatternType, recurrence.recurrenceDailyOptions, recurrence.recurrenceMonthlyOptions, recurrence.recurrenceYearlyOptions, recurrence.recurrenceEndOptions, recurrence.endEndDate)"
+				},
+
+				monthlyDayOfWeekInvalid: {
+					type: Boolean,
+					value: false,
+					computed: "_computeMonthlyDayOfWeekInvalid(recurrence.monthlyDayOfWeek)"
+				},
+
+				isLoading: {
+					type: Boolean,
+					value: false,
+					computed: "_computeLoading(isBusy, _recurrenceDSLoading)",
+					notify: true
+				},
+
+				_recurrenceDSLoading: {
+					type: Boolean,
+					value: false,
+				},
+
+				_selectedMonthlyWeekOfMonth: {
+					type: String,
+					value: ""
+				},
+				_selectedYearlyWeekOfMonth: {
+					type: String,
+					value: ""
+				},
+
+				oldDuration: Number,
+
+				_hideContent: {
+					type: Boolean,
+					value: true
+				},
+
+				loading: {
+					type: Boolean,
+					value: false
+				}
+			},
+
+			listeners: {
+				"recurrencePatternType.paper-radio-group-changed": "_recurrencePatternTypeChanged",
+				"recurrenceDailyOptions.paper-radio-group-changed": "_recurrenceDailyOptionsChanged",
+				"recurrenceMonthlyDayOfWeek.iron-select": "_recurrenceMonthlyDayOfWeekChanged",
+				"recurrenceYearlyDayOfWeek.iron-select": "_recurrenceYearlyDayOfWeekChanged",
+				"recurrenceEndOptions.paper-radio-group-changed": "_recurrenceEndOptionsChanged",
+
+				"endEndDate.date-picker-change": "_endEndDateChanged",
+
+				"startDateTime.datetime-picker-change": "_startDateTimeChanged",
+				"startDate.date-picker-change": "_startDateTimeChanged",
+				"allDayToggleButton.change": "_allDayChanged"
+			},
+
+			observers: [
+				"_durationValueChanged(recurrence.duration)",
+				"_updateSelectedMonthlyWeekOfMonth(recurrence.recurrenceMonthlyOptions, recurrence.monthlyWeekOfMonth)",
+				"_updateSelectedYearlyWeekOfMonth(recurrence.recurrenceYearlyOptions, recurrence.yearlyWeekOfMonth)",
+				"_observeLoading(loading)"
+			],
+
+			_updateSelectedMonthlyWeekOfMonth: function(recurrenceMonthlyOptions, monthlyWeekOfMonth) {
+				if (recurrenceMonthlyOptions && recurrenceMonthlyOptions != "") {
+					if (this._isMonthlyDayXOfEveryXMonths(recurrenceMonthlyOptions) && this._selectedMonthlyWeekOfMonth != "DAY") {
+						this.set("_selectedMonthlyWeekOfMonth", "DAY");
+					} else if (this._isMonthlyTheFirstMondayOfEveryXMonths(recurrenceMonthlyOptions) && this._selectedMonthlyWeekOfMonth != monthlyWeekOfMonth) {
+						this.set("_selectedMonthlyWeekOfMonth", monthlyWeekOfMonth);
+					}
+				}
+			},
+
+			_updateSelectedYearlyWeekOfMonth: function(recurrenceYearlyOptions, yearlyWeekOfMonth) {
+				if (recurrenceYearlyOptions && recurrenceYearlyOptions != "") {
+					if (this._isYearlyEveryMayX(recurrenceYearlyOptions) && this._selectedYearlyWeekOfMonth != "DAY") {
+						this.set("_selectedYearlyWeekOfMonth", "DAY");
+					} else if (this._isYearlyTheFirstMondayOfMay(recurrenceYearlyOptions) && this._selectedYearlyWeekOfMonth != yearlyWeekOfMonth) {
+						this.set("_selectedYearlyWeekOfMonth", yearlyWeekOfMonth);
+					}
+				}
+			},
+
+			_computeLoading: function(isBusy, _recurrenceDSLoading) {
+				return isBusy || _recurrenceDSLoading;
+			},
+
+			_computeCountDisplayValue: function(val) {
+				if (!val || val == "") return "[#]";
+				return (typeof val == "string") ? val.toLowerCase() : val;
+			},
+
+			_computeDayDisplayValue: function(val) {
+				if (!val || val == 0 || val == "") return "[day]";
+				return val;
+			},
+
+			_computeMonthDisplayValue: function(val) {
+				if (!val || val == 0 || val == "") return "[month]";
+				return val;
+			},
+
+			_computeMonthlyDayOfWeekInvalid: function(recurrenceMonthlyDayOfWeek) {
+				return !recurrenceMonthlyDayOfWeek || recurrenceMonthlyDayOfWeek == "";
+			},
+
+			/*
+			* Validate the input.
+			*/
+			_computeDisableDoneButton: function(dailyRecurrenceDaysInvalid, weeklyRecurrenceWeeksInvalid, selectedMonthlyWeekOfMonth, monthlyDayOfMonthInvalid, monthlyRecurrenceMonthsInvalid, monthlyDayOfWeekInvalid, selectedYearlyWeekOfMonth, yearlyDayOfMonthInvalid, recurrenceYearlyMonth, recurrenceYearlyDayOfWeek, endNoOfOccurrencesBeforeEndInvalid, recurrencePatternType, recurrenceDailyOptions, recurrenceMonthlyOptions, recurrenceYearlyOptions, recurrenceEndOptions, endEndDate) {
+				var isEndDate = this._isEndDate(recurrenceEndOptions);
+				if (isEndDate && !endEndDate) {
+					// "End date" selected, and is invalid
+					return true;
+				}
+
+				var isEndAfter = this._isEndAfter(recurrenceEndOptions);
+				if (isEndAfter && endNoOfOccurrencesBeforeEndInvalid) {
+					// "End after" selected, and is invalid
+					return true;
+				}
+
+				var isDailyRecurrence = this._isDailyRecurrence(recurrencePatternType);
+				var isDailyEveryXDays = this._isDailyEveryXDays(recurrenceDailyOptions);
+				if (isDailyRecurrence && isDailyEveryXDays && dailyRecurrenceDaysInvalid) {
+					// daily recurrence + "Every [#] days" selected, and is invalid
+					return true;
+				}
+
+				var isWeeklyRecurrence = this._isWeeklyRecurrence(recurrencePatternType);
+				if (isWeeklyRecurrence && weeklyRecurrenceWeeksInvalid) {
+					// weekly recurrence selected, and is invalid
+					return true;
+				}
+
+				var isMonthlyRecurrence = this._isMonthlyRecurrence(recurrencePatternType);
+				var monthlyWeekOfMonthInvalid = !selectedMonthlyWeekOfMonth || selectedMonthlyWeekOfMonth == "";
+				if (isMonthlyRecurrence && (monthlyWeekOfMonthInvalid || monthlyRecurrenceMonthsInvalid)) {
+					// monthly recurrence + no option selected or invalid months between recurrence
+					return true;
+				}
+				var isMonthlyDayXOfEveryXMonths = this._isMonthlyDayXOfEveryXMonths(recurrenceMonthlyOptions);
+				if (isMonthlyRecurrence && isMonthlyDayXOfEveryXMonths && monthlyDayOfMonthInvalid) {
+					// monthly recurrence + "Day X of every X months" selected, and is invalid
+					return true;
+				}
+				var isMonthlyTheFirstMondayOfEveryXMonths = this._isMonthlyTheFirstMondayOfEveryXMonths(recurrenceMonthlyOptions);
+				if (isMonthlyRecurrence && isMonthlyTheFirstMondayOfEveryXMonths && monthlyDayOfWeekInvalid) {
+					// monthly recurrence + "[First] [day] of every X months" selected, and is invalid
+					return true;
+				}
+
+				var isYearlyRecurrence = this._isYearlyRecurrence(recurrencePatternType);
+				var recurrenceYearlyMonthInvalid = !recurrenceYearlyMonth || recurrenceYearlyMonth == "";
+				var yearlyWeekOfMonthInvalid = !selectedYearlyWeekOfMonth || selectedYearlyWeekOfMonth == "";
+				if (isYearlyRecurrence && (yearlyWeekOfMonthInvalid || recurrenceYearlyMonthInvalid)) {
+					// yearly recurrence + no option selected
+					return true;
+				}
+				var isYearlyEveryMayX = this._isYearlyEveryMayX(recurrenceYearlyOptions);
+				if (isYearlyRecurrence && isYearlyEveryMayX && yearlyDayOfMonthInvalid) {
+					// yearly recurrence + "Every [month] [#]" selected, and is invalid
+					return true;
+				}
+				var isYearlyTheFirstMondayOfMay = this._isYearlyTheFirstMondayOfMay(recurrenceYearlyOptions);
+				var recurrenceYearlyDayOfWeekInvalid = !recurrenceYearlyDayOfWeek || recurrenceYearlyDayOfWeek == "";
+				if (isYearlyRecurrence && isYearlyTheFirstMondayOfMay && recurrenceYearlyDayOfWeekInvalid) {
+					// yearly recurrence + "The [First] [Monday] of [May]" selected, and is invalid
+					return true;
+				}
+
+				return false;
+			},
+
+			_showMonthlyTheFirstMondayOfEveryXMonthsOptions: function(selectedMonthlyWeekOfMonthIndex) {
+				return selectedMonthlyWeekOfMonthIndex != null && selectedMonthlyWeekOfMonthIndex != "" && selectedMonthlyWeekOfMonthIndex != "DAY";
+			},
+
+			_showMonthlyDayXOfEveryXMonthsOptions: function(selectedMonthlyWeekOfMonthIndex) {
+				return selectedMonthlyWeekOfMonthIndex == "DAY";
+			},
+
+			_showYearlyTheFirstMondayOfMayOptions: function(selectedYearlyWeekOfMonthIndex) {
+				return selectedYearlyWeekOfMonthIndex != null && selectedYearlyWeekOfMonthIndex != "" && selectedYearlyWeekOfMonthIndex != "DAY";
+			},
+
+			_showYearlyEveryMayXOptions: function(selectedYearlyWeekOfMonthIndex) {
+				return selectedYearlyWeekOfMonthIndex == "DAY";
+			},
+
+			_recurrencePatternTypeChanged: function(e) {
+				this._setBusy();
+				this.$.recurrence.updateRecord(this.recurrence._id, TriPlatDs.RefreshType.SERVER, "actions", "onChangeRecurrencePatternType").then(function() {
+					this._clearBusy();
+				}.bind(this));
+			},
+
+			_recurrenceDailyOptionsChanged: function(e) {
+				this._setBusy();
+				this.$.recurrence.updateRecord(this.recurrence._id, TriPlatDs.RefreshType.SERVER, "actions", "onChangeDailyOptions").then(function() {
+					this._clearBusy();
+				}.bind(this));
+			},
+
+			_recurrenceMonthlyDayOfWeekChanged: function(e) {
+				this._setBusy();
+				this.$.recurrence.updateRecord(this.recurrence._id, TriPlatDs.RefreshType.SERVER, "actions", "onChangeMonthlyDayOfWeek").then(function() {
+					this._clearBusy();
+				}.bind(this));
+			},
+
+			_onRecurrenceMonthlyWeekOfMonthChange: function(e) {
+				var selected = e.currentTarget.selected;
+
+				if (this._isMonthlyDayXOfEveryXMonths(this.recurrence.recurrenceMonthlyOptions) && selected != null && selected != "DAY") {
+					// switch to other monthly recurrence option
+					this.set("recurrence.recurrenceMonthlyOptions", "The [First] [Monday] of every [x] month(s)");
+					this.set("recurrence.monthlyWeekOfMonth", selected);
+
+					this._setBusy();
+					this.$.recurrence.updateRecord(this.recurrence._id, TriPlatDs.RefreshType.SERVER, "actions", "onChangeMonthlyOptions").then(function() {
+						this._clearBusy();
+					}.bind(this));
+				} else if (this._isMonthlyTheFirstMondayOfEveryXMonths(this.recurrence.recurrenceMonthlyOptions) && selected == "DAY") {
+					// switch to other monthly recurrence option
+					this.set("recurrence.recurrenceMonthlyOptions", "Day [x] of every [x] month(s)");
+					this.set("recurrence.monthlyWeekOfMonth", null);
+
+					this._setBusy();
+					this.$.recurrence.updateRecord(this.recurrence._id, TriPlatDs.RefreshType.SERVER, "actions", "onChangeMonthlyOptions").then(function() {
+						this._clearBusy();
+					}.bind(this));
+				} else if (this._isMonthlyDayXOfEveryXMonths(this.recurrence.recurrenceMonthlyOptions) && selected == "DAY") {
+					this.set("recurrence.monthlyWeekOfMonth", null);
+				} else {
+					this.set("recurrence.monthlyWeekOfMonth", selected);
+				}
+			},
+
+			_onRecurrenceYearlyWeekOfMonthChange: function(e) {
+				var selected = e.currentTarget.selected;
+
+				if (this._isYearlyEveryMayX(this.recurrence.recurrenceYearlyOptions) && selected != null && selected != "DAY") {
+					// switch to other yearly recurrence option
+					this.set("recurrence.recurrenceYearlyOptions", "The [First] [Monday] of [May]");
+					this.set("recurrence.yearlyWeekOfMonth", selected);
+
+					this._setBusy();
+					this.$.recurrence.updateRecord(this.recurrence._id, TriPlatDs.RefreshType.SERVER, "actions", "onChangeYearlyOptions").then(function() {
+						this._clearBusy();
+					}.bind(this));
+				} else if (this._isYearlyTheFirstMondayOfMay(this.recurrence.recurrenceYearlyOptions) && selected == "DAY") {
+					// switch to other yearly recurrence option
+					this.set("recurrence.recurrenceYearlyOptions", "Every [May] [1]");
+					this.set("recurrence.yearlyWeekOfMonth", null);
+
+					this._setBusy();
+					this.$.recurrence.updateRecord(this.recurrence._id, TriPlatDs.RefreshType.SERVER, "actions", "onChangeYearlyOptions").then(function() {
+						this._clearBusy();
+					}.bind(this));
+				} else if (this._isYearlyEveryMayX(this.recurrence.recurrenceYearlyOptions) && selected == "DAY") {
+					this.set("recurrence.yearlyWeekOfMonth", null);
+				} else {
+					this.set("recurrence.yearlyWeekOfMonth", selected);
+				}
+			},
+
+			_recurrenceYearlyDayOfWeekChanged: function(e) {
+				this._setBusy();
+				this.$.recurrence.updateRecord(this.recurrence._id, TriPlatDs.RefreshType.SERVER, "actions", "onChangeYearlyDayOfWeek").then(function() {
+					this._clearBusy();
+				}.bind(this));
+			},
+
+			_recurrenceEndOptionsChanged: function(e) {
+				this._setBusy();
+				this.$.recurrence.updateRecord(this.recurrence._id, TriPlatDs.RefreshType.SERVER, "actions", "onChangeEndOptions").then(function() {
+					this._clearBusy();
+				}.bind(this));
+			},
+
+			_endEndDateChanged: function(e) {
+				this._setBusy();
+				this.$.recurrence.updateRecord(this.recurrence._id, TriPlatDs.RefreshType.SERVER, "actions", "onChangeEndDateOption").then(function() {
+					this._clearBusy();
+				}.bind(this));
+			},
+
+			_startDateTimeChanged: function(e) {
+				this._setBusy();
+				this.$.recurrence.updateRecord(this.recurrence._id, TriPlatDs.RefreshType.SERVER, "actions", "onChangeStartDateTime").then(function() {
+					this._clearBusy();
+				}.bind(this));
+			},
+
+			_allDayChanged: function(e) {
+				this._setBusy();
+				this.$.recurrence.updateRecord(this.recurrence._id, TriPlatDs.RefreshType.BOTH, "actions", "onChangeAllDay").then(function() {
+					this.set("oldDuration", this.recurrence.duration);
+					this._clearBusy();
+				}.bind(this));
+			},
+
+			_durationValueChanged: function(value) {
+				if (this.oldDuration == undefined) {
+					return;
+				}
+
+				if (value == this.oldDuration) {
+					return;
+				}
+
+				this._durationChanged();
+			},
+
+			_durationChanged: function(value) {
+				this._setBusy();
+				this.$.recurrence.updateRecord(this.recurrence._id, TriPlatDs.RefreshType.BOTH, "actions", "onChangeDuration").then(function() {
+					this.set("oldDuration", this.recurrence.duration);
+					this._clearBusy();
+				}.bind(this));
+			},
+
+			_isDailyRecurrence: function(recurrenceType) {
+				return recurrenceType === "DAILY";
+			},
+
+			_isWeeklyRecurrence: function(recurrenceType) {
+				return recurrenceType === "WEEKLY";
+			},
+
+			_isMonthlyRecurrence: function(recurrenceType) {
+				return recurrenceType === "MONTHLY";
+			},
+
+			_isYearlyRecurrence: function(recurrenceType) {
+				return recurrenceType === "YEARLY";
+			},
+
+			_isDailyEveryXDays: function(dailyRecurrenceOption) {
+				return dailyRecurrenceOption === "Every [x] day(s)";
+			},
+
+			_isMonthlyDayXOfEveryXMonths: function(monthlyRecurrenceOption) {
+				return monthlyRecurrenceOption === "Day [x] of every [x] month(s)";
+			},
+
+			_isMonthlyTheFirstMondayOfEveryXMonths: function(monthlyRecurrenceOption) {
+				return monthlyRecurrenceOption === "The [First] [Monday] of every [x] month(s)";
+			},
+
+			_isYearlyEveryMayX: function(yearlyRecurrenceOption) {
+				return yearlyRecurrenceOption === "Every [May] [1]";
+			},
+
+			_isYearlyTheFirstMondayOfMay: function(yearlyRecurrenceOption) {
+				return yearlyRecurrenceOption === "The [First] [Monday] of [May]";
+			},
+
+			_isEndAfter: function(endOption) {
+				return endOption === "End After";
+			},
+
+			_isEndDate: function(endOption) {
+				return endOption === "End Date";
+			},
+
+			_handleNavigateBack: function(e) {
+				this.fire("done");
+			},
+
+			_handleClear: function(e) {
+				if (this._isRecurringMeeting(this.reservationManager)) {
+					if (this.recurrence && this.recurrence._id) {
+						this._setBusy();
+
+						this.$.recurrence.updateRecord(this.recurrence._id, TriPlatDs.RefreshType.SERVER, "actions", "clearRecurrence").then(function() {
+							this._updateReservationManager();
+						}.bind(this));
+					}
+				} else {
+					this.async(function() {
+						this._handleNavigateBack();
+					});
+				}
+				this.fire("criteria-changed");
+			},
+
+			_handleDone: function(e) {
+				if (this.recurrence && this.recurrence._id) {
+					this._setBusy();
+					this.$.recurrence.updateRecord(this.recurrence._id, TriPlatDs.RefreshType.SERVER, "actions", "save").then(function() {
+						this._updateReservationManager();
+					}.bind(this));
+					this.fire("criteria-changed");
+					this.fire("recurrence-changed", {'recurrence': this.recurrence});
+				}
+			},
+
+			_updateReservationManager: function() {
+				var wfParams = {};
+				if (this.recurrence && this.recurrence._id) {
+					wfParams.recurrence = this.recurrence._id;
+				}
+
+				this.rm.updateRecord(TriPlatDs.RefreshType.SERVER, "actions", "saveRecurrence", wfParams).then(function() {
+						this._clearBusy();
+
+						this.async(function() {
+							this._handleNavigateBack();
+						});
+				}.bind(this));
+			},
+
+			_pageAttached : function() {
+				this.set("oldDuration", undefined);
+				this._setBusy();
+				this.set("_hideContent", true);
+
+				var wfParams = {};
+				if (this.recurrence && this.recurrence._id) {
+					wfParams.recurrence = this.recurrence._id;
+				}
+
+				this.rm.updateRecord(TriPlatDs.RefreshType.SERVER, "actions", "createRecurrence", wfParams).then(function() {
+					this.$.recurrence.refresh().then(function() {
+						this._clearBusy();
+						this.set("oldDuration", this.recurrence.duration);
+					}.bind(this));
+				}.bind(this));
+			},
+
+			_observeLoading: function(loading) {
+				this.set("_hideContent", loading);
+			}
+		});
+	</script>
+</dom-module>

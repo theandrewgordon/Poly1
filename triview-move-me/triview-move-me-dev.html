@@ -1,0 +1,52 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2015-2016‌ - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../triplat-view-behavior/triplat-view-behavior.html">
+
+<link rel="import" href="theme.html">
+
+<link rel="import" href="tricomp-move-request.html">
+
+<dom-module id="triview-move-me">
+
+	<style>
+
+		.content {
+		}
+		#extendedBanner {
+			height: 50px;
+			background-color: var(--tri-header-background-color);
+		}
+
+	</style>
+
+	<template>
+		<div id="extendedBanner"></div>	
+		<div class="content">
+
+			<tricomp-move-request
+				id="moveRequest"
+				model-and-view="moveMe"
+				instance-id="-1">
+			</tricomp-move-request>
+
+		</div>
+
+	</template>
+</dom-module>
+<script>
+
+	Polymer({
+		is: "triview-move-me",
+
+		behaviors: [TriPlatViewBehavior],
+
+		properties: {
+		},
+
+		ready: function() {
+			var __dictionary__title = "IBM TRIRIGA Move Me";
+			document.title = __dictionary__title;
+		},
+
+	});
+</script>

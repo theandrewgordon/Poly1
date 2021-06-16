@@ -1,0 +1,250 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<link rel="import" href="../paper-tooltip/paper-tooltip.html">
+<link rel="import" href="../paper-button/paper-button.html">
+
+<link rel="import" href="../tricore-url/tricore-url.html">
+
+<link rel="import" href="../triblock-responsive-layout/triblock-view-responsive-behavior.html">
+
+<link rel="import" href="tristyles-room-reservation-app.html">
+
+<link rel="import" href="tribehav-room-reservation-util.html">
+<link rel="import" href="tricomp-alert-message.html">
+<link rel="import" href="tricomp-page-toolbar.html">
+
+<link rel="import" href="tricomp-equipment-order-item.html">
+
+<dom-module id="tricomp-equipment-order">
+	<template>
+		<style include="shared-page-styles">
+			:host {
+				position: relative;
+				@apply(--layout-vertical);
+				@apply(--layout-flex);
+			}
+
+			.equipment-order-container {
+				@apply(--layout-vertical);
+				@apply(--layout-flex);
+				min-height: 0;
+			}
+
+			tricomp-alert-message {
+				flex-shrink: 0;
+			}
+			
+			.header {
+				padding: 20px 20px 5px 20px;
+			}
+
+			.room-name {
+				font-weight: bold;
+			}
+
+			.list {
+				@apply(--layout-vertical);
+				@apply(--layout-flex);
+				@apply(--layout-scroll);
+				min-height: 0;
+			}
+
+			:host(small-screen-width) .action-bar {
+				background-color: var(--tri-footer-background-color);
+				color: var(--tri-footer-color);
+				width: 100%;
+				padding: 5px;
+				@apply(--layout-center-center);
+				@apply(--layout-fixed-bottom);
+				z-index: 102;
+			}
+
+		</style>
+
+		<tricore-url raw-url="/getCompanyFile.jsp?fileLoc=" bind-url="{{imgUrl}}"></tricore-url>
+
+		<div class="equipment-order-container" hidden$="[[!equipmentOrdersDisplay.length]]">		
+			<tricomp-alert-message danger class="hold-time-message" icon="ibm:clock-time" id="holdTimeMessage" show$="[[reservationLocation.holdTimeDeadline]]" show-tooltip-indicator-icon>
+				<span hidden$="[[holdTimeExpired]]">Hold expires in</span>
+				<triplat-countdown class="hold-time-countdown"
+					name="booking-expiration"
+					deadline="[[reservationLocation.holdTimeDeadline]]"
+					expired-text="Hold time is expired."
+					timezone="[[currentUser._TimeZoneId]]"
+					is-expired="{{holdTimeExpired}}">
+				</triplat-countdown>
+			</tricomp-alert-message>
+			<paper-tooltip for="holdTimeMessage" position="bottom" offset="5" animation-delay="100" fit-to-visible-bounds>When the hold time on this room expires, all added food and equipment are not saved, and the room is removed for this reservation.</paper-tooltip>
+
+			<div class="list">
+				<div class="header">
+					<div class="tri-h2">Equipment</div>
+					<div class="tri-h3 room-name">[[room]]</div>
+				</div>
+				<template id="listTemplate" is="dom-repeat" items="[[equipmentOrdersDisplay]]">
+					<tricomp-equipment-order-item
+						item="{{item}}"
+						application-settings="[[applicationSettings]]">
+					</tricomp-equipment-order-item>
+				</template>
+			</div>
+		</div>
+
+		<template is="dom-if" if="[[!equipmentOrdersDisplay.length]]">
+			<div class="page-main empty-data-message">
+				<span hidden$="[[_pageLoading]]">No equipment order items are available.</span>
+			</div>
+		</template>
+
+		<tricomp-page-toolbar small-screen-width="[[smallScreenWidth]]">
+			<paper-button footer$="[[smallScreenWidth]]" on-tap="_handleDone">Done</paper-button>
+		</tricomp-page-toolbar>
+	</template>
+	<script>
+		Polymer({
+
+			is: "tricomp-equipment-order",
+
+			behaviors: [
+				TriRoomReservationUtilBehavior,
+				TriBlockViewResponsiveBehavior
+			],
+
+			properties: {
+				equipmentOrdersDisplay: Array,
+				addedEquipmentId: String,
+				room: String,
+				_pageLoading: {
+					type: Boolean,
+					computed: "_isBusy(isBusy)"
+				},
+			},
+
+			observers: [
+				"_handleChanges(equipmentSpecs, equipmentOrders)",
+			],
+
+			listeners: {
+				"action-add-equipment": "_handleAddEquipment",
+				"equipment-order-changed": "_handleEquipmentOrderChanged",
+				"navigate-equipment-details-save": "_handleNavigateEquipmentDetails"
+			},
+
+			_isBusy: function(isBusy, reservationManagerLoading, equipmentOrdersLoading, equipmentSpecsLoading, reservationLocationsLoading) {
+				return isBusy || reservationManagerLoading || equipmentOrdersLoading || equipmentSpecsLoading || reservationLocationsLoading;
+			},
+
+			_handleEquipmentOrderChanged: function() {
+				this._setDirtyFlag();
+			},
+
+			_setDirtyFlag: function() {
+				this.set("_dirtyFlag", true);
+			},
+
+			_clearDirtyFlag: function() {
+				this.set("_dirtyFlag", false);
+			},
+
+			_handleChanges: function(equipmentSpecs, equipmentOrders) {
+				if (this._dirtyFlag) {
+					return;
+				}
+
+				var newEquipmentOrdersDisplay = new Array();
+
+				if (equipmentSpecs && equipmentSpecs.constructor === Array &&
+					equipmentOrders && equipmentOrders.constructor === Array) {
+
+					for (var itemIndex=0; itemIndex < equipmentSpecs.slice(0).length; itemIndex++) {
+						var spec = equipmentSpecs[itemIndex];
+
+						var matchingOrderItem = null;
+						for (var orderIndex=0; orderIndex < equipmentOrders.slice(0).length; orderIndex++) {
+							var orderItem = equipmentOrders[orderIndex];
+
+							if (orderItem.equipmentId == spec._id) {
+								matchingOrderItem = orderItem;
+								break;
+							}
+						}
+
+						if (matchingOrderItem == null) {
+							var newOrder = new Object();
+
+							newOrder._id = null;
+							newOrder.orderNum = null;
+
+							newOrder.image = spec.image;
+							newOrder.equipment = spec.name;
+							newOrder.equipmentId = spec._id;
+							newOrder.equipmentDescription = spec.description;
+
+							newOrder.usageCost = new Object;
+							newOrder.usageCost.uom = spec.usageCost.uom;
+							newOrder.usageCost.value = spec.usageCost.value;
+
+							newOrder.totalCost = new Object;
+							newOrder.totalCost.uom = spec.usageCost.uom;
+							newOrder.totalCost.value = 0;
+
+							newOrder.quantity = 0;
+							newOrder.instructions = "";
+
+							newEquipmentOrdersDisplay.push(newOrder);
+						} else {
+							newEquipmentOrdersDisplay.push(matchingOrderItem);
+						}
+					}
+					this.debounce(
+						"setEquipmentOrdersDisplay",
+						this.set.bind(this,"equipmentOrdersDisplay", newEquipmentOrdersDisplay),
+						300
+					);
+				}
+			},
+
+			_handleAddEquipment: function(e) {
+				if (e && e.detail) {
+					var equipmentId = e.detail.equipmentId;
+					var el = e.detail.el;
+
+					var model = this.$.listTemplate.modelForElement(el);
+					if (model) {
+						var orderItem = model.item;
+						if (orderItem._id > 0)
+							return;
+
+						this._setDirtyFlag();
+
+						this.fire("action-add-equipment-item", {equipmentId: equipmentId, model: model});
+					}
+				}
+			},
+
+			_handleDone: function(){
+				this.async(function() {
+					this.fire("done");
+				});
+			},
+
+			_handleSaveOrders: function(e) {
+				this.fire("action-save-equipment-orders", {resourceId: this.resourceId, equipmentOrders: this.equipmentOrdersDisplay});
+			},
+
+			_handleNavigateEquipmentDetails: function(e) {
+				var equipmentId = e.detail.equipmentId;
+				if (equipmentId) {
+					this.fire("navigate-equipment-details", { 'equipmentId' : equipmentId });
+				}
+			},
+
+			_pageAttached : function() {
+				this._clearDirtyFlag();
+				this.fire("action-load-equipment-orders");
+			}
+		});
+	</script>
+</dom-module>

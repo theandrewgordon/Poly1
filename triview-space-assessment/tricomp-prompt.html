@@ -1,0 +1,137 @@
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+
+<dom-module id="tricomp-prompt">
+
+	<style>
+
+		:host {
+			@apply(--layout-vertical);
+			font-family: "Helvetica Neue", Helvetica, Arial, Roboto;
+		}
+
+		.header {
+			@apply(--layout-horizontal);
+			@apply(--layout-center);
+			@apply(--layout-justified);
+		}
+
+		.message { 
+			padding: 10px 20px 10px 20px;
+		}
+
+		paper-checkbox {
+			font-size: 12px;
+			padding-bottom: 15px;
+		}
+
+		.button-container {
+			@apply(--layout-horizontal);
+			@apply(--layout-self-end);
+		}
+
+		paper-button {	
+			margin-top: 10px;
+			margin-right: 20px;
+			font-weight: bold;
+		}
+		
+	</style>
+
+	<template>
+		
+		<div class="header">
+			<h2>{{titleLabel}}</h2>
+			<paper-icon-button icon="icons:close" on-tap="_handleClose" hidden="{{noCancel}}" aria-labelledby="closeDialog"></paper-icon-button>
+		</div>
+		<span class="message">{{messageLabel}}</span>
+		<paper-checkbox hidden="{{alwaysShow}}" noink checked="{{checked}}">Do not show this message again</paper-checkbox>
+		<div class="button-container">
+			<template is="dom-repeat" id="buttonsTemplate" items="{{_options}}">
+				<paper-button on-tap="_handleButtonTapped" class$="{{_determineButtonStyle(item.primary)}}" aria-label="{{item.ariaLabel}}">{{item.label}}</paper-button>
+			</template>
+		</div>
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+
+		is: "tricomp-prompt",
+
+		properties : {
+			titleLabel : String,
+			messageLabel : String,
+			options : Object,
+			_options : Array,
+			noCancel : {
+				type : Boolean,
+				value : false
+			}, 
+			checked : {
+				type : Boolean,
+				notify : true
+			},
+			alwaysShow : {
+				type : Boolean,
+				value : false
+			},
+			yesNoOptions : {
+				type : Boolean,
+				value : false
+			}
+		},
+
+		observers : [
+			'_handleOptionsChanged(options)'
+		],
+
+		_handleOptionsChanged : function(options) {
+			if (options.toLowerCase() == "yes-no") {
+				this.set('_options', this._getYesOrNoDialogOptions());
+			} else if (options.toLowerCase() == "ok-cancel") {
+				this.set('_options', this._getOkOrCancelDialogOptions());
+			} else {
+				this.set('_options', options);
+			}
+		},
+
+		_determineButtonStyle : function(isPrimary) {
+			if (isPrimary) {
+				return "";
+			} else {
+				return "secondary";
+			}
+		},
+
+		_handleClose : function() {
+			this.fire('close');
+		},
+
+		_handleButtonTapped : function(e) {
+			var option = this.$.buttonsTemplate.itemForElement(e.target);
+			this.fire(option.id);
+		},
+
+		_getYesOrNoDialogOptions : function() {
+			var __dictionary__no = "No";
+			var __dictionary__yes = "Yes";
+			var buttonOptions = [
+				{ id : "no", label : __dictionary__no, ariaLabel : "No" },
+				{ id : "yes", label : __dictionary__yes, primary : true, ariaLabel : "Yes" }
+			];
+			return buttonOptions;
+		},
+
+		_getOkOrCancelDialogOptions : function() {
+			var __dictionary__cancel = "Cancel";
+			var __dictionary__ok = "OK";
+			var buttonOptions = [
+				{ id : "cancel", label : __dictionary__cancel, ariaLabel : "Cancel" },
+				{ id : "ok", label : __dictionary__ok, primary : true, ariaLabel : "Ok" }
+			];
+			return buttonOptions;
+		}
+
+	});
+</script>

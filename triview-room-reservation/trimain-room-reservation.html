@@ -1,0 +1,1052 @@
+<!-- IBM Confidential‌ - OCO Source Materials‌ - (C) COPYRIGHT IBM CORP. 2017-2019 - The source code for this program is not published or otherwise‌ divested of its trade secrets, irrespective of what has been‌ deposited with the U.S. Copyright Office. -->
+
+<!-- This is a lazy-loaded component, DO NOT add imports here, add them to its corresponding -imports.html file. -->
+<dom-module id="trimain-room-reservation">
+	<template>
+		<style include="shared-app-layout-styles">
+			paper-dialog {
+				overflow: auto;
+			}
+
+			.save-dialog {
+				@apply(--layout-vertical);
+				@apply(--layout-center-center);
+			}
+
+			.cancel-dialog {
+				@apply(--layout-vertical);
+				@apply(--layout-center-center);
+			}
+
+			paper-dialog > paper-spinner {
+				z-index: 8;
+			}
+
+			#reserveEquipmentFoodDialog {
+				width: 80%;
+				height: 80%;
+				max-width: 600px;
+				padding: 0px;
+			}
+
+			:host([small-screen-width]) triblock-popup {
+				padding: 0px;
+			}
+
+			:host(:not([small-screen-width])) #recurrenceDialog {
+				max-width: 950px;
+				width: 80%;
+				height: 80%;
+				padding: 5px;
+			}
+
+			#amenitiesDialog, #recurrenceDialog, #exceptionsDialog {
+				@apply(--layout-horizontal);
+			}
+
+			:host(:not([small-screen-width])) #amenitiesDialog {
+				max-height: 80%;
+				max-width : 80%;
+				width: 300px;
+				height: 500px;
+				padding: 5px;
+			}
+
+			:host(:not([small-screen-width])) #exceptionsDialog {
+				max-width: 800px;
+				height: 80%;
+				width : 80%;
+				padding: 0px;
+			}
+
+			triblock-popup > iron-pages {
+				display: block;
+				overflow: auto;
+				height: 100%;
+			} 
+
+			triblock-popup > iron-pages > *{
+				height: 100%;
+			}
+
+			triplat-loading-indicator {
+				z-index: 9999;
+			}
+		</style>
+
+		<triplat-ds id="currentUser" name="currentUser" data="{{currentUser}}"></triplat-ds>
+
+		<triplat-ds id="applicationSettings" name="applicationSettings" data="{{applicationSettings}}"></triplat-ds>
+
+		<triplat-ds id="favoriteRooms" name="favoriteRooms" data="{{favoriteRooms}}" loading="{{favoriteRoomsLoading}}">
+			<triplat-ds-context name="currentUser" context-id="[[currentUser._id]]"></triplat-ds-context>
+		</triplat-ds>
+
+		<tricomp-array-comparator
+				source="{{reservationLocations}}"
+				source-match-field="room.id"
+				compare-to="{{favoriteRooms}}"
+				match-flag="isFavorite"
+				update-source>
+		</tricomp-array-comparator>
+
+		<triplat-ds id="myReservationManagers" name="myReservationManagers" data="{{myReservationManagers}}" manual></triplat-ds>
+		<triplat-ds id="myOldReservationManagers" name="myOldReservationManagers" data="{{myOldReservationManagers}}" manual></triplat-ds>
+
+		<triplat-ds id="reservationInstances" name="reservationInstances" data="{{reservationInstances}}" loading="{{reservationInstancesLoading}}" manual>
+		</triplat-ds>
+
+		<triplat-ds id="reservationManager" name="reservationManager" data="{{reservationManager}}" loading="{{reservationManagerLoading}}" manual>
+			<triplat-ds-context name="myReservationManagers" context-id="[[reservationManagerSpecId]]">
+			</triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="reservationManagerInstance" name="reservationManagerInstance" data="{{reservationManagerInstance}}" loading="{{reservationManagerInstanceLoading}}" manual>
+			<triplat-ds-context name="myReservationManagers" context-id="[[reservationManagerSpecId]]">
+			</triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="reservationLocations" name="reservationLocations" data="{{reservationLocations}}" loading="{{reservationLocationsLoading}}" manual>
+			<triplat-ds-context name="myReservationManagers" context-id="[[reservationManagerSpecId]]">
+			</triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="reservationLocation" name="reservationLocations" data="{{reservationLocation}}" loading="{{reservationLocationLoading}}">
+			<triplat-ds-context name="myReservationManagers" context-id="[[reservationManagerSpecId]]"></triplat-ds-context>
+			<triplat-ds-instance instance-id="[[resourceId]]"></triplat-ds-instance>
+		</triplat-ds>
+
+		<triplat-ds id="exceptionOccurrences" name="exceptionOccurrences" data="{{exceptionOccurrences}}" loading="{{exceptionOccurrencesLoading}}" manual>
+			<triplat-ds-context name="myReservationManagers" context-id="[[reservationManagerSpecId]]">
+			</triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="resourceExceptionOccurrences" name="exceptionOccurrences" filtered-data="{{resourceExceptionOccurrences}}" loading="{{exceptionOccurrencesLoading}}">
+			<triplat-ds-context name="myReservationManagers" context-id="[[reservationManagerSpecId]]"></triplat-ds-context>
+			<triplat-query>
+				<triplat-query-filter name="resourceId" operator="equals" value="[[resourceId]]"></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<triplat-ds id="equipmentOrders" name="equipmentOrders" filtered-data="{{equipmentOrders}}" 
+				loading="{{equipmentOrdersLoading}}" manual>
+			<triplat-ds-context name="myReservationManagers" context-id="[[reservationManagerSpecId]]"></triplat-ds-context>
+			<triplat-query>
+				<triplat-query-filter name="resourceId" operator="equals" value="[[resourceId]]"></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<triplat-ds id="equipmentSpecs" name="equipmentSpecs" data="{{equipmentSpecs}}" 
+				loading="{{equipmentSpecsLoading}}" manual>
+			<triplat-ds-context name="myReservationManagers" context-id="[[reservationManagerSpecId]]"></triplat-ds-context>
+			<triplat-ds-context name="reservationLocations" context-id="[[resourceId]]"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="foodOrders" name="foodOrders" data="{{foodOrders}}" loading="{{foodOrdersLoading}}" manual>
+			<triplat-ds-context name="myReservationManagers" context-id="[[reservationManagerSpecId]]"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="selectedFoodOrder" name="selectedFoodOrder" data="{{selectedFoodOrder}}" 
+				loading="{{selectedFoodOrderLoading}}" manual>
+			<triplat-ds-instance instance-id="[[orderId]]"></triplat-ds-instance>
+			<triplat-ds-context name="myReservationManagers" context-id="[[reservationManagerSpecId]]"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-ds id="foodOrderLineItems" name="foodOrderLineItems" filtered-data="{{foodOrderLineItems}}" 
+				loading="{{foodOrderLineItemsLoading}}" force-server-filtering manual>
+			<triplat-ds-context name="myReservationManagers" context-id="[[reservationManagerSpecId]]"></triplat-ds-context>
+			<triplat-query>
+				<triplat-query-filter name="orderId" operator="equals" value="[[orderId]]"></triplat-query-filter>
+			</triplat-query>
+		</triplat-ds>
+
+		<triplat-ds id="menuItems" name="menuItems" data="{{menuItems}}" loading="{{menuItemsLoading}}" manual>
+			<triplat-ds-context name="myReservationManagers" context-id="[[reservationManagerSpecId]]"></triplat-ds-context>
+			<triplat-ds-context name="reservationLocations" context-id="[[resourceId]]"></triplat-ds-context>
+		</triplat-ds>
+
+		<triplat-route id="reservationListRoute" name="list" path="/" on-route-active="_onListRouteActive"></triplat-route>
+		<triplat-route id="newRoute" name="new" path="/new/:buildingId"></triplat-route>
+		<triplat-route id="openRoute" name="open"
+				path="/open/:reservationId/:occurrenceStart/:occurrenceEnd"></triplat-route>
+		<triplat-route id="reservationFindRoomRoute" name="reservationFindRoom" path="/find/:reservationId" on-route-active="_onFindRoomRouteActive"></triplat-route>
+		<triplat-route id="reservationSummaryRoute" name="reservationSummary" path="/summary/:reservationId" on-route-active="_onSummaryRouteActive"></triplat-route>
+		<triplat-route id="reservationNotFoundRoute" name="reservationNotFound" path="/reservationNotFound" on-route-active="_onReservationNotFoundRouteActive"></triplat-route>
+		<triplat-route id="loadingRoute" name="loading" path="/loading"></triplat-route>
+
+		<triplat-loading-indicator show="[[_showLoadingIndicator(isBusy, isLoading, isProcessing)]]"></triplat-loading-indicator>
+
+		<triplat-route-selector id="routeSelector" page>
+			<iron-pages>
+				<tripage-list
+					id="reservationListPage"
+					route="list"
+					on-route-active="_handleListRouteActive"
+					is-outlook-embedded="[[isOutlookEmbedded]]"
+					current-user="[[currentUser]]"
+					favorite-rooms="{{favoriteRooms}}"
+					default-route>
+				</tripage-list>
+
+				<tripage-new
+					id="reservationNewPage"
+					route="new"
+					on-route-active="_handleNewRouteActive"
+					is-outlook-embedded="[[isOutlookEmbedded]]"
+					current-user="[[currentUser]]">
+				</tripage-new>
+
+				<tripage-open
+					id="reservationNewPage"
+					route="open"
+					on-route-active="_handleOpenRouteActive"
+					is-outlook-embedded="[[isOutlookEmbedded]]"
+					current-user="[[currentUser]]">
+				</tripage-open>
+
+				<tripage-find-room
+					id="reservationFindRoomPage"
+					route="reservationFindRoom"
+					on-route-active="_handleFindRoomRouteActive"
+					building-id="[[_overrideBuildingId]]"
+					is-outlook-embedded="[[isOutlookEmbedded]]"
+					current-user="[[currentUser]]"
+					application-settings="[[applicationSettings]]"
+					favorite-rooms="{{favoriteRooms}}"
+					reservation-manager="{{reservationManager}}"
+					reservation-locations="{{reservationLocations}}"
+					spec-id="[[reservationManagerSpecId]]"
+					is-loading="{{_findRoomLoading}}">
+				</tripage-find-room>
+
+				<tripage-summary
+					id="reservationSummaryPage"
+					route="reservationSummary"
+					on-route-active="_handleReservationSummaryRouteActive"
+					is-outlook-embedded="[[isOutlookEmbedded]]"
+					current-user="[[currentUser]]"
+					application-settings="[[applicationSettings]]"
+					favorite-rooms="{{favoriteRooms}}"
+					reservation-manager="{{reservationManager}}"
+					reservation-locations="{{reservationLocations}}"
+					exception-occurrences="{{exceptionOccurrences}}"
+					reservation-location="{{reservationLocation}}"
+					food-orders="{{foodOrders}}"
+					equipment-orders="{{equipmentOrders}}"
+					rm="[[rm]]"
+					spec-id="[[reservationManagerSpecId]]"
+					recurrence="[[recurrence]]">
+				</tripage-summary>
+
+				<tripage-reservation-not-found
+					id="reservationNotFoundPage"
+					route="reservationNotFound">
+				</tripage-reservation-not-found>
+
+				<tripage-loading
+					id="loadingPage"
+					route="loading"
+					is-pre-creating="[[isPreCreating]]"
+					is-outlook-embedded="[[isOutlookEmbedded]]"
+					current-user="[[currentUser]]">
+				</tripage-loading>
+			</iron-pages>
+		</triplat-route-selector>
+
+		<paper-toast id="toast" text=""></paper-toast>
+
+		<paper-dialog id="saveDialog" class="save-dialog" modal with-backdrop>
+			<p>Your reservation is being saved.</p>
+			<paper-spinner active></paper-spinner>
+		</paper-dialog>
+
+		<paper-dialog id="cancelDialog" class="cancel-dialog" with-backdrop>
+			<p>Your reservation is being canceled.</p>
+			<paper-spinner active></paper-spinner>
+		</paper-dialog>
+
+		<paper-dialog modal  id="errorDialog" class="error-dialog">
+			<tricomp-error-prompt error-details="{{_errorDetails}}" is-admin="{{currentUser._Admin}}" on-error-details-collapse-or-expand="_handleErrorDetailsCollapseOrExpand"></tricomp-error-prompt>
+		</paper-dialog>
+
+		<paper-dialog id="discardChangedDialog" with-backdrop>
+			<p>Your changes were not saved. Are you sure you want to discard them?</p>
+			<div class="buttons">
+				<paper-button secondary dialog-dismiss>No</paper-button>
+				<paper-button dialog-confirm autofocus>Yes</paper-button>
+			</div>
+		</paper-dialog>
+
+
+		<triblock-popup id="amenitiesDialog" modal  title="Amenities">
+			<tricomp-amenities
+				id="reservationAmenitiesPage"
+				is-outlook-embedded="[[isOutlookEmbedded]]"
+				current-user="[[currentUser]]"
+				reservation-manager="{{reservationManager}}"
+				spec-id="[[reservationManagerSpecId]]">
+			</tricomp-amenities>
+		</triblock-popup>
+
+
+		<triblock-popup id="recurrenceDialog" modal title="Recurring Meeting">
+			<tricomp-recurrence
+				id="reservationRecurrencePage"
+				is-outlook-embedded="[[isOutlookEmbedded]]"
+				current-user="[[currentUser]]"
+				reservation-manager="{{reservationManager}}"
+				rm="[[rm]]"
+				spec-id="[[reservationManagerSpecId]]"
+				is-loading="{{_recurrenceLoading}}"
+				loading=[[isLoading]]>
+			</tricomp-recurrence>
+		</triblock-popup>
+
+		<triblock-popup id="exceptionsDialog"  title="Exceptions" opened="{{_isExceptionsOpened}}" modal>
+			<tricomp-exceptions
+				id="exceptionsPage"
+				is-outlook-embedded="[[isOutlookEmbedded]]"
+				current-user="[[currentUser]]"
+				resource-id="[[resourceId]]"
+				favorite-rooms="{{favoriteRooms}}"
+				application-settings="[[applicationSettings]]"
+				reservation-manager="{{reservationManager}}"
+				reservation-location="{{reservationLocation}}"
+				reservation-locations="{{reservationLocations}}"
+				exception-occurrences="{{exceptionOccurrences}}"
+				rm="[[rm]]"
+				spec-id="[[reservationManagerSpecId]]"
+				is-active="[[_isExceptionsOpened]]"
+				building-id="[[_overrideBuildingId]]">
+			</tricomp-exceptions>
+		</triblock-popup>
+
+		<triblock-popup id="reserveEquipmentFoodDialog" selected="{{_displayReservePopup}}" manual-close modal>
+			<iron-pages id="reserveEquipmentFoodDialogsPages" attr-for-selected="id" selected="{{_displayReservePopup}}" on-iron-deselect="_handleIronPageDeselect">
+				<tricomp-room-details
+					id="roomDetailsPage"
+					is-outlook-embedded="[[isOutlookEmbedded]]"
+					current-user="[[currentUser]]"
+					application-settings="[[applicationSettings]]"
+					favorite-rooms="{{favoriteRooms}}"
+					reservation-manager="{{reservationManager}}"
+					reservation-locations="{{reservationLocations}}"
+					params="{{roomDetailsParams}}"
+					has-back-button
+					page-label="Room Details"
+					spec-id="[[reservationManagerSpecId]]">
+				</tricomp-room-details>
+				<tricomp-reservation-room-location
+					id="roomLocation"
+					back-to="roomDetailsPage"
+					has-back-button
+					room-id="[[params.roomId]]"
+					page-label="Room Location"
+					action-label="Back"
+					spec-id="[[reservationManagerSpecId]]">
+				</tricomp-reservation-room-location>
+				<tricomp-equipment-details
+					id="equipmentDetailsPage"
+					is-outlook-embedded="[[isOutlookEmbedded]]"
+					current-user="[[currentUser]]"
+					application-settings="[[applicationSettings]]"
+					equipment-id="[[equipmentId]]"
+					resource-id="[[resourceId]]"
+					reservation-location="{{reservationLocation}}"
+					back-to="equipmentOrderPage"
+					has-back-button
+					page-label="Equipment Details"
+					spec-id="[[reservationManagerSpecId]]">
+				</tricomp-equipment-details>
+				<tricomp-equipment-order
+					id="equipmentOrderPage"
+					is-outlook-embedded="[[isOutlookEmbedded]]"
+					current-user="[[currentUser]]"
+					application-settings="[[applicationSettings]]"
+					order-id="[[orderId]]"
+					resource-id="[[resourceId]]"
+					reservation-manager="{{reservationManager}}"
+					reservation-locations="{{reservationLocations}}"
+					reservation-location="{{reservationLocation}}"
+					equipment-orders="{{equipmentOrders}}"
+					equipment-specs="{{equipmentSpecs}}"
+					rm="[[rm]]"
+					has-back-button
+					page-label="Equipment"
+					spec-id="[[reservationManagerSpecId]]">
+				</tricomp-equipment-order>
+				<tricomp-food-orders-summary
+					id="foodOrdersSummaryPage"
+					is-outlook-embedded="[[isOutlookEmbedded]]"
+					current-user="[[currentUser]]"
+					order-id="[[orderId]]"
+					resource-id="[[resourceId]]"
+					reservation-manager="{{reservationManager}}"
+					reservation-locations="{{reservationLocations}}"
+					reservation-location="{{reservationLocation}}"
+					food-orders="{{foodOrders}}"
+					has-back-button
+					page-label="Food Summary"
+					spec-id="[[reservationManagerSpecId]]">
+				</tricomp-food-orders-summary>
+				<tricomp-food-order
+					id="foodOrderPage"
+					is-outlook-embedded="[[isOutlookEmbedded]]"
+					current-user="[[currentUser]]"
+					application-settings="[[applicationSettings]]"
+					order-id="[[orderId]]"
+					resource-id="[[resourceId]]"
+					reservation-manager="{{reservationManager}}"
+					reservation-locations="{{reservationLocations}}"
+					reservation-location="{{reservationLocation}}"
+					food-orders="{{foodOrders}}"
+					selected-food-order="{{selectedFoodOrder}}"
+					menu-items="{{menuItems}}"
+					food-order-line-items="{{foodOrderLineItems}}"
+					rm="[[rm]]"
+					back-to="foodOrdersSummaryPage"
+					has-back-button
+					page-label="Food Order"
+					spec-id="[[reservationManagerSpecId]]">
+				</tricomp-food-order>
+			</iron-pages>
+		</triblock-popup>
+
+	</template>
+	<script>
+		Polymer({
+
+			is: "trimain-room-reservation",
+
+			behaviors: [
+				TriRoomReservationBehavior,
+				TriRoomReservationUtilBehavior,
+				TriBlockViewResponsiveBehavior,
+				TriLazyLoadingBehavior
+			],
+
+			properties: {
+				isLoading: {
+					type: Boolean,
+					computed: '_computeLoading(reservationManagerLoading, reservationManagerInstanceLoading, reservationLocationsLoading, favoriteRoomsLoading, exceptionOccurrencesLoading, equipmentOrdersLoading, equipmentSpecsLoading, foodOrdersLoading, foodOrderLineItemsLoading, menuItemsLoading, selectedFoodOrderLoading, reservationLocationLoading, _recurrenceLoading, _findRoomLoading)'
+				},
+
+				recurrence: Object,
+				_recurrence: Object,
+
+				_buildingId: {
+					type: String,
+					value: null
+				},
+				_reservationId: {
+					type: String,
+					value: null
+				},
+				_overrideBuildingId: Number,
+				_displayReservePopup: {
+					type: String,
+					value: "roomDetailsPage"
+				},
+
+				_recurrenceLoading: {
+					type: Boolean,
+					value: false
+				},
+
+				_findRoomLoading: {
+					type: Boolean,
+					value: false
+				},
+
+                _newReservationMessage: {
+					type: String,
+					value: function(){
+						var __dictionary__newreservation = "New Reservation";
+						return __dictionary__newreservation;
+					}
+				},
+
+				_openReservationMessage: {
+					type: String,
+					value: function(){
+						var __dictionary__openreservation = "Open Reservation";
+						return __dictionary__openreservation;
+					}
+				},
+
+				_reservationSummaryMessage: {
+					type: String,
+					value: function(){
+						var __dictionary__reservationsummary = "Reservation Summary";
+						return __dictionary__reservationsummary;
+					}
+				},
+
+				_reservationsMessage: {
+					type: String,
+					value: function(){
+						var __dictionary__reservations = "Reservations";
+						return __dictionary__reservations;
+					}
+				},
+
+				_signoutIntentionActive: {
+					type: Boolean,
+					value: false
+				},
+
+			},
+
+			observers: [
+				"_handleBuildingIdChange(_buildingId, reservationManager)"
+			],
+
+			listeners: {
+				// main init events
+				"reservation-new": "_init",
+				"reservation-open": "_init",
+
+				// navigate events
+				"navigate-reservation-open": "_navigateReservationOpen",
+				"navigate-reservation-new": "_navigateReservationNew",
+				"navigate-app-home": "_navigateListPage",
+				"navigate-app-home-validate": "_handleValidateHome",
+
+				// navigate pages
+				"navigate-init": "_init",
+				"navigate-reservation-list": "_navigateListPage",
+				"navigate-find-room-page": "_navigateFindRoomPage",
+				"navigate-summary-page": "_navigateSummaryPage",
+				"navigate-reservation-not-found": "_navigateReservationNotFound",
+
+				// navigate sub-pages/dialogs
+				"navigate-room-criteria": "_navigateFindRoomPage",
+				"navigate-criteria-amenities": "_navigateCriteriaAmenitiesPage",
+				"navigate-recurrence": "_navigateRecurrencePage",
+				"navigate-summary-instructions": "_navigateSummaryInstructions",
+				"navigate-room-results": "_navigateFindRoomPage",
+				"navigate-room-results-dramatic": "_navigateFindRoomPage",
+				"navigate-room-details": "_navigateRoomDetailsPage",
+				"navigate-room-schedule": "_navigateRoomSchedulePage",
+				"navigate-room-location": "_navigateRoomLocationPage",
+				"navigate-exceptions": "_navigateExceptionsPage",
+
+				"navigate-equipment-order": "_navigateEquipmentOrderPage",
+				"navigate-equipment-details": "_navigateEquipmentDetailsPage",
+				"navigate-food-order": "_navigateFoodOrderPage",
+				"navigate-food-order-add": "_navigateFoodOrderAddPage",
+				"navigate-food-orders-summary": "_navigateFoodOrdersSummaryPage",
+
+				"roomLocation.reservation-room-location-done": "_navigateRoomDetailsPage",
+				// page-action events
+				"page-action-cancel": "_handleCancel",
+				"page-action-submit": "_handleSubmit",
+
+				// on-change events
+				"on-change-room-type": "_onChangeRoomType",
+				"criteria-changed" : "_onCriteriaChanged",
+				"change-start-and-end-time": "_handleChangeStartAndEndTime",
+				"change-start-time": "_handleChangeStartTime",
+				"change-end-time": "_handleChangeEndTime",
+				"change-start-date": "_handleChangeStartDate",
+				"change-end-date": "_handleChangeEndDate",
+				"change-all-day": "_handleChangeAllDay",
+				"recurrence-changed": "_onRecurrenceChanged",
+
+				// action events
+				"action-update-search": "_updateSearch",
+
+				// dialog events
+				"discardChangedDialog.iron-overlay-closed": "_handleHomeDialogClose",
+				"amenitiesDialog.done": "_closeAmenitiesDialog",
+				"recurrenceDialog.done": "_closeRecurrenceDialog",
+				"recurrenceDialog.iron-overlay-closed": "_onRecurrenceDialogClosed",
+		
+				"foodOrderPage.done": "_handleSaveEquipmentFoodOrder",
+				"foodOrdersSummaryPage.done": "_closeFoodOrderSummaryDialog",
+				"equipmentOrderPage.done": "_handleSaveEquipmentFoodOrder",
+				"equipmentDetailsPage.done": "_closeEquipmentDetailsDialog",
+				
+				"exceptionsDialog.done": "_closeExceptionsDialog",
+				"roomDetailsPage.done": "_closeRoomDetailsDialog",
+				
+				// misc
+				"set-building-id": "_setBuildingId",
+				"update-resource-id": "_handleUpdateResourceId",
+
+				"show-unsaved-changes-dialog": '_handleValidateHome'
+			},
+
+			_onChangeRoomType: function(e) {
+				if (e && e.detail && e.detail.value) {
+					this._handleRoomTypeChange(e.detail.value);
+				}
+			},
+
+			_showLoadingIndicator: function(isBusy, isLoading, isProcessing) {
+				// NOTE: the processing states have their own indicator/dialog and will most likely cause
+				// the DS-loading properties to be set, so we want to avoid double indicators
+				return Boolean(isBusy || isLoading) && !isProcessing;
+			},
+
+			_computeLoading: function(reservationManagerLoading, reservationManagerInstanceLoading, reservationLocationsLoading, favoriteRoomsLoading, exceptionOccurrencesLoading, equipmentOrdersLoading, equipmentSpecsLoading, foodOrdersLoading, foodOrderLineItemsLoading, menuItemsLoading, selectedFoodOrderLoading, reservationLocationLoading, recurrenceLoading, findRoomLoading) {
+				return reservationManagerLoading || reservationManagerInstanceLoading || reservationLocationsLoading || favoriteRoomsLoading || exceptionOccurrencesLoading || equipmentOrdersLoading || equipmentSpecsLoading || foodOrdersLoading || foodOrderLineItemsLoading || menuItemsLoading || selectedFoodOrderLoading || reservationLocationLoading || recurrenceLoading || findRoomLoading;
+			},
+
+			_setBuildingId: function(e) {
+				if (e && e.detail && e.detail.buildingId) {
+					var buildingId = e.detail.buildingId;
+					if (buildingId) {
+						this.set("_buildingId", buildingId);
+					} else {
+						this.set('_buildingId', null);
+					}
+					this.fire("criteria-changed");
+				}
+			},
+
+			_handleBuildingIdChange: function(value, reservationManager) {
+				if (this.reservationManager) {
+					if (!this.reservationManager.searchBuilding
+							|| this.reservationManager.searchBuilding.id != value) {							
+						if (value && value != "undefined" ) {
+							var building = {id: value};
+							this.set("reservationManager.searchBuilding", building);
+							this.$.reservationManager.updateRecord(TriPlatDs.RefreshType.SERVER, "actions", "onChangeBuilding");
+						} else if (value == null) {
+							this.set("reservationManager.searchBuilding", null);
+							this.$.reservationManager.updateRecord(TriPlatDs.RefreshType.SERVER, "actions", "onChangeBuilding");
+						}	
+					} 
+				}
+			},
+
+			_init: function (e) {
+				if (e && e.detail) {
+					// if not already set, set the building Id
+					if (!Boolean(this._buildingId)) {
+						if (e.detail.buildingId && e.detail.buildingId != "-1" && e.detail.buildingId !== "undefined") {
+							this._overrideBuildingId = e.detail.buildingId;
+							this.set("_buildingId", e.detail.buildingId);
+						} else {
+							this.set("_buildingId", null);
+						}
+					}
+
+					if (e.detail.reservationId && e.detail.reservationId != "-1") {
+						this.set("_reservationId", e.detail.reservationId);
+					} else {
+						this.set("_reservationId", null);
+					}
+
+					if (e.detail.occurrenceStart && e.detail.occurrenceStart != "-1") {
+						this.set("occurrenceStart", this.toDateIsoString(Number(e.detail.occurrenceStart)));
+					} else {
+						this.set("occurrenceStart", null);
+					}
+
+					if (e.detail.occurrenceEnd && e.detail.occurrenceEnd != "-1") {
+						this.set("occurrenceEnd", this.toDateIsoString(Number(e.detail.occurrenceEnd)));
+					} else {
+						this.set("occurrenceEnd", null);
+					}
+				}
+
+				this.set("isPreCreating", true);
+
+				this.set("resourceId", "-1");
+				this.set("orderId", "-1");
+				this.set("equipmentId", "-1");
+
+				this.$.loadingRoute.navigate();
+
+				this._getRM(this._reservationId, this._buildingId).then(function() {
+					this.set("isPreCreating", false);
+					
+					var promises = [];
+					promises.push(this._refreshFoodOrdersData());
+					promises.push(this._refreshEquipmentOrdersData());
+
+					Promise.all(promises).then(function() {
+						var isRequestedForCurrentUser = this._isReservationRequestedForCurrentUserPerson();
+
+						if (this.reservationManager.reservation.id && isRequestedForCurrentUser) {
+							this.fire("navigate-summary-page", {reservationId: this.reservationManager.reservation.id});
+						} else if (this.reservationManager.reservation.id && !isRequestedForCurrentUser) {
+							this.fire("navigate-reservation-not-found");
+						} else {
+							this.fire("navigate-find-room-page", {reservationId: "-1"});
+						}
+					}.bind(this));
+				}.bind(this));
+
+			},
+
+			_navigateReservationOpen: function(e) {
+				this.$.openRoute.navigate(
+					this._buildOpenRouteParams(e.detail.reservationId, e.detail.occurrenceStart, e.detail.occurrenceEnd)
+				);
+			},
+
+			_navigateReservationNew: function(e) {
+				this.$.newRoute.navigate(e.detail);
+			},
+
+			_navigateListPage: function () {
+				this.$.reservationListRoute.navigate();
+			},
+
+			_navigateSummaryPage: function (e) {
+				this.$.reservationSummaryRoute.navigate(e.detail);
+			},
+
+			_navigateReservationNotFound: function () {
+				this.$.reservationNotFoundRoute.navigate();
+			},
+
+			_navigateFindRoomPage: function (e) {
+				this.$.reservationFindRoomRoute.navigate(e.detail);
+			},
+
+			_navigateCriteriaAmenitiesPage: function() {
+				this.$.amenitiesDialog.openPopup();
+			},
+
+			_closeAmenitiesDialog: function() {
+				this.$.amenitiesDialog.close();
+			},
+
+			_navigateRecurrencePage: function() {
+				this.$.reservationRecurrencePage._pageAttached();
+				this.async(function() {
+					this.$.recurrenceDialog.openPopup();
+				})
+			},
+
+			_closeRecurrenceDialog: function() {
+				this.$.recurrenceDialog.close();
+			},
+
+			_navigateSummaryInstructions: function(e) {
+				console.info("TODO: _navigateSummaryInstructions");
+			},
+
+			_navigateExceptionsPage: function(e) {
+				console.info("_navigateExceptionsPage");
+
+				if (e && e.detail) {
+					var resourceId = e.detail.resourceId;
+					this.set("resourceId", resourceId);
+
+					this.$.exceptionsPage._pageAttached();
+					this.async(function() {
+						this.$.exceptionsDialog.openPopup();
+					})
+				}
+			},
+
+			_closeExceptionsDialog: function() {
+				this.$.exceptionsDialog.close();
+			},
+
+			_navigateRoomDetailsPage: function(e) {
+				var roomId = e.detail.roomId ? e.detail.roomId : "-1";
+				var backEventName = e.detail.backEventName;
+				var resourceId = e.detail.resourceId ? e.detail.resourceId : "-1";
+
+				this.set("roomDetailsParams", { "roomId": roomId, "resourceId": resourceId });
+
+				this.$.roomDetailsPage._pageAttached();
+				this.async(function() {
+					if(!this.$.reserveEquipmentFoodDialog.opened){
+							this.$.reserveEquipmentFoodDialog.openPopup();
+						}
+					this._displayReservePopup = "roomDetailsPage";
+					this.fire("popup-page-opened", {ironPages: this.$.reserveEquipmentFoodDialogsPages, popup: this.$.reserveEquipmentFoodDialog});
+				});
+			},
+
+			_closeRoomDetailsDialog: function() {
+				this.$.reserveEquipmentFoodDialog.close();
+			},
+
+			_navigateRoomSchedulePage: function(e) {
+				console.info("TODO: _navigateRoomSchedulePage");
+
+
+			},
+
+			_navigateRoomLocationPage: function(e) {
+				this._displayReservePopup = "roomLocation";
+				this.$.roomLocation.roomId = this.roomDetailsParams.roomId;
+				this.$.roomLocation.specId = this.reservationManagerSpecId;
+				this.fire("popup-page-opened", {ironPages: this.$.reserveEquipmentFoodDialogsPages, popup: this.$.reserveEquipmentFoodDialog});
+			},
+
+			_navigateEquipmentOrderPage: function(e) {
+				if (e && e.detail && e.detail.resourceId != null && e.detail.resourceId > 0) {
+					var resourceId = e.detail.resourceId;
+					var orderId = e.detail.orderId;
+					this.$.equipmentOrderPage.set('room', e.detail.room);
+					this._setResourceOrder(resourceId, orderId);
+					this.$.equipmentSpecs.refresh();
+
+					this.$.equipmentOrderPage._pageAttached();
+					this.async(function() {
+						if(!this.$.reserveEquipmentFoodDialog.opened){
+							this.$.reserveEquipmentFoodDialog.openPopup();
+						}
+						this._displayReservePopup = "equipmentOrderPage";
+						this.fire("popup-page-opened", {ironPages: this.$.reserveEquipmentFoodDialogsPages, popup: this.$.reserveEquipmentFoodDialog});
+					})
+				}
+			},
+
+			_closeEquipmentOrderDialog: function() {
+				this.$.reserveEquipmentFoodDialog.closePopup();
+			},
+
+			_closeEquipmentDetailsDialog: function() {
+				this._displayReservePopup = "equipmentOrderPage";
+			},
+
+			_navigateEquipmentDetailsPage: function(e) {
+				if (e && e.detail) {
+					var equipmentId = e.detail.equipmentId;
+
+					this.set("equipmentId", equipmentId);
+
+					this.$.equipmentDetailsPage._pageAttached();
+					this.async(function() {
+						if(!this.$.reserveEquipmentFoodDialog.opened){
+							this.$.reserveEquipmentFoodDialog.openPopup();
+						}
+						this._displayReservePopup = "equipmentDetailsPage";
+						this.fire("popup-page-opened", {ironPages: this.$.reserveEquipmentFoodDialogsPages, popup: this.$.reserveEquipmentFoodDialog});
+					})
+				}
+			},
+
+			_navigateFoodOrderPage: function(e) {
+				if (e && e.detail && e.detail.resourceId != null && e.detail.resourceId > 0) {
+					var resourceId = e.detail.resourceId;
+					var orderId = e.detail.orderId;
+					this._setResourceOrder(resourceId, orderId);
+					this.$.menuItems.refresh();
+
+					this._displayReservePopup = "foodOrderPage";
+					this.async(function() {
+						if(!this.$.reserveEquipmentFoodDialog.opened){
+							this.$.reserveEquipmentFoodDialog.openPopup();
+						}
+						this._displayReservePopup = "foodOrderPage";
+						this.fire("popup-page-opened", {ironPages: this.$.reserveEquipmentFoodDialogsPages, popup: this.$.reserveEquipmentFoodDialog});
+					})
+
+					this.async(function(){
+						this.$.foodOrderPage._pageAttached();
+					}, 300);
+				}
+			},
+
+			_navigateFoodOrderAddPage: function(e) {
+				if (e && e.detail && e.detail.resourceId != null && e.detail.resourceId > 0) {
+					var resourceId = e.detail.resourceId;
+					var orderId = "-1";
+					this._setResourceOrder(resourceId, orderId);
+					this.$.menuItems.refresh();
+					
+					this.$.foodOrderPage._pageAttached();
+					this.$.foodOrderPage.set('room', e.detail.room);
+					this.async(function() {
+						if(!this.$.reserveEquipmentFoodDialog.opened){
+							this.$.reserveEquipmentFoodDialog.openPopup();
+						}
+						this._displayReservePopup = "foodOrderPage";
+						this.fire("popup-page-opened", {ironPages: this.$.reserveEquipmentFoodDialogsPages, popup: this.$.reserveEquipmentFoodDialog});
+					})
+				}
+			},
+
+			_closeFoodOrderDialog: function() {
+				this._displayReservePopup = "roomDetailsPage"; //reset the pop-up
+				this.$.reserveEquipmentFoodDialog.closePopup();
+			},
+
+			_navigateFoodOrdersSummaryPage: function(e) {
+				if (e && e.detail) {
+					var resourceId = e.detail.resourceId;
+					this.set("resourceId", resourceId);
+					
+					this.$.foodOrdersSummaryPage._pageAttached();
+					this.$.foodOrderPage.set('room', e.detail.room);
+					this.async(function() {
+						if(!this.$.reserveEquipmentFoodDialog.opened){
+							this.$.reserveEquipmentFoodDialog.openPopup();
+						}
+						this._displayReservePopup = "foodOrdersSummaryPage";
+						this.fire("popup-page-opened", {ironPages: this.$.reserveEquipmentFoodDialogsPages, popup: this.$.reserveEquipmentFoodDialog});
+					})
+				}
+			},
+
+			_closeFoodOrderSummaryDialog: function() {
+				this.$.reserveEquipmentFoodDialog.closePopup();
+			},
+
+			// check to see if the reservation is dirty and display a dialog asking the user if they want to discard the changes
+			_handleValidateHome: function(e) {
+				var signoutIntention = Boolean(e.detail.intention == "signout");
+				this.set('_signoutIntentionActive', signoutIntention);
+				if (this.reservationManager) {
+					this._setBusy();
+
+					var wfParams = {};
+					if (this.reservationManager.reservation != null && this.reservationManager.reservation.id) {
+						wfParams.reservation = this.reservationManager.reservation.id;
+					}
+
+					this.$.reservationManager.updateRecord(TriPlatDs.RefreshType.SERVER, "actions", "isChanged", wfParams).then(function() {
+						this._clearBusy();
+
+						if (this.reservationManager.isDirty) {
+							this.$.discardChangedDialog.open();
+						} else if (signoutIntention) {
+							this._fireSignoutEvent();
+						} else {
+							this._fireHomeEvent();
+						}
+					}.bind(this));
+				} else if (signoutIntention) {
+					this._fireSignoutEvent();
+				} else {
+					this._fireHomeEvent();
+				}
+			},
+
+			_handleHomeDialogClose: function(e, detail) {
+				if (detail && detail.confirmed) {
+					this._unsavedChangesDialogCleanup();
+					if (this._signoutIntentionActive) {
+						this._fireSignoutEvent();
+					} else {
+						this._goHome();
+					}
+				}
+			},
+
+			_unsavedChangesDialogCleanup: function() {
+				if (this.$.reservationSummaryRoute.active) {
+					this.$.reservationSummaryPage.cleanupUnsavedChangesDialogProcesses();
+				}
+			},
+
+			_fireHomeEvent: function() {
+				this._unsavedChangesDialogCleanup();
+				this._goHome();
+			},
+
+			_fireSignoutEvent: function() {
+				this._unsavedChangesDialogCleanup();
+				this.set('_signoutIntentionActive', false);
+				this.fire('signout');
+			},
+
+			_updateSearch: function() {
+				this.$.reservationManager.updateRecord(TriPlatDs.RefreshType.SERVER, "actions", "search").then(function() {
+					this.fire("update-search-results", {}, {node: this.$.reservationFindRoomPage});
+				}.bind(this));
+			},
+
+			_handleListRouteActive: function (e) {
+					this.fire("reservation-list-route-active", { active: e.detail.active, pageLabel: this._reservationsMessage, hasBackButton: false });
+			},
+
+			_handleNewRouteActive: function (e) {
+					this.fire("reservation-new-route-active", { active: e.detail.active, pageLabel: this._newReservationMessage, hasBackButton: true });
+			},
+
+			_handleOpenRouteActive: function (e) {
+					this.fire("reservation-open-route-active", { active: e.detail.active, pageLabel: this._openReservationMessage, hasBackButton: true });
+			},
+
+			_handleFindRoomRouteActive: function (e) {
+					this.fire("find-room-route-active", { active: e.detail.active, pageLabel: this._newReservationMessage, hasBackButton: true });
+			},
+
+			_handleReservationSummaryRouteActive: function (e) {
+					this.fire("reservation-summary-route-active", { active: e.detail.active, pageLabel: this._reservationSummaryMessage, hasBackButton: true });
+			},
+
+			_onCriteriaChanged: function() {
+				if (Polymer.isInstance(this.$.reservationFindRoomPage)) {
+					this.$.reservationFindRoomPage.hideResults();
+				}
+			},
+
+			attached: function() {
+				this.set("rm", this.$.reservationManager);
+			},
+
+			_onListRouteActive: function(e) {
+				if (e.detail.active) {
+					this.loadResource(this.$.reservationListPage, "tripage-list.html");
+				}
+			},
+
+			_onFindRoomRouteActive: function(e) {
+				if (e.detail.active) {
+					this.loadResource(this.$.reservationFindRoomPage, "tripage-find-room.html");
+				}
+			},
+
+			_onSummaryRouteActive: function(e) {
+				if (e.detail.active) {
+					this.loadResource(this.$.reservationSummaryPage, "tripage-summary.html");
+				}
+			},
+
+			_onReservationNotFoundRouteActive: function(e) {
+				if (e.detail.active) {
+					this.loadResource(this.$.reservationNotFoundPage, "tripage-reservation-not-found.html");
+				}
+			},
+
+			_onRecurrenceChanged: function(e) {
+				this.set("_recurrence", e.detail.recurrence)
+			},
+
+			_onRecurrenceDialogClosed: function() {
+				this.set("recurrence", this._recurrence)
+			},
+
+			_handleSaveEquipmentFoodOrder: function(){
+				if (this._displayReservePopup == "foodOrderPage") {
+					this._closeFoodOrderDialog();
+					this.$.foodOrderPage._handleSaveOrder();
+				} 
+				else if (this._displayReservePopup == "equipmentOrderPage") {
+					this._closeEquipmentOrderDialog();
+					this.$.equipmentOrderPage._handleSaveOrders();
+				}
+			},
+
+			_handleIronPageDeselect: function(e){
+				var target = e.detail.item;
+				// update the food order summary when back from add food
+				if(target && target.id && target.id == "foodOrderPage" && this._displayReservePopup == "foodOrdersSummaryPage" && this.smallScreenWidth){ 
+					this.$.foodOrderPage._handleSaveOrder();
+				}
+			},
+
+			_handleUpdateResourceId: function(e){
+				if (e && e.detail && e.detail.resourceId != null && e.detail.resourceId > 0) {
+					this.set('resourceId', e.detail.resourceId);
+					this._refreshEquipmentOrdersData();
+				}
+			},
+
+		});
+
+	</script>
+</dom-module>
