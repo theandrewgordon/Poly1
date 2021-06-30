@@ -134,10 +134,18 @@
 		<div class="description-label">Description</div>
 
 		<textarea id="descriptionField"
-			placeholder="Write your description of the problem"
+			placeholder="Write your description of the problem PLEASE"
 			value="{{request.desc::input}}"
 			rows="4" maxlength="250" aria-label="Problem Description"
 			tri-scroll-into-view></textarea>
+
+			
+		 <textarea id="todaysNotificationField"
+			placeholder="Put in Today's Notification"
+			value="{{request.todaysNotification::input}}"
+			rows="2" maxlength="50" aria-label="Today's Notification"
+			tri-scroll-into-view></textarea> 
+
 
 	</template>
 	<script>
