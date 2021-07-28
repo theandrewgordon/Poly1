@@ -1,0 +1,78 @@
+
+<!--
+`cstcomp-request-training` Description.
+
+### Example
+
+````
+<cstcomp-request-training></cstcomp-request-training>
+````
+
+@group Group.
+@element cstcomp-request-training
+@demo demo/index.html
+@hero hero.svg
+-->
+<dom-module id="cstcomp-request-training">
+    <template>
+        <style>
+            :host {
+                display: block
+            }
+            .todaysNotification{
+                font-weight: bold;
+            }
+        </style>
+        {{userMessage}}
+        {{abc}}
+
+        <template is="dom-if" if="[[readOnly]]">
+			<div class="todaysNotification">
+                {{request.todaysNotification}}
+			</div>
+		</template>
+        <template is="dom-if" if="[[!readOnly]]">
+			<div class="todaysNotification">
+                <textarea id="todaysNotificationField"
+                placeholder="Put in Today's Notification"
+                value="{{request.todaysNotification::input}}"
+                rows="2" maxlength="50" aria-label="Today's Notification"
+                tri-scroll-into-view></textarea> 
+			</div>
+		</template>
+
+
+
+    </template>
+
+    
+    <script>
+    'use strict';
+
+        Polymer({
+            is: "cstcomp-request-training",
+
+            behaviors: [],
+
+            properties: {
+                /** User Message. */
+                userMessage: {
+                    type: String,
+                    value: "Default message"
+                },
+                request: {
+					type: Object,
+				},              
+                readOnly: {
+                    type: Boolean, 
+                    value: false
+                }
+            },
+
+            observers: [],
+
+            listeners: {}
+
+        });
+    </script>
+</dom-module>

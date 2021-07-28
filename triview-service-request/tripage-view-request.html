@@ -31,7 +31,12 @@
 			<div class="request-page-left-panel">
 				<tricomp-request-read-only request="[[request]]" current-user="[[currentUser]]"></tricomp-request-read-only>
 			</div>
+			<!-- put my component read only here -->
+
 			<div class="request-page-right-panel">
+		
+				<cstcomp-request-training
+				user-message="attempt readonly" request="{{request}}" read-only="true"></cstcomp-request-training>
 				<tricomp-request-comments class="comments" request="{{request}}"
 						read-only="[[_isCompletedRequest(request.statusENUS)]]" current-user="[[currentUser]]">
 				</tricomp-request-comments>

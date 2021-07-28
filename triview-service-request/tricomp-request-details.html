@@ -10,6 +10,7 @@
 
 <link rel="import" href="tribehav-validation.html">
 <link rel="import" href="tribehav-scroll-field-into-view.html">
+<link rel="import" href="cstcomp-request-training.html">
 
 <dom-module id="tricomp-request-details">
 	<template>
@@ -139,12 +140,23 @@
 			rows="4" maxlength="250" aria-label="Problem Description"
 			tri-scroll-into-view></textarea>
 
-			
-		 <textarea id="todaysNotificationField"
+		<cstcomp-request-training
+			user-message="attempt 1" request="{{request}}"></cstcomp-request-training>
+		<cstcomp-request-training
+			user-message="attempt 2" request="[[request]]"></cstcomp-request-training>
+		<cstcomp-request-training
+			user-message="attempt 3" request="{{request}}" read-only="true"></cstcomp-request-training>
+		
+
+
+				
+				
+
+		 <!-- <textarea id="todaysNotificationField"
 			placeholder="Put in Today's Notification"
 			value="{{request.todaysNotification::input}}"
 			rows="2" maxlength="50" aria-label="Today's Notification"
-			tri-scroll-into-view></textarea> 
+			tri-scroll-into-view></textarea>  -->
 
 
 	</template>
